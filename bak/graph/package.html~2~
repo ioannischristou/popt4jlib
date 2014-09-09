@@ -1,0 +1,33 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head><!--
+  Copyright (c) 2011 
+  All Rights Reserved.
+--></head>
+
+<body bgcolor="white">graph package: a collection of classes for representing graphs, 
+hyper-graphs and algorithms operating on such discrete finite structures.
+
+<h2>Package specification</h2>
+The graph package provides a reentrant (thread-safe) Graph class that represents
+directed (as well as undirected) graph objects, their nodes (Node class) and 
+links (Link class) between them. It also provides an HGraph class representing
+hyper-graph objects, namely graphs whose edges may connect more than 2 nodes,
+and the related classes HNode and HLink.
+Several algorithms are implemented that operate on Graph or HGraph objects:
+1. Dijkstra's Shortest Path algorithm 
+2. Bron-Kerbosch All Maximal Cliques finding algorithm
+3. Kruskal's Minimal Spanning Tree algorithm
+Several other algorithms will be implemented in the next version of the library
+<ul>
+  <li><a href="">hyperlink</a>
+</ul>
+
+<h2>Related Documentation</h2>
+
+<ul>
+  <li><a href="">hyperlink</a>
+</ul>
+
+<!-- Put @see and @since tags here. --></body>
+</html>

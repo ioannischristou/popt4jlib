@@ -1,0 +1,93 @@
+package tests;
+
+import popt4jlib.*;
+import popt4jlib.SA.*;
+import java.util.*;
+import utils.RndUtil;
+
+/**
+ * Test-driver class for executing the SA algorithm implemented in the
+ * <CODE>popt4jlib.SA.DSA</CODE> class.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DSATest {
+  /**
+   * public no-arg constructor
+   */
+  public DSATest() {
+  }
+
+
+  /**
+   * run as <CODE> java -cp &ltclasspath&gt tests.DSATest &ltparams_file&gt [random_seed]</CODE>
+   * where the params_file must contain lines of the following form:
+   * <li> class,dsa.function, &ltfullclasspathname&gt  mandatory, the java class
+   * name defining the function to be optimized, which must accept
+   * as arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
+   * objects.
+   * <li> class,dsa.randomchromosomemaker, &ltfullclassname&gt mandatory the class
+   * name of a RandomChromosomeMakerIntf object responsible for implementing the
+   * interface that allows creating random initial chromosome objects.
+   * <li> class,dsa.movemaker, &ltfullclassname&gt mandatory, the  object responsible
+   * for implementing the interface NewChromosomeMakerIntf that allows creating
+   * new chromosome Objects from an existing one (makes a move).
+   * <li> dsa.numouteriters, $num$ optional, the total number of "generations"
+   * i.e. outer iterations to run, default is 100.
+   * <li> dsa.numthreads, $num$ optional, the number of threads representing
+   * islands for this evolutionary process run. Default is 1.
+   * <li> rndgen,$num$,$num2$ mandatory, specifies the starting random
+   * seed to use for each of the $num2$ threads to use (the value num2 must
+   * equal the number given for the dsa.numthreads, or 1 if no such line is
+   * present). The value of num should be a positive integer.
+   * <li> class,dsa.c2amaker, &ltfullclassname&gt optional, the object that
+   * implements the Chromosome2ArgMakerIntf interface that transforms chromosome
+   * Objects used in the evolutionary process -and manipulated by the Object
+   * implementing the NewChromosomeMakerIntf interface- into argument Objects
+   * that can be passed into the FunctionIntf object that the process minimizes.
+   * Default is null, which results in the chromosome objects being passed "as-is"
+   * to the FunctionIntf object being minimized.
+   * <li> dsa.numtriesperiter, $num$ optional, the number of
+   * iterations each thread will run before communicating its incumbent solution
+   * to all others, and get the best overall incumbent -among running threads-
+   * to continue with, default is 100.
+   * <li> class,dsa.schedule, &ltfullclasspathname&gt optional, class name of the
+   * object implementing the SAScheduleIntf that determines the temperature at
+   * each "generation" i.e. outer iteration. Default is LinScaleSchedule, that
+   * can be configured by the following two optional parameters:
+   * <li> dsa.T0, $num$ optional, initial temperature, default is 1000.0
+   * <li> dsa.K, $num$ optional, the "Boltzman constant", default is 20.0
+	 * 
+	 * <p> if the second optional argument is passed in, it overrides the random
+	 * seed specified in the params_file.
+   *
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      long start_time = System.currentTimeMillis();
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+			if (args.length>1) {
+				long seed = Long.parseLong(args[1]);
+				RndUtil.getInstance().setSeed(seed);  // updates all extra instances too!
+			}
+      FunctionIntf func = (FunctionIntf) params.get("dsa.function");
+      DSA opter = new DSA(params);
+      utils.PairObjDouble p = opter.minimize(func);
+      double[] arg = (double[]) p.getArg();
+      System.out.print("best soln found:[");
+      for (int i=0;i<arg.length;i++) System.out.print(arg[i]+" ");
+      System.out.println("] VAL="+p.getDouble());
+      long dur = System.currentTimeMillis()-start_time;
+      System.out.println("total time (msecs): "+dur);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

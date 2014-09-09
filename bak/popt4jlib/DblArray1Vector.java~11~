@@ -1,0 +1,175 @@
+package popt4jlib;
+
+/**
+ * double[] implementation of VectorIntf
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DblArray1Vector implements VectorIntf {
+  // public final static long serialVersionUID=...L;
+  private double _x[]=null;
+
+  /**
+   * public constructor making a copy of the argument
+   * @param x double[]
+   * @throws IllegalArgumentException
+   */
+  public DblArray1Vector(double[] x) throws IllegalArgumentException {
+    if (x==null) throw new IllegalArgumentException("null arg passed");
+    final int n = x.length;
+    _x = new double[n];
+    for (int i=0; i<n; i++) _x[i]=x[i];
+  }
+
+
+  /**
+   * public constructor making a copy of the array passed in, and multiplying
+   * each element by the multFactor passed in.
+   * @param x double[]
+   * @param multFactor double
+   * @throws IllegalArgumentException
+   */
+  public DblArray1Vector(double[] x, double multFactor) throws IllegalArgumentException {
+    if (x==null) throw new IllegalArgumentException("null arg passed");
+    final int n = x.length;
+    _x = new double[n];
+    for (int i=0; i<n; i++) _x[i]=x[i]*multFactor;
+  }
+
+
+  /**
+   * return a new VectorIntf object containing a copy of the data of this object.
+   * @return VectorIntf
+   */
+  public VectorIntf newCopy() {
+    DblArray1Vector x = new DblArray1Vector(_x);
+    return x;
+  }
+
+
+  /**
+   * return a new DblArray1Vector that contains a copy of this object's data,
+   * but each element in the returned object is multiplied by the passed arg.
+   * @param multFactor double
+   * @return VectorIntf
+   */
+  public VectorIntf newCopyMultBy(double multFactor) {
+    DblArray1Vector x = new DblArray1Vector(_x, multFactor);
+    return x;
+  }
+
+
+  /**
+   * return a DblArray1Vector object containing as data the arg passed in.
+   * @param arg double[]
+   * @return VectorIntf
+   */
+  public VectorIntf newInstance(double[] arg) {
+    return new DblArray1Vector(arg);
+  }
+
+
+  /**
+   * return the number of coordinates of this VectorIntf object.
+   * @return int
+   */
+  public int getNumCoords() { return _x.length; }
+
+
+  /**
+   * return a copy of this object's data member.
+   * @return double[]
+   */
+  public double[] getDblArray1() {
+    double[] x = new double[_x.length];
+    for (int i=0; i<x.length; i++) x[i] = _x[i];
+    return x;
+  }
+
+
+  /**
+   * return the i-th coordinate of this VectorIntf (i must be in the set
+   * {0,1,2,...<CODE>getNumCoords()</CODE>-1}
+   * @param i int
+   * @throws IndexOutOfBoundsException if i is not in the set mentioned above
+   * @return double
+   */
+  public double getCoord(int i) throws IndexOutOfBoundsException {
+    if (i<0 || i>=_x.length) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
+    return _x[i];
+  }
+
+
+  /**
+   * set the i-th coordinate of this VectorIntf (i must be in the set
+   * {0,1,2,...<CODE>getNumCoords()</CODE>-1}
+   * @param i int
+   * @param val double
+   * @throws IndexOutOfBoundsException if i is not in the set mentioned above
+   * @return double
+   */
+  public void setCoord(int i, double val) throws IndexOutOfBoundsException {
+    if (i<0 || i>=_x.length) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
+    _x[i] = val;
+  }
+
+
+  /**
+   * modifies this VectorIntf by adding the quantity m*other to it.
+   * @param m double
+   * @param other VectorIntf
+   * @throws IllegalArgumentException if other is null or does not have the
+   * same dimensions as this vector or if m is NaN
+   */
+  public void addMul(double m, VectorIntf other) throws IllegalArgumentException {
+    if (other==null || other.getNumCoords()!=_x.length || Double.isNaN(m))
+      throw new IllegalArgumentException("cannot call addMul(m,v) with v "+
+                                         "having different dimensions than "+
+                                         "this vector or with m being NaN.");
+    for (int i=0; i<_x.length; i++) {
+      _x[i] += m*other.getCoord(i);
+    }
+  }
+
+
+  /**
+   * divide the components of this vector by the argument h.
+   * @param h double
+   * @throws IllegalArgumentException if h is zero
+   */
+  public void div(double h) throws IllegalArgumentException {
+    if (Double.isNaN(h) || Math.abs(h)<1.e-120)
+      throw new IllegalArgumentException("division by (almost) zero or NaN");
+    for (int i=0; i<_x.length; i++)
+      _x[i] /= h;
+  }
+
+
+  /**
+   * return true iff all components are zero.
+   * @return boolean
+   */
+  public boolean isAtOrigin() {
+    for (int i=0; i<_x.length; i++)
+      if (Double.compare(_x[i], 0.0) != 0) return false;
+    return true;
+  }
+
+
+  /**
+   * return a String representation of this VectorIntf object.
+   * @return String
+   */
+  public String toString() {
+    String x="[";
+    for (int i=0; i<_x.length-1; i++) x += _x[i]+", ";
+    x += _x[_x.length-1];
+    x += "]";
+    return x;
+  }
+}
+

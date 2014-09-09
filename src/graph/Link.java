@@ -1,0 +1,92 @@
+package graph;
+
+import parallel.ParallelException;
+import java.io.Serializable;
+
+/**
+ * represents links between nodes in Graph objects.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class Link implements Serializable {
+  private final static long serialVersionUID = -7776018308783216013L;
+  private int _id;
+  private int _starta;
+  private int _enda;
+  private double _weight;
+
+
+  /**
+   * public constructor. Assigns a default weight of one to this Link object.
+   * @param id int
+   * @param in Node
+   * @param out Node
+   * @throws ParallelException if the current thread has a read-lock on the
+   * in Node and there exists another thread that also has a read-lock on the
+   * in Node.
+   */
+  Link(int id, Node in, Node out) throws ParallelException {
+    _id = id;
+    _starta = in.getId();
+    _enda = out.getId();
+    _weight = 1.0;
+    in.addOutLink(out, new Integer(id));
+  }
+
+
+  /**
+   * public constructor.
+   * @param g Graph
+   * @param id int
+   * @param starta int
+   * @param enda int
+   * @param weight double
+   * @throws ParallelException if the current thread has a read-lock on the
+   * Node with id starta, and there exists another thread that simultaneously
+   * holds the same read-lock.
+   */
+  Link(Graph g, int id, int starta, int enda, double weight)
+      throws ParallelException {
+    _id = id;
+    _starta = starta;
+    _enda = enda;
+    _weight = weight;
+    Node s = g.getNode(starta);
+    Node e = g.getNode(enda);
+    s.addOutLink(e, new Integer(id));
+  }
+
+
+  /**
+   * return this Link's id in [0, g.getNumArcs()-1]
+   * @return int
+   */
+  public int getId() { return _id; }
+
+
+  /**
+   * return this Link's weight
+   * @return double
+   */
+  public double getWeight() { return _weight; }
+
+
+  /**
+   * return the id of the starting Node of this Link in [0, g.getNumNodes()-1]
+   * @return int
+   */
+  public int getStart() { return _starta; }
+
+
+  /**
+   * return the id of the ending Node of this Link in [0, g.getNumNodes()-1]
+   * @return int
+   */
+  public int getEnd() { return _enda; }
+
+}
+

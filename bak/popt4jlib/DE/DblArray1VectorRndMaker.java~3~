@@ -1,0 +1,48 @@
+package popt4jlib.DE;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+public class DblArray1VectorRndMaker {
+  private Hashtable _params;
+
+  public DblArray1VectorRndMaker(Hashtable params) {
+    _params = params;
+  }
+
+  public VectorIntf createNewRandomVector() throws OptimizerException {
+    double mingval = Double.NEGATIVE_INFINITY;
+    Double mingvD = (Double) _params.get("de.minargval");
+    if (mingvD!=null) mingval = mingvD.doubleValue();
+    double maxgval = Double.MAX_VALUE;
+    Double maxgvD = (Double) _params.get("de.maxargval");
+    if (maxgvD!=null) maxgval = maxgvD.doubleValue();
+    if (maxgval < mingval)
+      throw new OptimizerException("global min arg value > global max arg value");
+    int n = 0;
+    try {
+      int tid = ((Integer) _params.get("thread.id")).intValue();
+      n = ((Integer) _params.get("de.numdimensions")).intValue();
+      double[] arr = new double[n];
+      for (int i=0; i<n; i++) {
+        double minval = mingval;
+        Double mvD = (Double) _params.get("de.minargval"+i);
+        if (mvD!=null && mvD.doubleValue()>minval) minval = mvD.doubleValue();
+        double maxval = maxgval;
+        Double MvD = (Double) _params.get("de.maxargval"+i);
+        if (MvD!=null && MvD.doubleValue()<maxval) maxval = MvD.doubleValue();
+        if (minval>maxval)
+          throw new OptimizerException("global min arg value > global max arg value");
+        arr[i] = minval +
+                 RndUtil.getInstance(tid).getRandom().nextDouble()*(maxval-minval);
+      }
+      return new DblArray1Vector(arr);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("createNewRandomVector() failed");
+    }
+  }
+}
+

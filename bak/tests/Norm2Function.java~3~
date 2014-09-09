@@ -1,0 +1,61 @@
+package tests;
+
+import popt4jlib.*;
+import java.util.*;
+
+/**
+ *
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ *
+ * This class implements the (weighted) ||x||^2 Function in n-dimensions
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class Norm2Function implements FunctionIntf {
+  public Norm2Function() {
+  }
+
+  public double eval(Object arg, Hashtable p) {
+    if (arg instanceof VectorIntf) {
+      VectorIntf x = (VectorIntf) arg;
+      int n = x.getNumCoords();
+      double res = 0;
+      for (int i = 0; i < n; i++) {
+        double xi = x.getCoord(i);
+        double val = xi*xi;
+        Double aiD = (Double) p.get("a"+i);
+        if (aiD!=null) val *= aiD.doubleValue();
+        res += val;
+      }
+      return res;
+    } else {
+      double[] x = (double[]) arg;
+      int n = x.length;
+      double res = 0;
+      for (int i = 0; i < n; i++) {
+        double val = x[i] * x[i];
+        Double aiD = (Double) p.get("a" + i);
+        if (aiD != null) val *= aiD.doubleValue();
+        res += val;
+      }
+      return res;
+    }
+  }
+
+
+  public static void main(String[] args) {
+    int n = args.length;
+    double[] x = new double[n];
+    Hashtable p = new Hashtable();
+    for (int i=0; i<n; i++) {
+      x[i] = Double.parseDouble(args[i]);
+    }
+    Norm2Function f = new Norm2Function();
+    double res=f.eval(x,p);
+    System.out.println(res);
+  }
+}
+

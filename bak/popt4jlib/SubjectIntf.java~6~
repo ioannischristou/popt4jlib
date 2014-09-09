@@ -1,0 +1,26 @@
+package popt4jlib;
+
+import java.util.Hashtable;
+
+/**
+ * The SubjectIntf implements the Subject Object's methods in the well-known
+ * Observer Design Pattern. See the comments in the ObserverIntf class.
+ *
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public interface SubjectIntf {
+  public boolean registerObserver(ObserverIntf o);
+  public boolean removeObserver(ObserverIntf o);
+  public void notifyObservers();
+  public FunctionIntf getFunction();
+  public Hashtable getParams();
+  public Object getIncumbent();
+  // add back a new solution produced by the obs Observer
+  public void addIncumbent(ObserverIntf obs, Object soln) throws OptimizerException;
+}
+

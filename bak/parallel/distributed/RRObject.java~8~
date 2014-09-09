@@ -1,0 +1,109 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.io.*;
+
+/**
+ * auxiliary base-class wrapping up Requests/Results for TaskObjects processing.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public abstract class RRObject implements Serializable {
+  public abstract void runProtocol(PDBatchTaskExecutorSrv srv,
+                                   ObjectInputStream ois,
+                                   ObjectOutputStream oos)
+      throws IOException, ClassNotFoundException, PDBatchTaskExecutorException;
+}
+
+
+/**
+ * auxiliary class wrapping a request for processing TaskObjects.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class TaskObjectsExecutionRequest extends RRObject {
+  public final static long serialversionUID = 98765433330L;
+  TaskObject[] _tasks;
+
+  public TaskObjectsExecutionRequest(TaskObject[] tasks) {
+    _tasks = tasks;
+  }
+
+
+  /**
+   * finds a free worker and submits the tasks for processing, then sends
+   * the results back to the requestor. In case no worker is available,
+   * sends back the tasks, wrapped in a NoWorkerAvailableResponse object.
+   * @param srv PDBatchTaskExecutorSrv
+   * @param ois ObjectInputStream
+   * @param oos ObjectOutputStream
+   * @throws IOException
+   */
+  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+    if (_tasks==null || _tasks.length==0)
+      throw new PDBatchTaskExecutorException("TaskObjectsExecutionRequest.runProtocol(): null or empty _tasks?");
+    // 1. find an available worker on the net, submit work, wait for results
+    try {
+      System.err.println("TaskObjectsExecutionRequest.runProtocol(): now executing srv.submitWork(), #tasks="+_tasks.length); System.err.flush();  // itc: HERE rm asap
+      TaskObjectsExecutionResults results = srv.submitWork(_tasks);
+      System.err.println("TaskObjectsExecutionRequest.runProtocol(): returned from srv.submitWork()"); System.err.flush();  // itc: HERE rm asap
+      // 2. send back the results to the requestor
+      oos.writeObject(results);
+      oos.flush();
+      System.err.println("TaskObjectsExecutionRequest.runProtocol(): flushed response to requestor and returning"); System.err.flush();  // itc: HERE rm asap
+      return;
+    }
+    catch (PDBatchTaskExecutorException e) {  // failed to find an available
+                                              // thread; indicate to the requestor
+      e.printStackTrace();
+      oos.writeObject(new NoWorkerAvailableResponse(_tasks));
+      oos.flush();
+      return;
+    }
+  }
+}
+
+
+/**
+ * auxiliary class wrapping the results of processing a TaskObject[].
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class TaskObjectsExecutionResults extends RRObject {
+  public final static long serialversionUID = 98765433331L;
+  Object[] _results;  // must be Serializable
+
+  public TaskObjectsExecutionResults(Object[] results) {
+    _results = results;
+  }
+
+  /**
+   * sends back the results to the requestor (forwards).
+   * @param ois ObjectInputStream
+   * @param oos ObjectOutputStream
+   * @throws IOException
+   */
+  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws IOException, PDBatchTaskExecutorException {
+    if (_results==null || _results.length==0)
+      throw new PDBatchTaskExecutorException("TaskObjectsExecutionResults.runProtocol(): null or empty _results?");
+    System.err.println("TaskObjectsExecutionResults.runProtocol(): now sending results to requester..."); System.err.flush();  // itc: HERE rm asap
+    oos.writeObject(this);
+    oos.flush();
+    System.err.println("TaskObjectsExecutionResults.runProtocol(): flushed results and returning"); System.err.flush();  // itc: HERE rm asap
+    return;
+  }
+}
+
+

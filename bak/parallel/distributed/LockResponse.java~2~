@@ -1,0 +1,12 @@
+package parallel.distributed;
+
+import java.io.Serializable;
+
+
+class LockResponse implements Serializable {
+  public final static long serialVersionUID = 9876543333234L;
+
+  public LockResponse() {
+  }
+}
+

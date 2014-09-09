@@ -1,0 +1,22 @@
+package graph.packing;
+
+import parallel.*;
+
+public class BBThreadPool {
+  static private int _numThreads = 1;  // default
+  static ParallelAsynchBatchTaskExecutor _pool = null;
+
+  public static void setNumthreads(int n) {
+    _numThreads = n;
+    try {
+      _pool = new ParallelAsynchBatchTaskExecutor(_numThreads);
+    }
+    catch (ParallelException e) {
+      e.printStackTrace();  // cannot get here
+    }
+  }
+  public static int getNumThreads() { return _numThreads; }
+  public static ParallelAsynchBatchTaskExecutor getPool() { return _pool; }
+
+}
+

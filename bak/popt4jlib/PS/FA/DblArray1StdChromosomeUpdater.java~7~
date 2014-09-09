@@ -1,0 +1,150 @@
+package popt4jlib.PS.FA;
+
+import popt4jlib.OptimizerException;
+import utils.LightweightParams;
+import java.util.Hashtable;
+
+
+/**
+ * the "standard" implementation of the position update for a firefly towards
+ * another, more "bright" one (see Wikipedia article: Firefly_Algorithm).
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DblArray1StdChromosomeUpdater implements ChromosomeUpdaterIntf {
+  private int _t=0;
+  private Hashtable _p=null;  // cache
+  private double _L = Double.NaN;  // cache
+
+
+  /**
+   * no-param sole public constructor is a no-op.
+   */
+  public DblArray1StdChromosomeUpdater() {
+
+  }
+
+
+  /**
+   * the main method of the class, requires the following params be present in
+   * the params object:
+   * <li> <"dfa.chromosomelength", Integer n> mandatory, the dimension of the
+   * double[] chromosomes.
+   * <li> <"dfa.maxallelevalue", Double v> optional, the max. value any element
+   * in the double[] chromosomes position can take. Default is +Infinity.
+   * <li> <"dfa.minallelevalue", Double v> optional, the min. value any element
+   * in the double[] chromosomes position can take. Default is -Infinity.
+   * <li> <"dfa.maxalleleval$i$", Double v> optional, the max. value the i-th
+   * element in the double[] chromosomes position can take. Default is +Infinity.
+   * <li> <"dfa.minallelevalue$i$", Double v> optional, the min. value the i-th
+   * element in the double[] chromosomes position can take. Default is -Infinity.
+   * <li> <"dfa.beta", Double v> optional, the value of â. Default is 1.0.
+   * <li> <"dfa.a0", Double v> optional, the value of a_0. Default is 0.01*L.
+   * <li> <"dfa.delta", Double v> optional, the value of ä. Default is 0.97.
+   *
+   * @param ci Object
+   * @param cj Object
+   * @param params Hashtable
+   * @throws OptimizerException
+   * @return Object
+   */
+  public Object update(Object ci, Object cj, Hashtable params) throws OptimizerException {
+    double beta = 1.0;
+    try {
+      Double bD = (Double) params.get("dfa.beta");
+      if (bD!=null) beta = bD.doubleValue();
+    }
+    catch (Exception e) {
+      e.printStackTrace();  // ignore
+    }
+    double[] xi = null;
+    double[] xj = null;
+    try {
+      xi = (double[]) ci;
+      xj = (double[]) cj;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("ci and/or cj are not double[]");
+    }
+    double L = params.equals(_p) ? _L : averageVariableScale(params);
+    double gamma = 1.0/Math.sqrt(L);
+    double a0 = 0.01*L;
+    try {
+      Double a0D = (Double) params.get("dfa.a0");
+      if (a0D!=null) a0 = a0D.doubleValue();
+    }
+    catch (Exception e) {
+      e.printStackTrace();  // ignore
+    }
+    double delta = 0.97;
+    try {
+      Double dD = (Double) params.get("dfa.delta");
+      if (dD!=null) delta = dD.doubleValue();
+    }
+    catch (Exception e) {
+      e.printStackTrace();  // ignore
+    }
+    double a = a0*Math.pow(delta, _t);
+    double rij2 = 0.0;
+    for (int i=0; i<xi.length; i++) rij2 += (xi[i]-xj[i])*(xi[i]-xj[i]);
+    int id = ((Integer) params.get("thread.id")).intValue();
+    // create new double[] to return
+    double[] y = new double[xi.length];
+    for (int i=0; i<y.length; i++) {
+      y[i] = xi[i] + beta*Math.exp(-gamma*rij2)*(xj[i] - xi[i]) +
+          a*utils.RndUtil.getInstance(id).getRandom().nextGaussian();
+    }
+    return y;
+  }
+
+
+  public void incrementGeneration() {
+    ++_t;
+  }
+
+
+  /**
+   * under normal circumstances, will only be called once.
+   * @param p Hashtable
+   * @throws OptimizerException
+   * @return double
+   */
+  private double averageVariableScale(Hashtable p) throws OptimizerException {
+    if (p==null) throw new OptimizerException("null params");
+    _p = p;  // cache the params ref.
+    try {
+      LightweightParams params = new LightweightParams(p);
+      double avgdiffs = 0.0;
+      final int nmax = params.getInteger("dfa.chromosomelength").intValue();
+      double maxallelevalg = Double.MAX_VALUE;
+      Double maxag = params.getDouble("dfa.maxallelevalue");
+      if (maxag != null) maxallelevalg = maxag.doubleValue();
+      double minallelevalg = Double.NEGATIVE_INFINITY;
+      Double minag = params.getDouble("dfa.minallelevalue");
+      if (minag != null) minallelevalg = minag.doubleValue();
+      for (int i = 0; i < nmax; i++) {
+        double minalleleval = minallelevalg;
+        Double minai = params.getDouble("dfa.minalleleval" + i);
+        if (minai != null && minai.doubleValue() > minallelevalg)
+          minalleleval = minai.doubleValue();
+        double maxalleleval = maxallelevalg;
+        Double maxai = params.getDouble("dfa.maxalleleval" + i);
+        if (maxai != null && maxai.doubleValue() < maxallelevalg)
+          maxalleleval = maxai.doubleValue();
+        avgdiffs = (avgdiffs*i + maxalleleval - minalleleval)/((double) i+1);
+      }
+      _L = avgdiffs;
+      return avgdiffs;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("averageVariableScale(params) failed");
+    }
+  }
+}
+

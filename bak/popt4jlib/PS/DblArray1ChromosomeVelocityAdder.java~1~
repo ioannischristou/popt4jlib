@@ -1,0 +1,6 @@
+package popt4jlib.PS;
+
+public class DblArray1ChromosomeVelocityAdder {
+  public DblArray1ChromosomeVelocityAdder() {
+  }
+}

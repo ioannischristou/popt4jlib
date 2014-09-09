@@ -1,0 +1,193 @@
+package parallel.distributed;
+
+import parallel.TaskObject;
+import graph.*;
+import java.io.Serializable;
+
+/**
+ * test-driver for PDBatchTaskExecutorClt and networks of PDBatchTaskExecutorWrk
+ * objects in general. Tests the ability of transporting Graph objects. Default
+ * PDBatchTaskExecutorSrv must be running on (localhost,7890).
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class PDBatchTaskExecutorCltTest2 {
+
+  private PDBatchTaskExecutorCltTest2() {
+    // no-op
+  }
+
+
+  /**
+   * auxiliary method, called by main().
+   */
+  private void run(Graph g) throws Exception {
+    long start = System.currentTimeMillis();
+    PDBatchTaskExecutorClt client1 = new PDBatchTaskExecutorClt();
+    PDBatchTaskExecutorClt client2 = new PDBatchTaskExecutorClt();
+    Graph[] comps = g.getGraphComponents();
+    int numtasks = comps.length/2;
+    // client-1 tasks
+    GraphDiameterEvalTask[] tasks1 = new GraphDiameterEvalTask[numtasks];
+    int i=0;
+    for (i=0; i<tasks1.length; i++) {
+      tasks1[i] = new GraphDiameterEvalTask(comps[i]);
+    }
+    // client-2 tasks
+    int numremtasks = comps.length-i;
+    GraphDiameterEvalTask[] tasks2 = new GraphDiameterEvalTask[numremtasks];
+    for ( ; i<comps.length; i++) {
+      tasks2[i-numtasks] = new GraphDiameterEvalTask(comps[i]);
+    }
+    PDBTECT2Thread t1 = new PDBTECT2Thread(client1, tasks1);
+    t1.start();
+    PDBTECT2Thread t2 = new PDBTECT2Thread(client2, tasks2);
+    t2.start();
+    try {
+      t1.join();
+      t2.join();
+    }
+    catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    // now find best number
+    double best = Double.NEGATIVE_INFINITY;
+    if (t1._results!=null) {
+      System.err.println("searching through t1 results...");
+      for (i=0; i<t1._results.length; i++) {
+        Double y = (Double) t1._results[i];
+        if (y!=null && y.doubleValue()>best)
+          best = y.doubleValue();
+      }
+      System.err.println("t1 best="+best);
+    }
+    if (t2._results!=null) {
+      System.err.println("searching through t2 results...");
+      for (i=0; i<t2._results.length; i++) {
+        Double y = (Double) t2._results[i];
+        if (y!=null && y.doubleValue()>best)
+          best = y.doubleValue();
+      }
+    }
+    long dur = System.currentTimeMillis()-start;
+    System.out.println("Overall best="+best+" (duration="+dur+" msecs)");
+  }
+
+
+  /**
+   * invoke with single arg as:
+   * <CODE>java -cp &ltclasspath&gt parallel.distributed.PDBatchTaskExecutorCltTest &ltgraphfilename&gt </CODE>
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      String fname = args[0];
+      Graph g = utils.DataMgr.readGraphFromFile2(fname);
+      PDBatchTaskExecutorCltTest2 test = new PDBatchTaskExecutorCltTest2();
+      test.run(g);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+
+
+  // inner class
+  class PDBTECT2Thread extends Thread {
+    PDBatchTaskExecutorClt _client;
+    GraphDiameterEvalTask[] _tasks;
+    Object[] _results;  // must be Serializable
+    PDBTECT2Thread(PDBatchTaskExecutorClt client, GraphDiameterEvalTask[] tasks) {
+      _client = client;
+      _tasks = tasks;
+    }
+    public void run() {
+      try {
+        System.out.println("CltTest2: submitting tasks");
+        _results = _client.submitWorkFromSameHost(_tasks);
+        System.out.println("CltTest2: got results, exiting.");
+      }
+      catch (PDBatchTaskExecutorException e) {
+        e.printStackTrace();
+        // attempt to re-submit for 10 seconds, then exit
+        long now = System.currentTimeMillis();
+        long max_duration = 10*1000L;
+        while (System.currentTimeMillis()<now+max_duration) {
+          try {
+            _results = _client.submitWorkFromSameHost(_tasks);
+            return;
+          }
+          catch (PDBatchTaskExecutorException e2) {
+            System.err.println("oops, failed again");
+          }
+          catch (Exception e3) {
+            e3.printStackTrace();
+            System.err.println("PDBTECT2Thread.run(): exits due to exception");
+            return;
+          }
+        }
+        System.err.println("PDBTECT2Thread.run(): exits due to exception");
+      }
+      catch (Exception e) {
+        e.printStackTrace();
+        System.err.println("PDBTECT2Thread.run(): exits due to exception");
+      }
+    }
+  }
+
+}
+
+
+/**
+ * auxiliary class implementing TaskObject interface.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class GraphDiameterEvalTask implements TaskObject {
+  private static final long serialVersionUID = -732416097486758599L;
+  private Graph _g;
+  private boolean _isDone=false;
+
+  GraphDiameterEvalTask(Graph g) throws IllegalArgumentException {
+    if (g==null)
+      throw new IllegalArgumentException("null graph passed in");
+    _g = g;
+  }
+
+  public Serializable run() {
+    // louzy way to compute graph diameter
+    double max_diam = Double.NEGATIVE_INFINITY;
+    for (int i=0; i<_g.getNumNodes(); i++) {
+      Node ni = _g.getNode(i);
+      for (int j=i+1; j<_g.getNumNodes(); j++) {
+        Node nj = _g.getNode(j);
+        double dij = _g.getShortestPath(ni, nj);
+        if (dij>max_diam) max_diam = dij;
+      }
+    }
+    setDone();
+    return new Double(max_diam);
+  }
+
+  public synchronized boolean isDone() {
+    return _isDone;
+  }
+
+  public void copyFrom(TaskObject obj) throws IllegalArgumentException {
+    throw new IllegalArgumentException("op not supported");
+  }
+
+  private synchronized void setDone() {
+    _isDone = true;
+  }
+}
+

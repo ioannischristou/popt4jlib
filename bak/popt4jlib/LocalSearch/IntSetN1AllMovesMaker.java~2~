@@ -1,0 +1,68 @@
+package popt4jlib.LocalSearch;
+
+import popt4jlib.*;
+import java.util.*;
+
+/**
+ * the class implements the notion of the N_1 neighborhood of a set of integers.
+ * In particular, given a subset S of the set M={1,2,...n}, the N_1(S) is the set
+ * whose members are the subsets S_i of S with cardinality ||S||-1 as well as
+ * the supersets S_i of S with cardinality ||S||+1 that are still subsets of M.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class IntSetN1AllMovesMaker  implements AllChromosomeMakerIntf {
+  /**
+   * public constructor.
+   */
+  public IntSetN1AllMovesMaker() {
+  }
+
+
+  /**
+   * implements the N_1 neighborhood for sets of integers.
+   * @param chromosome Object Set<Integer>
+   * @param params Hashtable must contains a key-value pair <"dls.maxvalue", num>
+   * and optionally a key-value pair <"dls.minvalue", num> (default is 0).
+   * @throws OptimizerException
+   * @return Vector Vector<Set points>
+   */
+  public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
+    if (chromosome==null) throw new OptimizerException("DLS.createAllChromosomes(): null chromosome");
+    try {
+      Set x0 = (Set) chromosome;
+      int max_val = ((Integer) params.get("dls.maxvalue")).intValue();
+      int min_val = 0;
+      Integer min_valI = (Integer) params.get("dls.minval");
+      if (min_valI!=null && min_valI.intValue()<max_val)
+        min_val = min_valI.intValue();
+      Vector result = new Vector();
+      // 1. first all the subsets of x0
+      Iterator iter = x0.iterator();
+      while (iter.hasNext()) {
+        Integer xi = (Integer) iter.next();
+        Set xnew = new HashSet(x0);
+        xnew.remove(xi);
+        result.add(xnew);
+      }
+      // 2. then add the 1-supersets of x0
+      for (int i=min_val; i<=max_val; i++) {
+        Set xnew = new HashSet(x0);
+        Integer ii = new Integer(i);
+        if (x0.contains(ii)) continue;
+        xnew.add(ii);
+        result.add(xnew);
+      }
+      return result;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("IntSetN1AllMovesMaker.createAllChromosomes(): failed");
+    }
+  }
+}
+

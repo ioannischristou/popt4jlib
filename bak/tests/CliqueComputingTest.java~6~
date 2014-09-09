@@ -1,0 +1,73 @@
+package tests;
+
+import utils.*;
+import graph.*;
+import java.util.*;
+
+/**
+ * a test-driver class to test the functionality of computing maximal weighted
+ * cliques in a graph (in the graph package).
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class CliqueComputingTest {
+  /**
+   * public no-arg constructor
+   */
+  public CliqueComputingTest() {
+  }
+
+
+  /**
+   * the main method: invoke from command line as follows:
+   * <CODE>java -cp <classpath> tests.CliqueComputingTest &ltgraph_file_name&gt &ltthres&gt [num]</CODE>
+   * where the parameter graph_file_name contains the graph whose cliques we
+   * seek, and the parameter thres defines the minimum weight that each edge
+   * of the graph must have so that it "counts" as a "true edge" in the
+   * computation of all maximally weighted cliques. The definition of the format
+   * of the graph_file_name can be found in the documentation for class
+   * <CODE>utils.DataMgr</CODE> and in particular for the method
+   * <CODE>DataMgr.readGraphFromFile(String name)</CODE>
+   * If the optional third argument [num] is provided, then it must be an integer
+   * and if it equals 1, the Bron-Kerbosh method is invoked, otherwise, the
+   * slower recursive method AllMWCFinder.getAllMaximalCliques(thres) will be
+   * invoked.
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      long start = System.currentTimeMillis();
+      String filename = args[0];
+      double thres = Double.parseDouble(args[1]);
+      boolean do_BK = false;
+      if (args.length > 2 && Integer.parseInt(args[2]) == 1) do_BK = true;
+      Graph g = DataMgr.readGraphFromFile(filename);
+      AllMWCFinder finder = null;
+      if (do_BK) finder = new AllMWCFinderBK(g);
+      else finder = new AllMWCFinder(g);
+      Set output = finder.getAllMaximalCliques(thres);
+      Iterator it = output.iterator();
+      int i=0;
+      while (it.hasNext()) {
+        Set c = (Set) it.next();
+        System.out.print(++i +
+                         ": [ ");
+        Iterator it2 = c.iterator();
+        while (it2.hasNext()) {
+          Integer id = (Integer) it2.next();
+          System.out.print(id.intValue()+" ");
+        }
+        System.out.println("]");
+      }
+      long dur = System.currentTimeMillis()-start;
+      System.out.println("time (msecs)="+dur);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+}

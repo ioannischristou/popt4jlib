@@ -1,0 +1,119 @@
+package analysis;
+
+import popt4jlib.*;
+import java.util.*;
+
+/**
+ * Performs numerical integration in one dimension using the Adaptive Simpson
+ * Procedure.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class IntegralApproximator implements FunctionIntf {
+  private FunctionIntf _f;
+  private double _eps = 1.e-6;
+  private int _maxLvl = Integer.MAX_VALUE;
+
+  /**
+   * public constructor.
+   * @param f FunctionIntf
+   * @param params Hashtable
+   */
+  public IntegralApproximator(FunctionIntf f, Hashtable params) {
+    _f = f;
+    if (params!=null) {
+      try {
+        Double epsD = (Double) params.get("integralapproximator.eps");
+        if (epsD != null) _eps = epsD.doubleValue();
+      }
+      catch (Exception e) {
+        e.printStackTrace(); // no-op
+      }
+      try {
+        Integer mlI = (Integer) params.get("integralapproximator.levelmax");
+        if (mlI != null) _maxLvl = mlI.intValue();
+      }
+      catch (Exception e) {
+        e.printStackTrace(); // no-op
+      }
+    }
+  }
+
+
+  /**
+   *
+   * @param x Object
+   * @param params Hashtable
+   * @throws IllegalArgumentException
+   * @return double
+   */
+  public double eval(Object x, Hashtable params) throws IllegalArgumentException {
+    VectorIntf t = null;
+    try {
+      if (x instanceof VectorIntf)
+        t = (VectorIntf) x;
+      else t = new DblArray1Vector((double[]) x);
+    }
+    catch (Exception e) {
+      throw new IllegalArgumentException("x cannot be converted to VectorIntf");
+    }
+    double a = 0;
+    try {
+      a = ((Double) params.get("integralapproximator.a")).doubleValue();
+    }
+    catch (Exception e) {
+      throw new IllegalArgumentException("integralapproximator.a not well defined");
+    }
+    int ii = 0;
+    try {
+      ii = ((Integer) params.get("integralapproximator.integrandvarindex")).intValue();
+    }
+    catch (Exception e) {
+      throw new IllegalArgumentException("integralapproximator.integrandvarindex not well defined");
+    }
+    try {
+      return simpson(t, ii, a, t.getCoord(ii), 0, _eps, params);
+    }
+    catch (IntegrationException e) {
+      throw new IllegalArgumentException("increase max level allowed");
+    }
+  }
+
+
+  private double simpson(VectorIntf x, int intvarind, double a, double b,
+                         int level, double eps,
+                         Hashtable p) throws IntegrationException {
+    ++level;
+    double h = b-a;
+    double c = (a+b)/2.0;
+    x.setCoord(intvarind, a);
+    double fa = _f.eval(x, p);
+    x.setCoord(intvarind, b);
+    double fb = _f.eval(x,p);
+    x.setCoord(intvarind, c);
+    double fc = _f.eval(x,p);
+    double simpson1 = h*(fa+4*fc+fb)/6.0;
+    double d = (a+c)/2.0;
+    double e = (c+b)/2.0;
+    x.setCoord(intvarind, d);
+    double fd = _f.eval(x,p);
+    x.setCoord(intvarind, e);
+    double fe = _f.eval(x,p);
+    double simpson2 = h*(fa+4*fd+2*fc+4*fe+fb)/12.0;
+    if (level>_maxLvl) {
+      throw new IntegrationException("Simpson Adaptive Procedure failed, reached level="+level);
+    }
+    if (Math.abs(simpson2-simpson1)<15*eps) return simpson2;
+    else {
+      double epshalf = eps/2.0;
+      double ls = simpson(x, intvarind, a, c, level, epshalf, p);
+      double rs = simpson(x, intvarind, c, b, level, epshalf, p);
+      return ls+rs;
+    }
+  }
+}
+

@@ -1,0 +1,51 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.io.*;
+import java.net.*;
+
+
+public class PDBatchTaskExecutorClt {
+  private String _host="localhost";  // default host
+  private int _port = 7891;  // default client port
+
+  public PDBatchTaskExecutorClt() {
+  }
+
+
+  public PDBatchTaskExecutorClt(String host, int port) {
+    _host = host;
+    _port = port;
+  }
+
+
+  public Object[] submitWork(TaskObject[] tasks)
+      throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+    if (tasks==null || tasks.length==0)
+      throw new PDBatchTaskExecutorException("PDBatchTaskExecutorClt.submitWork(tasks): null or empty tasks passed in.");
+    Socket s = null;
+    ObjectInputStream ois=null;
+    ObjectOutputStream oos=null;
+    try {
+      s = new Socket(_host, _port);
+      oos = new ObjectOutputStream(s.getOutputStream());
+      oos.flush();
+      ois = new ObjectInputStream(s.getInputStream());
+      TaskObjectsExecutionRequest req = new TaskObjectsExecutionRequest(tasks);
+      oos.writeObject(req);
+      oos.flush();
+      Object response = ois.readObject();
+      if (response instanceof TaskObjectsExecutionResults) {
+        return ( (TaskObjectsExecutionResults) response)._results;
+      }
+      else if (response instanceof NoWorkerAvailableResponse)
+        throw new PDBatchTaskExecutorException("no worker was available...");
+      else throw new PDBatchTaskExecutorException("cannot parse response...");
+    }
+    finally {
+      if (s!=null) s.close();
+    }
+  }
+
+}
+

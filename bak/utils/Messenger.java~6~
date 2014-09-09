@@ -1,0 +1,69 @@
+package utils;
+
+import java.io.*;
+import java.util.*;
+
+public class Messenger {
+  private PrintStream _os=null;
+  private int _dbgLvl=Integer.MAX_VALUE;  // default: print all
+  private static Hashtable _instances=new Hashtable();  // map<String name, Messenger m>
+
+
+  private Messenger(OutputStream os) throws IllegalArgumentException {
+    if (os==null) throw new IllegalArgumentException("Messenger.ctor(): null arg");
+    _os = new PrintStream(os);
+  }
+
+
+  public void close() {
+    if (_os != null) {
+      _os.flush();
+      _os.close();
+      _os = null;
+    }
+  }
+
+
+  protected void finalize() throws Throwable {
+    try {
+      if (_os != null) {
+        _os.flush();
+        _os.close();
+        _os = null;
+      }
+    }
+    finally {
+      super.finalize();  // recommended practice
+    }
+  }
+
+
+  public synchronized static Messenger getInstance() {
+    Messenger instance = (Messenger) _instances.get("default");
+    if (instance==null) {
+      instance = new Messenger(System.err);
+      _instances.put("default", instance);
+    }
+    return instance;
+  }
+
+
+  public synchronized static Messenger getInstance(String name) {
+    Messenger instance = (Messenger) _instances.get(name);
+    return instance;
+  }
+  public synchronized static void setInstance(String name, OutputStream os) {
+    _instances.put(name, new Messenger(os));
+  }
+  public synchronized void setDebugLevel(int lvl) {
+    _dbgLvl = lvl;
+  }
+
+
+  public synchronized void msg(String msg, int lvl) {
+    if (lvl <= _dbgLvl && _os!=null) {
+      _os.println(msg);
+      _os.flush();
+    }
+  }
+}

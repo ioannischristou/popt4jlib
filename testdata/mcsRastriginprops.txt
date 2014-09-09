@@ -1,0 +1,8 @@
+class,mcs.function,tests.RastriginFunction
+mcs.arglength,50
+mcs.maxargvalue,5.12
+mcs.minargvalue,-5.12
+rndgen,7,8
+mcs.numthreads,8
+mcs.numtries,1000000
+class,mcs.randomargmaker,popt4jlib.MonteCarlo.FastDblArray1ArgMaker

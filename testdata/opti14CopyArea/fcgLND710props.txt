@@ -1,0 +1,13 @@
+class,fcg.function,tests.LND7Function
+dummy_class,fcg.gradient,tests.LND7FunctionGrad
+fcg.numdimensions,10
+fcg.functionargmaxval,100.0
+fcg.functionargminval,-100.0
+rndgen,7,1
+fcg.numthreads,1
+fcg.numtries,1
+fcg.maxiters,10000
+fcg.gtol,1.e-5
+fcg.maxbracketingiters,10000
+fcg.maxsectioningiters,10000
+dbglvl,1

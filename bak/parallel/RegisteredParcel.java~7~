@@ -1,0 +1,169 @@
+package parallel;
+
+/**
+ * This is an auxiliary helper class for the *MsgPassingCoordinator classes.
+ * It is not intended to be used outside this package, nor to form part of the
+ * API of this libary.
+ * <p> The class implements the Thread-Local Object Pool mechanism that greatly
+ * reduces new object allocations (especially useful in multi-threaded
+ * contexts.) With appropriately large array threshold size, the pool will never
+ * be exhausted, and thus, a call to <CODE>new Registered(f,t,d)</CODE> will
+ * never occur.</p>
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class RegisteredParcel {
+  /**
+   * set to Integer.MAX_VALUE to indicate "Unspecified".
+   */
+  private int _fromId;
+  /**
+   * set to Integer.MAX_VALUE to indicate "Unspecified".
+   */
+  private int _toId;
+  private Object _data;
+  private long _creationTime;
+  private boolean _isDelivered;
+
+  private RegisteredParcelPool _pool;
+  private int _poolPos;
+  private boolean _isUsed;
+  // private static long _totalNumObjs=0;
+
+
+  /**
+   * returns a managed object if space exists for the current thread, else
+   * creates a new unmanaged object. This method forms the only public
+   * interface method for getting a new object (the programmer has no control
+   * over whether the object will come from the current thread's local pool
+   * or via a call to <CODE>new RegisteredParcel(f,t,d);</CODE>.)
+   * @param i int
+   * @param val double
+   * @return PairIntDouble
+   */
+  static RegisteredParcel newInstance(int from, int to, Object data) {
+    return RegisteredParcelPool.getObject(from, to, data);
+  }
+
+
+  /**
+   * indicate item is available for re-use by Object-Pool to which it belongs,
+   * and resets its _key and _val data IFF it is a managed object.
+   */
+  public void release() {
+    if (_pool!=null) {
+      _isUsed=false;
+      _fromId=Integer.MIN_VALUE;
+      _toId=Integer.MIN_VALUE;
+      _data = null;
+      _pool.returnObjectToPool(this);
+    }
+  }
+
+
+  /**
+   * this constructor is to be used only from the RegisteredParcelPool for
+   * constructing managed objects (re-claimable ones).
+   * @param pool
+   * @param poolpos
+   */
+  RegisteredParcel(RegistererParcelPool pool, int poolpos) {
+    _pool=pool;
+    _poolPos=poolpos;
+    _isUsed=false;
+    _fromId=Integer.MIN_VALUE;
+    _toId=Integer.MIN_VALUE;
+    _data=null;
+    /*
+    synchronized (RegisteredParcel.class) {
+      ++_totalNumObjs;
+    }
+    */
+  }
+
+
+  RegisteredParcel(int fromtid, int totid, Object data) {
+    _fromId = fromtid;
+    _toId = totid;
+    _data = data;
+    _isDelivered=false;  // not needed as that's the default value
+    _creationTime = System.currentTimeMillis();
+    _pool=null;
+    _poolPos=-1;
+    _isUsed=true;
+    /*
+    synchronized (RegisteredParcel.class) {
+      ++_totalNumObjs;
+    }
+    */
+  }
+
+
+  int getFromId() { return _fromId; }
+  int getToId() { return _toId; }
+  Object getData() { return _data; }
+  void setData(Object data) {
+    if (_isUsed) _data = data;
+    else {  // force a NullPointerException for debugging the pooling mechanism
+      Double null_y=null;
+      _data = null_y.toString();
+    }
+  }
+  boolean isDelivered() { return _isDelivered; }
+  void setDelivered() { _isDelivered=true; }
+  long getCreationTime() { return _creationTime; }
+
+  /**
+   * this method exists only for the Object-Pool mechanism.
+   * @param v int
+   */
+  void setFromId(int v) {
+    if (_isUsed) _fromId = v;
+    else {  // force a NullPointerException for debugging the pooling mechanism
+      Integer null_y=null;
+      _fromId = null_y.intValue();
+    }
+  }
+
+
+  /**
+   * this method exists only for the Object-Pool mechanism.
+   * @param v int
+   */
+  void setToId(int v) {
+    if (_isUsed) _toId = v;
+    else {  // force a NullPointerException for debugging the pooling mechanism
+      Integer null_y=null;
+      _toId = null_y.intValue();
+    }
+  }
+
+
+  /**
+   * return true IFF the object is managed and "currently used", or un-managed.
+   * @return boolean
+   */
+  boolean isUsed() {
+    return _isUsed;
+  }
+
+
+  /*
+  public static synchronized long getTotalNumObjs() {
+    return _totalNumObjs;
+  }
+  */
+
+  void setIsUsed() {
+    _isUsed=true;
+  }
+
+  int getPoolPos() {
+    return _poolPos;
+  }
+
+}

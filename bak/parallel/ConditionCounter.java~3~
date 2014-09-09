@@ -1,0 +1,83 @@
+package parallel;
+
+/**
+ * implements a "condition" counter, so that when the object's counter reaches
+ * a specified number, it releases a notification for any waiting thread to
+ * resume execution. The class is useful in combination with the
+ * parallel.ParallelAsynchBatchTaskExecutor class.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class ConditionCounter {
+  private long _count=0;
+  private long _target=0;
+  private boolean _isSatisfied=false;
+
+  /**
+   * public no-arg constructor
+   */
+  public ConditionCounter() {
+  }
+
+
+  public ConditionCounter(long t) {
+    _target = t;
+  }
+
+
+  public synchronized void increment() {
+    if (++_count == _target) {
+      _isSatisfied = true;
+      notifyAll();
+    } else _isSatisfied = false;
+  }
+
+
+  public synchronized void decrement() {
+    if (--_count == _target) {
+      _isSatisfied = true;
+      notifyAll();
+    } else _isSatisfied = false;
+  }
+
+
+  public synchronized void add(long c) {
+    _count += c;
+    if (_count == _target) {
+      _isSatisfied = true;
+      notifyAll();
+    } else _isSatisfied = false;
+  }
+
+
+  public synchronized void subtract(long c) {
+    _count -= c;
+    if (_count == _target) {
+      _isSatisfied = true;
+      notifyAll();
+    } else _isSatisfied = false;
+  }
+
+
+  public synchronized void await() {
+    while (_isSatisfied==false) {
+      try {
+        wait();
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+
+
+  public synchronized void reset() {
+    _count = 0;
+    _isSatisfied = false;
+  }
+}
+

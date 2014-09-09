@@ -1,0 +1,6 @@
+package graph.packing;
+
+public class IntSetN1RXPFirstImprovingGraphAllMovesMaker {
+  public IntSetN1RXPFirstImprovingGraphAllMovesMaker() {
+  }
+}

@@ -1,0 +1,47 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.io.*;
+import java.net.*;
+
+
+public class PDBatchTaskExecutorClt {
+  private String _host="localhost";  // default host
+  private int _port = 7891;  // default client port
+
+  public PDBatchTaskExecutorClt() {
+  }
+
+
+  public PDBatchTaskExecutorClt(String host, int port) {
+    _host = host;
+    _port = port;
+  }
+
+
+  public Serializable[] submitWork(TaskObject[] tasks)
+      throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+    Socket s = null;
+    ObjectInputStream ois=null;
+    ObjectOutputStream oos=null;
+    try {
+      s = new Socket(_host, _port);
+      ois = new ObjectInputStream(s.getInputStream());
+      oos = new ObjectOutputStream(s.getOutputStream());
+      TaskObjectsExecutionRequest req = new TaskObjectsExecutionRequest(tasks);
+      oos.writeObject(req);
+      Object response = ois.readObject();
+      if (response instanceof TaskObjectsExecutionResults) {
+        return ( (TaskObjectsExecutionResults) response)._results;
+      }
+      else if (response instanceof NoWorkerAvailableResponse)
+        throw new PDBatchTaskExecutorException("no worker was available...");
+      else throw new PDBatchTaskExecutorException("cannot parse response...");
+    }
+    finally {
+      if (s!=null) s.close();
+    }
+  }
+
+}
+

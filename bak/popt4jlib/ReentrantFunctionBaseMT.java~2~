@@ -1,0 +1,57 @@
+package popt4jlib;
+
+import java.util.*;
+import java.lang.reflect.*;
+
+
+/**
+ * The class is a wrapper class for FunctionIntf objects, that keeps track of
+ * how many times a function has been evaluated, plus it forces threads asking
+ * for function evaluation to execute using a different FunctionIntf object,
+ * so that no calls from different threads execute on the same FunctionIntf
+ * object (this way, if the eval() call modifies only NON-static data members
+ * of the FunctionIntf object, there is no data race danger.)
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class ReentrantFunctionBaseMT implements FunctionIntf {
+  private static long _evalCount=0;
+  private FunctionIntf[] _f=null;
+
+  public ReentrantFunctionBaseMT(FunctionIntf f, int nt) {
+    _evalCount=0;
+    _f = new FunctionIntf[nt];
+    Class fc = _f.getClass();
+    for (int i=0; i<nt; i++) {
+      try {
+        _f[i] = (FunctionIntf) fc.newInstance();
+      }
+      catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+
+  /**
+   * force function to be reentrant, as long as no STATIC data members are
+   * modified during evaluations, as no two threads can enter the eval()
+   * method on the same object simultaneously.
+   * @param arg Object
+   * @param params Hashtable
+   * @return double
+   */
+  public double eval(Object arg, Hashtable params) throws IllegalArgumentException {
+    incrEvalCount();
+    Integer id = (Integer) params.get("thread.id");
+    return _f[id.intValue()].eval(arg, params);
+  }
+
+  synchronized static public long getEvalCount() { return _evalCount; }
+  synchronized static public void incrEvalCount() { ++_evalCount; }
+}
+

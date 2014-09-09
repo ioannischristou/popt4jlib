@@ -1,0 +1,6 @@
+package graph.partitioning;
+
+public class SPP2MPSWriterUtil {
+  public SPP2MPSWriterUtil() {
+  }
+}

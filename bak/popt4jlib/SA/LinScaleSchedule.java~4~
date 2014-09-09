@@ -1,0 +1,24 @@
+package popt4jlib.SA;
+
+import popt4jlib.OptimizerException;
+import java.util.*;
+
+public class LinScaleSchedule implements SAScheduleIntf {
+
+  public LinScaleSchedule() {
+
+  }
+
+
+  public double getTemp(int t, Hashtable params) throws OptimizerException {
+    double t0 = 1000.0;
+    Double tD = (Double) params.get("dsa.T0");
+    double k = 20.0;
+    Double kD = (Double) params.get("dsa.K");
+    if (kD!=null) k = kD.doubleValue();
+    if (tD!=null) t0 = tD.doubleValue();
+    double lvl = 1.0 + Math.floor(k*t/t0);
+    return t0/(lvl*lvl);
+  }
+
+}

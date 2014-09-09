@@ -1,0 +1,6 @@
+package popt4jlib.LocalSearch;
+
+public class IntSetN1AllMovesMaker {
+  public IntSetN1AllMovesMaker() {
+  }
+}

@@ -1,0 +1,26 @@
+package parallel;
+
+class RegisteredParcel {
+  private Integer _fromId;
+  private Integer _toId;
+  private Object _data;
+  private long _creationTime;
+  private boolean _isDelivered;
+
+
+  RegisteredParcel(Integer fromtid, Integer totid, Object data) {
+    _fromId = fromtid;
+    _toId = totid;
+    _data = data;
+    _isDelivered=false;  // not needed as that's the default value
+    _creationTime = System.currentTimeMillis();
+  }
+
+  Integer getFromId() { return _fromId; }
+  Integer getToId() { return _toId; }
+  Object getData() { return _data; }
+  void setData(Object data) { _data = data; }
+  boolean isDelivered() { return _isDelivered; }
+  void setDelivered() { _isDelivered=true; }
+  long getCreationTime() { return _creationTime; }
+}

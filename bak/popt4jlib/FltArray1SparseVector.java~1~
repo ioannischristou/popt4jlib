@@ -1,0 +1,6 @@
+package popt4jlib;
+
+public class FltArray1SparseVector {
+  public FltArray1SparseVector() {
+  }
+}

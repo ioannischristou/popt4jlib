@@ -1,0 +1,465 @@
+package popt4jlib;
+
+import java.util.Vector;
+
+
+/**
+ * sparse double[] implementation of SparseVectorIntf, maintaining two arrays,
+ * an index array, and the FULL length values array. This implementation is
+ * based on the DblArray1SparseVector class but is much faster on getCoord()
+ * operations, at the expense of (eventually huge) memory requirements.
+ * Notice also that the class is not thread-safe, just like the
+ * DblArray1SparseVector class isn't either.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DblArray1SparseVectorFE implements SparseVectorIntf {
+  private static final long serialVersionUID = -6765183152262562934L;
+  private int[] _indices=null;  // _indices[0] indicates the first non-zero element
+  private double[] _x=null;  // the entire array -with all zeros included
+  private int _ilen;  // value of last non-zero element in _indices array
+  private int _n;  // _x.length
+
+
+  /**
+   * constructs the zero sparse vector in n-dimensional space.
+   * @param n int the number of dimensions
+   * @throws IllegalArgumentException if n<=0
+   */
+  public DblArray1SparseVectorFE(int n) throws IllegalArgumentException {
+    if (n<=0) throw new IllegalArgumentException("dimensions must be >= 1");
+    _n = n;
+    _x = new double[_n];  // all zeros
+  }
+
+
+  /**
+   * public constructor.
+   * @param indices int[] must be in ascending order
+   * @param values double[] corresponds to values for each index in the indices array
+   * @param n int total length of the vector
+   * @throws IllegalArgumentException
+   */
+  public DblArray1SparseVectorFE(int[] indices, double[] values, int n) throws IllegalArgumentException {
+    if (indices==null || values==null || indices.length!=values.length)
+      throw new IllegalArgumentException("Arguments null or dimensions don't match");
+    if (n<=indices[indices.length-1])
+      throw new IllegalArgumentException("dimension mismatch");
+    final int ilen = indices.length;
+    _indices = new int[ilen];
+    for (int i=0; i<ilen; i++) _indices[i] = indices[i];
+    _x = new double[n];
+    for (int i=0; i<ilen; i++) _x[indices[i]] = values[i];
+    _n = n;
+    _ilen = ilen;
+  }
+
+
+  /**
+   * public constructor making a copy of the vector passed in, and multiplying
+   * each element by the multFactor passed in.
+   * @param indices int[] elements must be in ascending order
+   * @param values double[]
+   * @param n int
+   * @param multFactor double
+   * @throws IllegalArgumentException
+   */
+  public DblArray1SparseVectorFE(int[] indices, double[] values, int n, double multFactor) throws IllegalArgumentException {
+    if (indices==null || values==null || indices.length!=values.length)
+      throw new IllegalArgumentException("Arguments null or dimensions don't match");
+    if (n<=indices[indices.length-1])
+      throw new IllegalArgumentException("dimension mismatch");
+    final int ilen = indices.length;
+    _indices = new int[ilen];
+    for (int i=0; i<ilen; i++) _indices[i] = indices[i];
+    _x = new double[n];
+    for (int i=0; i<ilen; i++) _x[indices[i]] = values[i]*multFactor;
+    _n = n;
+    _ilen  = ilen;
+  }
+
+
+  /**
+   * return a new VectorIntf object containing a copy of the data of this object.
+   * @return VectorIntf
+   */
+  public VectorIntf newCopy() {
+    if (_indices==null) return new DblArray1SparseVectorFE(_n);
+    double[] values = new double[_ilen];
+    for (int i=0; i<_ilen; i++) values[i] = _x[_indices[i]];
+    return new DblArray1SparseVectorFE(_indices, values, _n);
+  }
+
+
+  /**
+   * create new copy of this vector, and multiply each component by the
+   * multFactor argument.
+   * @param multFactor double
+   * @return VectorIntf
+   */
+  public VectorIntf newCopyMultBy(double multFactor) {
+    if (_indices==null) return new DblArray1SparseVectorFE(_n);
+    double[] values = new double[_ilen];
+    for (int i=0; i<_ilen; i++) values[i] = _x[_indices[i]];
+    return new DblArray1SparseVectorFE(_indices, values, _n, multFactor);
+  }
+
+
+  /**
+   * return a DblArray1SparseVectorFE object containing as data the arg passed in.
+   * Linear complexity in the length of the argument array.
+   * @param arg double[]
+   * @throws IllegalArgumentException
+   * @return VectorIntf
+   */
+  public VectorIntf newInstance(double[] arg) throws IllegalArgumentException {
+    if (arg==null) throw new IllegalArgumentException("null arg");
+    final int n = arg.length;
+    Vector inds = new Vector();
+    Vector vals = new Vector();
+    for (int i=0; i<n; i++) {
+      if (Double.compare(arg[i], 0.0) != 0) {
+        inds.add(new Integer(i));
+        vals.add(new Double(arg[i]));
+      }
+    }
+    final int ilen = inds.size();
+    int[] indices = new int[ilen];
+    for (int i=0; i<ilen; i++) indices[i] = ((Integer) inds.elementAt(i)).intValue();
+    double[] values = new double[ilen];
+    for (int i=0; i<ilen; i++) values[i] = ((Double) vals.elementAt(i)).doubleValue();
+    return new DblArray1SparseVectorFE(indices, values, n);
+  }
+
+
+  /**
+   * return the number of coordinates of this VectorIntf object.
+   * @return int
+   */
+  public int getNumCoords() { return _n; }
+
+
+  /**
+   * return a double[] representing this VectorIntf object. Changes to the
+   * returned array are NOT reflected in this object (nor vice-versa).
+   * @return double[]
+   */
+  public double[] getDblArray1() {
+    double[] x = new double[_n];
+    for (int i=0; i<_n; i++) x[i] = _x[i];
+    return x;
+  }
+
+
+  /**
+   * return the i-th coordinate of this VectorIntf (i must be in the set
+   * {0,1,2,...<CODE>getNumCoords()</CODE>-1}). Very fast access!
+   * @param i int
+   * @throws IndexOutOfBoundsException if i is not in the set mentioned above
+   * @return double
+   */
+  public double getCoord(int i) throws IndexOutOfBoundsException {
+    if (i<0 || i>=_n) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
+    return _x[i];
+  }
+
+
+  /**
+   * set the i-th coordinate of this VectorIntf (i must be in the set
+   * {0,1,2,...<CODE>getNumCoords()</CODE>-1}). Repeated calls to this method
+   * for indices not in the original contruction of this vector will eventually
+   * destroy its sparsity. Has O(_ilen) worst-case time-complexity where _ilen
+   * is the (max.) number of non-zeros in the array. The time-complexity
+   * reduces to O(log(_ilen)) if the element to be set, is already non-zero
+   * before the operation.
+   * @param i int
+   * @param val double
+   * @throws IndexOutOfBoundsException if i is not in the set mentioned above
+   * @return double
+   */
+  public void setCoord(int i, double val) throws IndexOutOfBoundsException {
+    if (i<0 || i>=_n) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
+    _x[i] = val;
+    if (_indices==null) {
+      if (Double.compare(val,0.0)==0) return;  // don't do anything
+      _indices = new int[1];
+      _indices[0] = i;
+      _ilen=1;
+      return;
+    }
+    // binary search in indices
+    final int ilen = _indices.length;
+    int i1 = 0;
+    int i2 = _ilen;
+    if (_indices[0]==i) {
+      if (Double.compare(val,0.0)==0) shrink(0);
+      return;
+    } else if (_indices[_ilen-1] == i) {
+      if (Double.compare(val,0.0)==0) shrink(_ilen-1);
+      return;
+    }
+    int ih = (i1+i2)/2;
+    while (i1<i2 && i1<ih) {
+      if (_indices[ih] == i) break;
+      else if (_indices[ih] < i) i1 = ih;
+      else i2 = ih;
+      ih = (i1+i2)/2;
+    }
+    if (_indices[ih]==i) {
+      if (Double.compare(val,0.0)==0) shrink(ih);
+      return;
+    }
+    else if (Double.compare(val,0.0)==0) return;  // no change
+    // change is necessary
+    // if needed, create new arrays to insert the value for <i,val> pair.
+    if (_ilen == ilen) {  // increase arrays' capacity 20%
+      int[] indices = new int[ilen + ilen / 5 + 1];
+      boolean first_time = true;
+      for (int j = 0; j < ilen; j++) {
+        if (_indices[j] < i) {
+          indices[j] = _indices[j];
+        }
+        else if (first_time) { // insert <i,val> pair
+          indices[j] = i;
+          first_time = false;
+          j--;
+        }
+        else {
+          indices[j + 1] = _indices[j];
+        }
+      }
+      if (first_time) {
+        indices[ilen] = i;
+      }
+      _indices = indices;
+    }
+    else {  // use same arrays as there is capacity
+      int j;
+      for (j=_ilen-1; j>=0; j--) {
+        if (_indices[j]>i) {
+          _indices[j+1] = _indices[j];
+        }
+        else break;
+      }
+      _indices[j+1] = i;
+    }
+    ++_ilen;
+  }
+
+
+  /**
+   * the purpose of this routine is to allow a traversal of the non-zeros of
+   * this object as follows:
+   * <p>
+   * <CODE>
+   * for (int i=0; i<sparsevector.getNumNonZeros(); i++) {
+   *   int    pos = sparsevector.getIthNonZeroPos(i);
+   *   double val = sparsevector.getCoord(pos);
+   * }
+   * </CODE>
+   * @param i int.
+   * @throws IndexOutOfBoundsException if i is out-of-bounds. Always throws if
+   * this is the zero vector.
+   * @return int
+   */
+  public int getIthNonZeroPos(int i) throws IndexOutOfBoundsException {
+    if (i<0 || i>=_ilen) throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+_ilen+"] Vector is: "+this);
+    return _indices[i];
+  }
+
+
+  /**
+   * modifies this VectorIntf by adding the quantity m*other to it. This
+   * operation may destroy the sparse nature of this object.
+   * @param m double
+   * @param other VectorIntf
+   * @throws IllegalArgumentException if other is null or does not have the
+   * same dimensions as this vector or if m is NaN
+   */
+  public void addMul(double m, VectorIntf other) throws IllegalArgumentException {
+    if (other==null || other.getNumCoords()!=_n || Double.isNaN(m))
+      throw new IllegalArgumentException("cannot call addMul(m,v) with v "+
+                                         "having different dimensions than "+
+                                         "this vector or with m being NaN.");
+    for (int i=0; i<_n; i++) {
+      setCoord(i, getCoord(i)+m*other.getCoord(i));
+    }
+  }
+
+
+  /**
+   * divide the components of this vector by the argument h.
+   * @param h double
+   * @throws IllegalArgumentException if h is zero
+   */
+  public void div(double h) throws IllegalArgumentException {
+    if (Double.isNaN(h) || Math.abs(h)<1.e-120)
+      throw new IllegalArgumentException("division by (almost) zero or NaN");
+    for (int i=0; i<_ilen; i++) {
+      _x[_indices[i]] /= h;
+    }
+  }
+
+
+  /**
+   * return true iff all components are zero.
+   * @return boolean
+   */
+  public boolean isAtOrigin() {
+    return _ilen==0;
+    // code below not needed
+    /*
+    for (int i=0; i<_ilen; i++) {
+      if (Double.compare(_x[_indices[i]],0.0)!=0) return false;
+    }
+    return true;
+    */
+  }
+
+
+  /**
+   * return a String representation of this VectorIntf object.
+   * @return String
+   */
+  public String toString() {
+    String x="[";
+    for (int i=0; i<_ilen-1; i++) x += "("+_indices[i]+","+_x[_indices[i]]+")"+", ";
+    x += "("+_indices[_ilen-1]+","+_x[_indices[_ilen-1]]+")";
+    x += "]";
+    return x;
+  }
+
+
+  /**
+   * returns the number of non-zero elements in this vector.
+   * @return int
+   */
+  public int getNumNonZeros() {
+    return _ilen;
+    // code below is not needed as _indices is guaranteed to have the first
+    // _ilen elements not-zero, and only those to be non-zero always.
+    /*
+    int res=0;
+    for (int i=0; i<_ilen; i++)
+      if (Double.compare(_x[_indices[i]],0.0)!=0) ++res;
+    return res;
+    */
+  }
+
+
+  /**
+   * compute the inner product of this vector with the argument passed in.
+   * The operation should be fast when this vector is sparse enough, as it only
+   * goes through the non-zero elements of the vector.
+   * @param other VectorIntf
+   * @throws IllegalArgumentException
+   * @return double
+   */
+  public double innerProduct(VectorIntf other) throws IllegalArgumentException {
+    if (other==null || other.getNumCoords()!=_n)
+      throw new IllegalArgumentException("dimensions don't match or null argument passed in");
+    double sum=0.0;
+    for (int i=0; i<_ilen; i++) {
+      sum += _x[_indices[i]]*other.getCoord(_indices[i]);
+    }
+    return sum;
+  }
+
+
+  /**
+   * return the k-th norm of this vector.
+   * @param k int
+   * @throws IllegalArgumentException if x==null or if k<=0
+   * @return double
+   */
+  public double norm(int k) throws IllegalArgumentException {
+    if (k<=0) throw new IllegalArgumentException("k<=0");
+    if (k==2) return norm2();  // faster computation
+    double res = 0.0;
+    for (int i=0; i<_ilen; i++) {
+      double absxi = Math.abs(_x[_indices[i]]);
+      res += Math.pow(absxi,k);
+    }
+    res = Math.pow(res, 1.0/(double) k);
+    return res;
+  }
+
+
+  /**
+   * short-cut for norm(2). Faster too.
+   * @throws IllegalArgumentException if x==null
+   * @return double
+   */
+  public double norm2() throws IllegalArgumentException {
+    double res2=0.0;
+    for (int i=0; i<_ilen; i++) {
+      double xi = _x[_indices[i]];
+      res2 += (xi * xi);
+    }
+    return Math.sqrt(res2);
+  }
+
+
+  /**
+   * computes the infinity norm of this vector.
+   * @return double
+   */
+  public double normInfinity() {
+    double res = 0.0;
+    for (int i=0; i<_ilen; i++) {
+      final double absxi = Math.abs(_x[_indices[i]]);
+      if (absxi>res) res = absxi;
+    }
+    return res;
+  }
+
+
+  /**
+   * return true iff the other vector is exactly equal to this.
+   * @param other Object
+   * @return boolean
+   */
+  public boolean equals(Object other) {
+    if (other==null || other instanceof VectorIntf == false) return false;
+    VectorIntf o = (VectorIntf) other;
+    if (o.getNumCoords()!=_n) return false;
+    if (other instanceof SparseVectorIntf) {  // short-cut
+      SparseVectorIntf osv = (SparseVectorIntf) other;
+      if (_ilen!=osv.getNumNonZeros()) return false;
+      for (int i = 0; i < _ilen; i++)
+        if (Double.compare(_x[_indices[i]], osv.getCoord(_indices[i])) != 0)
+          return false;
+      for (int i = 0; i < osv.getNumNonZeros(); i++) {
+        int pi = osv.getIthNonZeroPos(i);
+        if (Double.compare(osv.getCoord(pi), getCoord(pi)) != 0)
+          return false;
+      }
+      return true;
+    }
+    else return o.equals(this);  // no short-cut
+  }
+
+
+  protected int[] getIndices() { return _indices; }
+  protected void setIndices(int[] indices) { _indices = indices; }
+  protected int getILen() { return _ilen; }
+  protected void incrILen() { ++_ilen; }
+
+
+  /**
+   * reduce the _indices and _values arrays and the _ilen value by removing
+   * the value at position pos.
+   * @param pos int
+   */
+  private void shrink(int pos) {
+    for (int i=pos; i<_ilen-1; i++) {
+      _indices[i] = _indices[i+1];
+    }
+    --_ilen;
+  }
+}
+

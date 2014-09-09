@@ -1,0 +1,65 @@
+package utils;
+
+import java.util.*;
+import java.io.*;
+import graph.*;
+import parallel.*;
+
+
+public class RandomGraphMaker2 {
+  private int _numNodes;
+  private double _aveNodeDegree;
+  private long _seed;
+
+  private RandomGraphMaker2(int numnodes, double avgNodeDeg, long seed) {
+    _numNodes = numnodes;
+    _aveNodeDegree = avgNodeDeg;
+    if (seed>0) {
+      _seed = seed;
+      RndUtil.getInstance().setSeed(_seed);
+    }
+  }
+
+  private Graph buildRandomGraph() throws GraphException, ParallelException {
+    final int numarcs = (int) _aveNodeDegree*_numNodes/2;
+    Graph g = new Graph(_numNodes, numarcs);
+    for (int i=0; i<numarcs; i++) {
+      int starta = RndUtil.getInstance().getRandom().nextInt(_numNodes);
+      int enda=0;
+      while (true) {
+        enda = RndUtil.getInstance().getRandom().nextInt(_numNodes);
+        if (enda != starta) break;
+      }
+      g.addLink(starta, enda, 1.0);
+    }
+    for (int i=0; i<_numNodes; i++) {  // set equal weights for the nodes
+      g.getNode(i).setWeight("value", new Double(1.0));
+    }
+    return g;
+  }
+
+  public static void main(String[] args) {
+    if (args.length<3) {
+      System.err.println("usage: java -cp <classpath> RandomGraphMaker2 <numnodes> <avgnodedegree> <filename> [rndseed]");
+      System.exit(-1);
+    }
+    try {
+      long start_time = System.currentTimeMillis();
+      long seed=0;
+      if (args.length>3) seed = Long.parseLong(args[3]);
+      RandomGraphMaker2 maker = new RandomGraphMaker2(Integer.parseInt(args[0]),
+                                                    Double.parseDouble(args[1]),
+                                                    seed);
+      Graph g = maker.buildRandomGraph();
+      System.err.println("Graph has "+g.getNumComponents()+" components");
+      DataMgr.writeGraphToFile2(g, args[2]);
+      long duration = System.currentTimeMillis()-start_time;
+      System.out.println("total time (msecs): "+duration);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}
+

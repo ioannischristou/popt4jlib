@@ -1,0 +1,6 @@
+package parallel.distributed;
+
+public class NoWorkerAvailableResponse {
+  public NoWorkerAvailableResponse() {
+  }
+}

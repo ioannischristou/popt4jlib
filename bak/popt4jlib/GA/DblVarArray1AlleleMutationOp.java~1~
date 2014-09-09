@@ -1,0 +1,6 @@
+package popt4jlib.GA;
+
+public class DblVarArray1AlleleMutationOp {
+  public DblVarArray1AlleleMutationOp() {
+  }
+}

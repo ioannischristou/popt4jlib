@@ -1,0 +1,8 @@
+package popt4jlib;
+
+public class OptimizerException extends Exception {
+  public OptimizerException(String msg) {
+    System.err.println(msg);
+    System.err.flush();
+  }
+}

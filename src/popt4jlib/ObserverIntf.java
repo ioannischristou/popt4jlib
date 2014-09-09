@@ -1,0 +1,26 @@
+package popt4jlib;
+
+/**
+ * This interface allows objects that want to be "monitoring" other "Subject"
+ * objects to be notified whenever a change in the subject occurs, and act
+ * accordingly. The Observer is free to modify the Subject's state.
+ * One use of the mechanism is to allow a GA process to notify another
+ * optimizer (e.g. a Gradient-Descent based optimizer) whenever a new incumbent
+ * has been found.
+ * The combination of the ObserverIntf and the SubjectIntf is the well-known
+ * Observer Design Pattern.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public interface ObserverIntf {
+  /**
+   * called by a subject monitored when it changes its state.
+   * @param subject SubjectIntf
+   * @throws OptimizerException
+   */
+  public void notifyChange(SubjectIntf subject) throws OptimizerException;
+}

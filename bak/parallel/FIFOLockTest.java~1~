@@ -1,0 +1,6 @@
+package parallel;
+
+public class FIFOLockTest {
+  public FIFOLockTest() {
+  }
+}

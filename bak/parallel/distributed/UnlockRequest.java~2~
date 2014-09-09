@@ -1,0 +1,12 @@
+package parallel.distributed;
+
+import java.io.Serializable;
+
+
+class UnlockRequest implements Serializable {
+  public final static long serialVersionUID = 9876543333235L;
+
+  public UnlockRequest() {
+  }
+}
+

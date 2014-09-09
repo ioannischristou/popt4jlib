@@ -1,0 +1,36 @@
+package tests;
+
+import java.util.*;
+import utils.*;
+import popt4jlib.*;
+import popt4jlib.GradientDescent.*;
+
+public class GradApproximatorTest {
+  public GradApproximatorTest() {
+  }
+
+  public static void main(String[] args) {
+    try {
+      Hashtable p = DataMgr.readPropsFromFile(args[0]);
+      FunctionIntf f = (FunctionIntf) p.get("test.function");
+      VecFunctionIntf grad = (VecFunctionIntf) p.get("test.gradient");
+      int n = Integer.parseInt(args[1]);
+      double[] x = new double[n];
+      for (int i=0; i<n; i++) x[i] = Double.parseDouble(args[i+2]);
+      GradApproximator ga = new GradApproximator(f);
+      VectorIntf x0 = new DblArray1Vector(x);
+      double f0 = f.eval(x0,p);
+      System.out.println("f("+x0+")="+f0);
+      VectorIntf g0 = grad.eval(x0,p);
+      double normg0 = VecNorm.norm(g0,2);
+      System.out.println("g0="+g0+" norm2="+normg0);
+      VectorIntf ga0 = ga.eval(x0, p);
+      double normga0 = VecNorm.norm(ga0,2);
+      System.out.println("ga0="+ga0+" norm2="+normga0);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

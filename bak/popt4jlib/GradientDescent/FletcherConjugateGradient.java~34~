@@ -1,0 +1,383 @@
+package popt4jlib.GradientDescent;
+
+import java.util.*;
+import utils.*;
+import popt4jlib.*;
+
+public class FletcherConjugateGradient implements LocalOptimizerIntf {
+  Hashtable _params;
+  private double _incValue=Double.MAX_VALUE;
+  private VectorIntf _inc=null;  // incumbent vector
+  FunctionIntf _f;
+  private FCGThread[] _threads=null;
+  private int _numOK=0;
+  private int _numFailed=0;
+
+  public FletcherConjugateGradient() {
+  }
+
+  public FletcherConjugateGradient(Hashtable params) {
+    try {
+      setParams(params);
+    }
+    catch (Exception e) {
+      // no-op: cannot reach this point
+    }
+  }
+
+
+  /**
+   * return a copy of the parameters. Modifications to the returned object
+   * do not affect the data member.
+   * @return Hashtable
+   */
+  public synchronized Hashtable getParams() {
+    return new Hashtable(_params);
+  }
+
+
+  public LocalOptimizerIntf newInstance() {
+    return new FletcherConjugateGradient();
+  }
+
+
+  /**
+   * the optimization params are set to p
+   * @param p Hashtable
+   * @throws OptimizerException
+   */
+  public synchronized void setParams(Hashtable p) throws OptimizerException {
+    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    _params = null;
+    _params = new Hashtable(p);  // own the params
+  }
+
+
+  public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
+    try {
+      synchronized (this) {
+        if (_f != null)throw new OptimizerException("FCG.minimize(): " +
+            "another thread is concurrently executing the method on the same object");
+        _f = f;
+      }
+      int numthreads = 1;
+      Integer ntI = (Integer) _params.get("fcg.numthreads");
+      if (ntI != null && ntI.intValue() > 1) numthreads = ntI.intValue();
+      _threads = new FCGThread[numthreads];
+      int ntries = 1;
+      Integer ntriesI = (Integer) _params.get("fcg.numtries");
+      if (ntriesI != null && ntriesI.intValue() > 1) ntries = ntriesI.intValue();
+      int triesperthread = ntries / numthreads;
+      int rem = ntries;
+      for (int i = 0; i < numthreads - 1; i++) {
+        _threads[i] = new FCGThread(i, triesperthread, this);
+        rem -= triesperthread;
+      }
+      _threads[numthreads - 1] = new FCGThread(numthreads - 1, rem, this);
+      for (int i = 0; i < numthreads; i++) {
+        _threads[i].start();
+      }
+      // wait until all threads finish
+      for (int i=0; i<numthreads; i++) {
+        try {
+          _threads[i].join();
+        }
+        catch (InterruptedException e) {
+          Thread.currentThread().interrupt(); // recommended action
+        }
+      }
+      if (_inc == null) // didn't find a solution
+        throw new OptimizerException("failed to find solution");
+      // ok, we're done
+      PairObjDouble pr = new PairObjDouble(_inc, _incValue);
+      return pr;
+    }
+    finally {
+      _f = null;
+    }
+  }
+
+
+  public synchronized int getNumOK() { return _numOK; }
+  public synchronized int getNumFailed() { return _numFailed; }
+
+
+  synchronized void setIncumbent(VectorIntf arg, double val) throws OptimizerException {
+    if (val<_incValue) {
+      if (Debug.debug(Constants.FCG)!=0) {
+        // sanity check
+        double incval = _f.eval(arg, _params);
+        if (Math.abs(incval - _incValue) > 1.e-25) {
+          Messenger.getInstance().msg("DDE.setIncumbent(): arg-val originally=" +
+                                      _incValue + " fval=" + incval + " ???", 0);
+          throw new OptimizerException(
+              "DDE.setIncumbent(): insanity detected; " +
+              "most likely evaluation function is " +
+              "NOT reentrant... " +
+              "Add the 'function.notreentrant,num'" +
+              " pair (num=1 or 2) to run parameters");
+        }
+        // end sanity check
+      }
+      _incValue=val;
+      _inc=arg;
+    }
+  }
+
+
+  synchronized void incOK() { _numOK++; }
+  synchronized void incFailed() { _numFailed++; }
+
+}
+
+
+class FCGThread extends Thread {
+
+  private FletcherConjugateGradient _master;
+  private int _numtries;
+  private int _id;
+  private int _uid;
+
+  public FCGThread(int id, int numtries, FletcherConjugateGradient master) {
+    _id = id;
+    _uid = (int) DataMgr.getUniqueId();
+    _master=master;
+    _numtries=numtries;
+  }
+
+  public void run() {
+    Hashtable p = new Hashtable(_master._params);
+    p.put("thread.id", new Integer(_uid));  // used to be _id
+    VectorIntf best = null;
+    double bestval = Double.MAX_VALUE;
+    FunctionIntf f = _master._f;
+    for (int i=0; i<_numtries; i++) {
+      try {
+        int index = _id*_numtries+i;  // this is the starting point soln index
+        PairObjDouble pair = min(f, index, p);
+        double val = pair.getDouble();
+        if (val<bestval) {
+          bestval=val;
+          best=(VectorIntf) pair.getArg();
+        }
+        _master.incOK();
+      }
+      catch (Exception e) {
+        _master.incFailed();
+        e.printStackTrace();
+        // no-op
+      }
+    }
+    try {
+      _master.setIncumbent(best, bestval);
+    }
+    catch (OptimizerException e) {
+      e.printStackTrace();
+    }
+  }
+
+
+  private PairObjDouble min(FunctionIntf f, int solindex, Hashtable p) throws OptimizerException {
+    VecFunctionIntf grad = (VecFunctionIntf) p.get("fcg.gradient");
+    if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
+    final VectorIntf x0 = p.get("fcg.x"+solindex) == null ?
+                          (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
+                          (VectorIntf) p.get("fcg.x"+solindex);
+    if (x0==null) throw new OptimizerException("no fcg.x"+solindex+" initial point in _params passed");
+    VectorIntf x = x0.newCopy();  // don't modify the initial soln
+    final int n = x.getNumCoords();
+    double gtol = 1e-8;
+    Double gtolD = (Double) p.get("fcg.gtol");
+    if (gtolD!=null && gtolD.doubleValue()>0) gtol = gtolD.doubleValue();
+    double h=0;
+    double rho = 0.1;
+    Double rD = (Double) p.get("fcg.rho");
+    if (rD!=null && rD.doubleValue()>0 && rD.doubleValue()<1.0)
+      rho = rD.doubleValue();
+    double fx = Double.NaN;
+    int maxiters = Integer.MAX_VALUE;
+    Integer miI = (Integer) p.get("fcg.maxiters");
+    if (miI!=null && miI.intValue()>0)
+      maxiters = miI.intValue();
+    double sigma = 0.9;
+    Double sigmaD = (Double) p.get("fcg.sigma");
+    if (sigmaD!=null && sigmaD.doubleValue()>rho && sigmaD.doubleValue()<1.0)
+      sigma = sigmaD.doubleValue();
+    double t1 = 9.0;
+    Double t1D = (Double) p.get("fcg.t1");
+    if (t1D!=null && t1D.doubleValue()>1) t1 = t1D.doubleValue();
+    double t2 = 0.1;
+    Double t2D = (Double) p.get("fcg.t2");
+    if (t2D!=null && t2D.doubleValue()<=0.5) t2 = t2D.doubleValue();
+    double t3 = 0.5;
+    Double t3D = (Double) p.get("fcg.t3");
+    if (t3D!=null && t3D.doubleValue()<=0.5) t3 = t3D.doubleValue();
+    Double fbarD = (Double) p.get("fcg.fbar");
+    Double red_rateD = (Double) p.get("fcg.redrate");
+
+    // main loop
+    boolean found=false;
+    double b = 0.0;
+    VectorIntf s = new DblArray1Vector(new double[n]);
+    for (int iter=0; iter<maxiters; iter++) {
+      Messenger.getInstance().msg("FCGThread.min(): Thread-id="+_id+" In iteration "+iter+", prevh="+h+", fx="+fx,1);
+      VectorIntf g = grad.eval(x, p);
+      fx = f.eval(x, p);
+      final double norminfg = VecUtil.normInfinity(g);
+      final double normg = VecUtil.norm(g,2);
+      if (norminfg <= gtol) {
+        Messenger.getInstance().msg("found sol w/ value="+fx+" normg="+norminfg+" in "+iter+" iterations.",0);
+        found = true;
+        break;
+      }
+      if (iter % n ==0) {
+        for (int i=0; i<n; i++) {
+          s.setCoord(i, -g.getCoord(i)/normg);  // reset search direction
+        }
+      }
+      else {
+        for (int i=0; i<n; i++)
+          s.setCoord(i,s.getCoord(i)*b-g.getCoord(i));  // s update
+        double norms = VecUtil.norm2(s);
+        for (int i=0; i<n; i++)
+          s.setCoord(i, s.getCoord(i)/norms);  // normalize search direction
+      }
+      // Al-Baali-Fletcher Bracketing-Sectioning Algorithm implementation
+      // determine step-size h
+      double sTg = VecUtil.innerProduct(s,g);
+      if (sTg>=0) {  // reset search direction
+        Messenger.getInstance().msg("FCGThread.min(): Thread-id="+_id+
+                                    " resetting search direction",0);
+        for (int i=0; i<n; i++) s.setCoord(i, -g.getCoord(i)/normg);
+        sTg = -normg;
+      }
+      // init. guess on acceptable lower bound along f(h)
+      double red_rate = 2.0;
+      if (red_rateD!=null && red_rateD.doubleValue()>1.0)
+        red_rate = red_rateD.doubleValue();
+      double fbar = fx > 0 ? fx/red_rate :
+                            (fx==0.0 ? -1 : red_rate*fx);
+      if (fbarD!=null) fbar = fbarD.doubleValue();
+      h = findStepSize(f, grad, x, fx, s, sTg, fbar, rho, sigma, t1, t2, t3, p);
+      if (h<=0) {
+        Messenger.getInstance().msg("FCG will stop at x=" + x +
+                                    " as it could not find a valid h", 0);
+        return new PairObjDouble(x, fx);
+      }
+      // set new x
+      for (int i=0; i<n; i++) x.setCoord(i, x.getCoord(i) + h*s.getCoord(i));
+      // update b according to Fletcher-Reeves formula
+      VectorIntf gnew = grad.eval(x, p);
+      b = VecUtil.innerProduct(gnew,gnew)/(normg*normg);
+    }
+    // end main loop
+
+    if (found) return new PairObjDouble(x, fx);
+    else throw new OptimizerException("Thread did not find a solution"+
+                                      " satisfying tolerance criteria from "+
+                                      "the given initial point x0="+x0);
+  }
+
+
+  static double findStepSize(FunctionIntf f, VecFunctionIntf grad, VectorIntf x,
+                              double fx, VectorIntf s, double sTg,
+                              double fbar, double rho, double sigma,
+                              double t1, double t2, double t3,
+                              Hashtable p) {
+    final double miu = (fbar - fx)/(rho*sTg);
+    final int n = x.getNumCoords();
+    double alpha = 0.99*miu;
+    double aprev = 0.0;
+    double a = alpha;
+    double b = alpha;
+    double faprev = fx;
+    // 1. bracketing phase: compute [a,b] or return with appropriate h
+    int count=Integer.MAX_VALUE;
+    Integer cI = (Integer) p.get("fcg.maxbracketingiters");
+    if (cI!=null) count = cI.intValue();
+    Messenger.getInstance().msg("max iter count in bracketing phase="+count,2);
+    while (true) {
+      if (--count==0) {
+        Messenger.getInstance().msg("max allowed count exceeded "+
+                                    "in bracketing phase. "+
+                                    "(alpha="+alpha+", a="+a+", b="+b+")",0);
+        return -1;
+      }
+      // compute f(x+alpha*s)
+      VectorIntf xa = x.newCopy();
+      for (int i=0; i<n; i++) {
+        xa.setCoord(i, x.getCoord(i)+alpha*s.getCoord(i));
+      }
+      double fa = f.eval(xa, p);
+      if (fa<=fbar) return alpha;
+      if (fa>fx+rho*alpha*sTg || fa>=faprev) {
+        b = alpha;
+        a=aprev;
+        break;
+      }
+      // evaluate f'(alpha)
+      VectorIntf ga = grad.eval(xa,p);
+      double fpa = VecUtil.innerProduct(s,ga);
+      if (Math.abs(fpa) <= -sigma*sTg) return alpha;
+      if (fpa >= 0) {
+        a = alpha; b = aprev;
+        break;
+      }
+      double a2aprev = 2.0*alpha - aprev;
+      if (miu <= a2aprev) {
+        aprev = alpha;
+        alpha = miu;
+      }
+      else {
+        double min_miu_aaprev = Math.min(miu, alpha+t1*(alpha-aprev));
+        aprev = alpha;
+        alpha = (a2aprev + min_miu_aaprev) / 2.0;
+      }
+      faprev = fa;
+    }
+    // 2. sectioning phase: find the right h to return
+    aprev = a;
+    count = Integer.MAX_VALUE;
+    cI = (Integer) p.get("fcg.maxsectioningiters");
+    if (cI!=null) count = cI.intValue();
+    Messenger.getInstance().msg("max iter count in sectioning phase="+count,2);
+    while (true) {
+      if (--count==0) {
+        Messenger.getInstance().msg("max allowed count exceeded "+
+                                    "in sectioning phase. "+
+                                    "(alpha="+alpha+", a="+a+", b="+b+")",0);
+        return -1;
+      }
+      alpha = (a + t2 * (b - a) + b - t3 * (b - a)) / 2.0;
+      // compute f(x+alpha*s)
+      VectorIntf xa = x.newCopy();
+      for (int i = 0; i < n; i++) {
+        xa.setCoord(i, x.getCoord(i) + alpha * s.getCoord(i));
+      }
+      double falpha = f.eval(xa, p);
+      // compute f(x+a*s)
+      VectorIntf xaj = x.newCopy();
+      for (int i = 0; i < n; i++) {
+        xaj.setCoord(i, x.getCoord(i) + a * s.getCoord(i));
+      }
+      double faj = f.eval(xaj, p);
+      if (falpha > fx + rho * alpha * sTg || falpha >= faj) {
+        b = alpha;
+        aprev = a;
+      }
+      else {
+        // evaluate f'(alpha)
+        VectorIntf ga = grad.eval(xa,p);
+        double fpa = VecUtil.innerProduct(s,ga);
+        if (Math.abs(fpa) <= -sigma*sTg) return alpha;
+        aprev = a;
+        // a = alpha;
+        if ((b-a)*fpa>=0) {
+          b = a;
+        }
+      }
+    }
+  }
+
+}
+

@@ -1,0 +1,21 @@
+package popt4jlib;
+
+public final class Constants {
+  public static final int DGA=1;
+  public static final int DEA=2;
+  public static final int DSA=4;
+  public static final int DMC=8;
+  public static final int DPSO=16;
+  public static final int ABFGS=32;
+  public static final int ASD=64;
+  public static final int ASDST=128;
+  public static final int PRCG=256;
+  public static final int PRCGST=512;
+  public static final int FCG=1024;
+  public static final int FCGST=2048;
+  public static final int RD=4096;
+  public static final int DDE=8192;
+
+  public static final int OB=65536;
+  public static final int MPC=131072;
+}

@@ -1,0 +1,10 @@
+class,avd.function,tests.FletcherPowellFunction
+avd.numdimensions,30
+avd.maxargval,3.141592653589793
+avd.minargval,-3.141592653589793
+avd.numthreads,4
+avd.numtries,200
+rndgen,7,4
+dbglvl,2
+avd.minstepsize,0.000001
+avd.ftol,0.0000001

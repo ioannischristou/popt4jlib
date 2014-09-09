@@ -1,0 +1,9 @@
+package popt4jlib.SA;
+
+import popt4jlib.OptimizerException;
+import java.util.*;
+
+interface SAScheduleIntf {
+  public double getTemp(int gen, Hashtable props) throws OptimizerException;
+}
+

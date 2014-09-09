@@ -1,0 +1,9 @@
+class,asd.function,tests.GriewangkFunction
+class,asd.gradient,tests.GriewangkFunctionGrad
+asd.functionargmaxval,500.0
+asd.functionargminval,-500.0
+rndgen,7,2
+asd.numthreads,2
+asd.numdimensions,100
+asd.numtries,10
+asd.maxiters,50000

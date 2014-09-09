@@ -1,0 +1,207 @@
+package popt4jlib.MonteCarlo;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+/**
+ * A parallel implementation of a Monte-Carlo Simulation-inspired random search
+ * of the function domain space. The class is primarily useful only as benchmark
+ * method provider to compare other algorithms against (any optimization process
+ * should produce superior results as the MCS class given the same number of
+ * function evaluations.)
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class MCS implements OptimizerIntf {
+
+  Hashtable _params;
+  FunctionIntf _f;
+  private MCSThread[] _threads=null;
+  private double _min=Double.MAX_VALUE;
+  private Object _argmin=null;
+
+  private MCS() {
+  }
+
+
+  /**
+   * Construct an MCS (Monte Carlo Search) Object.
+   * @param p Hashtable
+   */
+  public MCS(Hashtable p) {
+    _params = new Hashtable(p);
+  }
+
+
+  synchronized void setParams(Hashtable params) throws OptimizerException {
+    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    _params = new Hashtable(params);
+  }
+
+
+  /**
+   * run a Monte-Carlo simulation-style attempt to minimize the function f:
+   * Produce as many random solutions as are described in the value of the key
+   * "mcs.numtries" in the _params Hashtable, and return the best one (the arg
+   * that produces the minimum function value).
+   *
+   * The parameters that must have been passed in (via the constructor or via
+   * a call to the setParams(p) method are as follows:
+   * <"mcs.numtries", Integer ntries> mandatory, the number of random attempts
+   * to perform in total (these attempts will be distributed among the number
+   * of threads that will be created.
+   * <"mcs.randomargmaker", RandomArgMakerIntf amaker> mandatory, an object that
+   * implements the RandomArgMakerIntf interface so that it can produce function
+   * arguments for the function f to be minimized.
+   * <"mcs.numthreads", Integer nt> optional, the number of threads to use,
+   * default is 1.
+   *
+   * The method will throw OptimizerException if it is called while another
+   * thread is also executing the same method on the same object.
+   * @param f FunctionIntf
+   * @return PairObjDouble
+   * @throws OptimizerException
+   */
+  public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
+    try {
+      synchronized (this) {
+        if (_f != null)throw new OptimizerException("MCS.minimize(): " +
+            "another thread is concurrently executing the method on the same object");
+        _f = f;
+      }
+      int numthreads = 1;
+      Integer ntI = (Integer) _params.get("mcs.numthreads");
+      if (ntI != null && ntI.intValue() > 1) numthreads = ntI.intValue();
+      _threads = new MCSThread[numthreads];
+      Integer ntriesI = (Integer) _params.get("mcs.numtries");
+      int ntries = ntriesI.intValue();
+      int triesperthread = ntries / numthreads;
+      int rem = ntries;
+      for (int i = 0; i < numthreads - 1; i++) {
+        _threads[i] = new MCSThread(i, triesperthread, this);
+        rem -= triesperthread;
+      }
+      _threads[numthreads - 1] = new MCSThread(numthreads - 1, rem, this);
+      for (int i = 0; i < numthreads; i++) {
+        _threads[i].start();
+      }
+      for (int i = 0; i < numthreads; i++) {
+        try {
+          _threads[i].join();
+        }
+        catch (InterruptedException e) {
+          Thread.currentThread().interrupt(); // recommended action
+        }
+      }
+      // ok, we're done
+      PairObjDouble pr = new PairObjDouble(_argmin, _min);
+      return pr;
+    }
+    finally {
+      _f = null;
+    }
+  }
+
+
+  synchronized void setIncumbent(Object arg, double val) throws OptimizerException {
+    if (val<_min) {
+      if (Debug.debug(Constants.DMC)!=0) {
+        // sanity check
+        double incval = _f.eval(arg, _params);
+        if (Math.abs(incval - val) > 1.e-25) {
+          Messenger.getInstance().msg("MCS.setIncumbent(): ind-val=" + val +
+                                      " fval=" + incval + " ???", 0);
+          throw new OptimizerException(
+              "MCS.setIncumbent(): insanity detected; " +
+              "most likely evaluation function is " +
+              "NOT reentrant... " +
+              "Add the 'function.notreentrant,num'" +
+              " pair (num=1 or 2) to run parameters");
+        }
+        // end sanity check
+      }
+      _min=val;
+      _argmin=arg;
+    }
+  }
+
+}
+
+
+class MCSThread extends Thread {
+
+  private MCS _master;
+  private int _numtries;
+  private int _id;
+  private int _uid;
+  private Hashtable _fp;
+
+  public MCSThread(int id, int numtries, MCS master) {
+    _id = id;
+    _uid = (int) DataMgr.getUniqueId();
+    _master=master;
+    _numtries=numtries;
+  }
+
+  public void run() {
+    Hashtable p = new Hashtable(_master._params);
+    p.put("thread.id", new Integer(_uid));  // used to be _id
+    // create the _funcParams
+    _fp = new Hashtable();
+    Iterator it = p.keySet().iterator();
+    while (it.hasNext()) {
+      String key = (String) it.next();
+      Object val = p.get(key);
+      if (val!=null) {
+        Class valclass = val.getClass();
+        Package pack = valclass.getPackage();
+        if (pack!=null) {
+          String packname = pack.getName();
+          if (packname.startsWith("popt4jlib") ||
+              packname.startsWith("parallel"))continue; // don't include such objects
+        }
+        else {
+          Messenger.getInstance().msg("no package info for object with key "+key,2);
+        }
+        _fp.put(key,val);
+      }
+    }
+    // end creating _funcParams
+
+    Object best = null;
+    double bestval = Double.MAX_VALUE;
+    RandomArgMakerIntf maker=(RandomArgMakerIntf) p.get("mcs.randomargmaker");
+    if (maker==null) {
+      Messenger.getInstance().msg("no RandomArgMakerIntf defined in params",0);
+      return;
+    }
+    FunctionIntf f = _master._f;
+    for (int i = 0; i < _numtries; i++) {
+      try {
+        Object argi = maker.createRandomArgument(p);
+        double val = f.eval(argi, _fp);
+        if (val < bestval) {
+          bestval = val;
+          best = argi;
+        }
+      }
+      catch (Exception e) {
+        e.printStackTrace();
+        // no-op
+      }
+    }
+    try {
+      _master.setIncumbent(best, bestval);  // _f may throw, or may not be re-entrant
+    }
+    catch (OptimizerException e) {
+      e.printStackTrace();  // no further action
+    }
+  }
+
+}
+

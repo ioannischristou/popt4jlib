@@ -1,0 +1,163 @@
+package graph.packing;
+
+import popt4jlib.*;
+import popt4jlib.LocalSearch.*;
+import graph.*;
+import utils.*;
+import parallel.*;
+import java.util.*;
+
+public class IntSetN2RXPFirstImprovingGraphAllMovesMaker  implements AllChromosomeMakerIntf {
+
+  /**
+   * public constructor
+   */
+  public IntSetN2RXPFirstImprovingGraphAllMovesMaker() {
+    // no-op
+  }
+
+
+  /**
+   * implements the N_{-2+P} neighborhood for sets of integers.
+   * @param chromosome Object Set<Integer>
+   * @param params Hashtable must contain a key-value pair
+   * <"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter>
+   * The filter must both specify what two numbers to remove, as well as what
+   * ints to be tried for addition to the set given a vector of 2 ints to be
+   * removed from the set. In particular, the filter(Integer x, Set s, Hashtable params)
+   * method must return a Vector<IntSet> that comprise all the 2-int combinations
+   * that may be tried for removal.
+   * @throws OptimizerException
+   * @return Vector Vector<Set<Integer> >
+   */
+  public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
+    if (chromosome==null) throw new OptimizerException("IntSetN2RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): null chromosome");
+    try {
+      Set result = null;  // Set<IntSet>
+      Set x0 = (Set) chromosome;
+      //System.err.println("IntSetN2RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): working w/ a soln of size="+x0.size());  // itc: HERE rm asap
+      IntSetNeighborhoodFilterIntf filter = (IntSetNeighborhoodFilterIntf)
+          params.get("dls.intsetneighborhoodfilter");
+      Iterator iter = x0.iterator();
+      boolean cont=true;
+      while (iter.hasNext() && cont) {
+        Integer id = (Integer) iter.next();
+        //System.err.println("IntSetN2RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): working w/ id="+id);  // itc: HERE rm asap
+        Vector twoint_sets = filter.filter(id, x0, params);  // Vector<IntSet>
+        Iterator iter2 = twoint_sets.iterator();
+        while (iter2.hasNext() && cont) {
+          Set rmids = (Set) iter2.next();
+          Vector tryids = filter.filter(rmids, x0, params);  // Vector<Integer>
+          if (tryids!=null) {
+            IntSet xnew = new IntSet(x0);
+            xnew.removeAll(rmids);
+            // add up to as many as the filter suggests.
+            Set res = new TreeSet();  // Set<IntSet>
+            res.add(xnew);
+            Set impr_res = createSets(res, rmids, tryids, 3, params);
+            // impr_res is Set<IntSet>
+            if (impr_res!=null) {
+              result = impr_res;
+              cont=false;  // found a soln; ok, break.
+            }
+          }
+        }
+        //System.err.println("IntSetN2RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): done w/ id="+id+
+        //           " returned "+cnt+" sets.");  // itc: HERE rm asap
+      }
+      // convert Set<IntSet> to Vector<IntSet>
+      Vector res = new Vector(result);
+      //System.err.println("IntSetN2RXPAllFirstImprovingGraphMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");  // itc: HERE rm asap
+      return res;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("IntSetN2RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): failed");
+    }
+  }
+
+
+  /**
+   * hook method in the context of the Template Method Design Pattern.
+   * Sub-classes with more domain knowledge may override this method to modify
+   * the behavior of this move-maker. This method implements a depth-first
+   * search on the space of neighbors to find the first improving solution
+   * which it returns immediately.
+   * @param res Set TreeSet<IntSet>
+   * @param rmids Set IntSet
+   * @param tryids Vector Vector<Integer>
+   * @param maxcard int
+   * @param params Hashtable
+   * @return Set  TreeSet<IntSet>
+   */
+  protected Set createSets(Set res, Set rmids, Vector tryids, int maxcard, Hashtable params) {
+    if (maxcard==0) return res;  // found an improving solution
+    Set res2 = new TreeSet();
+    Iterator iter = res.iterator();
+    while (iter.hasNext()) {
+      IntSet x = (IntSet) iter.next();
+      for (int i=0; i<tryids.size(); i++) {
+        Integer tid = (Integer) tryids.elementAt(i);
+        if (rmids.contains(tid)==false) {
+          if (x.contains(tid)==false && isOK2Add(tid, x, params)) {
+            IntSet x2 = new IntSet(x);
+            x2.add(tid);
+            res2.add(x2);
+            Set res3 = createSets(res2, rmids, tryids, maxcard-1, params);
+            if (res3!=null && res3.size()>0) return res3;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+
+  /**
+   * hook method in the context of the Template Method Design Pattern.
+   * Overrides this method to modify the behavior of the base move-maker.
+   * @param tid Integer
+   * @param x IntSet
+   * @param params Hashtable
+   * @return boolean
+   */
+  protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
+    try {
+      Graph g = (Graph) params.get("dls.graph");
+      Node n = g.getNode(tid.intValue());
+      Set nodes = new TreeSet();
+      Iterator xiter = x.iterator();
+      while (xiter.hasNext()) {
+        nodes.add(g.getNode(((Integer) xiter.next()).intValue()));
+      }
+      return isFree2Cover(n, nodes);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+  }
+
+
+  /**
+   * check if node nj can be set to one when the nodes in active are also set.
+   * @param nj Node
+   * @param active Set  // Set<Node>
+   * @return boolean // true iff nj can be added to active
+   * @throws ParallelException
+   */
+  private static boolean isFree2Cover(Node nj, Set active) throws ParallelException {
+    if (active==null) return true;
+    if (active.contains(nj)) return false;
+    Set activated = new HashSet(active);
+    Iterator it = active.iterator();
+    while (it.hasNext()) {
+      Node ni = (Node) it.next();
+      Set nnbors = ni.getNNbors();
+      activated.addAll(nnbors);
+    }
+    return !activated.contains(nj);
+  }
+
+}
+

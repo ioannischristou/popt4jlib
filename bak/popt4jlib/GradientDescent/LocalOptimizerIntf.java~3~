@@ -1,0 +1,11 @@
+package popt4jlib.GradientDescent;
+
+import popt4jlib.*;
+import java.util.*;
+
+public interface LocalOptimizerIntf extends OptimizerIntf {
+  public LocalOptimizerIntf newInstance();
+  public Hashtable getParams();
+  public void setParams(Hashtable params) throws OptimizerException;
+}
+

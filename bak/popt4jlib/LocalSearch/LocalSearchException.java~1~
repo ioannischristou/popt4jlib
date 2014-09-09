@@ -1,0 +1,6 @@
+package popt4jlib.LocalSearch;
+
+public class LocalSearchException {
+  public LocalSearchException() {
+  }
+}

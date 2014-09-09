@@ -1,0 +1,7 @@
+package popt4jlib;
+
+import java.util.Hashtable;
+
+public interface FunctionIntf {
+  public double eval(Object arg, Hashtable params) throws IllegalArgumentException;
+}

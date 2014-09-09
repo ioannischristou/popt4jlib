@@ -1,0 +1,42 @@
+package popt4jlib.PS;
+
+import popt4jlib.OptimizerException;
+import java.util.Hashtable;
+
+public class DblArray1ChromosomeVelocityAdder implements ChromosomeVelocityAdderIntf {
+  public DblArray1ChromosomeVelocityAdder() {
+  }
+
+  public Object addVelocity2Chromosome(Object chromosome, Object velocity, Hashtable params) throws OptimizerException {
+    if (chromosome==null) throw new OptimizerException("null chromosome arg");
+    if (chromosome instanceof double[] == false)
+      throw new OptimizerException("chromosome is not double[]");
+    if (velocity!=null && velocity instanceof double[] == false)
+      throw new OptimizerException("non-null velocity is not double[]");
+    final double[] c = (double[]) chromosome;
+    final double[] v = (double[]) velocity;
+    final int n = c.length;
+    double maxallelevalg = Double.MAX_VALUE;
+    Double maxag = (Double) params.get("dpso.maxallelevalue");
+    if (maxag != null) maxallelevalg = maxag.doubleValue();
+    double minallelevalg = Double.NEGATIVE_INFINITY;
+    Double minag = (Double) params.get("dpso.minallelevalue");
+    if (minag != null) minallelevalg = minag.doubleValue();
+    double[] res = new double[n];
+    for (int i=0; i<n; i++) {
+      res[i] = c[i] + v[i];
+      double minalleleval = minallelevalg;
+      Double minai = (Double) params.get("dpso.minalleleval" + i);
+      if (minai != null && minai.doubleValue() > minallelevalg)
+        minalleleval = minai.doubleValue();
+      if (res[i]<minalleleval) res[i] = minalleleval;
+      double maxalleleval = maxallelevalg;
+      Double maxai = (Double) params.get("dpso.maxalleleval" + i);
+      if (maxai != null && maxai.doubleValue() < maxallelevalg)
+        maxalleleval = maxai.doubleValue();
+      if (res[i]>maxalleleval) res[i] = maxalleleval;
+    }
+    return res;
+  }
+
+}

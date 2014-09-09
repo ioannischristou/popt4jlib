@@ -1,0 +1,23 @@
+package popt4jlib.MSSC;
+
+public class ClusterTerminationNumIters implements ClustererTerminationIntf {
+  private int _numItersLeft;
+  private int _initialNumIters;
+
+  public ClusterTerminationNumIters(int totalItersAllowed) {
+    _numItersLeft = totalItersAllowed;
+    _initialNumIters= totalItersAllowed;
+  }
+
+
+  public boolean isDone() {
+    if (_numItersLeft-- <= 0) return true;
+    return false;
+  }
+
+
+  public void registerClustering(ClustererIntf p) {
+    _numItersLeft = _initialNumIters;  // reset iterations left
+  }
+}
+

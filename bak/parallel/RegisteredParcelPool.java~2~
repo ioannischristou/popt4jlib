@@ -1,0 +1,87 @@
+package parallel;
+
+import java.util.ArrayList;
+
+/**
+ * The class is responsible for maintaining a sufficiently large array of
+ * <CODE>RegisteredParcel</CODE> objects, and there will be a pool for each
+ * thread of execution.
+ * In this way, there will be no need for invoking the new operator within the
+ * running threads requiring RegisteredParcel objects, unless a thread at some
+ * point runs out of space in its thread-local pool.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+
+public class RegisteredParcelPool {
+  /**
+   * the maximum number of objects this pool can handle.
+   */
+  private static final int _NUMOBJS = 10000;
+  private ArrayList _pool;
+  private int _maxUsedPos=-1;
+
+  /**
+   * sole public constructor. Creates <CODE>_NUMOBJS</CODE> "empty"
+   * <CODE>RegisteredParcel</CODE> objects.
+   */
+  public RegisteredParcelPool() {
+    _pool = new ArrayList(_NUMOBJS);
+    for (int i=0; i<_NUMOBJS; i++) {
+      _pool.add(new RegisteredParcel(this, i));
+    }
+  }
+
+  /**
+   * factory object creation method, first tries to return a managed object from
+   * the pool, and if it cannot find one, creates a new (unmanaged) one. The
+   * returned object, always has its data members (values) correctly set.
+   * @param fromId int
+   * @param toId int
+   * @param data Object
+   * @return RegisteredParcel
+   */
+  static RegisteredParcel getObject(int fromid, int toid, Object data) {
+    RegisteredParcelPool pool = RegisteredParcelThreadLocalPools.getThreadLocalPool();
+    RegisteredParcel p = pool.getObjectFromPool();
+    if (p!=null) {  // ok, return managed object
+      p.setFromId(fromid);
+      p.setToId(toid);
+      p.setData(data);
+      return p;
+    } else  // oops, create new unmanaged object
+      return new RegisteredParcel(fromid, toid, data);
+  }
+
+
+  /**
+   * return an unmanaged "free" objec from the pool, or null if it cannot find
+   * one.
+   * @return RegisteredParcel
+   */
+  RegisteredParcel getObjectFromPool() {
+    if (_maxUsedPos<_NUMOBJS-1) {
+      _maxUsedPos++;
+      RegisteredParcel dlp = (RegisteredParcel) _pool.get(_maxUsedPos);
+      dlp.setIsUsed();
+      return dlp;
+    }
+    else return null;
+  }
+
+  void returnObjectToPool(RegisteredParcel dlp) {
+    if (dlp.getPoolPos()==_maxUsedPos) {
+      --_maxUsedPos;
+      while (_maxUsedPos>=0 &&
+             ((RegisteredParcel)_pool.get(_maxUsedPos)).isUsed()==false)
+        --_maxUsedPos;
+    }
+    return;
+  }
+
+}
+

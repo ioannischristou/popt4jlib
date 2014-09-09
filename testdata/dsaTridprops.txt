@@ -1,0 +1,12 @@
+class,dsa.function,tests.TridFunction
+dsa.chromosomelength,100
+dsa.maxallelevalue,10000.0
+dsa.minallelevalue,-10000.0
+dsa.numouteriters,1000
+dsa.numtriesperiter,100
+dsa.movedelta,0.01
+dsa.K,20.0
+rndgen,7,4
+dsa.numthreads,4
+class,dsa.randomchromosomemaker,popt4jlib.SA.DblArray1CMaker
+class,dsa.movemaker,popt4jlib.SA.DblArray1MoveMaker

@@ -1,0 +1,10 @@
+package analysis;
+
+public class IntegrationException extends Exception {
+  private String _msg;
+  public IntegrationException(String msg) {
+    _msg = msg;
+    System.err.println(msg);
+  }
+}
+

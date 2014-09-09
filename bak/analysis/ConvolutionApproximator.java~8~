@@ -1,0 +1,82 @@
+package analysis;
+
+import popt4jlib.*;
+import java.util.*;
+
+
+public class ConvolutionApproximator implements FunctionIntf {
+  private Hashtable _convParams;
+  private IntegralApproximator _integrator;
+  private double _lowerLimit=Double.NEGATIVE_INFINITY;
+  private double _upperLimit = Double.POSITIVE_INFINITY;
+
+  public ConvolutionApproximator(FunctionIntf f, FunctionIntf g,
+                                 Hashtable params) throws IllegalArgumentException {
+    if (params!=null) _convParams = new Hashtable(params);
+    Double llD = (Double) _convParams.get("convolutionapproximator.integrationlowerlimit");
+    if (llD!=null) _lowerLimit = llD.doubleValue();
+    Double ulD = (Double) _convParams.get("convolutionapproximator.integrationupperlimit");
+    if (ulD!=null) _upperLimit = ulD.doubleValue();
+    Hashtable p = new Hashtable();
+    p.put("integralapproximatormt.maxnumthreads", new Integer(10));
+    _integrator = new IntegralApproximator(new InnerConvProdFunction(f, g), p);
+  }
+
+
+  public double eval(Object x, Hashtable params) throws IllegalArgumentException {
+    double[] t = null;
+    if (x instanceof VectorIntf) t = ((VectorIntf) x).getDblArray1();
+    else if (x instanceof double[]) t = (double[]) x;
+    else throw new IllegalArgumentException("cannot convert x to double[]");
+    int cvi = 0;
+    Integer cviI = (Integer) params.get("convolutionapproximator.varindex");
+    if (cviI!=null) cvi = cviI.intValue();
+    params.put("convolutionapproximator.S", new Double(t[cvi]));
+    params.put("integralapproximator.a", new Double(_lowerLimit));
+    params.put("integralapproximator.integrandvarindex", new Integer(cvi));
+    t[cvi] = _upperLimit;
+    double val = _integrator.eval(t, params);
+    return val;
+  }
+
+
+  //public int getIntegratorTotalCalls() {
+    //return _integrator.getTotalNumCalls();
+  //}
+}
+
+
+class InnerConvProdFunction implements FunctionIntf {
+  private FunctionIntf _f;
+  private FunctionIntf _g;
+
+
+  public InnerConvProdFunction(FunctionIntf f, FunctionIntf g) {
+    _f = f;
+    _g = g;
+  }
+
+
+  public double eval(Object x, Hashtable params) throws IllegalArgumentException {
+    double[] t = null;
+    if (x instanceof VectorIntf) t = ((VectorIntf) x).getDblArray1();
+    else if (x instanceof double[]) t = (double[]) x;
+    else throw new IllegalArgumentException("cannot convert x to double[]");
+    try {
+      int ivi = 0;
+      Integer ii = (Integer) params.get("convolutionapproximator.varindex");
+      if (ii!=null) ivi = ii.intValue();
+      Double SD = (Double) params.get("convolutionapproximator.S");
+      double S = SD.doubleValue();
+      double[] t2 = new double[t.length];
+      for (int i=0; i<t.length; i++) t2[i] = t[i];
+      t2[ivi] = S-t[ivi];
+      return _f.eval(t2, params)*_g.eval(t, params);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new IllegalArgumentException("problem evaluating the inner conv. product");
+    }
+  }
+}
+

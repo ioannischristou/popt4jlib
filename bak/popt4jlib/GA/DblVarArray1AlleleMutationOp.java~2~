@@ -1,0 +1,64 @@
+package popt4jlib.GA;
+
+import popt4jlib.OptimizerException;
+import utils.*;
+import java.util.*;
+
+public class DblVarArray1AlleleMutationOp {
+  private Hashtable _params;
+
+  public DblVarArray1AlleleMutationOp() {
+  }
+
+  /**
+   * the operation mutates each chromosome argument (not a DGAIndividual, not a
+   * Function() arg object) and stores the new chromosome in a Pair object that
+   * is returned.
+   * @param chromosome1 Object
+   * @param chromosome2 Object
+   * @return Pair
+   */
+  public Pair doMutation(Object chromosome1, Object chromosome2) {
+    double[] a1 = (double[]) chromosome1;
+    double[] a2 = (double[]) chromosome2;
+    double min=Double.MAX_VALUE;
+    double max=Double.NEGATIVE_INFINITY;
+    int n1 = a1.length;
+    for (int i=0; i<n1; i++) {
+      if (max<a1[i]) max=a1[i];
+      else if (min>a1[i]) min=a1[i];
+    }
+    int r1 = RndUtil.getInstance().getRandom().nextInt(n1);
+    double rv = RndUtil.getInstance().getRandom().nextGaussian();
+    a1[r1] += (max-min)*rv;
+    // check if value exceeds any limits
+    Double minargval = (Double) _params.get("dga.minargval");
+    if (minargval!=null && minargval.doubleValue()>a1[r1])
+      a1[r1]=minargval.doubleValue();
+    Double maxargval = (Double) _params.get("dga.maxargval");
+    if (maxargval!=null && maxargval.doubleValue()<a1[r1])
+      a1[r1]=maxargval.doubleValue();
+
+    int n2 = a2.length;
+    for (int i=0; i<n2; i++) {
+      if (max<a2[i]) max=a2[i];
+      else if (min>a2[i]) min=a2[i];
+    }
+    int r2 = RndUtil.getInstance().getRandom().nextInt(n2);
+    rv = RndUtil.getInstance().getRandom().nextGaussian();
+    a2[r2] += (max-min)*rv;
+    if (minargval!=null && minargval.doubleValue()>a2[r2])
+      a2[r2]=minargval.doubleValue();
+    if (maxargval!=null && maxargval.doubleValue()<a2[r2])
+      a2[r2]=maxargval.doubleValue();
+
+    Pair p = new Pair(a1, a2);
+    return p;
+  }
+
+
+  public void setParams(Hashtable params) {
+    _params = new Hashtable(params);
+  }
+
+}

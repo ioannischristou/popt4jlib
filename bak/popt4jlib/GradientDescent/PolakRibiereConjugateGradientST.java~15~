@@ -1,0 +1,221 @@
+package popt4jlib.GradientDescent;
+
+import java.util.*;
+import utils.*;
+import parallel.*;
+import popt4jlib.*;
+
+/**
+ * Single-Threaded version of the PolakRibiereConjugateGradient class that
+ * implements a single try, single threaded local optimization from a single
+ * initial point to a local stationary point of the function to be optimized.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class PolakRibiereConjugateGradientST implements LocalOptimizerIntf, ObserverIntf {
+  Hashtable _params;
+  FunctionIntf _f;
+
+  public PolakRibiereConjugateGradientST() {
+  }
+
+  public PolakRibiereConjugateGradientST(Hashtable params) {
+    try {
+      setParams(params);
+    }
+    catch (Exception e) {
+      // no-op: cannot reach this point
+    }
+  }
+
+
+  /**
+   * return a copy of the parameters. Modifications to the returned object
+   * do not affect the data member.
+   * @return Hashtable
+   */
+  public synchronized Hashtable getParams() {
+    return new Hashtable(_params);
+  }
+
+
+  public LocalOptimizerIntf newInstance() {
+    return new PolakRibiereConjugateGradientST();
+  }
+
+
+  /**
+   * the optimization params are set to p
+   * @param p Hashtable
+   * @throws OptimizerException
+   */
+  public synchronized void setParams(Hashtable p) throws OptimizerException {
+    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    _params = null;
+    _params = new Hashtable(p);  // own the params
+  }
+
+
+  public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
+    try {
+      synchronized (this) {
+        if (_f != null)throw new OptimizerException(
+            "PRCGST.minimize(): another " +
+            "thread is concurrently executing the method on the same object");
+        _f = f;
+      }
+      PairObjDouble pr = min(f, _params);
+      return pr;
+    }
+    finally {
+      _f = null;
+    }
+  }
+
+
+  // ObserverIntf methods implementation
+  /**
+   * when a subject's thread calls the method notifyChange, in response, this
+   * object will add the best solution found by the subject, in the _observers'
+   * solutions map, to be later picked up by the first DGAThread spawned by this
+   * DGA object.
+   * @param subject SubjectIntf
+   * @throws OptimizerException
+   */
+  public void notifyChange(SubjectIntf subject) throws OptimizerException {
+    try {
+      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
+      Object arg = subject.getIncumbent();
+      FunctionIntf f = subject.getFunction();
+      VectorIntf x=null;
+      if (arg instanceof double[]) {
+        x = new DblArray1Vector((double[]) arg);
+      } else if (arg instanceof VectorIntf) x = (DblArray1Vector) arg;
+      else throw new OptimizerException("OPRCGST.notifyChange(): don't know how to convert argument into VectorIntf object");
+      Hashtable params = subject.getParams();
+      params.put("gradientdescent.x0",x);  // add the initial point
+      params.put("prcg.maxiters", new Integer(1000));
+      setParams(params);
+      PairObjDouble p = minimize(f);
+      if (p!=null) {
+        VectorIntf argmin = (VectorIntf) p.getArg();
+        if (arg instanceof DblArray1Vector) subject.addIncumbent(this, argmin);
+        else subject.addIncumbent(this, argmin.getDblArray1());
+      }
+    }
+    catch (ParallelException e) {
+      e.printStackTrace();
+    }
+    finally {
+      DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
+    }
+  }
+
+
+  private PairObjDouble min(FunctionIntf f, Hashtable p) throws OptimizerException {
+    VecFunctionIntf grad = (VecFunctionIntf) p.get("prcg.gradient");
+    if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
+    final VectorIntf x0 = p.get("prcg.x0") == null ?
+                          (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
+                          (VectorIntf) p.get("prcg.x0");
+    if (x0==null) throw new OptimizerException("no prcg.x0"+
+                                               " initial point in _params passed");
+    VectorIntf x = x0.newCopy();  // don't modify the initial soln
+    final int n = x.getNumCoords();
+    double gtol = 1e-8;
+    Double gtolD = (Double) p.get("prcg.gtol");
+    if (gtolD!=null && gtolD.doubleValue()>0) gtol = gtolD.doubleValue();
+    double h=0;
+    double rho = 0.1;
+    Double rD = (Double) p.get("prcg.rho");
+    if (rD!=null && rD.doubleValue()>0)
+      rho = rD.doubleValue();
+    double beta = 0.8;
+    Double bD = (Double) p.get("prcg.beta");
+    if (bD!=null && bD.doubleValue()>0 && bD.doubleValue()<1)
+      beta = bD.doubleValue();
+    double gamma = 1;
+    Double gD = (Double) p.get("prcg.gamma");
+    if (gD!=null && gD.doubleValue()>0)
+      gamma = gD.doubleValue();
+    double fx = Double.NaN;
+    int maxiters = Integer.MAX_VALUE;
+    Integer miI = (Integer) p.get("prcg.maxiters");
+    if (miI!=null && miI.intValue()>0)
+      maxiters = miI.intValue();
+    double looptol = 1.e-21;
+    Double ltD = (Double) p.get("prcg.looptol");
+    if (ltD!=null && ltD.doubleValue() > 0) looptol = ltD.doubleValue();
+
+    // main loop
+    boolean found=false;
+    double b = 0.0;
+    VectorIntf s = new DblArray1Vector(new double[n]);
+    double[] xa = new double[n];
+    for (int iter=0; iter<maxiters; iter++) {
+      h=0;
+      VectorIntf g = grad.eval(x, p);
+      fx = _f.eval(x, p);
+      final double norminfg = VecUtil.normInfinity(g);
+      final double normg = VecUtil.norm2(g);
+      if (norminfg <= gtol) {
+        Messenger.getInstance().msg("found sol w/ norminfg="+norminfg+" in "+iter+" iterations.",0);
+        found = true;
+        break;
+      }
+      for (int i=0; i<n; i++) {
+        xa[i] = x.getCoord(i);
+        if (iter % n == 0) s.setCoord(i, -g.getCoord(i));  // reset search direction
+        else
+          s.setCoord(i,s.getCoord(i)*b-g.getCoord(i));  // s update
+      }
+      double norms = VecUtil.norm2(s);
+      for (int i=0; i<n; i++) s.setCoord(i, s.getCoord(i)/norms);  // normalize s
+      // Armijo Rule implementation
+      // determine step-size h
+      double sTg = VecUtil.innerProduct(s,g);
+      if (sTg>=0) {  // reset search direction
+        for (int i=0; i<n; i++) s.setCoord(i, -g.getCoord(i)/normg);
+        sTg = -normg;
+      }
+      double rprev = rho*gamma*sTg;
+      int m=0;
+      while (rprev < -looptol) {
+        for (int i=0; i<n; i++) x.setCoord(i, xa[i]+Math.pow(beta,m)*gamma*s.getCoord(i));
+        double fval = _f.eval(x,p);
+        if (fval <= fx + rprev) {
+          h = Math.pow(beta,m)*gamma;
+          break;
+        }
+        rprev = beta*rprev;
+        m++;
+      }
+      if (h<=0) throw new OptimizerException("PRCGST could not find a valid h "+
+                                             "for x="+x+
+                                             " after "+m+" iterations...");
+      // set new x
+      for (int i=0; i<n; i++) x.setCoord(i, xa[i] + h*s.getCoord(i));
+      // update b
+      VectorIntf gnew = grad.eval(x, p);
+      VectorIntf gdiff = gnew.newCopy();
+      for (int i=0; i<n; i++) {
+        gdiff.setCoord(i,gdiff.getCoord(i)-g.getCoord(i));
+      }
+      b = VecUtil.innerProduct(gdiff,gnew)/(normg*normg);
+      if (b<0) b = 0;  // automatic direction reset
+    }
+    // end main loop
+
+    if (found) return new PairObjDouble(x, fx);
+    else throw new OptimizerException("Thread did not find a solution"+
+                                      " satisfying tolerance criteria from "+
+                                      "the given initial point x0="+x0);
+
+  }
+
+}
+

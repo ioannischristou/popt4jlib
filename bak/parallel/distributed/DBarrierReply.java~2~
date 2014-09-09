@@ -1,0 +1,10 @@
+package parallel.distributed;
+
+import java.io.*;
+
+public class DBarrierReply implements Serializable {
+  public static final long serialVersionUID = 987654333328L;
+  public DBarrierReply() {
+  }
+}
+

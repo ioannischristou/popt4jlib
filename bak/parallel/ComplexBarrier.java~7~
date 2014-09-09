@@ -1,0 +1,206 @@
+package parallel;
+
+import java.util.*;
+
+
+/**
+ * A class implementing the Barrier concept in parallel/distributed computing.
+ * Before thread groups wishing to coordinate on barrier points can use this
+ * class, a "setup" must occur either via a call to Barrier.addThread(t) or
+ * (recommended) Barrier.addThread(groupname, t). Each of the n
+ * threads to "synchronize" on the barrier point then calls
+ * Barrier.getInstance([groupname]).barrier();
+ * The threads wait at this point until n threads actually reach this point,
+ * at which time, they resume execution.
+ * If a thread wishes to leave a barrier it may do so by calling
+ * <CODE>Barrier.removeCurrentThread([groupname])</CODE>
+ * If a thread other than the ones originally entering the barrier (via setup)
+ * calls the <CODE>barrier()</CODE> methods then a ParallelException will be
+ * thrown.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class ComplexBarrier {
+  private static ComplexBarrier _instance;
+  private static Hashtable _instances = new Hashtable();  // map<String name, Barrier b>
+  // private int _origNumThreads; // this is _threads.size()
+  private int _numThreads2Wait4=0;
+  private Set _threads = new HashSet();  // Set<Thread>
+
+
+  /**
+   * method must be called before barrier() can be used. It should be invoked
+   * only once for each group of threads which to coordinate with the barrier()
+   * call.
+   * @param t Thread
+   */
+  public synchronized static void addThread(Thread t) {
+    if (_instance==null) _instance = new ComplexBarrier();
+    _instance.placeThread(t);  // introduced to keep FindBugs happy
+  }
+
+
+  /**
+   * method has the same purpose as the addThread(t) call, except that it
+   * creates a separate Barrier instance that can be referenced by the
+   * getInstance(name) call, so that several Barrier objects can co-exist in the
+   * same program.
+   * @param name String the name with which the Barrier object can be later got
+   * @param t Thread a thread that will be coordinated on this Barrier
+   */
+  public synchronized static void addThread(String name, Thread t) {
+    ComplexBarrier b=(ComplexBarrier) _instances.get(name);
+    if (b==null) b = new ComplexBarrier();
+    synchronized (b) {  // keep FindBugs happy
+      b.placeThread(t);
+    }
+    _instances.put(name, b);
+  }
+
+
+  /**
+   * removes the current thread from having to synchronize on the default barrier.
+   * @throws ParallelException
+   */
+  public synchronized static void removeCurrentThread() throws ParallelException {
+    if (_instance==null) throw new ParallelException("no instance to remove thread from");
+    synchronized (_instance) {
+      Thread current = Thread.currentThread();
+      if (_instance._threads.contains(current)==false)
+        throw new ParallelException("thread not originally participant in this barrier object");
+      _instance.removeThread(current);
+    }
+  }
+
+
+  /**
+   * removes the current thread from having to synchronize on the barrier with
+   * the given name.
+   * @param name String
+   * @throws ParallelException if the barrier name does not exist or if the
+   * thread was not a participant in this barrier.
+   */
+  public synchronized static void removeCurrentThread(String name) throws ParallelException {
+    ComplexBarrier instance = (ComplexBarrier) _instances.get(name);
+    if (instance==null)
+      throw new ParallelException("no instance w/ name="+name+" to remove thread from");
+    synchronized (instance) {
+      Thread current = Thread.currentThread();
+      if (instance._threads.contains(current)==false)
+        throw new ParallelException("thread not originally participant in this barrier object");
+      instance.removeThread(current);
+    }
+  }
+
+
+  /**
+   * returns the instance that was created by a prior call to setNumThreads(n)
+   * @return ComplexBarrier
+   */
+  public synchronized static ComplexBarrier getInstance() {
+    return _instance;
+  }
+
+
+  /**
+   * returns the instance that was created by a prior call to
+   * Barrier.addThread(name,n)
+   * @param name String
+   * @return ComplexBarrier
+   */
+  public synchronized static ComplexBarrier getInstance(String name) {
+    return (ComplexBarrier) _instances.get(name);
+  }
+
+
+  /**
+   * remove the instance named after the argument passed in from the known
+   * data-base of Barrier instances (maintained by this class). The caller
+   * must ensure that no threads will call the barrier() method for the instance
+   * to be deleted again, otherwise deadlocks may arise (some threads waiting
+   * on the barrier, and the remaining threads will never be able to call the
+   * barrier() method again).
+   * @param name String
+   * @throws ParallelException if there was no such Barrier instance in the
+   * data-base of Barrier instances.
+   */
+  public synchronized static void removeInstance(String name) throws ParallelException {
+    ComplexBarrier b = (ComplexBarrier) _instances.remove(name);
+    if (b==null)
+      throw new ParallelException("no ComplexBarrier w/ name "+name+" in _instances");
+  }
+
+
+  /**
+   * main method of the class: it waits until _origNumThreads threads enter
+   * this method, and it guarantees that if a thread enters this method again
+   * before all threads have exited the previous barrier() call it will wait
+   * first for all the other threads to exit and then will proceed.
+   * @throws ParallelException if current thread is not registered via addThread
+   */
+  public void barrier() throws ParallelException {
+    if (_threads.contains(Thread.currentThread())==false)
+      throw new ParallelException("current thread cannot call barrier()");
+    while (passBarrier()==false) {
+      // repeat: this is not busy-waiting behavior except for the case
+      // when a thread has passed the barrier and is calling again
+      // the barrier() method before all other threads exit the previous call
+      Thread.yield();
+    }
+  }
+
+
+  /**
+   * private constructor in accordance with the Singleton(s) Design Pattern.
+   */
+  private ComplexBarrier() {
+    // _numThreads2Wait4 = n;
+  }
+
+
+  private synchronized void placeThread(Thread t) {
+    _threads.add(t);
+    ++_numThreads2Wait4;
+  }
+
+
+  private synchronized void removeThread(Thread t) {
+    _threads.remove(t);
+    if (_numThreads2Wait4>0)  // some threads may have entered barrier, all have left last barrier() call
+      --_numThreads2Wait4;
+    else if (_numThreads2Wait4<0)
+      ++_numThreads2Wait4;  // there are threads still in the previous barrier() call
+                            // current thread has already left previous barrier() call
+                            // and is now in removeThread()
+    if (_numThreads2Wait4==0)  // this would happen only if all other threads
+                               // have entered barrier() at this time
+      notify();  // all other threads were waiting for me
+  }
+
+
+  private synchronized boolean passBarrier() {
+    if (_numThreads2Wait4 < 0) return false;  // thread just ran through to the next barrier point before reseting
+    --_numThreads2Wait4;
+    while (_numThreads2Wait4>0) {
+      try {
+        wait();
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // recommended behavior
+        // no-op
+      }
+    }
+    if (--_numThreads2Wait4==-_threads.size()) {
+      // I am the last thread to pass this point, so reset
+      _numThreads2Wait4 = _threads.size();  // reset
+    }
+    notifyAll();  // wake them all up
+    return true;
+  }
+
+}
+

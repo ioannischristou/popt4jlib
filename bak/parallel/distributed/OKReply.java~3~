@@ -1,0 +1,10 @@
+package parallel.distributed;
+
+import java.io.*;
+
+public class OKReply implements Serializable {
+  public static final long serialVersionUID = 987654333327L;
+  public OKReply() {
+  }
+}
+

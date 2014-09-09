@@ -1,0 +1,43 @@
+package graph.packing;
+
+import java.util.*;
+import parallel.*;
+import graph.*;
+
+public class DefBBNodeComparator implements BBNodeComparatorIntf {
+  public DefBBNodeComparator() {
+  }
+
+  public int compare(BBNode2 o1, BBNode2 o2) {
+    try {
+      double sct = o1.getNodes().size();
+      double osct = o2.getNodes().size();
+      double bd = o1.getBound();
+      double obd = o2.getBound();
+      double ct = bd / sct + sct - 1.0;
+      double oct = obd / osct + osct - 1.0;
+      if (ct > oct)return -1;
+      else if (ct == oct) {
+        Set to = o2.getNodes();
+        Iterator it = o1.getNodes().iterator();
+        Iterator oit = to.iterator();
+        while (it.hasNext()) {
+          Node mi = (Node) it.next();
+          if (oit.hasNext()) {
+            Node oi = (Node) oit.next();
+            if (mi.getId() < oi.getId())return -1;
+            else if (mi.getId() > oi.getId())return 1;
+          }
+          else return 1;
+        }
+        if (oit.hasNext())return -1;
+        else return 0;
+      }
+      else return 1;
+    }
+    catch (ParallelException e) {
+      e.printStackTrace();
+      return 0;  // this would be wrong...
+    }
+  }
+}

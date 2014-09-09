@@ -1,0 +1,4 @@
+package graph.packing;
+
+public interface BBNodeComparatorIntf {
+}

@@ -1,0 +1,22 @@
+package popt4jlib.GA;
+
+import parallel.*;
+import java.util.*;
+
+public class RecvIndTask implements TaskObject {
+  Vector _imms;
+  Vector _inds;
+
+  public RecvIndTask(Vector imm, Vector inds) {
+    _imms = imm;
+    _inds = inds;
+  }
+
+  public void run() {
+    if (_imms!=null && _imms.size()>0) {
+      _inds.addAll(_imms);
+      _imms.clear();
+    }
+  }
+
+}

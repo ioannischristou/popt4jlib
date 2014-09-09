@@ -1,0 +1,4 @@
+package popt4jlib.GradientDescent;
+
+public interface LocalOptimizerIntf {
+}

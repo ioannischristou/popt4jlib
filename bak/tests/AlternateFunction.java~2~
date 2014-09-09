@@ -1,0 +1,32 @@
+package tests;
+
+import popt4jlib.*;
+
+/**
+ *
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ *
+ * This class implements a Function() object that counts the number of times
+ * the values in the argument change sign. Thus, the optimal argument would
+ * be an argument such as [1 -1 1 -1 1 -1 ... 1]
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class AlternateFunction implements FunctionIntf {
+  public AlternateFunction() {
+  }
+
+  public double eval(Object arg) {
+    double[] x = (double[]) arg;
+    double res = 1;
+    int n = x.length;
+    for (int i=1; i<n; i++) {
+      if (x[i]*x[i-1] < 0) res += 1;
+    }
+    return 1.0/res;
+  }
+}
+

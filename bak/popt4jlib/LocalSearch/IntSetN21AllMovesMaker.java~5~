@@ -1,0 +1,80 @@
+package popt4jlib.LocalSearch;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+/**
+ * the class implements the notion of the N_2+1 neighborhood of a set of integers.
+ * In particular, it is the same as the IntSetN2AllMovesMaker plus it adds to
+ * each one of the previously created sets one more integer. It also creates new
+ * sets by adding one to the initial set (like the N1 neighborhood) but the
+ * selection is only from the set of filter results.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class IntSetN21AllMovesMaker  implements AllChromosomeMakerIntf {
+  /**
+   * public constructor.
+   */
+  public IntSetN21AllMovesMaker() {
+  }
+
+
+  /**
+   * implements the N_2+1 neighborhood for sets of integers.
+   * @param chromosome Object Set<Integer>
+   * @param params Hashtable must contain a key-value pair
+   * <"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter>
+   * The filter specifies the ints to be tried for addition to
+   * the set given an int to be removed from the set.
+   * @throws OptimizerException
+   * @return Vector Vector<Set<Integer> >
+   */
+  public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
+    if (chromosome==null) throw new OptimizerException("DLS.createAllChromosomes(): null chromosome");
+    try {
+      TreeSet result = new TreeSet();
+      Set x0 = (Set) chromosome;
+      IntSetNeighborhoodFilterIntf filter = (IntSetNeighborhoodFilterIntf)
+          params.get("dls.intsetneighborhoodfilter");
+      Iterator iter = x0.iterator();
+      while (iter.hasNext()) {
+        Integer id = (Integer) iter.next();
+        Vector tryids = filter.filter(id, x0, params);  // Vector<Integer>
+        if (tryids!=null) {
+          final int sz = tryids.size();
+          for (int i=0; i<sz; i++) {
+            IntSet xnew = new IntSet(x0);
+            xnew.remove(id);  // remove one
+            xnew.add(tryids.elementAt(i));  // add one
+            for (int j=i+1; j<sz; j++) {
+              xnew.add(tryids.elementAt(j));  // add another
+              result.add(xnew);
+              System.err.println("Added 2+1 move: (-"+id+",+"+tryids.elementAt(i)+",+"+tryids.elementAt(j)+")");  // itc: HERE rm asap
+            }
+          }
+          // also consider adding one of the neighbors at the initial set x0
+          for (int i=0; i<sz; i++) {
+            IntSet x1 = new IntSet(x0);
+            x1.add(tryids.elementAt(i));
+            result.add(x1);
+            System.err.println("Added +1 move: (+"+tryids.elementAt(i)+")");
+          }
+        }
+      }
+      // convert Set<IntSet> to Vector<IntSet>
+      Vector res = new Vector(result);
+      return res;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("IntSetN1AllMovesMaker.createAllChromosomes(): failed");
+    }
+  }
+}
+

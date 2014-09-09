@@ -1,0 +1,6 @@
+package popt4jlib.MSSC;
+
+public class KMeansPP {
+  public KMeansPP() {
+  }
+}

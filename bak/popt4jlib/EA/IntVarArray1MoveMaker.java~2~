@@ -1,0 +1,33 @@
+package popt4jlib.EA;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+public class IntVarArray1MoveMaker implements NewChromosomeMakerIntf {
+  public IntVarArray1MoveMaker() {
+  }
+
+  public Object createNewChromosome(Object chromosome, Hashtable params) throws OptimizerException {
+    int[] arg = (int[]) chromosome;  // chromosome is a var int[] array
+    int[] res = new int[arg.length];
+    double delta = 1;
+    Double dD = (Double) params.get("dea.movesigma");
+    if (dD!=null && dD.doubleValue()>0) delta = dD.doubleValue();
+    int maxv = ((Integer) params.get("dea.maxallelevalue")).intValue();
+    int minv = ((Integer) params.get("dea.minallelevalue")).intValue();
+    int tid = ((Integer) params.get("thread.id")).intValue();
+    for (int i=0; i<arg.length; i++) {
+      double rd = RndUtil.getInstance(tid).getRandom().nextGaussian();
+      // check for specific ó_i
+      Double si = (Double) params.get("dea.movesigma"+i);
+      double s = delta;
+      if (si!=null && si.doubleValue()>0) s = si.doubleValue();
+      res[i] = arg[i] + (int) Math.round(rd*s);
+      if (res[i]<minv) res[i]=minv;
+      else if (res[i]>maxv) res[i]=maxv;
+    }
+    return res;
+  }
+}
+

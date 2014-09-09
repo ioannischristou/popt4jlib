@@ -1,0 +1,54 @@
+package parallel;
+
+public class FDMCTest {
+  public FDMCTest() {
+  }
+
+  public static void main(String[] args) {
+    for (int i=0; i<10; i++) {
+      FDMCThread ti = new FDMCThread(i);
+      ti.start();
+      try {
+        Thread.sleep(10);
+      }
+      catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+  }
+}
+
+
+class FDMCThread extends Thread {
+  private int _i;
+  public FDMCThread(int i) {
+    super("T"+i);
+    _i = i;
+  }
+
+  public void run() {
+    try {
+      boolean is_writer = _i % 3 == 0;
+      if (is_writer) {
+        System.out.println("Thread-" + _i + " getting write access");
+        FairDMCoordinator.getInstance().getWriteAccess();
+        System.out.println("Thread-" + _i + " got write access");
+        Thread.sleep((long) (Math.random() * 1000));
+        FairDMCoordinator.getInstance().releaseWriteAccess();
+        System.out.println("Thread-" + _i + " released write access");
+      }
+      else {
+        System.out.println("Thread-" + _i + " getting read access");
+        FairDMCoordinator.getInstance().getReadAccess();
+        System.out.println("Thread-" + _i + " got read access");
+        Thread.sleep((long) (Math.random() * 500));
+        FairDMCoordinator.getInstance().releaseReadAccess();
+        System.out.println("Thread-" + _i + " released read access");
+      }
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+}
+

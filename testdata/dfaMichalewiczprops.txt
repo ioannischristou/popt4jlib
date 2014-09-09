@@ -1,0 +1,16 @@
+class,dfa.function,tests.MichalewiczFunction
+m,10.0
+chromosomelength,100
+maxallelevalue,3.141592653589793
+minallelevalue,0.0
+dfa.maxallelevalue,3.141592653589793
+dfa.minallelevalue,0.0
+dfa.numgens,5000
+dfa.numinitpop,50
+rndgen,7,1
+dfa.numthreads,1
+class,dfa.randomfireflymaker,popt4jlib.PS.DblArray1CMaker
+class,dfa.cupdater,popt4jlib.PS.FA.DblArray1StdChromosomeUpdater
+dummy_class,dfa.localoptimizer.dummy,popt4jlib.GradientDescent.ArmijoSteepestDescentST
+asd.maxiters,10000
+class,asd.gradient,tests.MichalewiczFunctionGrad

@@ -1,0 +1,33 @@
+package parallel.distributed;
+
+public class DBarrierSrv {
+  private static int _port = 7896;
+
+
+  /**
+   * invoke as <CODE>java -cp &ltclasspath&gt parallel.distributed.DBarrierSrv [port(7896]</CODE>
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    if (args.length>0) {
+      int port = Integer.parseInt(args[1]);
+      if (port > 1024) _port = port;
+      else {
+        usage();
+        System.exit(-1);
+      }
+    }
+    DMsgPassingCoordinatorLongLivedConnSrv coord = new DMsgPassingCoordinatorLongLivedConnSrv(_port);
+    try {
+      utils.Messenger.getInstance().msg("DBarrierSrv.main(): running DMsgPassingCoordinatorLongLivedConnSrv",0);
+      coord.run();
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  private static void usage() {
+    System.err.println("usage: java -cp <classpath> parallel.distributed.DBarrierSrv [barriername(DBarrier_7896)] [port(7896, must be > 1024)]");
+  }
+}

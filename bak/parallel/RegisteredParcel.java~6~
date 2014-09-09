@@ -1,0 +1,37 @@
+package parallel;
+
+/**
+ * This is an auxiliary helper class for the *MsgPassingCoordinator classes.
+ * It is not intended to be used outside this package, nor to form part of the
+ * API of this libary.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class RegisteredParcel {
+  private Integer _fromId;
+  private Integer _toId;
+  private Object _data;
+  private long _creationTime;
+  private boolean _isDelivered;
+
+
+  RegisteredParcel(Integer fromtid, Integer totid, Object data) {
+    _fromId = fromtid;
+    _toId = totid;
+    _data = data;
+    _isDelivered=false;  // not needed as that's the default value
+    _creationTime = System.currentTimeMillis();
+  }
+
+  Integer getFromId() { return _fromId; }
+  Integer getToId() { return _toId; }
+  Object getData() { return _data; }
+  void setData(Object data) { _data = data; }
+  boolean isDelivered() { return _isDelivered; }
+  void setDelivered() { _isDelivered=true; }
+  long getCreationTime() { return _creationTime; }
+}

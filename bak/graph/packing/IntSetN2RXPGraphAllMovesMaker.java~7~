@@ -1,0 +1,103 @@
+package graph.packing;
+
+import popt4jlib.LocalSearch.*;
+import graph.*;
+import utils.*;
+import parallel.*;
+import java.util.*;
+
+public class IntSetN2RXPGraphAllMovesMaker extends IntSetN2RXPAllMovesMaker {
+
+  public IntSetN2RXPGraphAllMovesMaker() {
+  }
+
+
+  /**
+   * hook method in the context of the Template Method Design Pattern.
+   * Sub-classes with more domain knowledge may override this method to modify
+   * the behavior of this move-maker.
+   * @param res Set TreeSet<IntSet>
+   * @param rmids Set IntSet
+   * @param tryids Vector Vector<Integer>
+   * @param maxcard int
+   * @param params Hashtable may contain a key-value pair
+   * <"dls.createsetsperlevellimit", Integer limit> to cut the search short.
+   * @return Set  TreeSet<IntSet>
+   */
+  protected Set createSets(Set res, Set rmids, Vector tryids, int maxcard, Hashtable params) {
+    System.err.println("createSets(): level="+maxcard+" res.size()="+res.size()+" rmids.size()="+rmids.size()+" tryids.size()="+tryids.size());  // itc: HERE rm asap
+    if (maxcard==0) return res;
+    Set res2 = new TreeSet();
+    // check if we need to cut-short the search for candidates
+    Integer limitI = (Integer) params.get("dls.createsetsperlevellimit");
+    Iterator iter = res.iterator();
+    while (iter.hasNext()) {
+      IntSet x = (IntSet) iter.next();
+      boolean augmented = false;
+      for (int i=0; i<tryids.size(); i++) {
+        Integer tid = (Integer) tryids.elementAt(i);
+        if (rmids.contains(tid)==false) {
+          if (limitI!=null && limitI.intValue()<=res2.size())
+            break;
+          if (x.contains(tid)==false && isOK2Add(tid, x, params)) {
+            IntSet x2 = new IntSet(x);
+            x2.add(tid);
+            res2.add(x2);
+            augmented = true;
+          }
+        }
+      }
+      if (!augmented) res2.add(x);
+    }
+    return createSets(res2, rmids, tryids, maxcard-1, params);
+  }
+
+
+  /**
+   * hook method in the context of the Template Method Design Pattern.
+   * Overrides this method to modify the behavior of the base move-maker.
+   * @param tid Integer
+   * @param x IntSet
+   * @param params Hashtable
+   * @return boolean
+   */
+  protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
+    try {
+      Graph g = (Graph) params.get("dls.graph");
+      Node n = g.getNode(tid.intValue());
+      Set nodes = new TreeSet();
+      Iterator xiter = x.iterator();
+      while (xiter.hasNext()) {
+        nodes.add(g.getNode(((Integer) xiter.next()).intValue()));
+      }
+      return isFree2Cover(n, nodes);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+  }
+
+
+  /**
+   * check if node nj can be set to one when the nodes in active are also set.
+   * @param nj Node
+   * @param active Set  // Set<Node>
+   * @return boolean // true iff nj can be added to active
+   * @throws ParallelException
+   */
+  private static boolean isFree2Cover(Node nj, Set active) throws ParallelException {
+    if (active==null) return true;
+    if (active.contains(nj)) return false;
+    Set activated = new HashSet(active);
+    Iterator it = active.iterator();
+    while (it.hasNext()) {
+      Node ni = (Node) it.next();
+      Set nnbors = ni.getNNbors();
+      activated.addAll(nnbors);
+    }
+    return !activated.contains(nj);
+  }
+
+}
+

@@ -1,0 +1,9 @@
+package parallel.distributed;
+
+import java.io.*;
+import parallel.*;
+
+public interface DMsgIntf extends Serializable {
+  public void execute(ObjectInputStream ois, ObjectOutputStream oos) throws ParallelException, IOException;
+}
+

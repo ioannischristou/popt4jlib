@@ -1,0 +1,33 @@
+package popt4jlib;
+
+import java.util.*;
+
+/**
+ * The class is a wrapper class for FunctionIntf objects, that keeps track of
+ * how many times a function has been evaluated.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class FunctionBase implements FunctionIntf {
+  private long _evalCount=0;
+  private FunctionIntf _f=null;
+
+  public FunctionBase(FunctionIntf f) {
+    _evalCount=0;
+    _f = f;
+  }
+
+  public double eval(Object arg, Hashtable params) {
+    incrCount();
+    return _f.eval(arg, params);
+  }
+
+  synchronized public long getEvalCount() { return _evalCount; }
+  synchronized private void incrCount() { ++_evalCount; }
+
+}
+

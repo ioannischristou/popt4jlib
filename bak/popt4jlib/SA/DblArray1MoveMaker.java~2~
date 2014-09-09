@@ -1,0 +1,23 @@
+package popt4jlib.SA;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+public class DblArray1MoveMaker implements NewChromosomeMakerIntf {
+  public DblArray1MoveMaker() {
+  }
+
+  public Object createNewChromosome(Object chromosome, Hashtable params) throws OptimizerException {
+    double[] arg = (double[]) chromosome;  // chromosome is a double[] array
+    double[] res = new double[arg.length];
+    double delta = ((Double) params.get("dsa.movedelta")).doubleValue();
+    int tid = ((Integer) params.get("thread.id")).intValue();
+    for (int i=0; i<arg.length; i++) {
+      double rd = RndUtil.getInstance(tid).getRandom().nextDouble();
+      res[i] = arg[i] + (2*rd-1)*delta;
+    }
+    return res;
+  }
+}
+

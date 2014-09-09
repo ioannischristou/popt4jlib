@@ -1,0 +1,6 @@
+package popt4jlib.DE;
+
+public class DblArray1VectorRndMaker {
+  public DblArray1VectorRndMaker() {
+  }
+}

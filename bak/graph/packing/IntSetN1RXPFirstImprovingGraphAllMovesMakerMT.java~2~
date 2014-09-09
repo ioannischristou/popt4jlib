@@ -1,0 +1,287 @@
+package graph.packing;
+
+import popt4jlib.*;
+import popt4jlib.LocalSearch.*;
+import graph.*;
+import utils.*;
+import parallel.*;
+import java.util.*;
+import java.io.Serializable;
+
+/**
+ * Multi-threaded version of the IntSetN1RXPFirstImprovingGraphAllMovesMaker
+ * class.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMakerIntf {
+  private IntSet _soln=null;
+
+  /**
+   * public constructor
+   */
+  public IntSetN1RXPFirstImprovingGraphAllMovesMakerMT() {
+    // no-op
+  }
+
+
+  /**
+   * implements the N_{-1+P} neighborhood for sets of integers.
+   * @param chromosome Object Set<Integer>
+   * @param params Hashtable must contain a key-value pair
+   * <"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter>
+   * It may also optionally contain the following pairs:
+   * <li> <"dls.intsetneighborhoodmaxnodestotry", Integer max_nodes> which if present
+   * will indicate the maximum number of nodes to try to remove from the current
+   * solution in the "1RXP" local search.
+   * <li> <"dls.numthreads", Integer num_threads> which if present denotes the
+   * number of threads that an a-synchronous batch-task executor will create and
+   * use to execute the generated tasks, default is 1.
+   * The filter must specify what ints to be tried for addition to the set given
+   * an int to be removed from the set.
+   * @throws OptimizerException
+   * @return Vector Vector<Set<Integer> >
+   */
+  public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
+    if (chromosome==null) throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): null chromosome");
+    synchronized (this) {
+      _soln=null;  // reset
+    }
+    boolean rlocked_graph = false;
+    Graph g = null;
+    FasterParallelAsynchBatchTaskExecutor executor = null;
+    try {
+      int numthreads = 1;
+      try {
+        Integer ntI = (Integer) params.get("dls.numthreads");
+        if (ntI!=null && ntI.intValue()>0) numthreads = ntI.intValue();
+      }
+      catch (ClassCastException e) {
+        e.printStackTrace();  // ignore
+      }
+      executor = new FasterParallelAsynchBatchTaskExecutor(numthreads);
+      g = (Graph) params.get("dls.graph");
+      g.getReadAccess();
+      rlocked_graph = true;
+      Set result = null;  // Set<IntSet>
+      Set x0 = (Set) chromosome;
+      //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): working w/ a soln of size="+x0.size());  // itc: HERE rm asap
+      IntSetNeighborhoodFilterIntf filter = (IntSetNeighborhoodFilterIntf)
+          params.get("dls.intsetneighborhoodfilter");
+      int max_nodes2try = Integer.MAX_VALUE;
+      Integer mn2tI = null;
+      try {
+        mn2tI = (Integer) params.get("dls.intsetneighborhoodmaxnodestotry");
+        if (mn2tI!=null) max_nodes2try = mn2tI.intValue();
+      }
+      catch (ClassCastException e) {
+        e.printStackTrace();  // ignore
+      }
+      Iterator iter = x0.iterator();
+      boolean cont=true;
+      int max_batch_size = 10;
+      int count = max_batch_size;
+      Vector tasks = new Vector();
+      while (iter.hasNext() && cont) {
+        if (--max_nodes2try==0) return null;  // done with the search
+        Integer id = (Integer) iter.next();
+        //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): working w/ id="+id);  // itc: HERE rm asap
+        Set rmids = new IntSet();
+        rmids.add(id);
+        Vector tryids = filter.filter(rmids, x0, params);  // Vector<Integer>
+        if (tryids!=null) {
+          IntSet xnew = new IntSet(x0);
+          xnew.removeAll(rmids);
+          if (!searchCompleted()) {
+            SetCreatorTaskObject scto = new SetCreatorTaskObject(xnew, id.intValue(), tryids, 2, params);
+            tasks.addElement(scto);
+            if (--count==0) {  // batch is full, submit
+              executor.executeBatch(tasks);
+              tasks = new Vector();
+            }
+          }
+          else {
+            result = new TreeSet();
+            result.add(_soln);
+            cont = false;
+          }
+        }
+      }
+      if (cont==true && tasks.size()>0) {  // some tasks remain
+        ConditionCounter cond = new ConditionCounter(tasks.size());
+        for (int i=0; i<tasks.size(); i++) {
+          SetCreatorTaskObject ti = (SetCreatorTaskObject) tasks.elementAt(i);
+          ti.setCondCounter(cond);  // add the counter to each task to be executed
+        }
+        executor.executeBatch(tasks);
+        // now wait until those tasks run
+        cond.await();
+        if (searchCompleted()) {
+          result = new TreeSet();
+          result.add(_soln);
+        }
+      }
+      // convert Set<IntSet> to Vector<IntSet>
+      Vector res = null;
+      if (result!=null) {
+        res = new Vector(result);
+        //System.err.println("IntSetN1RXPAllFirstImprovingGraphMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");  // itc: HERE rm asap
+      }
+      return res;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): failed");
+    }
+    finally {
+      if (rlocked_graph) {
+        try {
+          g.releaseReadAccess();
+        }
+        catch (ParallelException e) {  // can never get here
+          e.printStackTrace();
+          throw new OptimizerException("insanity: ParallelException should not have been thrown");
+        }
+      }
+      try {
+        executor.shutDown();
+      }
+      catch (ParallelException e) {  // can never get here
+        e.printStackTrace();
+        throw new OptimizerException("insanity: ParallelException should not have been thrown");
+      }
+    }
+  }
+
+
+  /**
+   * hook method in the context of the Template Method Design Pattern.
+   * Sub-classes with more domain knowledge may override this method to modify
+   * the behavior of this move-maker. This method implements a depth-first
+   * search on the space of neighbors to find the first improving solution
+   * which it returns immediately (the soln is a maximally-improving soln in the
+   * DF fashion)
+   * @param res Set IntSet
+   * @param rmid Integer
+   * @param tryids Vector Vector<Integer>
+   * @param maxcard int
+   * @param params Hashtable
+   * @return Set IntSet
+   */
+  protected Set createSet(Set res, int rmid, Vector tryids, int maxcard, Hashtable params) {
+    IntSet x = (IntSet) res;
+    for (int i=0; i<tryids.size(); i++) {
+      Integer tid = (Integer) tryids.elementAt(i);
+      if (tid.intValue()!=rmid) {
+        if (x.contains(tid)==false && isOK2Add(tid, x, params)) {
+          IntSet x2 = new IntSet(x);
+          x2.add(tid);
+          Vector tryids2 = new Vector(tryids);
+          tryids2.remove(i);
+          Set res3 = createSet(x2, rmid, tryids2, maxcard-1, params);
+          if (res3!=null) return res3;
+        }
+      }
+    }
+    if (maxcard<=0) return res;
+    else return null;
+  }
+
+
+  /**
+   * hook method in the context of the Template Method Design Pattern.
+   * Overrides this method to modify the behavior of the base move-maker.
+   * @param tid Integer
+   * @param x IntSet
+   * @param params Hashtable
+   * @return boolean
+   */
+  protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
+    try {
+      Graph g = (Graph) params.get("dls.graph");
+      Node n = g.getNode(tid.intValue());
+      Set nodes = new TreeSet();
+      Iterator xiter = x.iterator();
+      while (xiter.hasNext()) {
+        nodes.add(g.getNode(((Integer) xiter.next()).intValue()));
+      }
+      return isFree2Cover(n, nodes);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+  }
+
+
+  /**
+   * check if node nj can be set to one when the nodes in active are also set.
+   * @param nj Node
+   * @param active Set  // Set<Node>
+   * @return boolean // true iff nj can be added to active
+   * @throws ParallelException
+   */
+  private static boolean isFree2Cover(Node nj, Set active) throws ParallelException {
+    if (active==null) return true;
+    if (active.contains(nj)) return false;
+    Set activated = new HashSet(active);
+    Iterator it = active.iterator();
+    while (it.hasNext()) {
+      Node ni = (Node) it.next();
+      Set nnbors = ni.getNNbors();
+      activated.addAll(nnbors);
+    }
+    return !activated.contains(nj);
+  }
+
+
+  private synchronized boolean searchCompleted() {
+    return _soln!=null;
+  }
+
+
+  private synchronized void setSoln(IntSet x) {
+    if (_soln==null) _soln = x;
+  }
+
+
+  class SetCreatorTaskObject implements TaskObject {
+    public final static long serialVersionUID = 987654333315L;
+    private Set _x0;
+    private int _id;
+    private Vector _tryids;
+    private int _maxCard;
+    private Hashtable _params;
+    private boolean _isDone=false;
+    private ConditionCounter _cond = null;
+
+    SetCreatorTaskObject(IntSet x, int id, Vector tryids, int maxcard, Hashtable params) {
+      _x0 = x;
+      _id = id;
+      _tryids = tryids;
+      _maxCard = maxcard;
+      _params = params;
+    }
+
+    public synchronized void setDone() { _isDone = true; }
+    public synchronized void setCondCounter(ConditionCounter c) { _cond = c; }
+
+    public synchronized boolean isDone() { return _isDone; }
+    public Serializable run() {
+      Set res = createSet(_x0, _id, _tryids, _maxCard, _params);
+      if (res!=null) setSoln((IntSet) res);
+      setDone();
+      if (_cond!=null) _cond.increment();
+      return this;
+    }
+    public void copyFrom(TaskObject other) throws IllegalArgumentException {
+      throw new IllegalArgumentException("copyFrom(other): operation not supported");
+    }
+  }
+
+}
+

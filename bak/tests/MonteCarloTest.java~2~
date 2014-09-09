@@ -1,0 +1,27 @@
+package tests;
+
+import popt4jlib.*;
+import popt4jlib.MonteCarlo.*;
+import java.util.*;
+
+public class MonteCarloTest {
+  public MonteCarloTest() {
+  }
+
+  public static void main(String[] args) {
+    try {
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      FunctionIntf func = (FunctionIntf) params.get("mcs.function");
+      MCS opter = new MCS(params);
+      utils.PairObjDouble p = opter.minimize(func);
+      double[] arg = (double[]) p.getArg();
+      System.out.print("best soln found:[");
+      for (int i=0;i<arg.length;i++) System.out.print(arg[i]+" ");
+      System.out.println("] VAL="+p.getDouble());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

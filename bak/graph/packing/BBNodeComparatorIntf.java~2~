@@ -1,0 +1,5 @@
+package graph.packing;
+
+public interface BBNodeComparatorIntf {
+  public int compare(BBNode2 o1, BBNode2 o2);
+}

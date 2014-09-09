@@ -1,0 +1,74 @@
+package tests;
+
+import popt4jlib.*;
+import popt4jlib.EA.*;
+import popt4jlib.GradientDescent.*;
+import java.util.*;
+
+public class DEATest {
+  public DEATest() {
+  }
+
+  public static void main(String[] args) {
+    try {
+      long start_time = System.currentTimeMillis();
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      FunctionIntf func = (FunctionIntf) params.get("dea.function");
+      Integer maxfuncevalI = (Integer) params.get("function.maxevaluationtime");
+      FunctionIntf wrapper_func = null;
+      if (maxfuncevalI!=null && maxfuncevalI.intValue()>0)
+        wrapper_func = new LimitedTimeEvalFunction(func, maxfuncevalI.longValue());
+      else wrapper_func = new FunctionBase(func);
+      params.put("dea.function",wrapper_func);
+      DEA opter = new DEA(params);
+      /*
+      // check for an ObserverIntf
+      ObserverIntf obs = (ObserverIntf) params.get("dga.observerlocaloptimizer");
+      if (obs!=null) {
+        opter.registerObserver(obs);
+        ((LocalOptimizerIntf) obs).setParams(params);
+      }
+      */
+      utils.PairObjDouble p = opter.minimize(wrapper_func);
+      double[] arg = (double[]) p.getArg();
+      if (wrapper_func instanceof FunctionBase)
+        System.out.println("total function evaluations when DEA finishes="+((FunctionBase) wrapper_func).getEvalCount());
+      else {
+        LimitedTimeEvalFunction f = (LimitedTimeEvalFunction) wrapper_func;
+        System.out.println("total function evaluations when DEA finishes="+f.getEvalCount()+
+                           " total SUCCESSFUL function evaluations="+f.getSucEvalCount());
+      }
+      if (arg!=null) {
+        System.out.print("best soln found:[");
+        for (int i = 0; i < arg.length; i++) System.out.print(arg[i] + " ");
+        System.out.println("] VAL=" + p.getDouble());
+        // final local optimization
+        LocalOptimizerIntf lasdst = (LocalOptimizerIntf) params.get("dea.localoptimizer");
+        if (lasdst!=null) {
+          VectorIntf x0 = new popt4jlib.DblArray1Vector(arg);
+          params.put("gradientdescent.x0", x0);
+          lasdst.setParams(params);
+          utils.PairObjDouble p2 = lasdst.minimize(wrapper_func);
+          VectorIntf xf = (VectorIntf) p2.getArg();
+          System.out.print("Optimized (via LocalOptimizer) best soln found:[");
+          for (int i = 0; i < xf.getNumCoords(); i++)
+            System.out.print(xf.getCoord(i) + " ");
+          System.out.println("] VAL=" + p2.getDouble());
+        }
+      }  else System.err.println("DEA did not find any solution.");
+      if (wrapper_func instanceof FunctionBase)
+        System.out.println("total function evaluations="+((FunctionBase) wrapper_func).getEvalCount());
+      else {
+        LimitedTimeEvalFunction f = (LimitedTimeEvalFunction) wrapper_func;
+        System.out.println("total function evaluations="+f.getEvalCount()+
+                           " total SUCCESSFUL function evaluations="+f.getSucEvalCount());
+      }
+      long end_time = System.currentTimeMillis();
+      System.out.println("total time (msecs): "+(end_time-start_time));
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

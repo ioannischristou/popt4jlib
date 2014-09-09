@@ -1,0 +1,48 @@
+package tests;
+
+import popt4jlib.*;
+import popt4jlib.DE.*;
+import popt4jlib.GradientDescent.*;
+import java.util.*;
+
+public class DDETest {
+  public DDETest() {
+  }
+
+  public static void main(String[] args) {
+    try {
+      long start_time = System.currentTimeMillis();
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      FunctionIntf func = (FunctionIntf) params.get("dde.function");
+      FunctionBase wrapper_func = new FunctionBase(func);
+      params.put("dde.function",wrapper_func);
+      DDE opter = new DDE(params);
+      utils.PairObjDouble p = opter.minimize(wrapper_func);
+      VectorIntf arg = (VectorIntf) p.getArg();
+      System.out.print("best soln found:[");
+      for (int i=0;i<arg.getNumCoords();i++) System.out.print(arg.getCoord(i)+" ");
+      System.out.println("] VAL="+p.getDouble());
+      // final local optimization
+      LocalOptimizerIntf lasdst = (LocalOptimizerIntf) params.get("dde.localoptimizer");
+      if (lasdst!=null) {
+        VectorIntf x0 = arg.newCopy();
+        params.put("gradientdescent.x0", x0);
+        lasdst.setParams(params);
+        utils.PairObjDouble p2 = lasdst.minimize(wrapper_func);
+        VectorIntf xf = (VectorIntf) p2.getArg();
+        System.out.print(
+            "Optimized (via a GradientDescent local method) best soln found:[");
+        for (int i = 0; i < xf.getNumCoords(); i++) System.out.print(xf.
+            getCoord(i) + " ");
+        System.out.println("] VAL=" + p2.getDouble());
+      }
+      System.err.println("total function evaluations="+wrapper_func.getEvalCount());
+      long dur = System.currentTimeMillis()-start_time;
+      System.out.println("total time (msecs): "+dur);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

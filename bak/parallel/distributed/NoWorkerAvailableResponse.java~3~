@@ -1,0 +1,14 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.io.Serializable;
+
+public class NoWorkerAvailableResponse implements Serializable {
+  final public static long serialVersionUID = 98765433332L;
+  TaskObject[] _tasks;
+
+  public NoWorkerAvailableResponse(TaskObject[] tasks) {
+    _tasks = tasks;
+  }
+
+}

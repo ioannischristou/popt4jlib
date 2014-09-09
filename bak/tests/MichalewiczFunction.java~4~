@@ -1,0 +1,60 @@
+package tests;
+
+import popt4jlib.*;
+import java.util.*;
+
+/**
+ *
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ *
+ * This class implements the Michalewicz Function in n-dimensions
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class MichalewiczFunction implements FunctionIntf {
+  public MichalewiczFunction() {
+  }
+
+  public double eval(Object arg, Hashtable p) {
+    double m = ( (Double) p.get("m")).doubleValue();
+    if (arg instanceof VectorIntf) {
+      VectorIntf x = (VectorIntf) arg;
+      int n = x.getNumCoords();
+      double res = 0;
+      for (int i = 0; i < n; i++) {
+        double xi = x.getCoord(i);
+        res += Math.sin(xi)*Math.pow(Math.sin((i+1)*xi*xi/Math.PI), 2.0*m);
+      }
+      return -res;
+    } else {
+      double[] x = (double[]) arg;
+      int n = x.length;
+      double res = 0;
+      for (int i = 0; i < n; i++) {
+        double xi = x[i];
+        res += Math.sin(xi) *
+            Math.pow(Math.sin( (i + 1) * xi * xi / Math.PI), 2.0 * m);
+      }
+      return -res;
+    }
+  }
+
+
+  public static void main(String[] args) {
+    int n = args.length;
+    double[] x = new double[n-1];
+    double m = Double.parseDouble(args[0]);
+    Hashtable p = new Hashtable();
+    p.put("m",new Double(m));
+    for (int i=1; i<n; i++) {
+      x[i-1] = Double.parseDouble(args[i]);
+    }
+    MichalewiczFunction f = new MichalewiczFunction();
+    double res=f.eval(x,p);
+    System.out.println(res);
+  }
+}
+

@@ -1,0 +1,117 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.net.*;
+import java.io.*;
+
+
+public class DMsgPassingCoordinatorSrv {
+  private int _port = 7894;  // default port
+  private DynamicAsynchTaskExecutor _pool;
+
+  DMsgPassingCoordinatorSrv(int port, int maxthreads) {
+    if (port >= 1024)
+      _port = port;
+    try {
+      if (maxthreads<=1) maxthreads = 2;
+      _pool = new DynamicAsynchTaskExecutor(1, maxthreads);
+    }
+    catch (ParallelException e) {
+      e.printStackTrace();  // cannot get here
+    }
+  }
+
+
+  void run() throws IOException, ParallelException {
+    ServerSocket ss = new ServerSocket(_port);
+    while (true) {
+      utils.Messenger.getInstance().msg("DMsgPassingCoordinatorSrv: waiting for socket connection",0);
+      Socket s = ss.accept();
+      handle(s);
+    }
+  }
+
+
+  /**
+   * invoke as:
+   * <CODE>java -cp &ltclasspath&gt parallel.distributed.DMsgPassingCoordinatorSrv [port(7894)] [maxthreads(100)]</CODE>
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    int port = -1;
+    int maxthreads = 100;
+    DMsgPassingCoordinatorSrv srv=null;
+    if (args.length>0) {
+      port = Integer.parseInt(args[0]);
+      if (args.length>1)
+        maxthreads = Integer.parseInt(args[1]);
+    }
+    srv = new DMsgPassingCoordinatorSrv(port, maxthreads);
+    try {
+      srv.run();
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+
+
+  private void handle(Socket s) throws IOException, ParallelException {
+    DMPCTask t = new DMPCTask(s);
+    _pool.execute(t);
+  }
+
+
+  /**
+   * inner helper class
+   * <p>Title: popt4jlib</p>
+   * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+   * <p>Copyright: Copyright (c) 2011</p>
+   * <p>Company: </p>
+   * @author Ioannis T. Christou
+   * @version 1.0
+   */
+  class DMPCTask implements Runnable {
+    private Socket _s;
+    DMPCTask(Socket s) {
+      _s = s;
+    }
+
+    public void run() {
+      ObjectInputStream ois = null;
+      ObjectOutputStream oos = null;
+      try {
+        oos = new ObjectOutputStream(_s.getOutputStream());
+        oos.flush();
+        ois = new ObjectInputStream(_s.getInputStream());
+        DMsgIntf msg = (DMsgIntf) ois.readObject();  // read a msg (send or recv)
+        msg.execute(ois, oos);
+      }
+      catch (IOException e) {
+        e.printStackTrace();
+      }
+      catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();
+      }
+      finally {
+        try {
+          if (oos != null) {
+            oos.flush();
+            oos.close();
+          }
+          if (ois != null) ois.close();
+          _s.close();
+        }
+        catch (IOException e) {
+          e.printStackTrace();  // shouldn't get here
+        }
+      }
+    }
+  }
+
+}
+

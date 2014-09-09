@@ -1,0 +1,97 @@
+package parallel;
+
+import java.util.*;
+
+
+/**
+ * A class implementing the <atomic> critical section protocol in Java.
+ * Users of this class wishing to ensure that certain pieces of code execute
+ * atomically, must enclose the critical section in the calls
+ *
+ * atomic.start(i)
+ * <critical section code>
+ * atomic.end(i)
+ *
+ * However, the class semantics are such so that it is possible for another
+ * thread to release the lock that another thread has acquired. If this
+ * possibility is unacceptable, then use the class Semaphore can be used
+ * instead, which ensures that no release() call can occur if the calling
+ * thread does not have a permit.
+ *
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class atomic {
+
+  private static Hashtable _h = new Hashtable();  // map<Integer i, A a>
+
+  /**
+   * get the lock for critical section i.
+   * @param i long
+   */
+  public static void start(long i) {
+    A ai = getA(i);
+    ai.getLock();
+  }
+
+  /**
+   * release the lock of critical section i
+   * @param i long
+   */
+  public static void end(long i) {
+    A ai = getA(i);
+    ai.releaseLock();
+  }
+
+
+  private static synchronized A getA(long i) {
+    Long ii = new Long(i);
+    A a = (A) _h.get(ii);
+    if (a==null) {
+      a = new A();
+      _h.put(ii, a);
+    }
+    return a;
+  }
+}
+
+
+class A {
+  private int _i=0;
+  private int _waiting=0;  // used to give priority to waiting threads
+
+  A() { }
+  synchronized void getLock() {
+    if (_i==0 && _waiting>0) {  // don't steal the lock
+      ++_waiting;
+      try {
+        wait();
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // recommended behavior
+      }
+      --_waiting;
+    }
+    while (_i!=0) {
+      ++_waiting;
+        try {
+          wait();
+        }
+        catch (InterruptedException e) {
+          Thread.currentThread().interrupt();  // recommended behavior
+        }
+        --_waiting;
+      }
+    _i=1;
+  }
+  synchronized void releaseLock() {
+    _i=0;
+    --_waiting;
+    notifyAll();
+  }
+}
+

@@ -1,0 +1,93 @@
+package parallel.distributed;
+
+import java.io.*;
+
+/**
+ * test for the DMsgPassingCoordinator[Clt/Srv] classes.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DMsgPassingTest {
+
+  private DMsgPassingTest() {
+  }
+
+
+  /**
+   * invoke as
+   * <CODE>java -cp &ltclasspath&gt parallel.distributed.DMsgPassingTest &ltstartid&gt &ltendid&gt [delay(-1)]</CODE>
+   * The test is set up so that the
+   * <CODE>parallel.distributed.DMsgPassingCoordinatorSrv</CODE> must be up and
+   * running at the default (host=localhost,port=7894) combination, and there
+   * must be exactly two processes, one started with (0,9) args and the other
+   * with (10,19) aguments.
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      int startid = Integer.parseInt(args[0]);
+      int endid = Integer.parseInt(args[1]);
+      long delay = -1;
+      if (args.length>=3) delay = Long.parseLong(args[2]);
+      DMsgPassingCoordinatorClt coordclt = new DMsgPassingCoordinatorClt();  // use localhost as server
+      for (int i = startid; i <= endid; i++) {
+        DMPThread ti = new DMPThread(i, coordclt);
+        if (delay>0) Thread.sleep(delay);  // enter a delay
+        ti.start();
+      }
+      if (startid==0) {
+        System.out.println("Thread--1(main) will now send data to TId=0");  // itc: HERE rm asap
+        coordclt.sendData( -1, 0, new SerObject()); // bootstrap the recv->send cycle
+        System.out.println("Thread--1(main) sent data to TId=0");
+        System.out.flush();
+      }
+    }
+    catch (Exception e) { e.printStackTrace(); }
+  }
+}
+
+
+class DMPThread extends Thread {
+  private DMsgPassingCoordinatorClt _coordclt;
+  private int _id;
+
+
+  public DMPThread(int i, DMsgPassingCoordinatorClt coord) {
+    _id = i;
+    _coordclt = coord;
+  }
+
+
+  public void run() {
+    // DMsgPassingCoordinatorClt coordclt = null;
+    try {
+      // coordclt = new DMsgPassingCoordinatorClt(); // use localhost as server
+      int sendTo = _id + 1;
+      if (sendTo >= 20) sendTo = 0; // there will be two JVMs running DMsgPassingTest
+      // the first will start with args 0 9 and the second will start with args
+      // 10 19
+      for (int i = 0; i < 100; i++) {
+        System.out.println("Thread-" + _id + " doing iter " + i +
+                           " waiting to recv any data");
+        _coordclt.recvData(_id);
+        System.out.println("Thread-" + _id + " doing iter " + i +
+                           " sending data to TId=" + sendTo);
+        _coordclt.sendData(_id, sendTo, new SerObject());
+      }
+      if (_id==0) _coordclt.recvData(_id);  // consume the last datum sent
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+}
+
+
+class SerObject implements Serializable {
+  public static final long serialVersionUID = 987654333330L;
+}
+

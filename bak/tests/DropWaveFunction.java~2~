@@ -1,0 +1,50 @@
+package tests;
+
+import popt4jlib.*;
+import java.util.*;
+
+/**
+ *
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ *
+ * This class implements the DropWave Function in n-dimensions
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DropWaveFunction implements FunctionIntf {
+  public DropWaveFunction() {
+  }
+
+  public double eval(Object arg, Hashtable p) {
+    if (arg instanceof VectorIntf) {
+      VectorIntf x = (VectorIntf) arg;
+      final int n = x.getNumCoords();
+      double sqs = 0.0;
+      for (int i=0; i<n; i++) sqs += x.getCoord(i)*x.getCoord(i);
+      double res = (1+Math.cos(Math.sqrt(sqs)))/(2+sqs/2.0);
+      return res;
+    } else {
+      double[] x = (double[]) arg;
+      int n = x.length;
+      double sqs = 0.0;
+      for (int i=0; i<n; i++) sqs += x[i]*x[i];
+      double res = (1+Math.cos(Math.sqrt(sqs)))/(2+sqs/2.0);
+      return res;
+    }
+  }
+
+  public static void main(String[] args) {
+    int n = args.length;
+    double[] x = new double[n];
+    for (int i=0; i<n; i++) {
+      x[i] = Double.parseDouble(args[i]);
+    }
+    DropWaveFunction f = new DropWaveFunction();
+    double res=f.eval(x,null);
+    System.out.println(res);
+  }
+}
+

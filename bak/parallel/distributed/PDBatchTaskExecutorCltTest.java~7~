@@ -1,0 +1,137 @@
+package parallel.distributed;
+
+import parallel.TaskObject;
+import tests.TridNonlinearFunction;
+import utils.RndUtil;
+import java.io.Serializable;
+
+public class PDBatchTaskExecutorCltTest {
+  public PDBatchTaskExecutorCltTest() {
+  }
+
+
+  public void run() {
+    long start = System.currentTimeMillis();
+    final int numdims = 10;
+    PDBatchTaskExecutorClt client1 = new PDBatchTaskExecutorClt();
+    PDBatchTaskExecutorClt client2 = new PDBatchTaskExecutorClt();
+    // client-1 tasks
+    TNLEvalTask[] tasks1 = new TNLEvalTask[1000];
+    for (int i=0; i<tasks1.length; i++) {
+      double[] x = getRandomArray(numdims);
+      tasks1[i] = new TNLEvalTask(x);
+    }
+    // client-2 tasks
+    TNLEvalTask[] tasks2 = new TNLEvalTask[1000];
+    for (int i=0; i<tasks2.length; i++) {
+      double[] x = getRandomArray(numdims);
+      tasks2[i] = new TNLEvalTask(x);
+    }
+    PDBTECTThread t1 = new PDBTECTThread(client1, tasks1);
+    t1.start();
+    PDBTECTThread t2 = new PDBTECTThread(client2, tasks2);
+    t2.start();
+    try {
+      t1.join();
+      t2.join();
+    }
+    catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    // now find best number
+    double best = Double.MAX_VALUE;
+    if (t1._results!=null) {
+      System.err.println("searching through t1 results...");
+      for (int i=0; i<t1._results.length; i++) {
+        Double y = (Double) t1._results[i];
+        if (y!=null && y.doubleValue()<best)
+          best = y.doubleValue();
+      }
+      System.err.println("t1 best="+best);
+    }
+    if (t2._results!=null) {
+      System.err.println("searching through t2 results...");
+      for (int i=0; i<t2._results.length; i++) {
+        Double y = (Double) t2._results[i];
+        if (y!=null && y.doubleValue()<best)
+          best = y.doubleValue();
+      }
+    }
+    long dur = System.currentTimeMillis()-start;
+    System.out.println("Overall best="+best+" (duration="+dur+" msecs)");
+  }
+
+
+  public static void main(String[] args) {
+    PDBatchTaskExecutorCltTest test = new PDBatchTaskExecutorCltTest();
+    test.run();
+  }
+
+
+  private static double[] getRandomArray(int dims) {
+    double[] x = new double[dims];
+    for (int i=0; i<x.length; i++) {
+      x[i] = RndUtil.getInstance().getRandom().nextDouble();
+    }
+    return x;
+  }
+
+
+  // inner class
+  class PDBTECTThread extends Thread {
+    PDBatchTaskExecutorClt _client;
+    TNLEvalTask[] _tasks;
+    Object[] _results;  // must be Serializable
+    public PDBTECTThread(PDBatchTaskExecutorClt client, TNLEvalTask[] tasks) {
+      _client = client;
+      _tasks = tasks;
+    }
+    public void run() {
+      try {
+        System.out.println("CltTest: submitting tasks");
+        _results = _client.submitWork(_tasks);
+        System.out.println("CltTest: got results, exiting.");
+      }
+      catch (Exception e) {
+        e.printStackTrace();
+        System.err.println("PDBTECTThread.run(): exits due to exception");
+      }
+    }
+  }
+
+}
+
+class TNLEvalTask implements TaskObject {
+  public static final long serialVersionUID=98765433339L;
+  private double[] _x;
+  private boolean _isDone=false;
+
+  public TNLEvalTask(double[] x) throws IllegalArgumentException {
+    if (x==null || x.length==0)
+      throw new IllegalArgumentException("null array passed in");
+    _x = x;
+  }
+
+  public Serializable run() {
+    TridNonlinearFunction f = new TridNonlinearFunction();
+    double y = f.eval(_x, null);
+    _isDone = true;
+    return new Double(y);
+  }
+
+
+  public boolean isDone() {
+    return _isDone;
+  }
+
+
+  public void copyFrom(TaskObject obj) throws IllegalArgumentException {
+    if (obj instanceof TNLEvalTask == false)
+      throw new IllegalArgumentException("obj not a TNLEvalTask");
+    TNLEvalTask t = (TNLEvalTask) obj;
+    _x = new double[t._x.length];
+    for (int i=0; i<_x.length; i++) _x[i] = t._x[i];
+    _isDone = t._isDone;
+  }
+}
+

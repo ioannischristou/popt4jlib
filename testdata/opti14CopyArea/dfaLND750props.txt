@@ -1,0 +1,12 @@
+class,dfa.function,tests.LND7Function
+chromosomelength,50
+maxallelevalue,100.0
+minallelevalue,-100.0
+dfa.maxallelevalue,100.0
+dfa.minallelevalue,-100.0
+dfa.numgens,5000
+dfa.numinitpop,50
+rndgen,7,1
+dfa.numthreads,1
+class,dfa.randomfireflymaker,popt4jlib.PS.DblArray1CMaker
+class,dfa.cupdater,popt4jlib.PS.FA.DblArray1StdChromosomeUpdater

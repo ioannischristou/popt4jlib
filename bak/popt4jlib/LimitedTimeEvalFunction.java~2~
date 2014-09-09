@@ -1,0 +1,34 @@
+package popt4jlib;
+
+import parallel.*;
+import java.util.*;
+
+/**
+ * The class is a wrapper class for FunctionIntf objects, that forces the
+ * function to execute in a different thread than the calling thread, allowing
+ * only up to a certain amount of time for execution.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class LimitedTimeEvalFunction implements FunctionIntf {
+  private LimitedTimeTaskExecutor _executor=null;
+  private FunctionIntf _f=null;
+
+
+  public LimitedTimeEvalFunction(FunctionIntf f, long millis2wait) {
+    _executor = new LimitedTimeTaskExecutor(millis2wait);
+    _f = f;
+  }
+
+
+  public double eval(Object arg, Hashtable params) {
+    FunctionEvaluationTask t = new FunctionEvaluationTask(_f, arg, params);
+    _executor.execute(t);
+    return t.getObjValue();
+  }
+}
+

@@ -1,0 +1,10 @@
+class,prcg.function,tests.MichalewiczFunction
+m,10.0
+prcg.numdimensions,100
+prcg.functionargmaxval,3.141592653589793
+prcg.functionargminval,0.0
+rndgen,7,4
+prcg.numthreads,4
+prcg.numtries,100
+prcg.maxiters,10000
+class,prcg.gradient,tests.MichalewiczFunctionGrad

@@ -1,0 +1,42 @@
+package popt4jlib.SA;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+public class IntVarArray1CMaker implements RandomChromosomeMakerIntf {
+  public IntVarArray1CMaker() {
+  }
+
+
+  public Object createRandomChromosome(Hashtable params) throws OptimizerException {
+    try {
+      final int nmax = ( (Integer) params.get("dsa.maxchromosomelength")).intValue();
+      final int maxalleleval=((Integer) params.get("dsa.maxallelevalue")).intValue();
+      final int minalleleval=((Integer) params.get("dsa.minallelevalue")).intValue();
+      final int id = ((Integer) params.get("thread.id")).intValue();
+      final int n = 1+RndUtil.getInstance(id).getRandom().nextInt(nmax);
+      int[] arr = new int[n];
+      for (int i=0; i<n; i++) {
+        // ensure bounds, if any
+        int maxargvali = maxalleleval;
+        Integer MaviI = (Integer) params.get("dsa.maxallelevalue"+i);
+        if (MaviI!=null && MaviI.intValue()<maxalleleval)
+          maxargvali = MaviI.intValue();
+        int minargvali = minalleleval;
+        Integer maviD = (Integer) params.get("dsa.minallelevalue"+i);
+        if (maviD!=null && maviD.intValue()>minalleleval)
+          minargvali = maviD.intValue();
+
+        arr[i] = minargvali +
+            RndUtil.getInstance(id).getRandom().nextInt(maxargvali-minargvali+1);
+      }
+      return arr;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("createRandomChromosome: failed");
+    }
+  }
+}
+

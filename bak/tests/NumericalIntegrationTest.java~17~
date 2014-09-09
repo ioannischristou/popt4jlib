@@ -1,0 +1,66 @@
+package tests;
+
+import popt4jlib.*;
+import analysis.*;
+import java.util.*;
+
+/**
+ * test-driver for the numerical integration classes.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class NumericalIntegrationTest {
+
+  /**
+   * public constructor
+   */
+  public NumericalIntegrationTest() {
+  }
+
+
+  /**
+   * invoke without arguments. Computes the integral of the Ackley function
+   * with respect to the first variable from 0 up to 1000.
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    //double a = Double.parseDouble(args[0]);
+    //double b = Double.parseDouble(args[1]);
+    double a = 0;
+    double b2 = 100;
+    double b=1;
+    while (b<=b2) {
+      int ivi = 0;
+      VectorIntf x = new DblArray1Vector(new double[2]);
+      x.setCoord(0, b);
+      Hashtable params = new Hashtable();
+      params.put("integralapproximator.a", new Double(a));
+      params.put("integralapproximator.integrandvarindex", new Integer(0));
+      Hashtable p = new Hashtable();
+      p.put("integralapproximatormt.maxnumthreads", new Integer(10));
+      IntegralApproximatorMT integrator = new IntegralApproximatorMT(new MyFunction2(), p);
+      double val = integrator.eval(x, params);
+      System.out.println("integral from a="+a+"to b="+b+" = " + val);
+      System.err.println("total num simpson() calls=" +
+                         integrator.getTotalNumCalls());
+      b+=1;
+    }
+  }
+}
+
+class MyFunction2 implements FunctionIntf {
+  public MyFunction2() {
+  }
+  public double eval(Object x, Hashtable p) throws IllegalArgumentException {
+    double[] t;
+    if (x==null) throw new IllegalArgumentException("null arg");
+    else if (x instanceof VectorIntf) t = ((VectorIntf) x).getDblArray1();
+    else if (x instanceof double[]) t = (double[]) x;
+    else throw new IllegalArgumentException("arg cannot be converted to double[]");
+    return t[0]*t[0]*Math.exp(-t[0]*t[0]/2)/Math.sqrt(2.0*Math.PI);
+  }
+}

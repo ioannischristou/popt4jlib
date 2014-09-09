@@ -1,0 +1,28 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head><!--
+  Copyright (c) 2011 
+  All Rights Reserved.
+--></head>
+
+<body bgcolor="white">Package implements algorithms for Minimum-Sum-of-Square(-Errors)-Clustering,
+a well-defined optimization problem.
+The <CODE>ClustererIntf</CODE> interface declares the methods that every MSSC
+clusterer should implement. The class <CODE>GMeansMTClusterer</CODE> is a 
+thread-safe multi-threaded algorithm implementing the (hard-version) K-Means
+algorithm for MSSC clustering, without the possibility of multiple restarts.
+
+<h2>Package Specification</h2>
+
+<ul>
+  <li><a href="">hyperlink</a>
+</ul>
+
+<h2>Related Documentation</h2>
+
+<ul>
+  <li><a href="">hyperlink</a>
+</ul>
+
+<!-- Put @see and @since tags here. --></body>
+</html>

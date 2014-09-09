@@ -1,0 +1,8 @@
+package popt4jlib;
+
+import java.util.*;
+
+public interface NewChromosomeMakerIntf {
+  public Object createNewChromosome(Object chromosome, Hashtable params) throws OptimizerException;
+}
+

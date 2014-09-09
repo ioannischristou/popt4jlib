@@ -1,0 +1,274 @@
+package popt4jlib.GradientDescent;
+
+import java.util.*;
+import utils.*;
+import parallel.*;
+import popt4jlib.*;
+
+/**
+ * Single-Threaded version of the FletcherConjugateGradient class that
+ * implements a single try, single threaded local optimization from a single
+ * initial point to a local stationary point of the function to be optimized.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class FletcherConjugateGradientST implements LocalOptimizerIntf, ObserverIntf {
+  Hashtable _params;
+  FunctionIntf _f;
+
+  public FletcherConjugateGradientST() {
+  }
+
+  public FletcherConjugateGradientST(Hashtable params) {
+    try {
+      setParams(params);
+    }
+    catch (Exception e) {
+      // no-op: cannot reach this point
+    }
+  }
+
+
+  /**
+   * return a copy of the parameters. Modifications to the returned object
+   * do not affect the data member.
+   * @return Hashtable
+   */
+  public synchronized Hashtable getParams() {
+    return new Hashtable(_params);
+  }
+
+
+  public LocalOptimizerIntf newInstance() {
+    return new FletcherConjugateGradientST();
+  }
+
+
+  /**
+   * the optimization params are set to p
+   * @param p Hashtable
+   * @throws OptimizerException
+   */
+  public synchronized void setParams(Hashtable p) throws OptimizerException {
+    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    _params = null;
+    _params = new Hashtable(p);  // own the params
+  }
+
+
+  public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
+    try {
+      synchronized (this) {
+        if (_f != null)throw new OptimizerException(
+            "FCGST.minimize(): another " +
+            "thread is concurrently executing the method on the same object");
+        _f = f;
+      }
+      PairObjDouble pr = min(f, _params);
+      return pr;
+    }
+    finally {
+      _f = null;
+    }
+  }
+
+
+  // ObserverIntf methods implementation
+  /**
+   * when a subject's thread calls the method notifyChange, in response, this
+   * object will add the best solution found by the subject, in the _observers'
+   * solutions map, to be later picked up by the first DGAThread spawned by this
+   * DGA object.
+   * @param subject SubjectIntf
+   * @throws OptimizerException
+   */
+  public void notifyChange(SubjectIntf subject) throws OptimizerException {
+    try {
+      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
+      Object arg = subject.getIncumbent();
+      FunctionIntf f = subject.getFunction();
+      VectorIntf x=null;
+      if (arg instanceof double[]) x = new DblArray1Vector((double[]) arg);
+      else if (arg instanceof VectorIntf) x = (DblArray1Vector) arg;
+      else throw new OptimizerException("OFCGST.notifyChange(): don't know how to convert argument into VectorIntf object");
+      final int len = x.getNumCoords();
+      Hashtable params = subject.getParams();
+      params.put("gradientdescent.x0",x);  // add the initial point
+      params.put("fcg.maxiters", new Integer(100));  // used to be 1000
+      int mbiters = len*10;  // used to be 100
+      int msiters = len*10;  // used to be 100
+      params.put("fcg.maxbracketingiters",new Integer(mbiters));
+      params.put("fcg.maxsectioningiters",new Integer(msiters));
+      setParams(params);
+      PairObjDouble p = minimize(f);
+      if (p!=null) {
+        VectorIntf argmin = (VectorIntf) p.getArg();
+        if (arg instanceof DblArray1Vector) subject.addIncumbent(this, argmin);
+        else subject.addIncumbent(this, argmin.getDblArray1());
+      }
+    }
+    catch (ParallelException e) {
+      e.printStackTrace();
+    }
+    finally {
+      DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
+    }
+  }
+
+
+  private PairObjDouble min(FunctionIntf f, Hashtable p) throws OptimizerException {
+    VecFunctionIntf grad = (VecFunctionIntf) p.get("fcg.gradient");
+    if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
+    final VectorIntf x0 = p.get("fcg.x0") == null ?
+                          (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
+                          (VectorIntf) p.get("fcg.x0");
+    if (x0==null) throw new OptimizerException("no fcg.x0"+
+                                               " initial point in _params passed");
+    VectorIntf x = x0.newCopy();  // don't modify the initial soln
+    final int n = x.getNumCoords();
+    double gtol = 1e-8;
+    try {
+      Double gtolD = (Double) p.get("fcg.gtol");
+      if (gtolD!=null && gtolD.doubleValue()>0) gtol = gtolD.doubleValue();
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();  // no-op
+    }
+    double h=0;
+    double rho = 0.1;
+    try {
+      Double rD = (Double) p.get("fcg.rho");
+      if (rD != null && rD.doubleValue() > 0 && rD.doubleValue() < 1)
+        rho = rD.doubleValue();
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();  // no-op
+    }
+    double fx = Double.NaN;
+    int maxiters = Integer.MAX_VALUE;
+    try {
+      Integer miI = (Integer) p.get("fcg.maxiters");
+      if (miI != null && miI.intValue() > 0)
+        maxiters = miI.intValue();
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();  // no-op
+    }
+    double sigma = 0.9;
+    try {
+      Double sigmaD = (Double) p.get("fcg.sigma");
+      if (sigmaD != null && sigmaD.doubleValue() > rho &&
+          sigmaD.doubleValue() < 1)
+        sigma = sigmaD.doubleValue();
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();  // no-op
+    }
+    double t1 = 9.0;
+    try {
+      Double t1D = (Double) p.get("fcg.t1");
+      if (t1D != null && t1D.doubleValue() > 1) t1 = t1D.doubleValue();
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();  // no-op
+    }
+    double t2 = 0.1;
+    try {
+      Double t2D = (Double) p.get("fcg.t2");
+      if (t2D != null && t2D.doubleValue() <= 0.5) t2 = t2D.doubleValue();
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();  // no-op
+    }
+    double t3 = 0.5;
+    try {
+      Double t3D = (Double) p.get("fcg.t3");
+      if (t3D != null && t3D.doubleValue() <= 0.5) t3 = t3D.doubleValue();
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();  // no-op
+    }
+    Double fbarD=null;
+    try {
+      fbarD = (Double) p.get("fcg.fbar");
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();  // no-op
+    }
+    Double red_rateD=null;
+    try {
+      red_rateD = (Double) p.get("fcg.redrate");
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();  // no-op
+    }
+
+    // main loop
+    boolean found=false;
+    double b = 0.0;
+    VectorIntf s = new DblArray1Vector(new double[n]);
+    for (int iter=0; iter<maxiters; iter++) {
+      VectorIntf g = grad.eval(x, p);
+      fx = f.eval(x, p);
+      Messenger.getInstance().msg("FCGST.min(): In iteration "+iter+", prevh="+h+", fx="+fx,1);
+      final double norminfg = VecUtil.normInfinity(g);
+      final double normg = VecUtil.norm(g,2);
+      if (norminfg <= gtol) {
+        Messenger.getInstance().msg("found sol w/ value="+fx+" normg="+norminfg+" in "+iter+" iterations.",0);
+        found = true;
+        break;
+      }
+      if (iter % n ==0) {
+        for (int i=0; i<n; i++) {
+          s.setCoord(i, -g.getCoord(i)/normg);  // reset search direction
+        }
+      }
+      else {
+        for (int i=0; i<n; i++)
+          s.setCoord(i,s.getCoord(i)*b-g.getCoord(i));  // s update
+        double norms = VecUtil.norm2(s);
+        for (int i=0; i<n; i++)
+          s.setCoord(i, s.getCoord(i)/norms);  // normalize search direction
+      }
+      // Al-Baali-Fletcher Bracketing-Sectioning Algorithm implementation
+      // determine step-size h
+      double sTg = VecUtil.innerProduct(s,g);
+      if (sTg>=0) {  // reset search direction
+        for (int i=0; i<n; i++) s.setCoord(i, -g.getCoord(i)/normg);
+        sTg = -normg;
+      }
+      // init. guess on acceptable lower bound along f(h)
+      double red_rate = 2.0;
+      if (red_rateD!=null && red_rateD.doubleValue()>1.0)
+        red_rate = red_rateD.doubleValue();
+      double fbar = fx > 0 ? fx/red_rate :
+                            (fx==0.0 ? -1 : red_rate*fx);
+      if (fbarD!=null) fbar = fbarD.doubleValue();
+      h = FCGThread.findStepSize(f, grad, x, fx, s, sTg, fbar, rho, sigma, t1, t2, t3, p);
+      if (h<=0) {
+        Messenger.getInstance().msg("FCG will stop at x=" + x +
+                                    " after "+iter+" iterations"+
+                                    " as it could not find a valid h", 0);
+        return new PairObjDouble(x, fx);
+      }
+      // set new x
+      for (int i=0; i<n; i++) x.setCoord(i, x.getCoord(i) + h*s.getCoord(i));
+      // update b according to Fletcher-Reeves formula
+      VectorIntf gnew = grad.eval(x, p);
+      b = VecUtil.innerProduct(gnew,gnew)/(normg*normg);
+    }
+    // end main loop
+
+    if (found) return new PairObjDouble(x, fx);
+    else throw new OptimizerException("Thread did not find a solution"+
+                                      " satisfying tolerance criteria from "+
+                                      "the given initial point x0="+x0);
+
+  }
+
+}
+

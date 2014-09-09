@@ -1,0 +1,7 @@
+package popt4jlib;
+
+import java.util.*;
+
+public interface RandomArgMakerIntf {
+  public Object createRandomArgument(Hashtable params) throws OptimizerException;
+}

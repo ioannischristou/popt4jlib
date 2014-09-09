@@ -1,0 +1,7 @@
+package popt4jlib;
+
+import java.util.*;
+
+interface Chromosome2ArgMakerIntf {
+  public Object getArg(Object chromosome, Hashtable params) throws OptimizerException;  // Chromosome->FunctionArgument Map
+}

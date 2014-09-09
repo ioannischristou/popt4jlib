@@ -1,0 +1,547 @@
+package popt4jlib.EA;
+
+import utils.*;
+import popt4jlib.*;
+import java.util.*;
+
+/**
+ * A class implementing the Evolutionary Algorithm paradigm for function
+ * optimization. The implementation is a Distributed Evolutionary Algorithm by
+ * which a number of threads are spawned to compute at each iteration a new
+ * solution. The best of all solutions found becomes the starting point for
+ * each thread in the next iteration.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DEA implements OptimizerIntf {
+  private static int _nextId=0;
+  private int _id;
+  private Hashtable _params=null;
+  private boolean _setParamsFromSameThreadOnly=false;
+  private Thread _originatingThread=null;
+  private Chromosome2ArgMakerIntf _c2amaker=null;
+  double _incValue=Double.MAX_VALUE;
+  Object _inc=null;  // incumbent chromosome
+  DEAIndividual _schedInc=null;  // incumbent chromosome for a given schedule temp.
+  double _schedVal=Double.MAX_VALUE;
+  int _schedCnt=0;
+  FunctionIntf _f=null;
+
+  private DEAThread[] _threads=null;
+
+
+  /**
+   * public constructor of a DEA OptimizerIntf. Assigns unique id among all DEA
+   * objects.
+   */
+  public DEA() {
+    _id = incrID();
+  }
+
+
+  /**
+   * public constructor of a DEA OptimizerIntf object. Assigns unique id among
+   * all DEA objects, and sets the appropriate parameters for the optimization
+   * process via the setParams(params) process. The parameters are discussed in
+   * the javadoc for the minimize(f) method.
+   * @param params Hashtable
+   */
+  public DEA(Hashtable params) {
+    this();
+    try {
+      setParams(params);
+    }
+    catch (Exception e) {
+      // no-op: cannot reach this point
+    }
+  }
+
+
+  /**
+   * Constructor of a DEA object, that assigns a unique id plus the parameters
+   * passed into the argument. Also, it prevents other threads from modifying
+   * the parameters passed into this object if the second argument is true.
+   * @param params Hashtable
+   * @param setParamsOnlyFromSameThread boolean
+   */
+  public DEA(Hashtable params, boolean setParamsOnlyFromSameThread) {
+    this();
+    try {
+      setParams(params);
+    }
+    catch (Exception e) {
+      // no-op: cannot reach this point
+    }
+    _setParamsFromSameThreadOnly = setParamsOnlyFromSameThread;
+    if (setParamsOnlyFromSameThread) _originatingThread = Thread.currentThread();
+  }
+
+
+  /**
+   * return a copy of the parameters. Modifications to the returned object
+   * do not affect the original data member
+   * @return Hashtable
+   */
+  public synchronized Hashtable getParams() {
+    return new Hashtable(_params);
+  }
+
+
+  /**
+   * the optimization params are set to p
+   * @param p Hashtable
+   * @throws OptimizerException if another thread is concurrently running the
+   * <CODE>minimize(f)</CODE> method of this object. Note that unless the 2-arg
+   * constructor DEA(params, use_from_same_thread_only=true) is used to create
+   * this object, it is perfectly possible for one thread to call setParams(p),
+   * then another to setParams(p2) to some other param-set, and then the
+   * first thread to call minimize(f).
+   */
+  public synchronized void setParams(Hashtable p) throws OptimizerException {
+    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    if (_setParamsFromSameThreadOnly) {
+      if (Thread.currentThread()!=_originatingThread)
+        throw new OptimizerException("Current Thread is not allowed to call setParams() on this DEA.");
+    }
+    _params = null;
+    _params = new Hashtable(p);  // own the params
+    try {
+      _c2amaker = (Chromosome2ArgMakerIntf) _params.get("dea.c2amaker");
+    }
+    catch (ClassCastException e) {
+      throw new OptimizerException("dea.c2amaker must be a Chromosome2ArgMakerIntf object");
+    }
+  }
+
+
+  /**
+   * The most important method of the class.
+   * Prior to calling this method, some parameters must have been set, either
+   * during construction of the object, or via a call to setParams(p).
+   * The parameters are as follows:
+   *
+   * <"dea.randomchromosomemaker", RandomChromosomeMakerIntf r> mandatory, the
+   * object responsible for implementing the interface that allows creating
+   * random initial chromosome objects.
+   * <"dea.movemaker", NewChromosomeMakerIntf movemaker> mandatory, the object
+   * responsible for implementing the interface that allows creating new
+   * chromosome Objects from an existing one (makes a move).
+   * <"dea.numiters", Integer niters> optional, the number of iterations each
+   * thread will go through in this evolutionary process run, default is 100.
+   * <"dea.sendrecvperiod",Integer period> optional, the number of generations
+   * before the threads communicate their best solution to the master DEA
+   * process and subsequent receipt of the same best solution by all threads.
+   * Default is 1.
+   * <"dea.numthreads", Integer nt> optional, the number of threads representing
+   * islands for this evolutionary process run. Default is 1.
+   * <"dea.c2amaker", Chromosome2ArgMakerIntf c2amaker> optional, an object
+   * implementing the Chromosome2ArgMakerIntf that transforms chromosome Objects
+   * used in the evolutionary process -and manipulated by the Object implementing
+   * the NewChromosomeMakerIntf interface- into argument Objects that can be
+   * passed into the FunctionIntf object that the process minimizes. Default is
+   * null, which results in the chromosome objects being passed "as-is" to the
+   * FunctionIntf object being minimized.
+   *
+   * The result is a PairObjDouble object that contains the best function arg.
+   * along with the minimum function value obtained by this argument (or null
+   * if the process fails to find any valid function argument).
+   * @param f FunctionIntf
+   * @throws OptimizerException if another thread is concurrently running the
+   * same method of this object or if the optimization process fails
+   * @return PairObjDouble an object that holds both the best value found by the
+   * DEA process run as well as the argmin -the argument that produced this best
+   * value.
+   */
+  public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
+    try {
+      synchronized (this) {
+        if (_f != null)throw new OptimizerException("DEA.minimize(): "+
+          "another thread is concurrently executing the method on the same object");
+        _f = f;
+        reset();
+      }
+      int nt = 1;
+      try {
+        Integer ntI = (Integer) _params.get("dea.numthreads");
+        if (ntI != null) nt = ntI.intValue();
+      }
+      catch (ClassCastException e) {
+        e.printStackTrace();
+      }
+      if (nt < 1)throw new OptimizerException(
+          "DEA.minimize(): invalid number of threads specified");
+      RndUtil.addExtraInstances(nt);  // not needed
+      _threads = new DEAThread[nt];
+      _schedCnt = nt;
+
+      try {
+        parallel.Barrier.setNumThreads("dea." + _id, nt); // init the Barrier obj.
+      }
+      catch (parallel.ParallelException e) {
+        e.printStackTrace();
+        throw new OptimizerException("Barrier init. call failed.");
+      }
+
+      for (int i = 0; i < nt; i++) {
+        _threads[i] = new DEAThread(this, i);
+      }
+      for (int i = 0; i < nt; i++) {
+        _threads[i].start();
+      }
+
+      for (int i = 0; i < nt; i++) {
+        DEAThreadAux rti = _threads[i].getDEAThreadAux();
+        rti.waitForTask();  // equivalent to _threads[i].join();
+      }
+
+      synchronized (this) {
+        if (_inc==null)
+          throw new OptimizerException("DEA.minimize(f): failed to find a solution");
+        Object arg = _inc;
+        if (_c2amaker != null)
+          arg = _c2amaker.getArg(_inc, _params);
+        return new PairObjDouble(arg, _incValue);
+      }
+    }
+    finally {
+      try {
+        parallel.Barrier.removeInstance("dea."+_id);
+      }
+      catch (Exception e) {  // cannot get here
+       e.printStackTrace();
+       throw new OptimizerException("DEA.minimize(f): couldn't reset barrier "+
+                                    "at end of optimization");
+      }
+      synchronized (this) {
+        _f = null;
+      }
+    }
+  }
+
+
+  /**
+   * reset values.
+   */
+  void reset() {
+    _inc = null;
+    _incValue = Double.MAX_VALUE;
+    _schedInc=null;
+    _schedVal=Double.MAX_VALUE;
+    _schedCnt=0;
+  }
+
+
+  synchronized Chromosome2ArgMakerIntf getC2AMaker() { return _c2amaker; }
+
+
+  synchronized void setIncumbent(DEAIndividual ind) throws OptimizerException {
+    if (_incValue > ind.getValue()) {  // minimization problems only
+      Messenger.getInstance().msg("Updating Incumbent w/ val="+ind.getValue(),0);
+      if (Debug.debug(Constants.DEA)!=0) {
+        // sanity check
+        Object arg = ind.getChromosome(); // assume the chromosome Object is
+        // the same used for function evals.
+        if (_c2amaker != null) // oops, no it wasn't
+          arg = _c2amaker.getArg(ind.getChromosome(), _params);
+        double incval = _f.eval(arg, _params);
+        if (Math.abs(incval - ind.getValue()) > 1.e-25) {
+          Messenger.getInstance().msg("DEA.setIncumbent(): ind-val=" +
+                                      ind.getValue() + " fval=" + incval +
+                                      " ???", 0);
+          throw new OptimizerException(
+              "DEA.setIncumbent(): insanity detected; " +
+              "most likely evaluation function is " +
+              "NOT reentrant... " +
+              "Add the 'function.notreentrant,num'" +
+              " pair (num=1 or 2) to run parameters");
+        }
+        // end sanity check
+      }
+      _incValue = ind.getValue();
+      _inc = ind.getChromosome();
+    }
+  }
+
+
+  synchronized DEAThread getDEAThread(int id) {
+    return _threads[id];
+  }
+
+
+  synchronized DEAIndividual getBestInd() {
+    return _schedInc;
+  }
+
+
+  synchronized void setBestInd(DEAIndividual ind) {
+    if (ind.getValue()<_schedVal) {
+      _schedVal = ind.getValue();
+      _schedInc = ind;
+    }
+    if (--_schedCnt==0) {  // reset when all threads send the generation's best
+      _schedVal = Double.MAX_VALUE;
+      // _schedInc=null;
+      _schedCnt=_threads.length;
+    }
+  }
+
+
+  synchronized int getId() { return _id; }
+
+
+  synchronized static int incrID() {
+    return ++_nextId;
+  }
+
+}
+
+
+/**
+ * auxiliary class
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class DEAThread extends Thread {
+  private DEAThreadAux _aux;
+
+
+  public DEAThread(DEA master, int id) throws OptimizerException {
+    _aux = new DEAThreadAux(master, id);
+  }
+
+
+  public DEAThreadAux getDEAThreadAux() {
+    return _aux;
+  }
+
+
+  public void run() {
+    _aux.runTask();
+  }
+}
+
+
+/**
+ * auxiliary class
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class DEAThreadAux {
+  private int _id;
+  private int _uid;
+  private DEA _master;
+  private boolean _finish = false;
+  private DEAIndividual _individual=null;
+  private Chromosome2ArgMakerIntf _c2arg=null;
+  private Hashtable _p=null;
+  private Hashtable _fp=null;
+
+  public DEAThreadAux(DEA master, int id) throws OptimizerException {
+    _master = master;
+    _id = id;
+    _uid = (int) DataMgr.getUniqueId();
+    _p = _master.getParams();  // returns a copy
+    _p.put("thread.localid", new Integer(_id));
+    _p.put("thread.id",new Integer(_uid));  // used to be _id, not _uid
+    // create the _funcParams
+    _fp = new Hashtable();
+    Iterator it = _p.keySet().iterator();
+    while (it.hasNext()) {
+      String key = (String) it.next();
+      Object val = _p.get(key);
+      if (val!=null) {
+        Class valclass = val.getClass();
+        Package pack = valclass.getPackage();
+        if (pack!=null) {
+          String packname = pack.getName();
+          if (packname.startsWith("popt4jlib") ||
+              packname.startsWith("parallel"))continue; // don't include such objects
+        }
+        else {
+          Messenger.getInstance().msg("no package info for object with key "+key,2);
+        }
+        _fp.put(key,val);
+      }
+    }
+    // end creating _funcParams
+
+    _c2arg = (Chromosome2ArgMakerIntf) _p.get("dea.c2amaker");
+    if (_c2arg==null) {  // use default choice
+      _c2arg = new IdentityC2ArgMaker();  // the chromosome IS the function arg.
+    }
+  }
+
+
+  void runTask() {
+    // start: do the DEA
+    try {
+      getInitSolution();
+    }
+    catch (Exception e) {
+      e.printStackTrace();  // no-op
+    }
+    //System.err.println("initializing solution done.");
+    int numiters = 100;
+    try {
+      Integer niI = (Integer) _p.get("dea.numiters");
+      if (niI != null) numiters = niI.intValue();
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();
+    }
+    int send_recv_period = 1;
+    try {
+      Integer periodI = (Integer) _p.get("dea.sendrecvperiod");
+      if (periodI != null && periodI.intValue()>0)
+        send_recv_period = periodI.intValue();
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();
+    }
+
+    for (int gen = 0; gen < numiters; gen++) {
+      //System.err.println("Island-Thread id=" + _id + " running iter=" + gen);
+      if (gen>0 && gen%send_recv_period==0) recvBestInd();
+      parallel.Barrier.getInstance("dea."+_master.getId()).barrier();  // synchronize with other threads
+      try {
+        runEA(gen);
+      }
+      catch (Exception e) {
+        e.printStackTrace();  // no-op
+      }
+      if (gen%send_recv_period==0) sendBestInd();
+      parallel.Barrier.getInstance("dea."+_master.getId()).barrier();  // synchronize with other threads
+    }
+    // end: declare finish
+    setFinish();
+  }
+
+
+  synchronized boolean getFinish() {
+    return _finish;
+  }
+
+
+  synchronized void setFinish() {
+    _finish = true;
+    notify();
+  }
+
+
+  synchronized void waitForTask() {
+    while (_finish==false) {
+      try {
+        wait();  // wait as other operation is still running
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // recommended action
+      }
+    }
+    // System.err.println("Thread-"+_id+" done.");
+  }
+
+
+  /* EA methods */
+
+
+  private void runEA(int gen) throws OptimizerException {
+    //System.err.println("thread: "+_id+" gen="+gen);
+    NewChromosomeMakerIntf mover = (NewChromosomeMakerIntf) _p.get("dea.movemaker");
+    Object newsol = mover.createNewChromosome(_individual.getChromosome(), _fp);  // used to be _p
+    Object newarg = _c2arg.getArg(newsol, _p);  // used to be _master.getParams()
+    double newval = _master._f.eval(newarg, _fp);  // used to be _p
+    double df = newval - _individual.getValue();
+    if (df < 0) {
+      _individual = new DEAIndividual(newsol, _master, _fp);  // used to be _p
+      _master.setIncumbent(_individual);
+    }
+  }
+
+
+  private void getInitSolution() throws OptimizerException, InterruptedException {
+    RandomChromosomeMakerIntf amaker =
+        (RandomChromosomeMakerIntf) _p.get("dea.randomchromosomemaker");
+    if (amaker==null)
+      throw new OptimizerException("no RandomChromosomeMakerIntf provided");
+    Object chromosome = amaker.createRandomChromosome(_fp); // used to be _p
+    _individual = new DEAIndividual(chromosome, _master, _fp); // used to be _p
+    //System.out.println("Individual="+_individual);
+    _master.setIncumbent(_individual);  // update master's best soln found if needed
+  }
+
+
+  private synchronized void sendBestInd() {
+    _master.setBestInd(_individual);
+  }
+
+
+  private synchronized void recvBestInd() {
+    _individual = _master.getBestInd();
+  }
+
+}
+
+
+/**
+ * auxiliary class
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class DEAIndividual {
+  private Object _chromosome;
+  private double _val=Double.MAX_VALUE;  // raw objective value
+  // private DEA _master;  // ref. back to master DGA object
+  private Chromosome2ArgMakerIntf _c2amaker;
+  private FunctionIntf _f;
+
+  public DEAIndividual(Object chromosome, DEA master, Hashtable p) throws OptimizerException {
+    _chromosome = chromosome;
+    //_master = master;
+    _c2amaker = (Chromosome2ArgMakerIntf) master.getC2AMaker();
+    _f = master._f;
+    computeValue(p);  // may throw OptimizerException
+  }
+
+
+  public DEAIndividual(Object chromosome, double val, DEA master) throws OptimizerException {
+    _chromosome = chromosome;
+    _val = val;
+    // _master = master;
+    _c2amaker = master.getC2AMaker();
+    _f = master._f;
+  }
+
+
+  public String toString() {
+    String r = "Chromosome=[";
+    r += _chromosome.toString();
+    r += "] val="+_val;
+    return r;
+  }
+  public Object getChromosome() { return _chromosome; }
+  public double getValue() { return _val; }  // enhance the density value differences
+  public void computeValue(Hashtable p) throws OptimizerException {
+    if (_val==Double.MAX_VALUE) {  // don't do the computation if already done
+      Object arg = null;
+      if (_c2amaker == null) arg = _chromosome;
+      else arg = _c2amaker.getArg(_chromosome, p);
+      _val = _f.eval(arg, p);
+    }
+  }
+}

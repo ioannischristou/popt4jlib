@@ -1,0 +1,54 @@
+package tests;
+
+import java.io.*;
+import java.net.*;
+
+/**
+ * implements a user-provided function evaluation. The main method accepts
+ * input through a socket and waits for the user to provide the value for that
+ * input, which it then transmits to the other end of the socket. Typing
+ * "quit" or simply hitting Enter will terminate the process.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class SocketEvalTestFunction {
+
+  /**
+   * invoke as:
+   * <CODE> java -cp &ltclasspath&gt tests.SocketEvalTestFunction [port(4444)]</CODE>
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    int port = 4444;
+    if (args.length>0) port = Integer.parseInt(args[0]);
+
+    try {
+      ServerSocket ss = new ServerSocket(port);
+      Socket s = ss.accept();
+      ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+      oos.flush();
+      ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+      while (true) {
+        // read from socket the values
+        double[] fargs = (double[]) ois.readObject();
+        // read from stdin a number
+        String input = br.readLine();
+        if ("quit".equals(input) || input==null || input.length()==0)
+          return;  // close socket
+        double num = Double.parseDouble(input);
+        oos.writeObject(new Double(num));
+        oos.flush();
+      }
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}
+

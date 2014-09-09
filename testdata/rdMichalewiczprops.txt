@@ -1,0 +1,9 @@
+class,rd.function,tests.MichalewiczFunction
+m,10.0
+rd.numdimensions,100
+rd.functionargmaxval,3.141592653589793
+rd.functionargminval,0.0
+rndgen,7,50
+rd.numthreads,50
+rd.numtries,1000
+class,rd.gradient,tests.MichalewiczFunctionGrad

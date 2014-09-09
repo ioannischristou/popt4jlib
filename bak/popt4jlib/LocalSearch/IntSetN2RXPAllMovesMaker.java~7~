@@ -1,0 +1,133 @@
+package popt4jlib.LocalSearch;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+/**
+ * the class implements the notion of the N_{-2+P} neighborhood of a set of
+ * integers. For a given set of integers S, a set S' belongs to this neighborhood
+ * iff there are exactly two integers from S missing in S', and any number of
+ * other integers included in S' (as proposed by the possible combinations of
+ * integers computed by the associated IntSetNeighborhoodFilterIntf).
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerIntf {
+
+  /**
+   * public constructor.
+   */
+  public IntSetN2RXPAllMovesMaker() {
+  }
+
+
+  /**
+   * implements the N_{-2+P} neighborhood for sets of integers.
+   * @param chromosome Object Set<Integer>
+   * @param params Hashtable must contain a key-value pair
+   * <"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter>
+   * The filter must both specify what two numbers to remove, as well as what
+   * ints to be tried for addition to the set given a vector of 2 ints to be
+   * removed from the set. In particular, the filter(Integer x, Set s, Hashtable params)
+   * method must return a Vector<IntSet> that comprise all the 2-int combinations
+   * that may be tried for removal.
+   * @throws OptimizerException
+   * @return Vector Vector<Set<Integer> >
+   */
+  public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
+    if (chromosome==null) throw new OptimizerException("IntSetN2RXPAllMovesMaker.createAllChromosomes(): null chromosome");
+    try {
+      TreeSet result = new TreeSet();  // Set<IntSet>
+      Set x0 = (Set) chromosome;
+      System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): working w/ a soln of size="+x0.size());  // itc: HERE rm asap
+      IntSetNeighborhoodFilterIntf filter = (IntSetNeighborhoodFilterIntf)
+          params.get("dls.intsetneighborhoodfilter");
+      Iterator iter = x0.iterator();
+      while (iter.hasNext()) {
+        Integer id = (Integer) iter.next();
+        System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): working w/ id="+id);  // itc: HERE rm asap
+        Vector twoint_sets = filter.filter(id, x0, params);  // Vector<IntSet>
+        Iterator iter2 = twoint_sets.iterator();
+        int cnt = 0;
+        while (iter2.hasNext()) {
+          Set rmids = (Set) iter2.next();
+          Vector tryids = filter.filter(rmids, x0, params);  // Vector<Integer>
+          if (tryids!=null) {
+            IntSet xnew = new IntSet(x0);
+            xnew.removeAll(rmids);
+            // add up to as many as the filter suggests.
+            Set res = new TreeSet();  // Set<IntSet>
+            res.add(xnew);
+            Set allres = createSets(res, rmids, tryids, filter.getMaxCardinality4Search(), params);
+            // res is Set<IntSet>
+            result.addAll(allres);
+            cnt += allres.size();
+          }
+        }
+        System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): done w/ id="+id+
+                   " returned "+cnt+" sets.");  // itc: HERE rm asap
+
+      }
+      // convert Set<IntSet> to Vector<IntSet>
+      Vector res = new Vector(result);
+      System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");  // itc: HERE rm asap
+      return res;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("IntSetN2RXPAllMovesMaker.createAllChromosomes(): failed");
+    }
+  }
+
+
+  /**
+   * hook method in the context of the Template Method Design Pattern.
+   * Sub-classes with more domain knowledge may override this method to modify
+   * the behavior of this move-maker.
+   * @param res Set TreeSet<IntSet>
+   * @param rmids Set IntSet
+   * @param tryids Vector Vector<Integer>
+   * @param maxcard int
+   * @param params Hashtable
+   * @return Set  TreeSet<IntSet>
+   */
+  protected Set createSets(Set res, Set rmids, Vector tryids, int maxcard, Hashtable params) {
+    if (maxcard==0) return res;
+    Set res2 = new TreeSet(res);  // was new TreeSet();
+    for (int i=0; i<tryids.size(); i++) {
+      Integer tid = (Integer) tryids.elementAt(i);
+      if (rmids.contains(tid)==false) {
+        Iterator iter = res.iterator();
+        while (iter.hasNext()) {
+          IntSet x = (IntSet) iter.next();
+          if (x.contains(tid)==false && isOK2Add(tid, x, params)) {
+            IntSet x2 = new IntSet(x);
+            x2.add(tid);
+            res2.add(x2);
+          }
+        }
+      }
+    }
+    return createSets(res2, rmids, tryids, maxcard-1, params);
+  }
+
+
+  /**
+   * hook method in the context of the Template Method Design Pattern.
+   * Sub-classes with more domain knowledge may override this method to modify
+   * the behavior of this move-maker.
+   * @param tid Integer
+   * @param x IntSet
+   * @param params Hashtable
+   * @return boolean
+   */
+  protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
+    return true;
+  }
+}
+

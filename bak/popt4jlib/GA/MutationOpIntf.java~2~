@@ -1,0 +1,9 @@
+package popt4jlib.GA;
+
+import popt4jlib.OptimizerException;
+import utils.*;
+
+public interface MutationOpIntf {
+  public Pair doMutation(Object chromosome1, Object chromosome2) throws OptimizerException;
+}
+

@@ -1,0 +1,6 @@
+package graph.partitioning;
+
+public class HPartitionerMLSPP2 {
+  public HPartitionerMLSPP2() {
+  }
+}

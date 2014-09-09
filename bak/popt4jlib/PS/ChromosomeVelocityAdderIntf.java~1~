@@ -1,0 +1,4 @@
+package popt4jlib.PS;
+
+public interface ChromosomeVelocityAdderIntf {
+}

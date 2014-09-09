@@ -1,0 +1,33 @@
+package popt4jlib.PS;
+
+import popt4jlib.OptimizerException;
+import utils.RndUtil;
+import java.util.Hashtable;
+
+public class DblArray1RandomVelocityMaker implements RandomVelocityMakerIntf {
+
+  public DblArray1RandomVelocityMaker() {
+  }
+
+
+  public Object createRandomVelocity(Hashtable params) throws OptimizerException {
+    if (params==null) throw new OptimizerException("null params arg");
+    Integer nI = (Integer) params.get("dpso.chromosomelength");
+    if (nI==null) throw new OptimizerException("dpso.chromosomelength not specified");
+    Double lbargD = (Double) params.get("dpso.minallelevalue");
+    double minval = lbargD.doubleValue();
+    if (lbargD==null) throw new OptimizerException("dpso.minallelevale not specified");
+    Double ubargD = (Double) params.get("dpso.maxallelevalue");
+    if (ubargD==null) throw new OptimizerException("dpso.maxallelevale not specified");
+    double maxval = ubargD.doubleValue();
+    double[] result = new double[nI.intValue()];
+    Integer idI = (Integer) params.get("thread.id");
+    int id = idI.intValue();
+    for (int i=0; i<nI.intValue(); i++) {
+      result[i] = RndUtil.getInstance(id).getRandom().nextDouble()*(maxval-minval)+minval;
+    }
+    return result;
+  }
+
+}
+

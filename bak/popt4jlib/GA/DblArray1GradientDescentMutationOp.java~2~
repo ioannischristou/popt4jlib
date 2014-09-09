@@ -1,0 +1,71 @@
+package popt4jlib.GA;
+
+import popt4jlib.*;
+import popt4jlib.GradientDescent.LocalOptimizerIntf;
+import utils.*;
+import java.util.*;
+
+public class DblArray1GradientDescentMutationOp implements MutationOpIntf {
+
+  public DblArray1GradientDescentMutationOp() {
+  }
+
+  /**
+   * the operation mutates each chromosome argument (not a DGAIndividual, not a
+   * Function() arg object) and stores the new chromosome in a Pair object that
+   * is returned.
+   * @param chromosome1 Object
+   * @param chromosome2 Object
+   * @param params Hashtable
+   * @throws OptimizerException
+   * @return Pair
+   */
+  public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
+    try {
+      final int id = ( (Integer) params.get("thread.id")).intValue();
+      double[] a1 = (double[]) chromosome1;
+      double[] a2 = (double[]) chromosome2;
+      double minargval = Double.MAX_VALUE;
+      double maxargval = Double.NEGATIVE_INFINITY;
+      final int n = a1.length;
+      // check if value exceeds any limits
+      Double minargvalD = (Double) params.get("dga.minallelevalue");
+      if (minargvalD != null && minargvalD.doubleValue() > minargval)
+        minargval = minargvalD.doubleValue();
+      Double maxargvalD = (Double) params.get("dga.maxallelevalue");
+      if (maxargvalD != null && maxargvalD.doubleValue() < maxargval)
+        maxargval = maxargvalD.doubleValue();
+      LocalOptimizerIntf localopter = (LocalOptimizerIntf) params.get("dga.localoptimizer");
+      Hashtable params2 = new Hashtable(params);
+      // mutate first chromosome
+      VectorIntf x0 = new DblArray1Vector(a1);
+      params2.put("gradientdescent.x0",x0);
+      localopter.setParams(params2);
+      FunctionIntf f = (FunctionIntf) params.get("dga.function");
+      PairObjDouble pod = localopter.minimize(f);
+      VectorIntf xf = (VectorIntf) pod.getArg();
+      for (int i=0; i<xf.getNumCoords(); i++) {
+        double xi = xf.getCoord(i);
+        // restore within bounds, if any
+        a1[i] = xi<maxargval ? (xi>minargval ? xi : minargval) : maxargval;
+      }
+      x0 = new DblArray1Vector(a2);
+      params2.put("gradientdescent.x0",x0);
+      localopter.setParams(params2);
+      pod = localopter.minimize(f);
+      xf = (VectorIntf) pod.getArg();
+      for (int i=0; i<xf.getNumCoords(); i++) {
+        double xi = xf.getCoord(i);
+        // restore within bounds, if any
+        a2[i] = xi<maxargval ? (xi>minargval ? xi : minargval) : maxargval;
+      }
+      Pair p = new Pair(a1, a2);
+      return p;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("doMutation(): failed");
+    }
+  }
+
+}

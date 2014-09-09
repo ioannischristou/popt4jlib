@@ -1,0 +1,9 @@
+dga.maxchromosomelength,100
+dga.maxallelevalue,1.0
+dga.minallelevalue,-1.0
+dga.numgens,100
+rndgen,7,4
+dga.numthreads,4
+class,dga.xoverop,popt4jlib.GA.DblVarArray1PtXOverOp
+class,dga.mutationop,popt4jlib.GA.DblVarArray1AlleleMutationOp
+class,dga.randomchromosomemaker,popt4jlib.GA.DblVarArray1CMaker

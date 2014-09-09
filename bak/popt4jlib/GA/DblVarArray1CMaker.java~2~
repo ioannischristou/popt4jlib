@@ -1,0 +1,28 @@
+package popt4jlib.GA;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+public class DblVarArray1CMaker implements RandomChromosomeMakerIntf {
+  public DblVarArray1CMaker() {
+  }
+
+  public Object createRandomChromosome(Hashtable params) throws OptimizerException {
+    try {
+      final int nmax = ( (Integer) params.get("dga.maxchromosomelength")).intValue();
+      final double maxalleleval=((Double) params.get("dga.maxallelevalue")).doubleValue();
+      final int id = ((Integer) params.get("thread.id")).intValue();
+      final int n = RndUtil.getInstance(id).getRandom().nextInt(nmax);
+      double[] arr = new double[n];
+      for (int i=0; i<n; i++) {
+        arr[i] = RndUtil.getInstance(id).getRandom().nextDouble()*maxalleleval;
+      }
+      return arr;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("createRandomChromosome: failed");
+    }
+  }
+}

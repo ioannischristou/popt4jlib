@@ -1,0 +1,6 @@
+package tests;
+
+public class MaxCliqueComputingTestMT0 {
+  public MaxCliqueComputingTestMT0() {
+  }
+}

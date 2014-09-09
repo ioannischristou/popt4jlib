@@ -1,0 +1,49 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.io.*;
+
+/**
+ * implements a DMsgIntf object that asks a DBarrierSrv to add the corresponding
+ * thread to its pool of participants in the DBarrier. Not for use as part of
+ * the normal public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DBarrierAddRequest implements DMsgIntf {
+  public final static long serialVersionUID=987654333330L;
+  private String _bname;
+
+
+  /**
+   * constructor.
+   * @param bname String name of the barrier in the receiving DBarrierSrv.
+   */
+  public DBarrierAddRequest(String bname) {
+    _bname = bname;
+  }
+
+
+  /**
+   * adds the originating thread (via sockets) to the DBarrier object named in
+   * the constructor.
+   * @param oos ObjectOutputStream
+   * @throws ParallelException
+   * @throws IOException
+   */
+  public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
+    ComplexBarrier.addThread(_bname, Thread.currentThread());
+    oos.writeObject(new OKReply());
+    oos.flush();
+  }
+
+  public String toString() {
+    return "DBarrierAddRequest("+_bname+")";
+  }
+
+}
+

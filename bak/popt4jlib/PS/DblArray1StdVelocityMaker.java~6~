@@ -1,0 +1,83 @@
+package popt4jlib.PS;
+
+import popt4jlib.OptimizerException;
+import utils.RndUtil;
+import java.util.Hashtable;
+
+
+public class DblArray1StdVelocityMaker implements NewVelocityMakerIntf {
+  public DblArray1StdVelocityMaker() {
+  }
+
+  public Object createNewVelocity(Object x, Object v, Object p, Object g,
+                                  Hashtable params)
+      throws OptimizerException {
+    if (x==null || v==null || p==null || g==null || params==null)
+      throw new OptimizerException("null args passed in");
+    try {
+      final double[] x2 = (double[]) x;
+      final double[] v2 = (double[]) v;
+      final double[] p2 = (double[]) p;
+      final double[] g2 = (double[]) g;
+      final int id = ((Integer) params.get("thread.id")).intValue();
+      if (x2.length!=v2.length || x2.length!=p2.length || x2.length!=g2.length)
+        throw new OptimizerException("arg arrays have different lengths");
+      final int n = x2.length;
+      double[] result = new double[x2.length];
+      double rp = RndUtil.getInstance(id).getRandom().nextDouble();
+      double rg = RndUtil.getInstance(id).getRandom().nextDouble();
+      double fp = 0.1;
+      Double fpD = (Double) params.get("dpso.fp");
+      if (fpD!=null && fpD.doubleValue()>=0) fp = fpD.doubleValue();
+      double fg = 0.01;
+      Double fgD = (Double) params.get("dpso.fg");
+      if (fgD!=null && fgD.doubleValue()>=0) fg = fgD.doubleValue();
+      double w = 1.0;
+      Double wD = (Double) params.get("dpso.w");
+      if (wD!=null && wD.doubleValue()>=0) w = wD.doubleValue();
+      double maxaval = Double.MAX_VALUE;
+      try {
+        Double maxiD = (Double) params.get("dpso.maxalleleval");
+        if (maxiD!=null && maxiD.doubleValue()<maxaval) maxaval = maxiD.doubleValue();
+      }
+      catch (Exception e) {
+        e.printStackTrace();  // no-op
+      }
+      double minaval = Double.NEGATIVE_INFINITY;
+      try {
+        Double miniD = (Double) params.get("dpso.minalleleval");
+        if (miniD!=null && miniD.doubleValue()>minaval) minaval = miniD.doubleValue();
+      }
+      catch (Exception e) {
+        e.printStackTrace();  // no-op
+      }
+      for (int i=0; i<n; i++) {
+        result[i] = w*v2[i] + fp*rp*(p2[i]-x2[i]) + fg*rg*(g2[i]-x2[i]);
+        // check for bounds
+        double maxi = maxaval;
+        try {
+          Double maxai = (Double) params.get("dpso.maxalleleval" + i);
+          if (maxai!=null && maxai.doubleValue()<maxaval) maxi = maxai.doubleValue();
+        }
+        catch (Exception e) {
+          e.printStackTrace();  // no-op
+        }
+        if (result[i]>maxi) result[i] = maxi;
+        double mini = minaval;
+        try {
+          Double minai = (Double) params.get("dpso.minalleleval" + i);
+          if (minai!=null && minai.doubleValue()<minaval) mini = minai.doubleValue();
+        }
+        catch (Exception e) {
+          e.printStackTrace();  // no-op
+        }
+        if (result[i]<mini) result[i] = mini;
+      }
+      return result;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("createNewVelocity(): failed");
+    }
+  }
+}

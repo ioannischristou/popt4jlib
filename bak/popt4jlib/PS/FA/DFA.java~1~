@@ -1,0 +1,6 @@
+package popt4jlib.PS.FA;
+
+public class DFA {
+  public DFA() {
+  }
+}

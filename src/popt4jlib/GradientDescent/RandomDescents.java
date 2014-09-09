@@ -1,0 +1,445 @@
+package popt4jlib.GradientDescent;
+
+import java.util.*;
+import utils.*;
+import analysis.*;
+import popt4jlib.*;
+import parallel.*;
+
+/**
+ * class implementing a "questionable" method of attempting multiple descent
+ * directions (in parallel) from the same iterate point, and greedily choosing
+ * the best one using the Armijo rule for step-size determination.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class RandomDescents implements LocalOptimizerIntf {
+  private static int _nextId = 0;
+  private int _id;
+  private Hashtable _params;
+  private double _incValue=Double.MAX_VALUE;
+  private VectorIntf _inc=null;  // incumbent vector
+  private RDThread[] _threads=null;
+  protected FunctionIntf _f;
+
+
+  /**
+   * public no-arg constructor
+   */
+  public RandomDescents() {
+    _id = incrID();
+  }
+
+
+  /**
+   * public constructor, accepting the optimization process parameters (they can
+   * be later changed by a call to <CODE>setParams(p)</CODE>
+   * @param params Hashtable
+   */
+  public RandomDescents(Hashtable params) {
+    this();
+    try {
+      setParams(params);
+    }
+    catch (Exception e) {
+      // no-op: cannot reach this point
+    }
+  }
+
+
+  /**
+   * return a copy of the parameters. Modifications to the returned object
+   * do not affect the data member.
+   * @return Hashtable
+   */
+  public synchronized Hashtable getParams() {
+    return new Hashtable(_params);
+  }
+
+
+  /**
+   * the optimization params are set to p
+   * @param p Hashtable
+   * @throws OptimizerException if another thread is concurrently running the
+   * <CODE>minimize(f)</CODE> method of this object.
+   */
+  public synchronized void setParams(Hashtable p) throws OptimizerException {
+    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    _params = null;
+    _params = new Hashtable(p);  // own the params
+  }
+
+
+  /**
+   * return a new empty RandomDescents optimizer object (that must be
+   * configured via a call to setParams(p) before it is used.)
+   * @return LocalOptimizerIntf
+   */
+  public LocalOptimizerIntf newInstance() {
+    return new RandomDescents();
+  }
+
+
+  /**
+   * the main method of the class. Before it is called, a number of parameters
+   * must have been set (via the parameters passed in the constructor, or via
+   * a later call to setParams(p). These are:
+   * <"rd.numthreads", Integer nt> optional, the number of threads to use in
+   * the optimization process. Default is 1.
+   * <"rd.numtries", Integer ntries> optional, the number of tries (starting
+   * from different initial points). Default is 100.
+   * <"rd.gradient", VecFunctionIntf g> optional, the gradient of f, the
+   * function to be minimized. If this param-value pair does not exist, the
+   * gradient will be computed using Richardson finite differences extrapolation
+   * <"rd.gtol", Double v> optional, the minimum abs. value for each of the
+   * gradient's coordinates, below which if all coordinates of the gradient
+   * happen to be, the search stops assuming it has reached a stationary point.
+   * Default is 1.e-6.
+   * <"rd.maxiters", Integer miters> optional, the maximum number of major
+   * iterations of the SD search before the algorithm stops. Default is
+   * Integer.MAX_VALUE.
+   * <"rd.rho", Double v> optional, the value for the parameter ñ in the
+   * Armijo rule implementation. Default is 0.1.
+   * <"rd.beta", Double v> optional, the value for the parameter â in the
+   * Armijo rule implementation. Default is 0.8.
+   * <"rd.gamma", Double v> optional, the value for the parameter ã in the
+   * Armijo rule implementation. Default is 1.
+   * <"rd.looptol", Double v> optional, the minimum step-size allowed. Default
+   * is 1.e-21.
+   *
+   * @param f FunctionIntf the function to minimize
+   * @throws OptimizerException if another thread is currently executing the
+   * same method or if the method fails to find a minimizer
+   * @return PairObjDouble the pair containing the arg. min (a VectorIntf) and
+   * the min. value found
+   */
+  public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
+		if (f==null) throw new OptimizerException("RD.minimize(f): null f");
+    try {
+      synchronized (this) {
+        if (_f != null)throw new OptimizerException(
+            "RandomDescents.minimize(): " +
+            "another thread is concurrently executing the method on the same object");
+        _f = f;
+        _inc = null;
+        _incValue = Double.MAX_VALUE;
+      }
+      // _params is atomically accessed.
+      int numthreads = 1;
+      try {
+        Integer ntI = (Integer) _params.get("rd.numthreads");
+        if (ntI != null && ntI.intValue() > 1) numthreads = ntI.intValue();
+      }
+      catch (ClassCastException e) { e.printStackTrace(); }
+
+      try {
+        Barrier.setNumThreads("rd." + getId(), numthreads); // initialize barrier
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();
+        throw new OptimizerException("barrier init. failed");
+      }
+
+      _threads = new RDThread[numthreads];
+      int ntries = 100;
+      try {
+        Integer ntriesI = (Integer) _params.get("rd.numtries");
+        if (ntriesI != null && ntriesI.intValue() > 1)
+          ntries = ntriesI.intValue();
+      }
+      catch (ClassCastException e) { e.printStackTrace(); }
+      for (int i = 0; i < numthreads; i++) {
+        _threads[i] = new RDThread(i, ntries, this);
+      }
+      for (int i = 0; i < numthreads; i++) {
+        _threads[i].start();
+      }
+      // wait until all threads finish
+      for(int i=0; i<numthreads; i++) {
+        try {
+          _threads[i].join();
+        }
+        catch (InterruptedException e) {
+          Thread.currentThread().interrupt(); // recommended action
+        }
+      }
+      synchronized (this) {
+        if (_inc == null) // didn't find a solution
+          throw new OptimizerException("failed to find solution");
+        // ok, we're done
+        PairObjDouble pr = new PairObjDouble(_inc, _incValue);
+        return pr;
+      }
+    }
+    finally {
+      try {
+        Barrier.removeInstance("rd."+getId());
+      }
+      catch (Exception e) {  // cannot get here
+       e.printStackTrace();
+       throw new OptimizerException("RandomDescents.minimize(f): couldn't reset barrier "+
+                                    "at end of optimization");
+      }
+      synchronized (this) {  // communicate changes to other threads
+        _f = null;
+      }
+    }
+  }
+
+
+  /**
+   * set the incumbent solution -if it is better than the current incumbent.
+   * @param arg VectorIntf proposed arg.
+   * @param val double proposed value
+   * @throws OptimizerException in case of insanity (may only happen if the
+   * function to be minimized is not reentrant and the debug bit
+   * <CODE>Constants.RD</CODE> is set in the <CODE>Debug</CODE> class)
+   */
+  synchronized void setIncumbent(VectorIntf arg, double val) throws OptimizerException {
+    if (val<_incValue) {
+      if (Debug.debug(Constants.RD)!=0) {
+        // sanity check
+        double incval = _f.eval(arg, _params);
+        if (Math.abs(incval - _incValue) > 1.e-25) {
+          Messenger.getInstance().msg("RD.setIncumbent(): arg-val originally=" +
+                                      _incValue + " fval=" + incval + " ???", 0);
+          throw new OptimizerException(
+              "RD.setIncumbent(): insanity detected; " +
+              "most likely evaluation function is " +
+              "NOT reentrant... " +
+              "Add the 'function.notreentrant,num'" +
+              " pair (num=1 or 2) to run parameters");
+        }
+        // end sanity check
+      }
+      _incValue=val;
+      _inc=arg;
+      Messenger.getInstance().msg("setIncumbent(): best sol value="+val,0);
+    }
+  }
+
+
+  /**
+   * return the current argmin
+   * @return VectorIntf
+   */
+  synchronized VectorIntf getIncumbent() {
+    return _inc;
+  }
+
+
+  /**
+   * introduced to keep FindBugs happy...
+   * @return FunctionIntf
+   */
+  synchronized FunctionIntf getFunction() {
+    return _f;
+  }
+
+
+  /**
+   * return the unique id among all RandomDescents objects of this one
+   * @return int
+   */
+  int getId() { return _id; }
+
+
+  /**
+   * return a new unique id for this class of objects
+   * @return int
+   */
+  private synchronized static int incrID() {
+    return ++_nextId;
+  }
+
+  // nested auxiliary class that implements the threads that will execute the
+  // method
+  class RDThread extends Thread {
+
+    private RandomDescents _master;
+    private int _numtries;
+    private int _id;
+    private int _uid;
+
+    public RDThread(int id, int numtries, RandomDescents master) {
+      _id = id;
+      _uid = (int) DataMgr.getUniqueId();
+      _master=master;
+      _numtries=numtries;
+    }
+
+    public void run() {
+      Hashtable p = _master.getParams();  // returns a copy
+      p.put("thread.localid", new Integer(_id));
+      p.put("thread.id", new Integer(_uid));  // used to be _id
+      VectorIntf best = null;
+      double bestval = Double.MAX_VALUE;
+      FunctionIntf f = _master.getFunction();
+      for (int i=0; i<_numtries; i++) {
+        try {
+          Barrier.getInstance("rd."+_master.getId()).barrier();
+          VectorIntf x0 = _master.getIncumbent();
+          PairObjDouble pair = descent(f, x0, p);
+          if (pair==null) {
+            continue;
+          }
+          double val = pair.getDouble();
+          if (val<bestval) {
+            bestval=val;
+            best=(VectorIntf) pair.getArg();
+            _master.setIncumbent(best, bestval);
+          }
+        }
+        catch (Exception e) {
+          e.printStackTrace();
+          // no-op
+        }
+      }
+    }
+
+
+    private PairObjDouble descent(FunctionIntf f, VectorIntf x0, Hashtable p) throws OptimizerException {
+      VecFunctionIntf grad = (VecFunctionIntf) p.get("rd.gradient");
+      if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
+      if (x0==null) {
+        x0 = (VectorIntf) p.get("rd.x0");  // get x0 from the initial params
+        if (x0==null)
+          throw new OptimizerException("null x0 initial point passed");
+      }
+      VectorIntf x = x0.newCopy();  // don't modify the initial soln
+      final int n = x.getNumCoords();
+      double gtol = 1e-8;
+      try {
+        Double gtolD = (Double) p.get("rd.gtol");
+        if (gtolD != null && gtolD.doubleValue() > 0) gtol = gtolD.doubleValue();
+      }
+      catch (ClassCastException e) { e.printStackTrace(); }
+      double h=0;
+      double rho = 0.1;
+      try {
+        Double rD = (Double) p.get("rd.rho");
+        if (rD != null && rD.doubleValue() > 0)
+          rho = rD.doubleValue();
+      }
+      catch (ClassCastException e) { e.printStackTrace(); }
+      double beta = 0.2;
+      try {
+        Double bD = (Double) p.get("rd.beta");
+        if (bD != null && bD.doubleValue() > 0) beta = bD.doubleValue();
+      }
+      catch (ClassCastException e) { e.printStackTrace(); }
+      double gamma = 1;
+      try {
+        Double gD = (Double) p.get("rd.gamma");
+        if (gD != null && gD.doubleValue() > 0) gamma = gD.doubleValue();
+      }
+      catch (ClassCastException e) { e.printStackTrace(); }
+      double fx = Double.NaN;
+      double looptol = 1.e-25;
+      try {
+        Double ltD = (Double) p.get("rd.looptol");
+        if (ltD != null && ltD.doubleValue() > 0) looptol = ltD.doubleValue();
+      }
+      catch (ClassCastException e) { e.printStackTrace(); }
+      VectorIntf g = grad.eval(x, p);
+      fx = f.eval(x, p);  // was _master._f
+      double f0 = fx;
+      final double norminfg = VecUtil.normInfinity(g);
+      //final double normg = VecUtil.norm2(g);
+      if (norminfg <= gtol) {
+        Messenger.getInstance().msg("found sol w/ norminfg="+norminfg,0);
+        return new PairObjDouble(x, fx);
+      }
+
+      // determine descent direction s
+      VectorIntf s = g.newCopy();
+      double len = 0.0;
+      for (int i=0; i<n; i++) {
+        double gi = g.getCoord(i);
+        if (Math.abs(gi)>1e-6/n) {  // itc: HERE change into param asap
+          double r = RndUtil.getInstance(_uid).getRandom().nextDouble();  // used to be _id
+          if (r<0.55) {  // itc: HERE change into param asap
+            try {
+              s.setCoord(i, -gi);
+            }
+            catch (ParallelException e) {  // can never get here
+              e.printStackTrace();
+            }
+            len += gi*gi;
+          }
+          else {
+            try {
+              s.setCoord(i, 0.0);
+            }
+            catch (ParallelException e) {  // can never get here
+              e.printStackTrace();
+            }
+          }
+        }
+        else {
+          try {
+            s.setCoord(i, 0.0);
+          }
+          catch (ParallelException e) {  // can never get here
+            e.printStackTrace();
+          }
+        }
+      }
+      // normalize the direction s
+      len = Math.sqrt(len);
+      if (len<gtol) {  // the search vector chosen is too small
+        return null;
+      }
+      for (int i=0; i<n; i++) {
+        try {
+          s.setCoord(i, s.getCoord(i)/len);
+        }
+        catch (ParallelException e) {  // can never get here
+          e.printStackTrace();
+        }
+      }
+
+      double[] xa = new double[n];
+      for (int i=0; i<n; i++) xa[i] = x.getCoord(i);
+      // Armijo Rule implementation
+      // determine step-size h
+      double rprev = rho*gamma*VecUtil.innerProduct(g,s);
+      int m=0;
+      while (rprev < -looptol) {
+        for (int i=0; i<n; i++) {
+          try {
+            x.setCoord(i, xa[i] + Math.pow(beta, m) * gamma * s.getCoord(i));
+          }
+          catch (ParallelException e) {  // can never get here
+            e.printStackTrace();
+          }
+        }
+        double fval = f.eval(x,p);  // was _master._f
+        if (fval <= fx + rprev) {
+          h = Math.pow(beta,m)*gamma;
+          break;
+        }
+        rprev = beta*rprev;
+        m++;
+      }
+      // set new x
+      for (int i=0; i<n; i++) {
+        try {
+          x.setCoord(i, xa[i] + h * s.getCoord(i));
+        }
+        catch (ParallelException e) {  // can never get here
+          e.printStackTrace();
+        }
+      }
+      fx = f.eval(x,p);  // was _master._f
+      if (fx < f0) return new PairObjDouble(x, fx);
+      else return null;
+    }
+  }  // end class RDThread
+
+}
+

@@ -1,0 +1,13 @@
+class,dsa.function,tests.MichalewiczFunction
+m,10.0
+dsa.chromosomelength,100
+dsa.maxallelevalue,3.141592653589793
+dsa.minallelevalue,0.0
+dsa.numouteriters,5000
+dsa.numtriesperiter,100
+dsa.movedelta,0.1
+dsa.K,20.0
+rndgen,7,1
+dsa.numthreads,1
+class,dsa.randomchromosomemaker,popt4jlib.SA.DblArray1CMaker
+class,dsa.movemaker,popt4jlib.SA.DblArray1MoveMaker

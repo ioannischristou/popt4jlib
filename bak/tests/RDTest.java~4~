@@ -1,0 +1,41 @@
+package tests;
+
+import popt4jlib.*;
+import utils.*;
+import popt4jlib.GradientDescent.*;
+import java.util.*;
+
+public class RDTest {
+  public RDTest() {
+  }
+
+  public static void main(String[] args) {
+    try {
+      long start_time = System.currentTimeMillis();
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      int n = ((Integer) params.get("rd.numdimensions")).intValue();
+      double maxargval = ((Double) params.get("rd.functionargmaxval")).doubleValue();
+      double minargval = ((Double) params.get("rd.functionargminval")).doubleValue();
+      // add the initial point
+      VectorIntf x0 = new DblArray1Vector(new double[n]);
+      for (int j=0; j<n; j++) {
+        double val = minargval+RndUtil.getInstance().getRandom().nextDouble()*(maxargval-minargval);
+        x0.setCoord(j, val);
+      }
+      params.put("rd.x0", x0);
+      FunctionIntf func = (FunctionIntf) params.get("rd.function");
+      RandomDescents opter = new RandomDescents(params);
+      utils.PairObjDouble p = opter.minimize(func);
+      VectorIntf arg = (VectorIntf) p.getArg();
+      System.out.print("best soln found:[");
+      for (int i=0;i<arg.getNumCoords();i++) System.out.print(arg.getCoord(i)+" ");
+      System.out.println("] VAL="+p.getDouble());
+      long dur = System.currentTimeMillis()-start_time;
+      System.out.println("total time (msecs): "+dur);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

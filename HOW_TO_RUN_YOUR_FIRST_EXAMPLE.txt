@@ -1,0 +1,17 @@
+In order to run your first example:
+
+1. open a command-line console and type:
+% cd <working_dir> 
+where working_dir is the directory where you have expanded the popt4jlib.zip archive.
+2. run the command:
+% runDGATest testdata\dgaTridNonlinearprops3.txt
+to optimize the function tests.TridNonlinearFunction in 100 dimensions using a Distributed GA.
+
+Open the testdata\dgaTridNonlinearprops3.txt to see the parameters defined for this 
+optimization run.
+Other test-run .bat files are found in the top level directory, along with many different 
+test configurations in the testdata directory. In general, when you run a batch file 
+run<XYZ>Test.bat 
+you should use a configuration file with the convention 
+testdata\<xyz>SomeFunctionNameprops.txt.
+

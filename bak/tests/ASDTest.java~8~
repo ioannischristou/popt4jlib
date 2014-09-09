@@ -1,0 +1,42 @@
+package tests;
+
+import popt4jlib.*;
+import utils.*;
+import popt4jlib.GradientDescent.*;
+import java.util.*;
+
+public class ASDTest {
+  public ASDTest() {
+  }
+
+  public static void main(String[] args) {
+    try {
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      int n = ((Integer) params.get("asd.numdimensions")).intValue();
+      double maxargval = ((Double) params.get("asd.functionargmaxval")).doubleValue();
+      double minargval = ((Double) params.get("asd.functionargminval")).doubleValue();
+      // add the initial points
+      int numtries = ((Integer) params.get("asd.numtries")).intValue();
+      for (int i=0; i<numtries; i++) {
+        VectorIntf x0 = new DblArray1Vector(new double[n]);
+        for (int j=0; j<n; j++) {
+          double val = minargval+RndUtil.getInstance().getRandom().nextDouble()*(maxargval-minargval);
+          x0.setCoord(j, val);
+        }
+        params.put("asd.x"+i, x0);
+      }
+      FunctionIntf func = (FunctionIntf) params.get("asd.function");
+      ArmijoSteepestDescent opter = new ArmijoSteepestDescent(params);
+      utils.PairObjDouble p = opter.minimize(func);
+      VectorIntf arg = (VectorIntf) p.getArg();
+      System.out.print("best soln found:[");
+      for (int i=0;i<arg.getNumCoords();i++) System.out.print(arg.getCoord(i)+" ");
+      System.out.println("] VAL="+p.getDouble());
+      System.err.println("numSolutionsFound="+opter.getNumOK()+" numFailed="+opter.getNumFailed());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

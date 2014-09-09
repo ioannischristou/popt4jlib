@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--JBuilder XML Project-->
+<project>
+  <property category="javaFormatting" name="packageThreshold" value="0"/>
+  <property category="javadoc" name="custom.tags.1" value="todo;a;To Do:"/>
+  <property category="optimize.1" name="OptimizableType" value="intuitive.ide.borland.jb10.ProfilerBootstrap"/>
+  <property category="optimize.1" name="oicc.FilterFile" value="C:\Documents and Settings\itc\My Documents\projects\popt4jlib\popt4jlib.oif"/>
+  <property category="optimize.1" name="oipr.FilterFile" value="C:\Documents and Settings\itc\My Documents\projects\popt4jlib\popt4jlib.oif"/>
+  <property category="optimize.2" name="OptimizableType" value="intuitive.ide.borland.jb10.ProfilerBootstrap"/>
+  <property category="optimize.2" name="oicc.FilterFile" value="C:\Documents and Settings\itc\My Documents\projects\popt4jlib\popt4jlib.oif"/>
+  <property category="optimize.2" name="oipr.FilterFile" value="C:\Documents and Settings\itc\My Documents\projects\popt4jlib\popt4jlib.oif"/>
+  <property category="runtime" name="ConfigurationCount" value="7"/>
+  <property category="runtime" name="DefaultConfiguration" value="-1"/>
+  <property category="runtime.0" name="BuildTargetOnRun" value="com.borland.jbuilder.build.ProjectBuilder$ProjectBuildAction;make"/>
+  <property category="runtime.0" name="ConfigurationName" value="DGATest"/>
+  <property category="runtime.0" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.0" name="application.class" value="tests.DGATest"/>
+  <property category="runtime.0" name="application.parameters" value="testdata\dgaMichalewiczprops.txt"/>
+  <property category="runtime.0" name="application.vmparameters" value="-Xmx1500m"/>
+  <property category="runtime.1" name="BuildTargetOnRun" value="com.borland.jbuilder.build.ProjectBuilder$ProjectBuildAction;make"/>
+  <property category="runtime.1" name="ConfigurationName" value="BBGASPPacker"/>
+  <property category="runtime.1" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.1" name="application.class" value="graph.packing.BBGASPPacker"/>
+  <property category="runtime.1" name="application.parameters" value="testdata\udg_05.graph testdata\bbprops_test.txt 20000"/>
+  <property category="runtime.1" name="application.vmparameters" value="-Xmx1200m"/>
+  <property category="runtime.1" name="custom.init_required" value="0"/>
+  <property category="runtime.1" name="custom.required.1" value="colt"/>
+  <property category="runtime.2" name="BuildTargetOnRun" value="com.borland.jbuilder.build.ProjectBuilder$ProjectBuildAction;make"/>
+  <property category="runtime.2" name="ConfigurationName" value="GRASPPacker"/>
+  <property category="runtime.2" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.2" name="application.class" value="graph.packing.GRASPPacker"/>
+  <property category="runtime.2" name="application.parameters" value="testdata\udg_05.graph 0 1 true"/>
+  <property category="runtime.2" name="application.vmparameters" value="-Xmx600m"/>
+  <property category="runtime.2" name="custom.init_required" value="0"/>
+  <property category="runtime.2" name="custom.required.1" value="colt"/>
+  <property category="runtime.3" name="BuildTargetOnRun" value="com.borland.jbuilder.build.ProjectBuilder$ProjectBuildAction;make"/>
+  <property category="runtime.3" name="ConfigurationName" value="GMeansMTClustererTest"/>
+  <property category="runtime.3" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.3" name="application.class" value="tests.GMeansMTClustererTest"/>
+  <property category="runtime.3" name="application.parameters" value="testdata\gaussian_clusters_test_vectors.txt 50 4 7 true"/>
+  <property category="runtime.3" name="application.vmparameters" value="-Xmx1200m"/>
+  <property category="runtime.4" name="BuildTargetOnRun" value="com.borland.jbuilder.build.ProjectBuilder$ProjectBuildAction;make"/>
+  <property category="runtime.4" name="ConfigurationName" value="DGA-DPSO Ensemble Test"/>
+  <property category="runtime.4" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.4" name="application.class" value="tests.DGADPSOTest"/>
+  <property category="runtime.4" name="application.parameters" value="testdata\dgadpsoMichalewiczprops.txt"/>
+  <property category="runtime.4" name="application.vmparameters" value="-Xmx128m"/>
+  <property category="runtime.5" name="BuildTargetOnRun" value="com.borland.jbuilder.build.ProjectBuilder$ProjectBuildAction;make"/>
+  <property category="runtime.5" name="ConfigurationName" value="BlockingFasterMsgPassingTest"/>
+  <property category="runtime.5" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.5" name="application.class" value="parallel.BlockingFasterMsgPassingTest"/>
+  <property category="runtime.5" name="application.vmparameters" value="-Xmx250m"/>
+  <property category="runtime.6" name="BuildTargetOnRun" value="com.borland.jbuilder.build.ProjectBuilder$ProjectBuildAction;make"/>
+  <property category="runtime.6" name="ConfigurationName" value="MsgPassingTest"/>
+  <property category="runtime.6" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.6" name="application.class" value="parallel.MsgPassingTest"/>
+  <property category="runtime.6" name="application.vmparameters" value="-Xmx128m"/>
+  <property category="runtime.7" name="BuildTargetOnRun" value="com.borland.jbuilder.build.ProjectBuilder$ProjectBuildAction;make"/>
+  <property category="runtime.7" name="ConfigurationName" value="BlockingMsgPassingTest"/>
+  <property category="runtime.7" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.7" name="application.class" value="parallel.BlockingMsgPassingTest"/>
+  <property category="runtime.7" name="application.vmparameters" value="-Xmx512m"/>
+  <property category="serverservices" name="disabled.services" value="jdatastore"/>
+  <property category="serverservices" name="single.server.name" value="Tomcat 4.0"/>
+  <property category="sys" name="AuthorLabel" value="@author"/>
+  <property category="sys" name="BackupPath" value="bak"/>
+  <property category="sys" name="CheckStable" value="1"/>
+  <property category="sys" name="Company" value=""/>
+  <property category="sys" name="CompanyLabel" value="Company:"/>
+  <property category="sys" name="Copyright" value="Copyright (c) 2011"/>
+  <property category="sys" name="CopyrightLabel" value="Copyright:"/>
+  <property category="sys" name="DefaultPath" value="src"/>
+  <property category="sys" name="Description" value="A Parallel Meta-Heuristic Optimization Library in Java"/>
+  <property category="sys" name="DescriptionLabel" value="Description:"/>
+  <property category="sys" name="DocPath" value="doc"/>
+  <property category="sys" name="ExcludeClassEnabled" value="0"/>
+  <property category="sys" name="IncludeTestPath" value="1"/>
+  <property category="sys" name="InstanceVisibility" value="2"/>
+  <property category="sys" name="JDK" value="java version 1.4.2_01-b06"/>
+  <property category="sys" name="JvmVersion" value="1.2"/>
+  <property category="sys" name="LastTag" value="0"/>
+  <property category="sys" name="Libraries" value="colt"/>
+  <property category="sys" name="MakeStable" value="0"/>
+  <property category="sys" name="OutPath" value="classes"/>
+  <property category="sys" name="SourcePath" value="src;test"/>
+  <property category="sys" name="TestPath" value="test"/>
+  <property category="sys" name="Title" value="popt4jlib"/>
+  <property category="sys" name="TitleLabel" value="Title:"/>
+  <property category="sys" name="Version" value="1.0"/>
+  <property category="sys" name="VersionLabel" value="@version"/>
+  <property category="sys" name="WorkingDirectory" value="."/>
+  <node name="Archive" type="Archive">
+    <property category="archiving" name="contentRules.1" value="I:**/*.*"/>
+    <property category="archiving" name="documentationPath" value="doc"/>
+    <property category="archiving" name="includeDeps" value="1"/>
+    <property category="archiving" name="includeDocumentation" value="1"/>
+    <property category="archiving" name="targetCompressed" value="1"/>
+    <property category="archiving" name="targetPath" value="popt4jlib.jar"/>
+    <property category="archiving" name="usingRules" value="1"/>
+  </node>
+  <node name="Standard Doclet" type="Javadoc">
+    <property category="docletJavadoc" name="author" value="1"/>
+    <property category="docletJavadoc" name="version" value="1"/>
+    <property category="javadoc" name="documentAllPackages" value="0"/>
+    <property category="javadoc" name="packages.1" value="analysis"/>
+    <property category="javadoc" name="packages.10" value="popt4jlib.EA"/>
+    <property category="javadoc" name="packages.11" value="popt4jlib.GA"/>
+    <property category="javadoc" name="packages.12" value="popt4jlib.GradientDescent"/>
+    <property category="javadoc" name="packages.13" value="popt4jlib.LocalSearch"/>
+    <property category="javadoc" name="packages.14" value="popt4jlib.MSSC"/>
+    <property category="javadoc" name="packages.15" value="popt4jlib.MSSC1D"/>
+    <property category="javadoc" name="packages.16" value="popt4jlib.MonteCarlo"/>
+    <property category="javadoc" name="packages.17" value="popt4jlib.NumberPartitioning"/>
+    <property category="javadoc" name="packages.18" value="popt4jlib.PS"/>
+    <property category="javadoc" name="packages.19" value="popt4jlib.SA"/>
+    <property category="javadoc" name="packages.2" value="graph"/>
+    <property category="javadoc" name="packages.20" value="tests"/>
+    <property category="javadoc" name="packages.21" value="utils"/>
+    <property category="javadoc" name="packages.3" value="graph.coarsening"/>
+    <property category="javadoc" name="packages.4" value="graph.packing"/>
+    <property category="javadoc" name="packages.5" value="graph.partitioning"/>
+    <property category="javadoc" name="packages.6" value="parallel"/>
+    <property category="javadoc" name="packages.7" value="parallel.distributed"/>
+    <property category="javadoc" name="packages.8" value="popt4jlib"/>
+    <property category="javadoc" name="packages.9" value="popt4jlib.DE"/>
+    <property category="javadoc" name="scope" value="public"/>
+    <property category="nodeJavadoc" name="directory" value="doc"/>
+    <property category="nodeJavadoc" name="displayAllOutput" value="0"/>
+  </node>
+</project>

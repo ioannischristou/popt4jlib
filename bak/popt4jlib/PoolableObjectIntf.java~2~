@@ -1,0 +1,35 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package popt4jlib;
+
+/**
+ * interface specifies the contract for objects that can participate in
+ * thread-local object pools.
+ * @author Ioannis T. Christou
+ */
+public interface PoolableObjectIntf {
+	/**
+	 * create a new un-managed object of same type as this object, for use by
+	 * other threads as well.
+	 * @return PoolableObjectIntf
+	 */
+	public PoolableObjectIntf cloneObject();
+	/**
+	 * denote to the pool to which this object belongs that it is no longer needed
+	 * and can be reclaimed and reused by the pool. if the object is not managed
+	 * this is a no-op.
+	 */
+	public void release();
+	/**
+	 * returns true IFF this object is part of a particular thread-local object
+	 * pool.
+	 * @return true IFF this object is part of a particular thread-local object
+	 * pool.
+	 */
+	public boolean isManaged();
+}
+

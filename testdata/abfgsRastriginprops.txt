@@ -1,0 +1,10 @@
+class,abfgs.function,tests.RastriginFunction
+class,abfgs.gradient,tests.RastriginFunctionGrad
+A,10.0
+w,6.283185307179586
+rndgen,7,4
+abfgs.numthreads,4
+abfgs.numdimensions,10
+abfgs.numtries,100
+abfgs.maxiters,1000
+abfgs.maxarmijoiters,100

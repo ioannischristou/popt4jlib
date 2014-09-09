@@ -1,0 +1,6 @@
+package popt4jlib.GA;
+
+public class IntVarArray1CMaker {
+  public IntVarArray1CMaker() {
+  }
+}

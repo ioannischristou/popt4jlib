@@ -1,0 +1,437 @@
+package graph;
+
+import parallel.ParallelException;
+import java.util.*;
+
+
+/**
+ * represents nodes in Graph objects.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class Node implements Comparable {
+  private int _id;
+  private Graph _g;
+  private Set _outlinks;  // Set<Integer linkid>
+  private Set _inlinks;  // Set<Integer linkid>
+  private Set _nbors;  // Set<Node nbor>
+  private Set _nnbors;  // Set<Node nnbor>
+  private Set _nnborCache;  // Set<Node nnbor>
+  private Hashtable _weights;  // map<String wname, Double wvalue>
+
+  /**
+   * public constructor.
+   * @param id int
+   */
+  Node(Graph g, int id) {
+    _g = g;
+    _id=id;
+    _nbors = new HashSet();
+    _outlinks = new HashSet();
+    _inlinks = new HashSet();
+    _weights = new Hashtable();
+  }
+
+
+  /**
+   * return the id of the node.
+   * @return int
+   */
+  public int getId() { return _id; }
+
+
+  /**
+   * nodes with higher id than other nodes come first.
+   * @param other Object
+   * @return int
+   */
+  public int compareTo(Object other) {
+    Node o = (Node) other;
+    if (_id < o._id) return 1;  // nodes with large id come first
+    else if (_id==o._id) return 0;
+    else return -1;
+  }
+
+
+  /**
+   * two nodes equal each other iff they have the same id
+   * @param other Object
+   * @return boolean
+   */
+  public boolean equals(Object other) {
+    if (other==null || !(other instanceof Node)) return false;
+    Node o = (Node) other;
+    return _id == o._id;
+  }
+
+
+  /**
+   * the hashCode() of the Node is its id.
+   * @return int
+   */
+  public int hashCode() {
+    return _id;
+  }
+
+
+  /**
+   * adds the link with id linkid as an outgoing link towards Node t.
+   * @param t Node
+   * @param linkid Integer
+   * @throws ParallelException if the current thread has a read-lock and there
+   * is another thread currently having a read-lock also
+   */
+  void addOutLink(Node t, Integer linkid) throws ParallelException {
+    try {
+      getWriteAccess();
+      _nbors.add(t);
+      _outlinks.add(linkid);
+      t.addInLink(this, linkid);
+      _nnbors = null;  // force re-computation
+      _nnborCache = null;
+    }
+    finally {
+      try {
+        releaseWriteAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+
+  /**
+   * set the weight of the node for the property named <name> to the value val
+   * passed in the 2nd argument.
+   * @param name String
+   * @param val Double
+   * @throws ParallelException if the current thread has read-lock on the graph
+   * and there is another thread currently having a read-lock also
+   */
+  public void setWeight(String name, Double val) throws ParallelException {
+    try {
+      getWriteAccess();
+      _weights.put(name, val);
+    }
+    finally {
+      try {
+        releaseWriteAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+
+  /**
+   * get the node value for the property named <name> in the passed argument
+   * @param name String
+   * @return Double
+   */
+  public Double getWeightValue(String name) {
+    try {
+      getReadAccess();
+      return (Double) _weights.get(name);
+    }
+    finally {
+      try {
+        releaseReadAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();  // never gets here
+      }
+    }
+  }
+
+
+  /**
+   * return the neighboring nodes of this Node
+   * @return Set Set<Node>
+   */
+  public final Set getNbors() {
+    try {
+      getReadAccess();
+      return _nbors;
+    }
+    finally {
+      try {
+        releaseReadAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();  // never gets here
+      }
+    }
+  }
+
+
+  /**
+   * return the neighboring nodes of this Node that are connected by an arc with
+   * weight greater than the value val passed in the 2nd argument.
+   * @param val double
+   * @return Set
+   */
+  public Set getNborIndices(double val) {
+    try {
+      getReadAccess();
+      Set indices = new HashSet(); // Set<Integer nid>
+      Iterator it = _inlinks.iterator();
+      while (it.hasNext()) {
+        Integer lid = (Integer) it.next();
+        Link l = _g.getLink(lid.intValue());
+        if (l.getWeight() >= val) indices.add(new Integer(l.getStart()));
+      }
+      Iterator it2 = _outlinks.iterator();
+      while (it2.hasNext()) {
+        Integer lid = (Integer) it2.next();
+        Link l = _g.getLink(lid.intValue());
+        if (l.getWeight() >= val) indices.add(new Integer(l.getEnd()));
+      }
+      return indices;
+    }
+    finally {
+      try {
+        releaseReadAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();  // never gets here
+      }
+    }
+  }
+
+
+  /**
+   * return this Node's neighbors' indices (excluding this Node's id)
+   * @return Set Set<Integer nodeid>
+   */
+  public Set getNNborIndices() {
+    try {
+      getReadAccess();
+      Set indices = new HashSet();
+      Iterator iter = _nbors.iterator();
+      while (iter.hasNext()) {
+        Node n = (Node) iter.next();
+        indices.add(new Integer(n.getId()));
+        Set nnbors = n.getNborIndices(Double.NEGATIVE_INFINITY);
+        indices.addAll(nnbors);
+      }
+      return indices;
+    }
+    finally {
+      try {
+        releaseReadAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();  // never gets here
+      }
+    }
+  }
+
+
+  /**
+   * return all neighbors of this node at distance 1 or 2
+   * @return Set Set<Node>
+   * @throws ParallelException
+   */
+  public final Set getNNbors() throws ParallelException {
+    return getNNbors(false);
+  }
+
+
+  /**
+   * return all neighbors of this node at distance 1 or 2.
+   * The returned set is a reference to the data member _nnbors so cannot
+   * be used to be modified in any way
+   * @param force boolean if true it forces the re-computation of the neighbors
+   * (unless a cache exists in which case the nnbors are not re-computed as
+   * there is no need)
+   * @return Set Set<Node>
+   * @throws ParallelException if the current thread has read-lock on the graph
+   * and there is another thread currently owning a read-lock as well.
+   */
+  public final Set getNNbors(boolean force) throws ParallelException {
+    boolean do_rel = true;
+    try {
+      getReadAccess();
+      if (_nnbors != null && force == false) {
+        do_rel = false;
+        releaseReadAccess();
+        return _nnbors;
+      }
+      else if (_nnborCache == null) { // force re-computation
+        releaseReadAccess();
+        getWriteAccess();
+        if (_nnborCache != null) {  // this is a working version of the
+                                    // Double-Check-Locking idiom, that is
+                                    // however correct as all checks to the
+                                    // _nnbors and _nnborCache happen under
+                                    // proper synchronization
+          // restore from cache
+          _nnbors = new TreeSet(_nnborCache);
+          return _nnbors;
+        }
+        TreeSet nnbors = new TreeSet(_nbors);
+        Iterator it = _nbors.iterator();
+        while (it.hasNext()) {
+          Node nbor = (Node) it.next();
+          Set nnbors2 = nbor.getNbors();
+          nnbors.addAll(nnbors2);
+        }
+        nnbors.remove(this);
+        // store in data member, and in cache
+        _nnbors = nnbors;
+        _nnborCache = new TreeSet(nnbors);
+        return _nnbors;
+      }
+      else {
+        releaseReadAccess();
+        getWriteAccess();
+        // restore from cache
+        _nnbors = new TreeSet(_nnborCache);
+        return _nnbors;
+      }
+    }
+    finally {
+      try {
+        if (do_rel) releaseWriteAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+
+  /**
+   * return the ids of the incoming links to this Node.
+   * @return Set Set<Integer linkid>
+   */
+  public Set getInLinks() {
+    try {
+      getReadAccess();
+      return _inlinks;
+    }
+    finally {
+      try {
+        releaseReadAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();  // never gets here
+      }
+    }
+  }
+
+
+  /**
+   * return the ids of the outgoing links from this Node.
+   * @return Set Set<Integer linkid>
+   */
+  public Set getOutLinks() {
+    try {
+      getReadAccess();
+      return _outlinks;
+    }
+    finally {
+      try {
+        releaseReadAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();  // never gets here
+      }
+    }
+  }
+
+
+  /**
+   * return the sum of all weights of all links connected to this Node (incoming
+   * and outgoing).
+   * @param g Graph
+   * @return double
+   */
+  public double getArcWeights(Graph g) {
+    try {
+      getReadAccess();
+      double res = 0.0;
+      Iterator itin = _inlinks.iterator();
+      while (itin.hasNext()) {
+        Integer lid = (Integer) itin.next();
+        Link l = g.getLink(lid.intValue());
+        res += l.getWeight();
+      }
+      Iterator itout = _outlinks.iterator();
+      while (itout.hasNext()) {
+        Integer lid = (Integer) itout.next();
+        Link l = g.getLink(lid.intValue());
+        res += l.getWeight();
+      }
+      return res;
+    }
+    finally {
+      try {
+        releaseReadAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();  // never gets here
+      }
+    }
+  }
+
+
+  /**
+   * helper method. Not to be used by clients of this package.
+   * @param t Node
+   * @param linkid Integer
+   */
+  private void addInLink(Node t, Integer linkid) {
+    // intentionally left unsynchronized as there is no need to
+    _nbors.add(t);
+    _inlinks.add(linkid);
+    // if (t._outlinks.contains(linkid)==false) t.addOutLink(this, linkid);
+    // reset members that need recomputation
+    _nnbors = null;
+    _nnborCache = null;
+  }
+
+
+  /**
+   * get the read-lock for the graph to which this node belongs.
+   */
+  private void getReadAccess() {
+    _g.getReadAccess();
+  }
+
+
+  /**
+   * get the write-lock for the graph to which this node belongs.
+   * @throws ParallelException
+   */
+  private void getWriteAccess() throws ParallelException {
+    _g.getWriteAccess();
+  }
+
+
+  /**
+   * release the read-lock for the graph to which this node belongs. A prior
+   * getReadAccess() call on this Node object must have taken place.
+   * @throws ParallelException
+   */
+  private void releaseReadAccess() throws ParallelException {
+    _g.releaseReadAccess();
+  }
+
+
+  /**
+   * release the write-lock for the graph to which this node belongs. A prior
+   * getWriteAccess() call on this Node object must have taken place.
+   * @throws ParallelException
+   */
+  private void releaseWriteAccess() throws ParallelException {
+    _g.releaseWriteAccess();
+  }
+
+}

@@ -1,0 +1,8 @@
+class,asd.function,tests.LND7Function
+asd.functionargmaxval,100.0
+asd.functionargminval,-100.0
+rndgen,7,1
+asd.numthreads,1
+asd.numdimensions,100
+asd.numtries,1
+asd.maxiters,10000

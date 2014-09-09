@@ -1,0 +1,6 @@
+package popt4jlib.GA;
+
+public class DblVarArray1CMaker {
+  public DblVarArray1CMaker() {
+  }
+}

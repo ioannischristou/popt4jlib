@@ -1,0 +1,47 @@
+package popt4jlib.GradientDescent;
+
+import popt4jlib.*;
+import java.util.*;
+
+public strictfp class GradApproximator implements VecFunctionIntf {
+  private FunctionIntf _f=null;
+
+  public GradApproximator(FunctionIntf f) {
+    _f = f;
+  }
+
+
+  public VectorIntf eval(VectorIntf x, Hashtable params) throws IllegalArgumentException {
+    if (x==null) throw new IllegalArgumentException("null arg passed");
+    final int n = x.getNumCoords();
+    VectorIntf xc = x.newCopy();  // work with copy so as to avoid memory
+    // corruption issues in multi-threaded accesses of the vector
+    double h = 1.0;
+    int nmax = 20;
+    Integer nmI = (Integer) params.get("gradapproximator.nmax");
+    if (nmI!=null && nmI.intValue()>0)
+      nmax = nmI.intValue();
+    double[][] d = new double[nmax][nmax];
+    VectorIntf retval = x.newCopy();
+    for (int k=0; k<n; k++) {
+      for (int i = 0; i < nmax; i++) {
+        double xk = xc.getCoord(k);
+        xc.setCoord(k, xk + h);
+        double fphk = _f.eval(xc, params);
+        xc.setCoord(k, xk - h);
+        double fmhk = _f.eval(xc, params);
+        double gk = (fphk - fmhk) / (2.0 * h);
+        xc.setCoord(k, xk); // reset to normal value
+        d[i][0] = gk;
+        for (int j = 0; j <= i-1; j++) {
+          d[i][j+1] = d[i][j] +
+              (d[i][j] - d[i-1][j]) / (Math.pow(4.0, j+1.0) - 1);
+        }
+        h = h / 2;
+      }
+      retval.setCoord(k, d[nmax-1][nmax-1]);
+    }
+    return retval;
+  }
+}
+

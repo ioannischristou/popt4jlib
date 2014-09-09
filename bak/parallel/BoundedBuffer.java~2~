@@ -1,0 +1,57 @@
+package parallel;
+
+class BoundedBuffer {
+  private DLCListNode _head;
+  private DLCListNode _tail;
+  private int _maxLen;
+  private DLCListNode[] _buffer;
+
+  public BoundedBuffer(int maxlen) {
+    _maxLen = maxlen;
+    _buffer = new DLCListNode[maxlen];
+    _buffer[0] = new DLCListNode(null, null, null);
+    _head = _buffer[0];
+    _head._prev = _head;
+    _head._next = _head;
+    DLCListNode prev = _head;
+    DLCListNode next = _head;
+    for (int i=1; i<_maxLen; i++) {
+      _buffer[i] = new DLCListNode(null, null, prev);
+      next = _buffer[i];
+      prev._next=next;
+      prev = next;
+    }
+    _head._prev = next;
+    next._next = _head;
+    _tail = _head;  // empty buffer
+  }
+
+  public synchronized void add(Object obj) throws ParallelException {
+    if (_head._prev == _tail) throw new ParallelException("cannot add any more data to this buffer");
+    _tail._data = obj;
+    _tail = _tail._next;
+    return;
+  }
+
+
+  public synchronized Object remove() throws ParallelException {
+    if (_head==_tail) throw new ParallelException("buffer is empty");
+    Object result = _head._data;
+    _head = _head._next;
+    return result;
+  }
+}
+
+
+class DLCListNode {
+  DLCListNode _next;
+  DLCListNode _prev;
+  Object _data;
+
+  public DLCListNode(Object data, DLCListNode next, DLCListNode previous) {
+    _data = data;
+    _next = next;
+    _prev = previous;
+  }
+}
+

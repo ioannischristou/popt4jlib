@@ -1,0 +1,36 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.io.*;
+
+public class DSendMsg implements DMsgIntf {
+  public static final long serialVersionUID = 987654333320L;
+  private Integer _fromId;
+  private Integer _toId=null;
+  private String _coordName;
+  private Serializable _data;
+
+
+  public DSendMsg(int fromid, Serializable data, String coordName) {
+    _fromId = new Integer(fromid);
+    _data = data;
+    _coordName = coordName;
+  }
+
+  public DSendMsg(int fromid, int toid, Serializable data, String coordName) {
+    this(fromid, data, coordName);
+    _toId = new Integer(toid);
+  }
+
+
+  public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
+    MsgPassingCoordinator coord = MsgPassingCoordinator.getInstance(_coordName);
+    if (_toId!=null) coord.sendData(_fromId.intValue(), _toId.intValue(), _data);
+    else coord.sendData(_fromId.intValue(), _data);
+    System.err.println("sent to coordinator data: fromid="+_fromId+" toid="+_toId);  // itc: HERE rm asap
+    oos.writeObject(new OKReply());
+    oos.flush();
+    System.err.println("sent OKReply");  // itc: HERE rm asap
+  }
+}
+

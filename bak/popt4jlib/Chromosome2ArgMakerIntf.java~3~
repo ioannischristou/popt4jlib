@@ -1,0 +1,5 @@
+package popt4jlib;
+
+public interface Chromosome2ArgMakerIntf {
+  public Object getArg(Object chromosome) throws OptimizerException;  // Chromosome->FunctionArgument Map
+}

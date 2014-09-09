@@ -1,0 +1,43 @@
+package tests;
+
+import utils.*;
+import graph.*;
+import java.util.*;
+
+public class CliqueComputingTest {
+  public CliqueComputingTest() {
+  }
+
+  public static void main(String[] args) {
+    try {
+      long start = System.currentTimeMillis();
+      String filename = args[0];
+      double thres = Double.parseDouble(args[1]);
+      boolean do_BK = false;
+      if (args.length > 2 && Integer.parseInt(args[2]) == 1) do_BK = true;
+      Graph g = DataMgr.readGraphFromFile(filename);
+      AllMWCFinder finder = null;
+      if (do_BK) finder = new AllMWCFinderBK(g);
+      else finder = new AllMWCFinder(g);
+      Set output = finder.getAllMaximalCliques(thres);
+      Iterator it = output.iterator();
+      int i=0;
+      while (it.hasNext()) {
+        Set c = (Set) it.next();
+        System.out.print(++i +
+                         ": [ ");
+        Iterator it2 = c.iterator();
+        while (it2.hasNext()) {
+          Integer id = (Integer) it2.next();
+          System.out.print(id.intValue()+" ");
+        }
+        System.out.println("]");
+      }
+      long dur = System.currentTimeMillis()-start;
+      System.out.println("time (msecs)="+dur);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+}

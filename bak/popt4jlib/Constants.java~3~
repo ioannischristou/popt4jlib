@@ -1,0 +1,17 @@
+package popt4jlib;
+
+public final class Constants {
+  public static final int DGA=1;
+  public static final int DEA=2;
+  public static final int DSA=3;
+  public static final int DMC=4;
+  public static final int DPSO=5;
+  public static final int ABFGS=6;
+  public static final int ASD=7;
+  public static final int ASDST=8;
+  public static final int PRCG=9;
+  public static final int PRCGST=10;
+  public static final int RD=11;
+  public static final int DDE=12;
+  public static final int OB=14;
+}

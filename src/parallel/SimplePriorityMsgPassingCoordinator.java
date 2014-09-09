@@ -1,0 +1,143 @@
+package parallel;
+
+import java.util.Hashtable;
+import java.util.TreeSet;
+import java.util.Iterator;
+
+
+/**
+ * The SimplePriorityMsgPassingCoordinator class: yet another class that allows
+ * sending and receiving (synchronous and asynchronous) data between threads.
+ * It behaves as the SimpleFasterMsgPassingCoordinator, except that tasks are
+ * assumed to have different priorities, and higher-priority tasks are received
+ * before lower-priority ones. The class is used e.g. with the
+ * <CODE>FasterParallelAsynchBatchPriorityTaskExecutor</CODE>.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class SimplePriorityMsgPassingCoordinator {
+  private static final int _maxSize=10000;
+  private TreeSet _data;  // holds ComparableTaskObject objects
+  private static SimplePriorityMsgPassingCoordinator _instance=null;
+  private static Hashtable _instances=new Hashtable();  // map<String name, SPMPC instance>
+
+
+  /**
+   * private constructor in accordance with the Singleton Design Pattern
+   */
+  private SimplePriorityMsgPassingCoordinator() {
+    _data = new TreeSet();
+  }
+
+
+  /**
+   * return the default SimplePriorityMsgPassingCoordinator object.
+   * @return SimpleFasterMsgPassingCoordinator
+   */
+  public synchronized static SimplePriorityMsgPassingCoordinator getInstance() {
+    if (_instance==null) {
+      _instance = new SimplePriorityMsgPassingCoordinator();
+    }
+    return _instance;
+  }
+
+
+  /**
+   * return the unique SimplePriorityMsgPassingCoordinator object associated
+   * with a given name.
+   * @return SimplePriorityMsgPassingCoordinator
+   */
+  public synchronized static SimplePriorityMsgPassingCoordinator getInstance(String name) {
+    SimplePriorityMsgPassingCoordinator instance = (SimplePriorityMsgPassingCoordinator) _instances.get(name);
+    if (instance==null) {
+      instance = new SimplePriorityMsgPassingCoordinator();
+      _instances.put(name, instance);
+    }
+    return instance;
+  }
+
+
+  /**
+   * return the _maxSize data member
+   * @return int
+   */
+  public static int getMaxSize() { return _maxSize; }
+
+
+  /**
+   * get the current number of tasks in the queue awaiting processing.
+   * @return int
+   */
+  public synchronized int getNumTasksInQueue() {
+    return _data.size();
+  }
+
+
+  /**
+   * stores the data object to be consumed by any thread that invokes recvData()
+   * method -regardless of which thread that is. The method returns immediately.
+   * @param data ComparableTaskObject
+   * @throws ParallelException if there are more data than _maxSize in the queue
+   */
+  public synchronized void sendData(ComparableTaskObject data)
+      throws ParallelException {
+    if (_data.size()>=_maxSize)
+      throw new ParallelException("SimplePriorityMsgPassingCoordinator queue is full");
+    _data.add(data);
+    notifyAll();
+  }
+
+
+  /**
+   * stores the data object to be consumed by any thread that invokes recvData()
+   * method -regardless of which thread that is. The method will wait if the
+   * queue is full until another thread consumes a datum and allows this thread
+   * to write to the _data buffer.
+   * @param data Object
+   */
+  public synchronized void sendDataBlocking(ComparableTaskObject data) {
+    while (_data.size()>= _maxSize) {
+      try {
+        wait();
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+    _data.add(data);
+    notifyAll();
+  }
+
+
+  /**
+   * retrieves the first data Object that has been stored via a call (from
+   * another thread) to sendData(threadId, data). If no such
+   * data exists, the calling thread will wait until another thread stores an
+   * appropriate datum.
+   * @return Object
+   */
+  public synchronized Object recvData() {
+    while (true) {
+      if (_data.size()>0) {
+        Iterator it = _data.iterator();
+        ComparableTaskObject res = (ComparableTaskObject) it.next();
+        it.remove();
+        notifyAll();
+        return res;
+      }
+      // else:
+      try {
+        wait();
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // recommended action
+      }
+    }
+  }
+
+}
+

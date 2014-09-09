@@ -1,0 +1,132 @@
+package tests;
+
+import popt4jlib.*;
+import utils.*;
+import popt4jlib.GradientDescent.*;
+import java.util.*;
+
+/**
+ * Test-driver for the ArmijoBFGS optimizer in popt4jlib.GradientDescent package.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class ABFGSTest {
+
+  /**
+   * public no-arg (no-op) constructor
+   */
+  public ABFGSTest() {
+  }
+
+
+  /**
+   * run as <CODE> java -cp <classpath> tests.ABFGSTest <params_file> </CODE>
+   * where the params_file must contain lines of the following form:
+   * <li> <abfgs.numdimensions, <num> > mandatory, number of dimensions
+   * of the function to be optimized; the function to be optimized must accept
+   * as arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
+   * objects.
+   * <li> <abfgs.numtries, <num> > mandatory, the number of "tries" to
+   * attempt. Different random points will be used as initial points for each
+   * "try".
+   * <li> <class,abfgs.function, <fullclassnameoffunction> > mandatory the
+   * classname of the java class defining the function to be optimized.
+   * <li> <abfgs.maxargval, <num> > optional, the max. argument value for any
+   * argument of the function to be optimized
+   * <li> <abfgs.minargval, <num> > optional, the min. arg. value for any arg.
+   * of the function to be optimized.
+   * <li> <abfgs.maxargval$j$, <num> > j=0...numdimensions-1 optional, the max.
+   * arg. value for the (j+1)-st variable of the function
+   * <li> <abfgs.minargval$j$, <num> > j=0...numdimensions-1 optional, the min.
+   * arg. value for the (j+1)-st variable of the function.
+   *
+   * Plus in the file, the parameters for <CODE>ArmijoBFGS.minimize(f)</CODE>
+   * method may be specified:
+   *
+   * <li> <abfgs.numthreads, <num> > optional, the number of threads to use.
+   * Default is 1.
+   * <li> <class,abfgs.gradient, <fullclassnameofgradient> > optional, the grad.
+   * of f, the function to be minimized. If this param-value pair does not exist
+   * gradient will be computed using Richardson finite differences extrapolation
+   * <li> <abfgs.gtol, <num> > optional, the minimum abs. value for each of the
+   * gradient's coordinates, below which if all coordinates of the gradient
+   * happen to be, the search stops assuming it has reached a stationary point.
+   * Default is 1.e-6.
+   * <li> <abfgs.maxiters, <num> > optional, the maximum number of major
+   * iterations of the Newton-type search before the algorithm stops. Default is
+   * Integer.MAX_VALUE.
+   * <li> <abfgs.rho, <num> > optional, the value for the parameter ñ in the
+   * Armijo rule implementation. Default is 0.1.
+   * <li> <abfgs.beta, <num> > optional, the value for the parameter â in the
+   * Armijo rule implementation. Default is 0.2.
+   * <li> <abfgs.gamma, <num> > optional, the value for the parameter ã in the
+   * Armijo rule implementation. Default is 1.
+   * <li> <abfgs.maxarmijoiters, <num> > optional, the maximum number of Armijo
+   * rule iterations allowed. Default is Integer.MAX_VALUE.
+   *
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      int n = ((Integer) params.get("abfgs.numdimensions")).intValue();
+      // add the initial points
+      int numtries = ((Integer) params.get("abfgs.numtries")).intValue();
+      double maxargval = Double.MAX_VALUE;
+      try {
+        maxargval = ( (Double) params.get("abfgs.maxargval")).doubleValue();
+      }
+      catch (Exception e) {
+        // no-op
+      }
+      double minargval = Double.NEGATIVE_INFINITY;
+      try {
+        minargval = ( (Double) params.get("abfgs.minargval")).doubleValue();
+      }
+      catch (Exception e) {
+        // no-op
+      }
+      for (int i=0; i<numtries; i++) {
+        VectorIntf x0 = new DblArray1Vector(new double[n]);
+        for (int j=0; j<n; j++) {
+          double maxargvalj = maxargval;
+          try {
+            maxargvalj = ( (Double) params.get("abfgs.maxargval"+j)).doubleValue();
+            if (maxargvalj >= maxargval) maxargvalj = maxargval;
+          }
+          catch (Exception e) {
+            // no-op
+          }
+          double minargvalj = minargval;
+          try {
+            minargvalj = ( (Double) params.get("abfgs.minargval"+j)).doubleValue();
+            if (minargvalj >= minargval) minargvalj = minargval;
+          }
+          catch (Exception e) {
+            // no-op
+          }
+          double val = minargvalj +
+                       RndUtil.getInstance().getRandom().nextDouble()*(maxargvalj-minargvalj);
+          x0.setCoord(j, val);
+        }
+        params.put("abfgs.x"+i, x0);
+      }
+      FunctionIntf func = (FunctionIntf) params.get("abfgs.function");
+      ArmijoBFGS opter = new ArmijoBFGS(params);
+      utils.PairObjDouble p = opter.minimize(func);
+      VectorIntf arg = (VectorIntf) p.getArg();
+      System.out.print("best soln found:[");
+      for (int i=0;i<arg.getNumCoords();i++) System.out.print(arg.getCoord(i)+" ");
+      System.out.println("] VAL="+p.getDouble());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}
+

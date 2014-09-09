@@ -1,0 +1,11 @@
+package popt4jlib.LocalSearch;
+
+public class LocalSearchException extends Exception {
+  private String _msg;
+
+  public LocalSearchException(String msg) {
+    _msg = msg;
+    System.err.println(msg);
+  }
+}
+

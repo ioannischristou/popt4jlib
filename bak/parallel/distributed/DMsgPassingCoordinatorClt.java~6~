@@ -1,0 +1,119 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.io.*;
+import java.net.*;
+
+public class DMsgPassingCoordinatorClt {
+  private String _host="localhost";
+  private int _port = 7894;
+  private String _coordName="DMsgPassingCoordinator_"+_port;
+
+
+  public DMsgPassingCoordinatorClt() throws UnknownHostException {
+    InetAddress ia = InetAddress.getLocalHost();
+    _host = ia.getHostAddress();
+  }
+
+
+  public DMsgPassingCoordinatorClt(String host, int port, String coordName) throws UnknownHostException {
+    _host = InetAddress.getByName(host).getHostAddress();
+    _port = port;
+    _coordName = coordName;
+  }
+
+
+  public void sendData(int myid, int toid, Serializable data) throws IOException, ClassNotFoundException, ParallelException {
+    Socket s = new Socket(_host, _port);
+    ObjectOutputStream oos = null;
+    ObjectInputStream ois = null;
+    try {
+      oos = new ObjectOutputStream(s.getOutputStream());
+      oos.flush();
+      ois = new ObjectInputStream(s.getInputStream());
+      oos.writeObject(new DSendMsg(myid, toid, data, _coordName));
+      oos.flush();
+      Object reply = ois.readObject();
+      if (reply instanceof OKReply) {
+        return;
+      }
+      else {
+        throw new ParallelException("sendData(myid, toid, data) failed");
+      }
+    }
+    finally {
+      if (oos!=null) oos.close();
+      if (ois!=null) ois.close();
+      s.close();
+    }
+  }
+
+
+  public void sendData(int myid, Serializable data) throws IOException, ClassNotFoundException, ParallelException {
+    Socket s = new Socket(_host, _port);
+    ObjectOutputStream oos = null;
+    ObjectInputStream ois = null;
+    try {
+      oos = new ObjectOutputStream(s.getOutputStream());
+      oos.flush();
+      ois = new ObjectInputStream(s.getInputStream());
+      oos.writeObject(new DSendMsg(myid, data, _coordName));
+      oos.flush();
+      Object reply = ois.readObject();
+      if (reply instanceof OKReply) {
+        return;
+      }
+      else {
+        throw new ParallelException("sendData(myid, data) failed");
+      }
+    }
+    finally {
+      if (oos!=null) oos.close();
+      if (ois!=null) ois.close();
+      s.close();
+    }
+  }
+
+
+  public Object recvData(int myid) throws IOException, ClassNotFoundException, ParallelException {
+    Socket s = new Socket(_host, _port);
+    ObjectOutputStream oos = null;
+    ObjectInputStream ois = null;
+    try {
+      oos = new ObjectOutputStream(s.getOutputStream());
+      oos.flush();
+      ois = new ObjectInputStream(s.getInputStream());
+      oos.writeObject(new DRecvMsg(myid, _coordName));
+      oos.flush();
+      Object reply = ois.readObject();
+      return reply;
+    }
+    finally {
+      if (oos!=null) oos.close();
+      if (ois!=null) ois.close();
+      s.close();
+    }
+  }
+
+
+  public Object recvData(int myid, int fromid) throws IOException, ClassNotFoundException, ParallelException {
+    Socket s = new Socket(_host, _port);
+    ObjectOutputStream oos = null;
+    ObjectInputStream ois = null;
+    try {
+      oos = new ObjectOutputStream(s.getOutputStream());
+      oos.flush();
+      ois = new ObjectInputStream(s.getInputStream());
+      oos.writeObject(new DRecvMsg(myid, fromid, _coordName));
+      oos.flush();
+      Object reply = ois.readObject();
+      return reply;
+    }
+    finally {
+      if (oos!=null) oos.close();
+      if (ois!=null) ois.close();
+      s.close();
+    }
+  }
+}
+

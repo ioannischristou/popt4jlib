@@ -1,0 +1,8 @@
+package popt4jlib;
+
+public interface VectorIntf {
+  public VectorIntf newInstance(double[] arg);
+  public double getCoord(int coord) throws IllegalArgumentException;
+  public void setCoord(int i, double val) throws IllegalArgumentException;
+  public int getNumCoords();
+}

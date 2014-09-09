@@ -1,0 +1,431 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+/**
+ * Server class allows clients or workers to connect to this process and submit
+ * TaskObjects for processing to any of the available workers in the network of
+ * connected workers. A worker process connects to this process on default port
+ * 7890 and by doing so declares itself available for processing an array of
+ * <CODE>TaskObject</CODE> objects, encapsulated in a
+ * <CODE>TaskObjectsExecutionRequest</CODE>
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class PDBatchTaskExecutorSrv {
+  private Hashtable _workers;  // map<Socket s, PDBTEListener listener>
+  private HashSet _working;  // Set<PDBTEListener listener>
+  private int _workersPort = 7890;  // default port
+  private int _clientsPort = 7891;  // default port
+  private static final int _NUM_ATTEMPTS = 10;  // num attempts to iterate over
+                                                // available worker connections
+                                                // to try to find an idle one.
+
+
+  /**
+   * sole public constructor.
+   * @param wport int the port workers (PDBatchTaskExecutorWrk) connect to.
+   * @param cport int the port clients (PDBatchTaskExecutorClt) connect to.
+   */
+  public PDBatchTaskExecutorSrv(int wport, int cport) {
+    _workers = new Hashtable();
+    _working = new HashSet();
+    _workersPort = wport;
+    _clientsPort = cport;
+  }
+
+
+  /**
+   * invoke as:
+   * <CODE>java -cp &ltclasspath&gt parallel.distributed.PDBatchTaskExecutorSrv [workers_port(7890)] [clients_port(7891)]</CODE>
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    int wport = 7890;  // default port
+    int cport = 7891;
+    if (args.length>0) {
+      try {
+        wport = Integer.parseInt(args[0]);
+      }
+      catch (Exception e) {
+        e.printStackTrace();
+        usage();
+        System.exit(-1);
+      }
+      if (args.length>1) {
+        try {
+          cport = Integer.parseInt(args[1]);
+        }
+        catch (Exception e) {
+          e.printStackTrace();
+          usage();
+          System.exit(-1);
+        }
+      }
+    }
+    PDBatchTaskExecutorSrv server = new PDBatchTaskExecutorSrv(wport, cport);
+    try {
+      server.run();
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.err.println("Server exits due to exception.");
+    }
+  }
+
+
+  void run() throws IOException {
+    WThread workersListeningThread = new WThread(_workersPort);
+    workersListeningThread.start();
+    CThread clientsListeningThread = new CThread(_clientsPort);
+    clientsListeningThread.start();
+  }
+
+
+  TaskObjectsExecutionResults submitWork(TaskObject[] tasks) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+    Set workers2rm = new HashSet();  // Set<PDBTEWListener>
+    PDBTEWListener t = null;
+    System.err.println("PDBatchTaskExecutorSrv.submitWork(tasks): finding an available worker connection"); System.err.flush();  // itc: HERE rm asap
+    // 1. find a worker (via Round-Robin)
+    synchronized (this) {
+      int count = 0;
+      while (++count<_NUM_ATTEMPTS) {
+        workers2rm.clear();
+        Iterator sit = _workers.keySet().iterator();
+        while (sit.hasNext()) {
+          Socket s = (Socket) sit.next();
+          t = (PDBTEWListener) _workers.get(s);
+          boolean is_avail = t.getAvailability() && !_working.contains(t);
+          // the _working set is needed so that submitWork() is guaranteed not
+          // to choose twice the same worker before the worker is done with the
+          // first request.
+          if (is_avail) {
+            count = _NUM_ATTEMPTS;
+            _working.add(t);
+            break;
+          }
+          else {
+            if (t.isConnectionLost()) workers2rm.add(t);
+            t = null; // reset to null
+          }
+        }
+        // remove any "lost connections" worker listeners
+        Iterator it = workers2rm.iterator();
+        while (it.hasNext()) _workers.remove(it.next());
+      }
+    }
+    if (t==null) {  // failed to find an available thread
+      throw new PDBatchTaskExecutorException("no available worker");
+    }
+    System.err.println("PDBatchTaskExecutorSrv.submitWork(tasks): found an available worker"); System.err.flush();  // itc: HERE rm asap
+    // 2. submit tasks and get back results
+    TaskObjectsExecutionRequest req = new TaskObjectsExecutionRequest(tasks);
+    System.err.println("PDBatchTaskExecutorSrv.submitWork(tasks): created the TaskObjectsExecutionRequest to send"); System.err.flush();  // itc: HERE rm asap
+    RRObject res = submitWork(req, t);
+    System.err.println("PDBatchTaskExecutorSrv.submitWork(tasks): finished running submitWork(req,ois,oos)"); System.err.flush();  // itc: HERE rm asap
+    synchronized (this) {
+      _working.remove(t);  // declare worker's availability again
+    }
+    if (res instanceof TaskObjectsExecutionResults)
+      return (TaskObjectsExecutionResults) res;
+    else {
+      throw new PDBatchTaskExecutorException("worker failed to process tasks.");
+    }
+  }
+
+
+  private TaskObjectsExecutionResults submitWork(TaskObjectsExecutionRequest req, PDBTEWListener t)
+      throws IOException, PDBatchTaskExecutorException {
+    System.err.println("PDBatchTaskExecutorSrv.submitWork(req,t): sending request"); System.err.flush();  // itc: HERE rm asap
+    TaskObjectsExecutionResults res = t.runObject(req);
+    System.err.println("PDBatchTaskExecutorSrv.submitWork(req,t): request submitted"); System.err.flush();  // itc: HERE rm asap
+    return res;
+  }
+
+
+  /**
+   * adds a new worker to the network.
+   * @param s Socket
+   */
+  private synchronized void addNewWorkerConnection(Socket s) {
+    try {
+      PDBTEWListener lt = new PDBTEWListener(this, s);
+      _workers.put(s, lt);
+    }
+    catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+
+  /**
+   * adds a new client to the network. The difference between clients and
+   * workers is that "clients" submit jobs to the network, but don't want to
+   * "get" any job to do themselves. Workers may also submit jobs to the network
+   * but are also available to run tasks themselves as well.
+   * @param s Socket
+   */
+  private synchronized void addNewClientConnection(Socket s) {
+    try {
+      PDBTECListenerThread lt = new PDBTECListenerThread(this, s);
+      lt.start();
+    }
+    catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+
+  private static void usage() {
+    System.err.println("usage: java -cp <classpath> parallel.distributed.PDBatchTaskExecutorSrv [workersport] [clientsport]");
+  }
+
+
+  /**
+   * auxiliary inner class.
+   * <p>Title: popt4jlib</p>
+   * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+   * <p>Copyright: Copyright (c) 2011</p>
+   * <p>Company: </p>
+   * @author Ioannis T. Christou
+   * @version 1.0
+   */
+  class WThread extends Thread {
+    int _port;
+    public WThread(int port) {
+      _port = port;
+    }
+
+    public void run() {
+      try {
+        ServerSocket ss = new ServerSocket(_port);
+        System.out.println("Srv: Now Accepting Worker Connections");
+        while (true) {
+          try {
+            Socket s = ss.accept();
+            System.out.println("Srv: New Worker Added to the Network");
+            addNewWorkerConnection(s);
+            System.out.println("Srv: finished adding new worker connection to the _workers");
+          }
+          catch (Exception e) {
+            e.printStackTrace();
+          }
+        }
+      }
+      catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+
+  /**
+   * auxiliary inner class.
+   * <p>Title: popt4jlib</p>
+   * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+   * <p>Copyright: Copyright (c) 2011</p>
+   * <p>Company: </p>
+   * @author Ioannis T. Christou
+   * @version 1.0
+   */
+  class CThread extends Thread {
+    int _port;
+    public CThread(int port) {
+      _port = port;
+    }
+
+    public void run() {
+      try {
+        ServerSocket ss = new ServerSocket(_port);
+        System.out.println("Srv: Now Accepting Client Connections");
+        while (true) {
+          try {
+            Socket s = ss.accept();
+            System.out.println("Srv: New Client Added to the Network");
+            addNewClientConnection(s);
+            System.out.println("Srv: finished adding new client connection");
+          }
+          catch (Exception e) {
+            e.printStackTrace();
+          }
+        }
+      }
+      catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+
+  /**
+   * auxiliary inner class.
+   * <p>Title: popt4jlib</p>
+   * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+   * <p>Copyright: Copyright (c) 2011</p>
+   * <p>Company: </p>
+   * @author Ioannis T. Christou
+   * @version 1.0
+   */
+  class PDBTECListenerThread extends Thread {
+    private Socket _s;
+    private ObjectInputStream _ois;
+    private ObjectOutputStream _oos;
+    private PDBatchTaskExecutorSrv _srv;
+    private boolean _isAvail = true;
+
+    PDBTECListenerThread(PDBatchTaskExecutorSrv srv, Socket s) throws IOException {
+      _srv = srv;
+      _s = s;
+      _ois = new ObjectInputStream(_s.getInputStream());
+      _oos = new ObjectOutputStream(_s.getOutputStream());
+      _oos.flush();
+    }
+
+    public void run() {
+      while (true) {
+        try {
+          System.err.println("PDBTECListenerThread.run(): waiting to read an RRObject..."); System.err.flush();  // itc: HERE rm asap
+          // 1. read from socket input
+          RRObject obj =  (RRObject) _ois.readObject();  // obj is an TaskObjectsExecutionRequest
+          System.err.println("PDBTECListenerThread.run(): RRObject read"); System.err.flush();  // itc: HERE rm asap
+          // 2. take appropriate action
+          try {
+            obj.runProtocol(_srv, _ois, _oos);
+          }
+          catch (PDBatchTaskExecutorException e) {  // failed to find an available
+                                                    // thread; indicate to the requestor
+            System.err.println("PDBTECListenerThread.run(): sending NoWorkerAvailableResponse() to client...");  // itc: HERE rm asap
+            // e.printStackTrace();
+            _oos.writeObject(new NoWorkerAvailableResponse(((TaskObjectsExecutionRequest) obj)._tasks));
+            _oos.flush();
+          }
+        }
+        catch (Exception e) {  // client closed connection
+          // e.printStackTrace();
+          try {
+            _ois.close();
+            _oos.close();
+            _s.close();
+          }
+          catch (Exception e2) {
+            e2.printStackTrace();
+          }
+          synchronized (_srv) {
+            _workers.remove(_s);
+            System.out.println("Srv: Client Network Connection Closed");
+          }
+          return;
+        }
+      }
+    }
+
+  }
+
+
+  /**
+   * auxiliary inner class.
+   * <p>Title: popt4jlib</p>
+   * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+   * <p>Copyright: Copyright (c) 2011</p>
+   * <p>Company: </p>
+   * @author Ioannis T. Christou
+   * @version 1.0
+   */
+  class PDBTEWListener {
+    private Socket _s;
+    private ObjectInputStream _ois;
+    private ObjectOutputStream _oos;
+    private PDBatchTaskExecutorSrv _srv;
+    private boolean _isAvail = true;
+
+    PDBTEWListener(PDBatchTaskExecutorSrv srv, Socket s) throws IOException {
+      _srv = srv;
+      _s = s;
+      _ois = new ObjectInputStream(_s.getInputStream());
+      _oos = new ObjectOutputStream(_s.getOutputStream());
+      _oos.flush();
+    }
+
+    TaskObjectsExecutionResults runObject(TaskObjectsExecutionRequest obj) throws IOException, PDBatchTaskExecutorException {
+      Object res = null;
+      try {
+        setAvailability(false);
+        _oos.writeObject(obj);
+        _oos.flush();
+        res = _ois.readObject();
+        setAvailability(true);
+      }
+      catch (IOException e) {  // client closed connection
+        processException(e);
+        throw e;
+      }
+      catch (ClassNotFoundException e) {
+        processException(e);
+        throw new IOException("stream has failed");
+      }
+      if (res instanceof TaskObjectsExecutionResults)
+        return (TaskObjectsExecutionResults) res;
+      else throw new PDBatchTaskExecutorException("worker failed to run tasks");
+    }
+
+    boolean getAvailability() {
+      boolean res = _isAvail && _s!=null && _s.isClosed()==false;
+      if (res) {
+        // last test using OOB sending of data
+        try {
+          _s.sendUrgentData(0);
+          res = true;
+        }
+        catch (IOException e) {
+          System.err.println("Socket has been closed");
+          res = false;
+          _isAvail = false;  // declare availability to false as well
+          // try graceful exit
+          try {
+            _s.shutdownOutput();
+            _s.close(); // Now we can close the Socket
+          }
+          catch (IOException e2) {
+            // silently ignore
+          }
+        }
+      }
+      return res;
+    }
+    void setAvailability(boolean v) { _isAvail = v; }
+
+    private boolean isConnectionLost() {
+      return _s==null || _s.isClosed();
+    }
+
+    private void processException(Exception e) {
+      // e.printStackTrace();
+      try {
+        _ois.close();
+        _oos.close();
+        _s.close();
+      }
+      catch (Exception e2) {
+        // e2.printStackTrace();
+      }
+      finally {
+        _ois = null;
+        _oos = null;
+        _s = null;
+      }
+      synchronized (_srv) {
+        _workers.remove(_s);
+        System.out.println("Srv: Worker Network Connection Closed");
+      }
+    }
+  }
+
+}
+

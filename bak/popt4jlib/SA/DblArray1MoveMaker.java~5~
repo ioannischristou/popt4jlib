@@ -1,0 +1,36 @@
+package popt4jlib.SA;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+public class DblArray1MoveMaker implements NewChromosomeMakerIntf {
+  public DblArray1MoveMaker() {
+  }
+
+  public Object createNewChromosome(Object chromosome, Hashtable params) throws OptimizerException {
+    double[] arg = (double[]) chromosome;  // chromosome is a double[] array
+    double[] res = new double[arg.length];
+    double delta = ((Double) params.get("dsa.movedelta")).doubleValue();
+    double maxv = ((Double) params.get("dsa.maxallelevalue")).doubleValue();
+    double minv = ((Double) params.get("dsa.minallelevalue")).doubleValue();
+    int tid = ((Integer) params.get("thread.id")).intValue();
+    for (int i=0; i<arg.length; i++) {
+      double rd = RndUtil.getInstance(tid).getRandom().nextDouble();
+      res[i] = arg[i] + (2*rd-1)*delta;
+      // restore within bounds, if any
+      double maxargvali = maxv;
+      Double MaviD = (Double) params.get("dsa.maxallelevalue"+i);
+      if (MaviD!=null && MaviD.doubleValue()<maxv)
+        maxargvali = MaviD.doubleValue();
+      double minargvali = minv;
+      Double maviD = (Double) params.get("dsa.minallelevalue"+i);
+      if (maviD!=null && maviD.doubleValue()>minv)
+        minargvali = maviD.doubleValue();
+      if (res[i]<minargvali) res[i]=minargvali;
+      else if (res[i]>maxargvali) res[i]=maxargvali;
+    }
+    return res;
+  }
+}
+

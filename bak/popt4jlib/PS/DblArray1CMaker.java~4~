@@ -1,0 +1,43 @@
+package popt4jlib.PS;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+public class DblArray1CMaker implements RandomChromosomeMakerIntf {
+  public DblArray1CMaker() {
+  }
+
+
+  public Object createRandomChromosome(Hashtable p) throws OptimizerException {
+    try {
+      LightweightParams params = new LightweightParams(p);
+      final int nmax = params.getInteger("dpso.chromosomelength").intValue();
+      double maxallelevalg=Double.MAX_VALUE;
+      Double maxag = params.getDouble("dpso.maxallelevalue");
+      if (maxag!=null) maxallelevalg = maxag.doubleValue();
+      double minallelevalg=Double.NEGATIVE_INFINITY;
+      Double minag = params.getDouble("dpso.minallelevalue");
+      if (minag!=null) minallelevalg = minag.doubleValue();
+      final int id = params.getInteger("thread.id").intValue();
+      double[] arr = new double[nmax];
+      for (int i=0; i<nmax; i++) {
+        double minalleleval = minallelevalg;
+        Double minai = params.getDouble("dpso.minalleleval"+i);
+        if (minai!=null && minai.doubleValue() > minallelevalg)
+          minalleleval = minai.doubleValue();
+        double maxalleleval = maxallelevalg;
+        Double maxai = params.getDouble("dpso.maxalleleval"+i);
+        if (maxai!=null && maxai.doubleValue() < maxallelevalg)
+          maxalleleval = maxai.doubleValue();
+        arr[i] = minalleleval +
+            RndUtil.getInstance(id).getRandom().nextDouble()*(maxalleleval-minalleleval);
+      }
+      return arr;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("createRandomChromosome: failed");
+    }
+  }
+}

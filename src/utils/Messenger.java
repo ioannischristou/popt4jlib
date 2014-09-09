@@ -1,0 +1,120 @@
+package utils;
+
+import java.io.*;
+import java.util.*;
+
+/**
+ * class controlling messaging to various output streams. Used for logging
+ * purposes as an alterntative to log4j.
+ * The class methods are all thread-safe (i.e. reentrant)
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class Messenger {
+  private PrintStream _os=null;
+  private int _dbgLvl=Integer.MAX_VALUE;  // default: print all
+  private static Hashtable _instances=new Hashtable();  // map<String name, Messenger m>
+
+
+  /**
+   * private constructor in accordance with the Singleton(s) Design Pattern
+   * @param os OutputStream
+   * @throws IllegalArgumentException if the os argument is null
+   */
+  private Messenger(OutputStream os) throws IllegalArgumentException {
+    if (os==null) throw new IllegalArgumentException("Messenger.ctor(): null arg");
+    _os = new PrintStream(os);
+  }
+
+
+  /**
+   * close the PrintStream stream associated with this Messenger, flushing any
+   * unwritten content before.
+   */
+  public void close() {
+    if (_os != null) {
+      _os.flush();
+      _os.close();
+      _os = null;
+    }
+  }
+
+
+  protected void finalize() throws Throwable {
+    try {
+      if (_os != null) {
+        _os.flush();
+        _os.close();
+        _os = null;
+      }
+    }
+    finally {
+      super.finalize();  // recommended practice
+    }
+  }
+
+
+  /**
+   * get the default Messenger object
+   * @return Messenger
+   */
+  public synchronized static Messenger getInstance() {
+    Messenger instance = (Messenger) _instances.get("default");
+    if (instance==null) {
+      instance = new Messenger(System.err);
+      _instances.put("default", instance);
+    }
+    return instance;
+  }
+
+
+  /**
+   * get the Messenger associated with the given name
+   * @param name String
+   * @return Messenger
+   */
+  public synchronized static Messenger getInstance(String name) {
+    Messenger instance = (Messenger) _instances.get(name);
+    return instance;
+  }
+
+
+  /**
+   * associate a Messenger with the given name with the PrintStream passed in.
+   * @param name String
+   * @param os OutputStream
+   */
+  public synchronized static void setInstance(String name, OutputStream os) {
+    _instances.put(name, new Messenger(os));
+  }
+
+
+  /**
+   * set a "debug level" to be later used for printing out messages according
+   * to the debug level of the message
+   * @param lvl int
+   */
+  public synchronized void setDebugLevel(int lvl) {
+    _dbgLvl = lvl;
+  }
+
+
+  /**
+   * sends the msg to the PrintStream of this Messenger iff the debug level lvl
+   * is less than or equal to the debug level set by a prior call to
+   * <CODE>setDebugLevel(dlvl)</CODE>
+   * @param msg String
+   * @param lvl int
+   */
+  public synchronized void msg(String msg, int lvl) {
+    if (lvl <= _dbgLvl && _os!=null) {
+      _os.println(msg);
+      _os.flush();
+    }
+  }
+}
+

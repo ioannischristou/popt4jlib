@@ -1,0 +1,6 @@
+package graph.packing;
+
+public class GRASPPackerIntSetNbrhoodFilter {
+  public GRASPPackerIntSetNbrhoodFilter() {
+  }
+}

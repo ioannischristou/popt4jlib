@@ -1,0 +1,291 @@
+package parallel;
+
+import java.util.Vector;
+import java.util.Hashtable;
+
+
+/**
+ * The BlockingFasterMsgPassingCoordinator class is yet another class
+ * that implements the rendevouz mechanism in parallel programming.
+ * Threads can call the method sendData(myid, t-id, data) to store some data in
+ * a queue that only the thread with thread-id can retrieve (in a FIFO fashion
+ * only), and waits until the datum is received by the receiver thread.
+ * Only non-null data can be "passed" from sender to receiver.
+ * The data Objects that are stored are not copies
+ * of the original objects, but rather references to them and so should not
+ * be changed in any way after they are stored via a call to sendData... or
+ * more appropriately, the sender thread should make sure it sends to the
+ * receiver thread a copy of the data it intends to send. Unfortunately, the
+ * latter strategy cannot be effectively enforced as Object.clone() is a
+ * protected method, and it cannot be called on the parameter passed in the
+ * send method from this code. Also, if we require that the objects to be sent
+ * implement some interface (say, Clonable, as opposed to the Java built-in
+ * (empty) Cloneable interface), then the objects that we are most likely
+ * interested in sending/receiving, which are Java built-in data types including
+ * arrays, will not be passable per se...
+ * This implementation treats senders and receivers equivalently, so that when
+ * a thread wants to send data or retrieve data, it follows the same procedure:
+ * it checks to see if a receiver (sender) is already waiting to match with it,
+ * and if so, it does the match; otherwise, it stores an appropriate
+ * RegisteredParcel object (with data in case of a sender, with null data in
+ * case of a receiver) in the queue, and the wait/notification mechanism
+ * is invoked on that RegisteredParcel, avoiding the need to wake-up any other
+ * receiver (or sender respectively) except the right one every time a match is
+ * made. The speedup observed on uni-processor CPUs over the standard (simpler)
+ * BlockingMsgPassingCoordinator class is more than 2 orders of magnitude!
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class BlockingFasterMsgPassingCoordinator {
+  private static final int _maxSize=10000;  // in fact, the size of the _data
+                                            // Vector can never exceed the
+                                            // number of threads in the system
+  private Vector _data;  // Vector<RegisteredParcel>
+  private static BlockingFasterMsgPassingCoordinator _instance=null;
+  private static Hashtable _instances=new Hashtable();  // map<String name, BFMPC instance>
+
+  private BlockingFasterMsgPassingCoordinator() {
+    _data = new Vector();
+  }
+
+
+  /**
+   * return the default BlockingFasterMsgPassingCoordinator object
+   * @return BlockingFasterMsgPassingCoordinator
+   */
+  public synchronized static BlockingFasterMsgPassingCoordinator getInstance() {
+    if (_instance==null) {
+      _instance = new BlockingFasterMsgPassingCoordinator();
+    }
+    return _instance;
+  }
+
+
+  /**
+   * return the unique BlockingFasterMsgPassingCoordinator object associated
+   * with a given name.
+   * @return BlockingFasterMsgPassingCoordinator
+   */
+  public synchronized static BlockingFasterMsgPassingCoordinator getInstance(String name) {
+    BlockingFasterMsgPassingCoordinator instance = (BlockingFasterMsgPassingCoordinator)
+        _instances.get(name);
+    if (instance==null) {
+      instance = new BlockingFasterMsgPassingCoordinator();
+      _instances.put(name, instance);
+    }
+    return instance;
+  }
+
+
+  /**
+   * stores the data object to be consumed by any thread that invokes recvData()
+   * method -regardless of which thread that is. The method waits until the
+   * data is retrieved.
+   * @param myid int the sender's id
+   * @param data Object
+   * @throws ParallelException if there are more data than _maxSize in the queue
+   * at the time when the method is invoked. A necessary (but not sufficient)
+   * condition for this is that the total number of threads in the system
+   * sending/receiving messages is more than _maxSize.
+   */
+  public void sendData(int myid, Object data)
+      throws ParallelException {
+    RegisteredParcel p = null;
+    synchronized (this) {
+      if (_data.size() >= _maxSize)
+        throw new ParallelException("BlockingFasterMsgPassingCoordinator queue is full");
+      // first check to see if a thread already waits for the msg to be received
+      for (int i = 0; i < _data.size(); i++) {
+        RegisteredParcel p2 = (RegisteredParcel) _data.elementAt(i);
+        if ((p2.getFromId()==null ||
+             p2.getFromId().intValue() == myid) && p2.getData() == null) {
+          p = p2;
+          break;
+        }
+      }
+      if (p != null) { // someone is waiting to receive the msg
+        synchronized (p) {
+          p.setData(data);
+          p.notify();  // notify the particular receiver
+          return;
+        }
+      }
+      // p==null
+      p = new RegisteredParcel(new Integer(myid), null, data);
+      _data.addElement(p);
+    }
+    // wait until item is retrieved
+    synchronized (p) {
+      try {
+        while (p.isDelivered()==false)
+          p.wait();
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // recommended action
+      }
+    }
+  }
+
+
+  /**
+   * stores the data object to be consumed only by the first thread that invokes
+   * the method recvData(threadId). The method will wait until the data is
+   * received.
+   * @param myid int
+   * @param threadId int
+   * @param data Object
+   * @throws ParallelException if there are more data than _maxSize in the queue
+   * at the time when the method is invoked, or if myid==threadId
+   */
+  public void sendData(int myid, int threadId, Object data)
+      throws ParallelException {
+    if (myid==threadId)
+      throw new ParallelException("BlockingFasterMsgPassingCoordinator.sendData(): cannot send to self");
+    RegisteredParcel p = null;
+    synchronized (this) {
+      if (_data.size() >= _maxSize)
+        throw new ParallelException("BlockingFasterMsgPassingCoordinator queue is full");
+      // first check to see if a thread already waits for the msg to be received
+      for (int i = 0; i < _data.size(); i++) {
+        RegisteredParcel p2 = (RegisteredParcel) _data.elementAt(i);
+        if ((p2.getFromId()==null ||
+             p2.getFromId().intValue() == myid) &&
+            (p2.getToId()!=null && p2.getToId().intValue()==threadId) &&
+            p2.getData() == null) {
+          p = p2;
+          break;
+        }
+      }
+      if (p != null) { // someone is or will be waiting to receive the msg
+        synchronized (p) {
+          p.setData(data);
+          p.notify();  // notify the particular receiver
+          return;
+        }
+      }
+      // p==null
+      p = new RegisteredParcel(new Integer(myid), new Integer(threadId), data);
+      _data.addElement(p);
+    }
+    // wait until item is retrieved
+    synchronized (p) {
+      try {
+        while (p.isDelivered()==false)
+          p.wait();
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // recommended action
+      }
+    }
+  }
+
+
+  /**
+   * retrieves the first data Object that has been stored via a call (from
+   * another thread) to sendData(sendid,data) or sendData(sendid,recvId,data).
+   * If no such data exists the calling thread will wait until the right thread
+   * stores an appropriate datum.
+   * @param myId int
+   * @return Object
+   */
+  public Object recvData(int myId) {
+    RegisteredParcel p=null;
+    synchronized (this) {
+      // check if msg is waiting to be received
+      for (int i=0; i<_data.size(); i++) {
+        RegisteredParcel p2 = (RegisteredParcel) _data.elementAt(i);
+        if ((p2.getToId()==null || p2.getToId().intValue()==myId) &&
+            p2.getData()!=null) {
+          p=p2;
+          _data.remove(i);
+          break;
+        }
+      }
+      if (p!=null) {
+        synchronized(p) {
+          p.setDelivered();
+          p.notify();  // notify the particular sender
+          return p.getData();
+        }
+      }
+      // p==null
+      p = new RegisteredParcel(null, new Integer(myId), null);
+      _data.addElement(p);
+    }
+    synchronized (p) {
+      try {
+        while (p.getData()==null)
+          p.wait();
+        p.setDelivered();
+        synchronized(this) {
+          _data.remove(p);
+        }
+        return p.getData();
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // recommended action
+        return null;
+      }
+    }
+  }
+
+
+  /**
+   * same as recvData(myid) but will only retrieve a datum from the specified
+   * sender thread (whose id is specified in the 2nd argument).
+   * @param myId int
+   * @param fromId int
+   * @return Object
+   * @throws ParallelException if myId==fromId
+   */
+  public Object recvData(int myId, int fromId)
+      throws ParallelException {
+    if (myId==fromId)
+      throw new ParallelException("BlockingFasterMsgPassingCoordinator.recvData(): cannot receive from self");
+    RegisteredParcel p=null;
+    synchronized (this) {
+      // check if msg is waiting to be received
+      for (int i=0; i<_data.size(); i++) {
+        RegisteredParcel p2 = (RegisteredParcel) _data.elementAt(i);
+        if ((p2.getFromId()!=null && p2.getFromId().intValue()==fromId) &&
+            (p2.getToId()==null || p2.getToId().intValue()==myId) &&
+            p2.getData()!=null) {
+          p=p2;
+          _data.remove(i);
+          break;
+        }
+      }
+      if (p!=null) {
+        synchronized(p) {
+          p.setDelivered();
+          p.notify();  // notify the sender
+          return p.getData();
+        }
+      }
+      // p==null
+      p = new RegisteredParcel(new Integer(fromId), new Integer(myId), null);
+      _data.addElement(p);
+    }
+    synchronized (p) {
+      try {
+        while (p.getData()==null)
+          p.wait();
+        p.setDelivered();
+        synchronized(this) {
+          _data.remove(p);
+        }
+        return p.getData();
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // recommended action
+        return null;
+      }
+    }
+  }
+
+}
+

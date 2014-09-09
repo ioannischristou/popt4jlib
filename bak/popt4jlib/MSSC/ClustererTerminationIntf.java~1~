@@ -1,0 +1,6 @@
+package popt4jlib.MSSC;
+
+public interface ClustererTerminationIntf {
+  public boolean isDone();
+  public void registerClustering(Clusterer problem);
+}

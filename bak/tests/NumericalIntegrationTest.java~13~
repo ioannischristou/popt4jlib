@@ -1,0 +1,49 @@
+package tests;
+
+import popt4jlib.*;
+import analysis.*;
+import java.util.*;
+
+/**
+ * test-driver for the numerical integration classes.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class NumericalIntegrationTest {
+
+  /**
+   * public constructor
+   */
+  public NumericalIntegrationTest() {
+  }
+
+
+  /**
+   * invoke without arguments. Computes the integral of the Ackley function
+   * with respect to the first variable from 0 to 100.
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    //double a = Double.parseDouble(args[0]);
+    //double b = Double.parseDouble(args[1]);
+    double a = 0;
+    double b = 100;
+    int ivi = 0;
+    VectorIntf x = new DblArray1Vector(new double[2]);
+    x.setCoord(0, b);
+    Hashtable params = new Hashtable();
+    params.put("integralapproximator.a", new Double(a));
+    params.put("integralapproximator.integrandvarindex", new Integer(0));
+    Hashtable p = new Hashtable();
+    p.put("integralapproximatormt.maxnumthreads", new Integer(10));
+    IntegralApproximatorMT integrator = new IntegralApproximatorMT(new AckleyFunction(), p);
+    double val = integrator.eval(x, params);
+    System.out.println("integral="+val);
+    System.err.println("total num simpson() calls="+integrator.getTotalNumCalls());
+  }
+}
+

@@ -1,0 +1,60 @@
+package utils;
+
+/**
+ * A class to help in debugging of the code. Depending on the debug level,
+ * set for each class wishing to be debugged separately, the system may
+ * execute extra code to help with debugging (printing more information, or
+ * execute more sanity checks etc.) The code is normally used with constants
+ * bit information found in Constants class.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class Debug {
+  private static int _debugBits=0;
+  private static int _savedBits=0;
+  private static int _toggle=1;
+
+
+  public synchronized static int debug(int bit) {
+    return (_debugBits & bit);
+  }
+
+
+  public synchronized static void resetDebugBit(int bit) {
+    _debugBits &= ~bit;
+  }
+
+
+  public synchronized static void resetDebug() {
+    _debugBits = 0;
+  }
+
+
+  public synchronized static void resumeDebug() {
+    _debugBits = _savedBits;
+  }
+
+
+  public synchronized static void setDebugBit(int bit) {
+    if (bit==0) resetDebug();
+    else _debugBits |= bit;
+  }
+
+
+  public synchronized static void toggle() {
+    if (_toggle==1) {
+      // reset state
+      saveDebugBits();
+      resetDebug();
+    }
+    else resumeDebug();
+    _toggle = (_toggle==1 ? 0 : 1);
+  }
+
+  private static void saveDebugBits() { _savedBits = _debugBits; }
+
+}

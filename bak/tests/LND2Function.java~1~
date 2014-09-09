@@ -1,0 +1,6 @@
+package tests;
+
+public class LND2Function {
+  public LND2Function() {
+  }
+}

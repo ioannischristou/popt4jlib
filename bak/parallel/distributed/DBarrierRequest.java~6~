@@ -1,0 +1,54 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.io.*;
+import java.net.*;
+
+/**
+ * implements a request to enter the barrier state.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DBarrierRequest implements DMsgIntf {
+  public static final long seralVersionUID = 987654333339L;
+  private String _bName;
+
+
+  /**
+   * public constructor.
+   * @param barriername String the name of the DBarrier object to be used.
+   */
+  public DBarrierRequest(String barriername) {
+    _bName = barriername;
+  }
+
+
+  /**
+   * reads the data and sends them back to the JVM's thread that connected to
+   * the server, via the same socket.
+   * @param oos ObjectOutputStream
+   * @throws ParallelException
+   * @throws IOException
+   */
+  public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
+    try {
+      ComplexBarrier.getInstance(_bName).barrier();  // enter barrier
+      oos.writeObject(new DBarrierReply());
+      oos.flush();
+    }
+    catch (ParallelException e) {
+      oos.writeObject(new FailedReply());
+      oos.flush();
+      throw e;
+    }
+  }
+
+  public String toString() {
+    return "DBarrierRequest(_bName="+_bName+")";
+  }
+
+}

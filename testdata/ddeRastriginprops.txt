@@ -1,0 +1,14 @@
+class,dde.function,tests.RastriginFastDefFunction
+dde.numdimensions,50
+dde.maxargval,5.12
+dde.minargval,-5.12
+dde.numtries,1250
+dde.popsize,800
+dde.w,0.1
+dde.px,0.01
+rndgen,7,8
+dde.numthreads,8
+dde.nondeterminismok,true
+#class,dde.localoptimizer_dummy,popt4jlib.GradientDescent.ArmijoSteepestDescentST
+#asd.maxiters,10000
+#class,asd.gradient,tests.RastriginFunctionGrad

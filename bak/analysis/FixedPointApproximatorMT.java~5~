@@ -1,0 +1,137 @@
+package analysis;
+
+import popt4jlib.*;
+import parallel.*;
+import parallel.distributed.*;
+import java.util.*;
+import java.io.Serializable;
+
+/**
+ * computes a Fixed-Point of a contraction mapping f:R^n -> R^n, using multiple
+ * threads. The use of multiple threads makes more sense when n is large, and/or
+ * the function components are hard to compute. The contraction mapping must be
+ * implemented as a thread-safe class (its evalCoord() method must be reentrant).
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class FixedPointApproximatorMT {
+  private PDBatchTaskExecutor _executor;
+  private int _numThreads;
+
+  /**
+   * single constructor.
+   * @param numthreads int
+   * @throws ParallelException if numthreads <= 0
+   */
+  public FixedPointApproximatorMT(int numthreads) throws ParallelException {
+    _numThreads = numthreads;
+    _executor = new PDBatchTaskExecutor(_numThreads);
+  }
+
+
+  /**
+   * shuts down the associated PDBatchTaskExecutor object. Once shut-down, the
+   * object cannot be used again to compute any function's fixed point.
+   * @throws ParallelException
+   */
+  public void shutDownExecutor() throws ParallelException {
+    _executor.shutDown();
+  }
+
+
+  /**
+   * main method that computes the unique fixed point of the function -assuming
+   * the function is a contraction mapping.
+   * @param f VecFunctionIntf the contraction mapping whose fixed point must be
+   * computed.
+   * @param params Hashtable any parameters used by the contraction mapping.
+   * @param x0 VectorIntf the initial point to kick-start the computations.
+   * @param max_iters long the maximum number of iterations allowed.
+   * @param tol double the maximum tolerance allowed in terms of || x - f(x) ||.
+   * @throws ParallelException if it fails to find a fixed point with the given
+   * arguments
+   * @return VectorIntf the required fixed-point.
+   */
+  public VectorIntf findFixedPoint(VecFunctionIntf f, Hashtable params, VectorIntf x0, long max_iters, double tol) throws ParallelException {
+    VectorIntf x = x0.newCopy();
+    VectorIntf xstar = x0.newCopy();
+    final int n = x0.getNumCoords();
+    int len = n/_numThreads;
+    int j=0;
+    int k=len;
+    Vector tasks = new Vector(_numThreads);
+    boolean cont = true;
+    int count=0;
+    while (cont && ++count<=max_iters) {
+      tasks.clear();
+      for (int i = 0; i < _numThreads - 1; i++) {
+        FixedPointTask fpti = new FixedPointTask(f, j, k, x, params, xstar);
+        j = k+1;
+        k += k;
+        tasks.addElement(fpti);
+      }
+      // last task
+      tasks.addElement(new FixedPointTask(f,j,n-1,x,params,xstar));
+      _executor.executeBatch(tasks);  // waits until all done
+      double d = popt4jlib.GradientDescent.VecUtil.getEuclideanDistance(x, xstar);
+      cont = Math.abs(d)<tol;
+      if (cont) {
+        VectorIntf tmp = x;
+        x = xstar;
+        xstar = tmp;
+      }
+    }
+    if (cont==true) {
+      throw new ParallelException("failed to find fixed point with given tolerance "+tol+" within "+max_iters+" iterations");
+    }
+    return xstar;
+  }
+
+
+  class FixedPointTask implements TaskObject {
+    private final static long serialVersionUID= -2511150165483541083L;
+    private Hashtable _params;
+    private VectorIntf _x;
+    private VectorIntf _xnew;
+    private transient VecFunctionIntf _f;
+    private int _from;
+    private int _to;
+    private boolean _isDone;
+
+
+    public FixedPointTask(VecFunctionIntf f, int startindex, int endindex, VectorIntf x, Hashtable params, VectorIntf xnew) {
+      _f = f;
+      _params = params;
+      _x = x;
+      _xnew = xnew;
+      _from = startindex;
+      _to = endindex;
+    }
+
+
+    public Serializable run() {
+      for (int i=_from; i<=_to; i++) {
+        _xnew.setCoord(i, _f.evalCoord(_x, _params, i));
+      }
+      synchronized (this) {
+        _isDone = true;
+      }
+      return this;
+    }
+
+
+    public void copyFrom(TaskObject other) throws IllegalArgumentException {
+      throw new IllegalArgumentException("not supported");
+    }
+
+
+    public synchronized boolean isDone() {
+      return _isDone;
+    }
+  }
+}
+

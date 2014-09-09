@@ -1,0 +1,89 @@
+package popt4jlib.MSSC;
+
+import popt4jlib.*;
+import popt4jlib.GradientDescent.VecUtil;
+import utils.RndUtil;
+import java.util.*;
+
+
+/**
+ * implements the KMeans++ method for seeds initialization for the K-Means
+ * algorithm.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class KMeansPP {
+  private Vector _vectors;
+
+
+  /**
+   * public constructor.
+   * @param vectors Vector Vector<VectorIntf> objects.
+   * @throws IllegalArgumentException if arg is empty or null.
+   */
+  public KMeansPP(Vector vectors) throws IllegalArgumentException {
+    if (vectors==null || vectors.size()==0)
+      throw new IllegalArgumentException("KMeansPP.<init>: vectors arg must have at least one vector");
+    _vectors = vectors;
+  }
+
+
+  /**
+   * the main method of the class.
+   * @param k int
+   * @throws IllegalArgumentException
+   * @return Vector
+   */
+  public Vector getInitialCenters(int k) throws IllegalArgumentException {
+    final int n = _vectors.size();
+    if (k>n)
+      throw new IllegalArgumentException("KMeansPP.getInitialCenters("+k+"): more centers than data points requested.");
+    Vector centers = new Vector();
+    // 1. choose uniformly at random the first data-point
+    int n0 = RndUtil.getInstance().getRandom().nextInt(n);
+    centers.addElement(((VectorIntf) _vectors.elementAt(n0)).newCopy());
+    // 2. choose a center x from the remaining data points according to a
+    // probability distribution that is proportional to D(x)^2 (the further,
+    // the better) until we have k centers.
+    double[] _dists = new double[n];
+    for (int i=2; i<=k; i++) {
+      // compute D(x) for each x
+      double total = 0.0;
+      for (int j=0; j<n; j++) {
+        VectorIntf xj = (VectorIntf) _vectors.elementAt(j);
+        _dists[j] = getMinDist(xj, centers);
+        total += _dists[j]*_dists[j];
+      }
+      // draw a point x at random with D(x)^2 probability
+      double[] pie = new double[n];
+      pie[0]=_dists[0]*_dists[0]/total;
+      for (int j=1; j<n; j++) pie[j] = pie[j-1]+_dists[j]*_dists[j]/total;
+      double r = RndUtil.getInstance().getRandom().nextDouble();
+      int c = 0;
+      for (int j=0; j<n; j++) {
+        if (pie[j]>r && _dists[j]>1.e-12) {  // comparison const needs revision
+          c = j;
+          break;
+        }
+      }
+      centers.addElement(((VectorIntf) _vectors.elementAt(c)).newCopy());
+    }
+    return centers;
+  }
+
+
+  private double getMinDist(VectorIntf x, Vector centers) {
+    int k = centers.size();
+    double mind = Double.MAX_VALUE;
+    for (int i=0; i<k; i++) {
+      double di = VecUtil.getEuclideanDistance(x, (VectorIntf) centers.elementAt(i));
+      if (di<mind) mind = di;
+    }
+    return mind;
+  }
+}
+

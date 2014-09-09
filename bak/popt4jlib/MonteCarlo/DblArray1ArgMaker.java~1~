@@ -1,0 +1,6 @@
+package popt4jlib.MonteCarlo;
+
+public class DblArray1ArgMaker {
+  public DblArray1ArgMaker() {
+  }
+}

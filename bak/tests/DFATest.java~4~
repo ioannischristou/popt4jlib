@@ -1,0 +1,131 @@
+package tests;
+
+import popt4jlib.*;
+import popt4jlib.PS.*;
+import popt4jlib.PS.FA.*;
+import popt4jlib.GradientDescent.*;
+import java.util.*;
+import utils.RndUtil;
+
+/**
+ * test-driver program for the DFA (Distributed Firefly Algorithm)
+ * optimizer.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DFATest {
+
+  /**
+   * single public no-arg constructor
+   */
+  public DFATest() {
+  }
+
+
+  /**
+   * invoke as <CODE>java -&ltclasspath&gt tests.DFATest &ltparams_file&gt [random_seed] [maxfuncevals]</CODE>
+   * where the params_file must contain the following lines:
+   * <li> class,dfa.function, &lt fullclassname &gt mandatory, specifies full
+   * java class name of the function to be optimized (implementing the
+   * <CODE>popt4jlib.FunctionIntf</CODE> interface.)
+   * <li> class,dfa.randomfireflymaker, &ltfullclassname&gt, mandatory, the
+   * full class name of the class implementing the
+   * <CODE>popt4jlib.RandomChromosomeMakerIntf</CODE> interface, responsible
+   * for creating valid random chromosome Objects to populate the islands.
+   * <li> dfa.numthreads, $num$ optional, how many threads will be used,
+   * default is 1.
+   * <li> class,dfa.cupdater, &ltfullclassname&gt, mandatory, the
+   * ChromosomeUpdaterIntf updater object that implements the interface that
+   * produces the next position of a firefly given its current position and that
+   * of its better neighbors.
+   * <li> class,dfa.localoptimizer, &ltfullclassname&gt optional, if present,
+   * specifies the full java class name of the class implementing the
+   * <CODE>popt4jlib.GradientDescent.LocalOptimizerIntf</CODE> interface that
+   * will be used to post-optimize the DFA search, starting from the best
+   * solution the DFA process will find.
+   * <li> rndgen,$num$,$num2$ mandatory, specifies the starting random
+   * seed to use for each of the $num2$ threads to use (the value num2 must
+   * equal the number given for the dfa.numthreads, or 1 if no such line is
+   * present). The value of num should be a positive integer.
+   * <li> class,dfa.c2amaker,&ltfullclassname&gt, optional, if present the full
+   * class name of the class implementing the
+   * <CODE>popt4jlib.Chromosome2ArgMakerIntf</CODE> interface that is
+   * responsible for tranforming a chromosome Object to a function argument
+   * Object. If not present, the default identity transformation is assumed.
+   * <li> class,dfa.a2cmaker,&ltfullclassname&gt, optional, if present the full
+   * class name of the class implementing the
+   * <CODE>popt4jlib.Arg2ChromosomeMakerIntf</CODE> interface that's responsible
+   * for transforming a FunctionIntf argument Object to a chromosome
+   * Object. If not present, the default identity transformation is assumed. The
+   * a2c object is only useful when other ObserverIntf objects register for this
+   * SubjectIntf object and also add back solutions to it (as FunctionIntf args)
+   * <li> dfa.numgens, $num$ optional, the number of generations to run the
+   * DFA, default is 1.
+   * <li> dfa.immprob, $num$ optional, the probability with which an sub-
+   * population will send some of its members to migrate to another (island)
+   * sub-population, default is 0.01
+   * <li> dfa.numinitpop, $num$ optional, the initial population number for
+   * each island, default is 10.
+   * <p> Additionally, the params_file must contain any parameters required for
+   * the function optimized, as well as any parameters for any of the objects
+   * used in the DFA process (such as the objects implementing the
+   * Arg2ChromosomeMakerIntf etc. interfaces).
+   *
+   * <p> if the optional second argument is passed in, it overrides the random
+   * seed specified in the params_file.
+   * <p> The optional third argument, if present, overrides any max. limit set
+   * on the number of function evaluations allowed. After this limit, the
+   * function will always return Double.MAX_VALUE instead, and won't increase
+   * the evaluation count.
+   *
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      long start_time = System.currentTimeMillis();
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      if (args.length>1) {
+        long seed = Long.parseLong(args[1]);
+        RndUtil.getInstance().setSeed(seed);  // updates all extra instances too!
+      }
+      if (args.length>2) {
+        long num = Long.parseLong(args[2]);
+        params.put("maxfuncevalslimit",new Long(num));
+      }
+      FunctionIntf func = (FunctionIntf) params.get("dfa.function");
+      FunctionBase wrapper_func = new FunctionBase(func);
+      params.put("dfa.function",wrapper_func);
+      DFA opter = new DFA(params);
+      utils.PairObjDouble p = opter.minimize(wrapper_func);
+      double[] arg = (double[]) p.getArg();
+      System.out.print("best soln found:[");
+      for (int i=0;i<arg.length;i++) System.out.print(arg[i]+" ");
+      System.out.println("] VAL="+p.getDouble());
+      // final local optimization
+      LocalOptimizerIntf lasdst = (LocalOptimizerIntf) params.get("dfa.localoptimizer");
+      if (lasdst!=null) {
+        VectorIntf x0 = new popt4jlib.DblArray1Vector(arg);
+        params.put("gradientdescent.x0", x0);
+        lasdst.setParams(params);
+        utils.PairObjDouble p2 = lasdst.minimize(wrapper_func);
+        VectorIntf xf = (VectorIntf) p2.getArg();
+        System.out.print(
+            "Optimized (via LocalOptimizerIntf) best soln found:[");
+        for (int i = 0; i < xf.getNumCoords(); i++) System.out.print(xf.
+            getCoord(i) + " ");
+        System.out.println("] VAL=" + p2.getDouble());
+      }
+      System.err.println("total function evaluations="+wrapper_func.getEvalCount());
+      long dur = System.currentTimeMillis()-start_time;
+      System.out.println("total time (msecs): "+dur);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

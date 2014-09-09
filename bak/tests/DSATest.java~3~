@@ -1,0 +1,30 @@
+package tests;
+
+import popt4jlib.*;
+import popt4jlib.SA.*;
+import java.util.*;
+
+public class DSATest {
+  public DSATest() {
+  }
+
+  public static void main(String[] args) {
+    try {
+      long start_time = System.currentTimeMillis();
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      FunctionIntf func = (FunctionIntf) params.get("dsa.function");
+      DSA opter = new DSA(params);
+      utils.PairObjDouble p = opter.minimize(func);
+      double[] arg = (double[]) p.getArg();
+      System.out.print("best soln found:[");
+      for (int i=0;i<arg.length;i++) System.out.print(arg[i]+" ");
+      System.out.println("] VAL="+p.getDouble());
+      long dur = System.currentTimeMillis()-start_time;
+      System.out.println("total time (msecs): "+dur);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

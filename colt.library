@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library>
+  <!--JBuilder Library Definition File-->
+  <fullname>colt</fullname>
+  <class>
+    <path>[lib/colt.jar]</path>
+  </class>
+  <lastmodsaved>1317652195071</lastmodsaved>
+</library>

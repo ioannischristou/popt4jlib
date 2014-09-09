@@ -1,0 +1,53 @@
+package tests;
+
+import popt4jlib.*;
+import java.util.*;
+
+/**
+ *
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ *
+ * This class implements the Langermann Function in n-dimensions.
+ * f(x) = \sum_{i=1}^m [c_i * exp(-||x-A_{(i)}||^2/ð) * cos(ð*||x-A_{(i)}||^2)]
+ * (usually m=5)
+ * The argument boundaries are [0, 10]^n
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class LangermannFunction implements FunctionIntf {
+  public LangermannFunction() {
+  }
+
+  public double eval(Object arg, Hashtable p) {
+    Vector[] A = (Vector[]) p.get("A");  // A[i] is Vector<Double> i=0...A.length-1
+    Vector c = (Vector) p.get("c");
+    double[] x=null;
+    if (arg instanceof VectorIntf) {
+      x = ((VectorIntf) arg).getDblArray1();
+    } else x = (double[]) arg;
+    final int n = x.length;
+    final int m = A.length;
+    double res=0;
+    for (int i=0; i<m; i++) {
+      double dist2 = dist2(x,A[i]);
+      double ci = ((Double) c.elementAt(i)).doubleValue();
+      res += ci*Math.exp(-dist2/Math.PI)*Math.cos(Math.PI*dist2);
+    }
+    return res;
+  }
+
+
+  private static double dist2(double[] x, Vector a) {
+    final int n = x.length;
+    double res = 0;
+    for (int i=0; i<n; i++) {
+      double diffi = x[i] - ((Double) a.elementAt(i)).doubleValue();
+      res += diffi*diffi;
+    }
+    return res;
+  }
+}
+

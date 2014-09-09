@@ -1,0 +1,9 @@
+package popt4jlib.GA;
+
+import popt4jlib.OptimizerException;
+import utils.*;
+
+public interface XoverOpIntf {
+  public Pair doXover(Object chromosome1, Object chromosome2) throws OptimizerException;
+}
+

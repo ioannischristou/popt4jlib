@@ -1,0 +1,114 @@
+package tests;
+
+import utils.*;
+import java.util.*;
+import java.io.*;
+
+/**
+ * Test the ability of two threads using the RndUtil to generate the same
+ * sequence of numbers.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class ParallelRNGTest {
+  public ParallelRNGTest() {
+  }
+
+  public static void main(String[] args) {
+    final int size = Integer.parseInt(args[0]);
+    RndUtil.getInstance().setSeed(1);
+    RndUtil.addExtraInstances(2);
+    TTest t1=new TTest(0, size);
+    TTest t2 = new TTest(1, size);
+    t1.start();
+    t2.start();
+    try {
+      while (t1._isDone == false) {
+        Thread.currentThread().sleep(1000); // wait 1 sec.
+      }
+      while (t2._isDone == false) {
+        Thread.currentThread().sleep(1000); // wait 1 sec.
+      }
+    }
+    catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+/*
+    // test numbers
+    for (int i=0; i<size; i++) {
+      if (t1._numbers[i]!=t2._numbers[i]) {
+        System.out.println("Random class did not produce the same seq in two concurrent threads");
+        return;
+      }
+    }
+    System.out.println("Random class produced the same seq in two concurrent threads");
+*/
+  }
+}
+
+class TTest extends Thread {
+  Random _r;
+  int[] _numbers;
+  boolean _isDone=false;
+  PrintWriter pw = null;
+  BufferedReader br = null;
+
+  public TTest(int id, int size) {
+    _r = RndUtil.getInstance(id).getRandom();
+    _numbers = new int[size];
+    try {
+      br = new BufferedReader(new FileReader("num" + id + ".txt"));
+    }
+    catch (FileNotFoundException e) {
+      br=null;
+      try {
+        pw = new PrintWriter(new FileWriter("num" + id + ".txt"));
+      }
+      catch (Exception e2) {
+        e2.printStackTrace();
+      }
+    }
+  }
+
+  public void run() {
+    for (int i=0; i<_numbers.length; i++) {
+      _numbers[i] = _r.nextInt(1000);
+    }
+    if (br!=null) {
+      try {
+        if (br.ready()) {
+          String line="";
+          int i=0;
+          while (true) {
+            line=br.readLine();
+            if (line==null) break;
+            int ni = Integer.parseInt(line);
+            if (ni!=_numbers[i]) {
+              System.out.println("consecutive runs do not produce same numbers");
+              br.close();
+              return;
+            }
+            i++;
+          }
+          System.out.println("OK");
+        }
+      }
+      catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+    else {
+      // write data
+      for (int i=0; i<_numbers.length; i++) {
+        pw.println(_numbers[i]);
+      }
+      pw.flush();
+      pw.close();
+    }
+    _isDone=true;
+  }
+}

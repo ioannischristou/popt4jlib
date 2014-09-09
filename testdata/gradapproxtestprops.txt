@@ -1,0 +1,5 @@
+class,test.function,tests.MichalewiczFunction
+class,test.gradient,tests.MichalewiczFunctionGrad
+m,10.0
+gradapproximator.numthreads,4
+gradapproximator.nmax,15

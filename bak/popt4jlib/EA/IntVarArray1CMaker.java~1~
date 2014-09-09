@@ -1,0 +1,6 @@
+package popt4jlib.EA;
+
+public class IntVarArray1CMaker {
+  public IntVarArray1CMaker() {
+  }
+}

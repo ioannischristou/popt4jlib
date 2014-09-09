@@ -1,0 +1,6 @@
+package tests;
+
+public class DropWaveFunction {
+  public DropWaveFunction() {
+  }
+}

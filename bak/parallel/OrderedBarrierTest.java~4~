@@ -1,0 +1,46 @@
+package parallel;
+
+public class OrderedBarrierTest {
+  public OrderedBarrierTest() {
+  }
+
+  public static void main(String[] args) {
+    OBThread arr[] = new OBThread[10];
+    for (int i=0; i<arr.length; i++) {
+      arr[i] = new OBThread(i);
+      OrderedBarrier.addThread(arr[i]);
+    }
+    for (int i=0; i<arr.length; i++) {
+      arr[i].start();
+    }
+  }
+}
+
+
+class OBThread extends Thread {
+  private int _id;
+  public OBThread(int id) { _id = id; }
+  public void run() {
+    for (int i=0; i<10; i++) {
+      //System.out.println("t-id="+_id+" i="+i);
+      OrderedBarrier.getInstance().orderedBarrier(new TO(_id, i));
+    }
+  }
+}
+
+
+class TO implements TaskObject {
+  int _id;
+  int _i;
+  public TO(int id, int i) {
+    _id = id;
+    _i = i;
+  }
+
+  public void run() {
+    System.out.println("t-id="+_id+" i="+_i);
+  }
+
+  public boolean isDone() { return true; }
+}
+

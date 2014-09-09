@@ -1,0 +1,12 @@
+class,dde.function,tests.RosenbrockFunction
+dde.numdimensions,1000
+dde.maxargval,100.0
+dde.minargval,-100.0
+dde.numtries,10000
+dde.popsize,800
+dde.w,0.08
+dde.px,0.3
+#dde.w,0.5
+rndgen,7,8
+dde.numthreads,8
+#dde.de/best/1/binstrategy,true

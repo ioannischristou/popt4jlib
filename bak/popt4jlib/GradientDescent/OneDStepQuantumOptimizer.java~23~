@@ -1,0 +1,255 @@
+package popt4jlib.GradientDescent;
+
+
+import popt4jlib.*;
+import parallel.ParallelException;
+import java.util.Hashtable;
+
+/**
+ * the class implements a minimization method for a function alone one of its
+ * variables, using an initial starting point x0, and a quantum step-size that
+ * the variable must be constrained to take values on multiples of.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public final class OneDStepQuantumOptimizer {
+  private int _dir=0;
+
+  /**
+   * public no-arg constructor.
+   */
+  public OneDStepQuantumOptimizer() {
+  }
+
+
+  /**
+   * if the return value is zero, it means that the optimization process did not
+   * produce a new result: the starting point was already (near-) minimal.
+   * @return int
+   */
+  public int getDir() {
+    return _dir;
+  }
+
+
+  /**
+   * computes a local minimum of the restriction of the function f in the j-th
+   * variable, under the box-constraints lowerbound <= x_j <= upperbound, and
+   * also under the constraint that x_j = x0_j + k*stepquantum where k is an
+   * integer quantity.
+   * @param f FunctionIntf
+   * @param x0 VectorIntf
+   * @param fparams Hashtable
+   * @param varindex int
+   * @param stepquantum double
+   * @param lowerbound double
+   * @param upperbound double
+   * @param niterbnd int how many iterations to proceed in the same direction
+   * before incrementing the current step-size
+   * @param multfactor int the mult factor by which to multiply the current
+   * step-size after a number of iterations are all in the same direction
+   * @param ftol double the function tolerance below which two function evals
+   * are considered the same
+   * @throws OptimizerException
+   * @throws ParallelException
+   * @return double
+   */
+  public double argmin(FunctionIntf f, VectorIntf x0, Hashtable fparams,
+                           int varindex, double stepquantum,
+                           double lowerbound, double upperbound,
+                           int niterbnd, int multfactor, double ftol) throws OptimizerException, ParallelException {
+    // itc: HERE rm asap
+    //utils.Messenger.getInstance().msg("OneDStepQuantumOptimizer.argmin(): optimizing var x"+varindex+"="+
+    //                                  x0.getCoord(varindex)+" in ["+lowerbound+","+upperbound+"]",0);
+    if (niterbnd<=0) niterbnd = 5;
+    if (multfactor<=0) multfactor = 2;
+    double step = stepquantum;
+    VectorIntf x = x0.newCopy();
+    int cnt = niterbnd;
+    double s = x.getCoord(varindex);
+    double sqt = s;
+    int prevdir = 0;
+    while (true) {
+      if (--cnt==0) {
+        step *= multfactor;
+        cnt = niterbnd;
+        //System.err.println("(*)step="+step);  // itc: HERE rm asap
+      }
+      x.setCoord(varindex, s);
+      double news = detdir(f, fparams, x, varindex, stepquantum, lowerbound, upperbound, ftol);
+      //if (Math.abs(s-news)>stepquantum) System.err.println("s="+s+" news="+news);  // itc: HERE rm asap
+      if (_dir==0) {
+        sqt = news;
+        break;
+      }
+      if (_dir>0) {
+        if (news>=upperbound) {  // return closest feasible point to upperbound
+          long k = (long) Math.floor((upperbound-x0.getCoord(varindex))/stepquantum);
+          return x0.getCoord(varindex) + k*stepquantum;
+        }
+        s += step;
+        if (prevdir<0 && step>stepquantum) {
+          step /= multfactor;
+          cnt = niterbnd;
+          //System.err.println("(/)step="+step);  // itc: HERE rm asap
+        }
+      }
+      else {  // _dir<0
+        if (news<=lowerbound) {  // return closest feasible point to lowerbound
+          long k = (long) Math.floor((x0.getCoord(varindex)-lowerbound)/stepquantum);
+          return x0.getCoord(varindex) - k*stepquantum;
+        }
+        s -= step;
+        if (prevdir>0 && step>stepquantum) {
+          step /= multfactor;
+          cnt = niterbnd;
+          //System.err.println("(/)step="+step);  // itc: HERE rm asap
+        }
+      }
+      //System.err.println("s="+s+" dir="+_dir+" prevdir="+prevdir);  // itc: HERE rm asap
+      prevdir = _dir;
+    }  // while true
+    if (Math.abs(sqt-x0.getCoord(varindex))<=ftol) _dir = -2;  // indicate no change
+    return sqt;
+  }
+
+
+  /**
+   * determine in which direction (up or down) the function f decreases, along
+   * the j-th variable, or return zero.
+   * @param f FunctionIntf the function
+   * @param params Hashtable parameters of the function
+   * @param x VectorIntf the argument
+   * @param j int the index of the variable in question (in {0,...n-1})
+   * @param eps double
+   * @param lb double
+   * @param ub double
+   * @param ftol double
+   * @throws ParallelException
+   * @throws IllegalArgumentException
+   * @return double
+   */
+  private double detdir(FunctionIntf f, Hashtable params, VectorIntf x,
+                        int j, double eps, double lb, double ub, double ftol) throws ParallelException, IllegalArgumentException {
+    try {
+      final double s = x.getCoord(j);
+      final double c = f.eval(x, params);
+      //utils.Messenger.getInstance().msg("detdir: starting with x["+j+"]="+s+" c="+c+" lb="+lb+" ub="+ub,2);
+      x.setCoord(j, s + eps);
+      if (ftol < 0) ftol = 0.0;
+      double cup = f.eval(x, params);
+      if (c > cup + ftol) {
+        _dir = 1;
+        return s;
+      }
+      else if (Math.abs(c - cup) <= ftol) { // Double.compare(c,cup)==0
+        double s2 = s;
+        x.setCoord(j, s2);
+        double cnew = f.eval(x, params);
+        while (Math.abs(cnew - c) <= ftol && s2 < ub) { // Double.compare(cnew,c)==0
+          s2 += eps;
+          x.setCoord(j, s2);
+          cnew = f.eval(x, params);
+          //System.err.println("detdir: up(+)s2="+s2+" c="+c);  // itc: HERE rm asap
+          //utils.Messenger.getInstance().msg("ODSQO.detdir(): f(x" + j + "=" +
+          //                                  s2 + ")=" + cnew+" eps3="+eps, 0); // itc: HERE rm asap
+        }
+        if (cnew < c - ftol) {
+          _dir = 1;
+          return s2;
+        }
+        else { // cnew > c - ftol OR s2 >= ub
+          if (s2 >= ub) { // irrespective of "trend to decrease further or not"
+            _dir = 0;
+            return ub;
+          }
+          // ok, cnew > c - ftol, so to the starting point, and go left
+          s2 = s;
+          x.setCoord(j, s2);
+          cnew = f.eval(x, params);
+          while (Math.abs(c - cnew) <= ftol && s2 > lb) { // Double.compare(cnew,c)==0
+            //System.err.println("detdir: up(-)s2="+s2+" c="+c);  // itc: HERE rm asap
+            s2 -= eps;
+            x.setCoord(j, s2);
+            cnew = f.eval(x, params);
+            //utils.Messenger.getInstance().msg("ODSQO.detdir(): f(x"+j+"="+s2+")="+cnew,0);  // itc: HERE rm asap
+          }
+          if (cnew < c - ftol) {
+            _dir = -1;
+            return s2;
+          }
+          else { // cnew > c + ftol OR s2 <= lb
+            _dir = 0;
+            if (s2 <= lb)
+              return lb;
+            return s;
+          }
+        }
+      }
+      // should try the down direction
+      x.setCoord(j, s - eps);
+      double cdown = f.eval(x, params);
+      if (c > cdown + ftol) {
+        _dir = -1;
+        return s;
+      }
+      else if (Math.abs(c - cdown) <= ftol) { // Double.compare(c,cdown)==0
+        double s2 = s;
+        x.setCoord(j, s2);
+        double cnew = f.eval(x, params);
+        while (Math.abs(cnew - c) <= ftol && s2 > lb) { // Double.compare(cnew,c)==0
+          //System.err.println("detdir: down(-)s2="+s2+" c="+c);  // itc: HERE rm asap
+          s2 -= eps;
+          x.setCoord(j, s2);
+          cnew = f.eval(x, params);
+          //utils.Messenger.getInstance().msg("ODSQO.detdir(): f(x" + j + "=" +
+          //                                  s2 + ")=" + cnew+" eps="+eps, 0); // itc: HERE rm asap
+        }
+        if (cnew < c - ftol) {
+          _dir = -1;
+          return s2;
+        }
+        else { // cnew > c - ftol OR s2<=lb
+          if (s2 <= lb) { // irrespective of "trend to decrease further or not"
+            _dir = 0;
+            return lb;
+          }
+          // ok, cnew > c - ftol, so to the starting point, and go right
+          s2 = s;
+          x.setCoord(j, s2);
+          cnew = f.eval(x, params);
+          while (Math.abs(cnew - c) <= ftol && s2 < ub) { // Double.compare(cnew,c)==0
+            //System.err.println("detdir: down(+)s2="+s2+" c="+c);  // itc: HERE rm asap
+            s2 += eps;
+            x.setCoord(j, s2);
+            cnew = f.eval(x, params);
+            //utils.Messenger.getInstance().msg("ODSQO.detdir(): f(x" + j + "=" +
+            //                                  s2 + ")=" + cnew+" eps2="+eps, 0); // itc: HERE rm asap
+          }
+          if (cnew < c - ftol) {
+            _dir = 1;
+            return s2;
+          }
+          else { // cnew > c
+            _dir = 0;
+            if (s2 >= ub)
+              return ub;
+            return s;
+          }
+        }
+      }
+      // if we reach here, we're optimal
+      _dir = 0;
+      return s;
+    }
+    finally {
+      //utils.Messenger.getInstance().msg("ODSQO.detdir(): done",2);
+    }
+  }
+
+}
+

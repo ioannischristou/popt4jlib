@@ -1,0 +1,12 @@
+package popt4jlib;
+
+import java.util.Hashtable;
+
+public class IdentityArg2CMaker implements Arg2ChromosomeMakerIntf {
+  public IdentityArg2CMaker() {
+  }
+
+  public Object getChromosome(Object c, Hashtable params) {
+    return c;
+  }
+}

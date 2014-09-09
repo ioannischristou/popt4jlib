@@ -1,0 +1,29 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.io.*;
+import java.net.*;
+
+public class DBarrierRequest implements DMsgIntf {
+  public static final long seralVersionUID = 987654333339L;
+  private String _bName;
+
+
+  public DBarrierRequest(String barriername) {
+    _bName = barriername;
+  }
+
+
+  /**
+   * reads the data and sends them back to the JVM's thread that connected to
+   * the server, via the same socket.
+   * @param oos ObjectOutputStream
+   * @throws ParallelException
+   * @throws IOException
+   */
+  public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
+    ComplexBarrier.getInstance(_bName).barrier();
+      oos.writeObject(new DBarrierReply());
+      oos.flush();
+  }
+}

@@ -1,0 +1,6 @@
+package parallel;
+
+public class MsgPassingTest {
+  public MsgPassingTest() {
+  }
+}

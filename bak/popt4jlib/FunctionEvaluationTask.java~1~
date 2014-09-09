@@ -1,0 +1,6 @@
+package popt4jlib;
+
+public class FunctionEvaluationTask {
+  public FunctionEvaluationTask() {
+  }
+}

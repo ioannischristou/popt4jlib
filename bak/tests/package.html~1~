@@ -1,0 +1,26 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head><!--
+  Copyright (c) 2011 
+  All Rights Reserved.
+--></head>
+
+<body bgcolor="white">defines functions used for testing the optimization algorithms in the popt4jlib
+library.
+
+<h2>Package Specification</h2>
+definition of several well known test functions (convex as well as non-convex)
+non-linear multi-dimensional functions for NLP, as well as some test driver
+classes for the various algorithms defined in popt4jlib.
+<ul>
+  <li><a href="">hyperlink</a>
+</ul>
+
+<h2>Related Documentation</h2>
+
+<ul>
+  <li><a href="">hyperlink</a>
+</ul>
+
+<!-- Put @see and @since tags here. --></body>
+</html>

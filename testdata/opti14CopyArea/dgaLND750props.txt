@@ -1,0 +1,15 @@
+class,dga.function,tests.LND7Function
+dga.chromosomelength,50
+dga.maxallelevalue,100.0
+dga.minallelevalue,-100.0
+dga.cutoffage,100
+dga.varage,10.0
+dga.numgens,1000
+dga.numinitpop,10
+dga.poplimit,100
+rndgen,7,1
+dga.numthreads,1
+dbglvl,2
+class,dga.xoverop,popt4jlib.GA.DblArray1PtXOverOp
+class,dga.mutationop,popt4jlib.GA.DblVarArray1AlleleMutationOp
+class,dga.randomchromosomemaker,popt4jlib.GA.DblArray1CMaker

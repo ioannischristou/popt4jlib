@@ -1,0 +1,6 @@
+package graph.packing;
+
+public class IntSetN21GraphAllMovesMaker {
+  public IntSetN21GraphAllMovesMaker() {
+  }
+}

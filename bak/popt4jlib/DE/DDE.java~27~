@@ -1,0 +1,447 @@
+package popt4jlib.DE;
+
+import java.util.*;
+import parallel.*;
+import utils.*;
+import popt4jlib.*;
+import popt4jlib.GradientDescent.VecUtil;
+
+/**
+ * A parallel implementation of the Differential Evolution algorithm. The
+ * distribution of effort among threads is such so that each thread updates
+ * its own portion of the population.
+ * It must be noted that DE applies only to functions with domain the space
+ * R^n, and range the real axis R, and therefore cannot be applied to functions
+ * with other domains.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DDE implements OptimizerIntf {
+  private static int _nextId = 0;
+  private int _id;
+  private Hashtable _params;
+  private double _incValue=Double.MAX_VALUE;
+  private VectorIntf _inc=null;  // incumbent vector
+  private DDEThread[] _threads=null;
+  protected FunctionIntf _f=null;
+  protected VectorIntf[] _sols;  // the population of solutions
+  protected double[] _solVals;
+  protected int _maxthreadwork;
+
+
+  /**
+   * default constructor. Assigns to the object a unique id.
+   */
+  public DDE() {
+    _id = incrID();
+  }
+
+
+  /**
+   * Constructor of a DDE object, that assigns a unique id plus the parameters
+   * passed into the argument.
+   * @param params Hashtable
+   */
+  public DDE(Hashtable params) {
+    this();
+    try {
+      setParams(params);
+    }
+    catch (Exception e) {
+      // no-op: cannot reach this point
+    }
+  }
+
+
+  /**
+   * return a copy of the parameters. Modifications to the returned object
+   * do not affect the data member.
+   * @return Hashtable
+   */
+  synchronized Hashtable getParams() {  // modifications of the returned object do not matter
+    return new Hashtable(_params);
+  }
+
+
+  /**
+   * the optimization params are set to a copy of p
+   * @param p Hashtable
+   * @throws OptimizerException if another thread is concurrently running the
+   * <CODE>minimize(f)</CODE> of this object
+   */
+  synchronized void setParams(Hashtable p) throws OptimizerException {
+    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    _params = null;
+    _params = new Hashtable(p);  // own the params
+  }
+
+
+  /**
+   * the most important method of the class, that implements a Distributed
+   * Differential Evolution process. A number of threads work on different
+   * solutions in the solution array holding each iteration's population.
+   * For a given number of "tries", the process should run faster when given
+   * more threads assuming there are as many cores in the CPU running the
+   * process.
+   * Prior to calling this method, a few parameters must have been passed in
+   * either during object construction, or afterwards, by a call to setParams(p)
+   * These parameters are:
+   * <li> <"dde.numdimensions", Integer nd> mandatory, the dimension of the domain of
+   * the function to be minimized.
+   * <li> <"dde.numtries", Integer ni> optional, the total number of "tries", default
+   * is 100.
+   * <li> <"dde.numthreads", Integer nt> optional, the number of threads to use,
+   * default is 1.
+   * <li> <"dde.popsize", Integer ps> optional, the total population size in each
+   * iteration, default is 10.
+   * <li> <"dde.w", Double w> optional, the "weight" of the DE process, a double
+   * number in [0,2], default is 1.0
+   * <li> <"dde.px", Double px> optional, the "crossover rate" of the DE process, a
+   * double number in [0,1], default is 0.9
+   * <li> <"dde.minargval", Double val> optional, a double number that is a lower
+   * bound for all variables of the optimization process, i.e. all variables
+   * must satisfy x_i >= val.doubleValue(), default is -infinity
+   * <li> <"dde.maxargval", Double val> optional, a double number that is an upper
+   * bound for all variables of the optimization process, i.e. all variables
+   * must satisfy x_i <= val.doubleValue(), default is +infinity
+   * <li> <"dde.minargval$i$", Double val> optional, a double number that is a lower
+   * bound for the i-th variable of the optimization process, i.e. variable
+   * must satisfy x_i >= val.doubleValue(), default is -infinity
+   * <li> <"dde.maxargval$i$", Double val> optional, a double number that is an upper
+   * bound for the i-th variable of the optimization process, i.e. variable
+   * must satisfy x_i <= val.doubleValue(), default is +infinity
+   *
+   * @param f FunctionIntf the function to be minimized
+   * @throws OptimizerException if another thread is concurrently running the
+   * <CODE>minimize(f)</CODE> method of this object or if the optimization
+   * process fails
+   * @return PairObjDouble an object containing both the best value found by
+   * the DE optimization process, as well as the best argument that produced it.
+   */
+  public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
+    try {
+      synchronized (this) {
+        if (_f != null)throw new OptimizerException("DDE.minimize(): "+
+          "another thread is concurrently executing the method on the same object");
+        _f = f;
+      }
+      int numthreads = 1;
+      try {
+        Integer ntI = (Integer) _params.get("dde.numthreads");
+        if (ntI != null && ntI.intValue() > 1) numthreads = ntI.intValue();
+      }
+      catch (Exception e) {
+        e.printStackTrace();  // no-op
+      }
+      int popsize = 10;
+      try {
+        Integer psI = (Integer) _params.get("dde.popsize");
+        if (psI != null && psI.intValue() > 1) popsize = psI.intValue();
+      }
+      catch (Exception e) {
+        e.printStackTrace();  // no-op
+      }
+      _sols = new VectorIntf[popsize]; // create array of solutions
+      _solVals = new double[popsize];
+
+      try {
+        Barrier.setNumThreads("dde." + getId(), numthreads); // initialize barrier
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();
+        throw new OptimizerException("barrier init. failed");
+      }
+
+      _threads = new DDEThread[numthreads];
+      RndUtil.addExtraInstances(numthreads);  // not needed
+      int ntries = 100;
+      try {
+        Integer ntriesI = (Integer) _params.get("dde.numtries");
+        if (ntriesI != null && ntriesI.intValue() > 1)
+          ntries = ntriesI.intValue();
+      }
+      catch (Exception e) {
+        e.printStackTrace();  // no-op
+      }
+      int vecsperthread = popsize / numthreads;
+      int k = 0;
+      int l = vecsperthread;
+      for (int i = 0; i < numthreads - 1; i++) {
+        _threads[i] = new DDEThread(i, k, l - 1, ntries, this);
+        k = l;
+        l += vecsperthread;
+      }
+      _threads[numthreads -
+          1] = new DDEThread(numthreads - 1, k, popsize - 1, ntries, this);
+      _maxthreadwork = popsize - k;
+      for (int i = 0; i < numthreads; i++) {
+        _threads[i].start();
+      }
+      // wait until all threads finish
+      for (int i = 0; i < numthreads; i++) {
+        try {
+          _threads[i].join();
+        }
+        catch (InterruptedException e) {
+          Thread.currentThread().interrupt(); // recommended behavior
+        }
+      }
+
+      if (_inc == null) // didn't find a solution
+        throw new OptimizerException("failed to find solution");
+      // ok, we're done
+      PairObjDouble pr = new PairObjDouble(_inc, _incValue);
+      return pr;
+    }
+    finally {
+      _f = null;
+    }
+  }
+
+
+  synchronized void setIncumbent(VectorIntf arg, double val) throws OptimizerException {
+    if (val<_incValue) {
+      _incValue=val;
+      _inc=arg;
+      if (Debug.debug(Constants.DDE)!=0) {
+        // sanity check
+        double incval = _f.eval(arg, _params);
+        if (Math.abs(incval - _incValue) > 1.e-25) {
+          Messenger.getInstance().msg("DDE.setIncumbent(): arg-val originally=" +
+                                      _incValue + " fval=" + incval + " ???", 0);
+          throw new OptimizerException(
+              "DDE.setIncumbent(): insanity detected; " +
+              "most likely evaluation function is " +
+              "NOT reentrant... " +
+              "Add the 'function.notreentrant,num'" +
+              " pair (num=1 or 2) to run parameters");
+        }
+        // end sanity check
+      }
+      Messenger.getInstance().msg("setIncumbent(): best sol value="+val,0);
+    }
+  }
+
+
+  synchronized VectorIntf getIncumbent() {
+    return _inc;
+  }
+
+
+  int getId() { return _id; }
+
+
+  private synchronized static int incrID() {
+    return ++_nextId;
+  }
+
+}
+
+
+/**
+ * auxiliary class
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class DDEThread extends Thread {
+
+  private DDE _master;
+  private int _numtries;
+  private int _id;
+  private int _uid;
+  private int _from;
+  private int _to;
+  private double _px=0.9;
+  private double _w=1.0;
+  private Hashtable _fp;
+
+  public DDEThread(int id, int from, int to, int numtries, DDE master) {
+    _id = id;
+    _uid = (int) DataMgr.getUniqueId();
+    _master=master;
+    _numtries=numtries;
+    _from = from;
+    _to = to;
+  }
+
+  public void run() {
+    Hashtable p = _master.getParams();  // returns a copy
+    p.put("thread.id", new Integer(_uid));  // used to be _id
+    // create the _funcParams
+    _fp = new Hashtable();
+    Iterator it = p.keySet().iterator();
+    while (it.hasNext()) {
+      String key = (String) it.next();
+      Object val = p.get(key);
+      if (val!=null) {
+        Class valclass = val.getClass();
+        Package pack = valclass.getPackage();
+        if (pack!=null) {
+          String packname = pack.getName();
+          if (packname.startsWith("popt4jlib") ||
+              packname.startsWith("parallel"))continue; // don't include such objects
+        }
+        else {
+          Messenger.getInstance().msg("no package info for object with key "+key,2);
+        }
+        _fp.put(key, val);
+      }
+    }
+    // end creating _funcParams
+    try {
+      Double wD = (Double) p.get("dde.w");
+      if (wD != null && wD.doubleValue() >= 0 && wD.doubleValue() <= 2)
+        _w = wD.doubleValue();
+      Double pxD = (Double) p.get("dde.px");
+      if (pxD != null && pxD.doubleValue() >= 0 && wD.doubleValue() <= 1)
+        _px = pxD.doubleValue();
+    }
+    catch (ClassCastException e) {
+      e.printStackTrace();  // no-op
+    }
+    VectorIntf best = null;
+    double bestval = Double.MAX_VALUE;
+    FunctionIntf f = _master._f;
+    // initialize the [from,to] part of the population
+    DblArray1VectorRndMaker rvmaker = new DblArray1VectorRndMaker(p);
+    for (int i=_from; i<=_to; i++) {
+      try {
+        _master._sols[i] = rvmaker.createNewRandomVector();
+        _master._solVals[i] = _master._f.eval(_master._sols[i],_fp);  // used to be p
+      }
+      catch (Exception e) {
+        e.printStackTrace();  // no-op
+      }
+    }
+    // main computation
+    for (int i=0; i<_numtries; i++) {
+      try {
+        Barrier.getInstance("dde."+_master.getId()).barrier();
+        PairObjDouble pair = min(f, p);
+        if (pair==null) {
+          continue;
+        }
+        double val = pair.getDouble();
+        if (val<bestval) {
+          bestval=val;
+          best=(VectorIntf) pair.getArg();
+          _master.setIncumbent(best, bestval);
+        }
+      }
+      catch (Exception e) {
+        e.printStackTrace();
+        // no-op
+      }
+    }
+  }
+
+
+  private PairObjDouble min(FunctionIntf f, Hashtable p) throws OptimizerException {
+    final int popsize = _master._sols.length;
+    double bestval = Double.MAX_VALUE;
+    VectorIntf best = null;
+    int count=0;
+    for (int i=_from; i<=_to; i++) {
+      ++count;
+      VectorIntf x = _master._sols[i];
+      // select random vectors a,b,c from _sols
+      Vector indices = new Vector();
+      for (int j=0; j<popsize; j++) {
+        if (j!=i) indices.add(new Integer(j));
+      }
+      Collections.shuffle(indices, RndUtil.getInstance(_uid).getRandom());  // used to be _id
+      boolean found=false;
+      VectorIntf xia=null; VectorIntf xib=null; VectorIntf xic=null;
+      for (int k=0; k<indices.size(); k++) {
+        int ia = ((Integer) indices.elementAt(k)).intValue();
+        xia = _master._sols[ia];
+        if (VecUtil.equal(x,xia)==false) {
+          found=true;
+          indices.remove(k);
+          break;
+        }
+      }
+      if (!found) throw new OptimizerException("couldn't find a vector xa != x");
+      found=false;
+      for (int k=0; k<indices.size(); k++) {
+        int ib = ((Integer) indices.elementAt(k)).intValue();
+        xib = _master._sols[ib];
+        if (VecUtil.equal(x,xib)==false && VecUtil.equal(xia,xib)==false) {
+          found=true;
+          indices.remove(k);
+          break;
+        }
+      }
+      if (!found) throw new OptimizerException("couldn't find a vector xb != x,xa");
+      found=false;
+      for (int k=0; k<indices.size(); k++) {
+        int ic = ((Integer) indices.elementAt(k)).intValue();
+        xic = _master._sols[ic];
+        if (VecUtil.equal(x,xic)==false && VecUtil.equal(xia,xic)==false && VecUtil.equal(xib,xic)==false) {
+          found=true;
+          indices.remove(k);
+          break;
+        }
+      }
+      if (!found) throw new OptimizerException("couldn't find a vector xc != x,xa,xb");
+      int n = x.getNumCoords();
+      int r = RndUtil.getInstance(_uid).getRandom().nextInt(n);  // used to be _id
+      VectorIntf xtry = x.newCopy();
+      for (int j=0; j<n; j++) {
+        double rj = RndUtil.getInstance(_uid).getRandom().nextDouble();  // used to be _id
+        if (j==r || rj<_px) {
+          double valj = bound(xia.getCoord(j) + _w * (xib.getCoord(j) - xic.getCoord(j)), j, p);
+          xtry.setCoord(j, valj);
+        }
+      }
+      Barrier.getInstance("dde."+_master.getId()).barrier();
+      double ftry = f.eval(xtry, _fp);  // used to be p
+      if (ftry < _master._solVals[i]) {
+        _master._sols[i] = xtry;
+        _master._solVals[i] = ftry;
+      }
+      if (ftry < bestval) {
+        best = xtry;
+        bestval = ftry;
+      }
+    }
+    while (count<_master._maxthreadwork) {
+      Barrier.getInstance("dde."+_master.getId()).barrier();
+      ++count;
+    }
+    return new PairObjDouble(best, bestval);
+  }
+
+
+  private double bound(double val, int j, Hashtable params) throws OptimizerException {
+    double mingval = Double.NEGATIVE_INFINITY;
+    Double mingvD = (Double) params.get("dde.minargval");
+    if (mingvD!=null) mingval = mingvD.doubleValue();
+    double maxgval = Double.MAX_VALUE;
+    Double maxgvD = (Double) params.get("dde.maxargval");
+    if (maxgvD!=null) maxgval = maxgvD.doubleValue();
+    if (maxgval < mingval)
+      throw new OptimizerException("global min arg value > global max arg value");
+    double minval = mingval;
+    Double mvD = (Double) params.get("dde.minargval"+j);
+    if (mvD!=null && mvD.doubleValue()>minval) minval = mvD.doubleValue();
+    double maxval = maxgval;
+    Double MvD = (Double) params.get("dde.maxargval"+j);
+    if (MvD!=null && MvD.doubleValue()<maxval) maxval = MvD.doubleValue();
+    if (minval>maxval)
+      throw new OptimizerException("global min arg value > global max arg value");
+    double val2 = val;
+    if (val2 < minval) val2 = minval;
+    else if (val2>maxval) val2 = maxval;
+    return val2;
+  }
+}
+

@@ -1,0 +1,9 @@
+class,prcg.function,tests.TridFunction
+class,prcg.gradient,tests.TridFunctionGrad
+prcg.numdimensions,100
+prcg.functionargmaxval,10000.0
+prcg.functionargminval,-10000.0
+rndgen,7,1
+prcg.numthreads,1
+prcg.numtries,1
+prcg.maxiters,100000

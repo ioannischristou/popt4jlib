@@ -1,0 +1,6 @@
+package tests;
+
+public class CliqueComputingTestMT2 {
+  public CliqueComputingTestMT2() {
+  }
+}

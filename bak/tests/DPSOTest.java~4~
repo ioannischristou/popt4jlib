@@ -1,0 +1,69 @@
+package tests;
+
+import popt4jlib.*;
+import popt4jlib.PS.*;
+import popt4jlib.GradientDescent.*;
+import java.util.*;
+
+/**
+ * test-driver program for the DPSO (Distributed Particle Swarm Optimization)
+ * algorithm.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DPSOTest {
+
+  /**
+   * single public no-arg constructor
+   */
+  public DPSOTest() {
+  }
+
+
+  /**
+   * invoke as <CODE>java -&ltclasspath&gt tests.DPSOTest &ltparams_file&gt</CODE>
+   * where the params_file must contain the following lines:
+   * HERE continue
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      long start_time = System.currentTimeMillis();
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      FunctionIntf func = (FunctionIntf) params.get("dpso.function");
+      FunctionBase wrapper_func = new FunctionBase(func);
+      params.put("dpso.function",wrapper_func);
+      DPSO opter = new DPSO(params);
+      utils.PairObjDouble p = opter.minimize(wrapper_func);
+      double[] arg = (double[]) p.getArg();
+      System.out.print("best soln found:[");
+      for (int i=0;i<arg.length;i++) System.out.print(arg[i]+" ");
+      System.out.println("] VAL="+p.getDouble());
+      // final local optimization
+      LocalOptimizerIntf lasdst = (LocalOptimizerIntf) params.get("dpso.localoptimizer");
+      if (lasdst!=null) {
+        VectorIntf x0 = new popt4jlib.DblArray1Vector(arg);
+        params.put("gradientdescent.x0", x0);
+        lasdst.setParams(params);
+        utils.PairObjDouble p2 = lasdst.minimize(wrapper_func);
+        VectorIntf xf = (VectorIntf) p2.getArg();
+        System.out.print(
+            "Optimized (via LocalOptimizerIntf) best soln found:[");
+        for (int i = 0; i < xf.getNumCoords(); i++) System.out.print(xf.
+            getCoord(i) + " ");
+        System.out.println("] VAL=" + p2.getDouble());
+      }
+      System.err.println("total function evaluations="+wrapper_func.getEvalCount());
+      long dur = System.currentTimeMillis()-start_time;
+      System.out.println("total time (msecs): "+dur);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

@@ -1,0 +1,44 @@
+package popt4jlib.GA;
+
+import parallel.*;
+import java.util.*;
+import java.io.Serializable;
+
+/**
+ * used in migrating individuals between islands in DGA.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class RecvIndTask implements TaskObject {
+  //public final static long serialVersionUID=987654338L;  // recommended
+  Vector _immpool;
+  Vector _imms;
+  boolean _isDone=false;
+
+  public RecvIndTask(Vector immpool, Vector imms) {
+    _immpool = immpool;
+    _imms = imms;
+  }
+
+  public Serializable run() {
+    _immpool.addAll(_imms);
+    _isDone = true;
+    return this;
+  }
+
+  public boolean isDone() { return _isDone; }
+
+  public synchronized void copyFrom(TaskObject t) throws IllegalArgumentException {
+    if (t instanceof RecvIndTask == false)
+      throw new IllegalArgumentException("copyFrom(t) method not supported");
+    RecvIndTask t2 = (RecvIndTask) t;
+    _immpool = t2._immpool;
+    _imms = t2._imms;
+    _isDone = t2._isDone;
+  }
+
+}

@@ -1,0 +1,15 @@
+package parallel;
+
+import java.util.Vector;
+
+public class ParallelExceptionUnsubmittedTasks extends Exception {
+  private Vector _unsubmittedTasks;
+  public ParallelExceptionUnsubmittedTasks(Vector unsubmittedtasks) {
+    _unsubmittedTasks = unsubmittedtasks;
+  }
+
+  public Vector getUnsubmittedTasks() {
+    return _unsubmittedTasks;
+  }
+}
+

@@ -1,0 +1,6 @@
+package popt4jlib.MSSC;
+
+public class NeuralGasClusterer {
+  public NeuralGasClusterer() {
+  }
+}

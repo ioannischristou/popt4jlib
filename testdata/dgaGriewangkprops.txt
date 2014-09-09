@@ -1,0 +1,17 @@
+class,dga.function,tests.GriewangkFunction
+dga.chromosomelength,30
+dga.maxallelevalue,600.0
+dga.minallelevalue,-600.0
+dga.cutoffage,100
+dga.varage,10.0
+dga.numgens,1000
+dga.numinitpop,50
+dga.poplimit,100
+rndgen,7,4
+dga.numthreads,4
+class,dga.xoverop,popt4jlib.GA.DblArray1PtXOverOp
+class,dga.mutationop,popt4jlib.GA.DblVarArray1AlleleMutationOp
+class,dga.randomchromosomemaker,popt4jlib.GA.DblArray1CMaker
+class,dga.localoptimizer_dummy,popt4jlib.GradientDescent.ArmijoSteepestDescent
+asd.maxiters,20000
+class,asd.gradient_dummy,tests.GriewangkFunctionGrad

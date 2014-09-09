@@ -1,0 +1,8 @@
+package popt4jlib;
+
+import java.util.*;
+
+interface RandomChromosomeMakerIntf {
+  public Object createRandomChromosome(Hashtable params) throws OptimizerException;
+}
+

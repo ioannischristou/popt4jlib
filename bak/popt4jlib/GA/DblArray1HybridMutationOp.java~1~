@@ -1,0 +1,6 @@
+package popt4jlib.GA;
+
+public class DblArray1HybridMutationOp {
+  public DblArray1HybridMutationOp() {
+  }
+}

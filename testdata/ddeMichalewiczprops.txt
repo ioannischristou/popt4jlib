@@ -1,0 +1,14 @@
+class,dde.function,tests.MichalewiczFunction
+m,10.0
+dde.numdimensions,100
+dde.maxargval,3.141592653589793
+dde.minargval,0.0
+dde.numtries,100
+dde.popsize,1000
+dde.w,5.0
+dde.px,0.8
+rndgen,7,1
+dde.numthreads,1
+class,dde.localoptimizer_dummy,popt4jlib.GradientDescent.ArmijoSteepestDescentST
+asd.maxiters,10000
+class,asd.gradient,tests.MichalewiczFunctionGrad

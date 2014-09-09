@@ -1,0 +1,9 @@
+package popt4jlib;
+
+import java.util.Hashtable;
+
+interface Arg2ChromosomeMakerIntf {
+  public Object getChromosome(Object chromosome, Hashtable params)
+      throws OptimizerException;  // FunctionArgument->Chromosome Map
+}
+

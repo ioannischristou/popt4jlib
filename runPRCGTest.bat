@@ -1,0 +1,1 @@
+java -Xmx1500m -cp ./popt4jlib.jar;./lib/colt.jar tests.PRCGTest %1

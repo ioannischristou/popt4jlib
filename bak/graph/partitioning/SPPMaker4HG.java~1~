@@ -1,0 +1,6 @@
+package graph.partitioning;
+
+public class SPPMaker4HG {
+  public SPPMaker4HG() {
+  }
+}

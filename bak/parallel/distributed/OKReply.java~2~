@@ -1,0 +1,9 @@
+package parallel.distributed;
+
+import java.io.*;
+
+public class OKReply implements Serializable {
+  public OKReply() {
+  }
+}
+

@@ -1,0 +1,74 @@
+package tests;
+
+import utils.*;
+import graph.*;
+import java.util.*;
+
+/**
+ * a test-driver class to test the functionality of computing maximal weighted
+ * cliques in a graph (in the graph package).
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class CliqueComputingTestMT {
+  /**
+   * public no-arg constructor
+   */
+  public CliqueComputingTestMT() {
+  }
+
+
+  /**
+   * the main method: invoke from command line as follows:
+   * <CODE>java -cp <classpath> tests.CliqueComputingTestMT &ltgraph_file_name&gt &ltthres&gt &ltnumthreads&gt</CODE>
+   * where the parameter graph_file_name contains the graph whose cliques we
+   * seek, and the parameter thres defines the minimum weight that each edge
+   * of the graph must have so that it "counts" as a "true edge" in the
+   * computation of all maximally weighted cliques. The definition of the format
+   * of the graph_file_name can be found in the documentation for class
+   * <CODE>utils.DataMgr</CODE> and in particular for the method
+   * <CODE>DataMgr.readGraphFromFile[2](String name)</CODE>. The third argument
+   * is the number of threads to use.
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      long start = System.currentTimeMillis();
+      String filename = args[0];
+      double thres = Double.parseDouble(args[1]);
+      int numthreads = Integer.parseInt(args[2]);
+      Graph g = null;
+      try {
+        g = DataMgr.readGraphFromFile(filename);
+      }
+      catch (Exception e) {
+        g = DataMgr.readGraphFromFile2(filename);  // try alternative format
+      }
+      AllMWCFinder finder = null;
+      finder = new AllMWCFinderBKMT(g, numthreads);
+      Set output = finder.getAllMaximalCliques(thres);
+      Iterator it = output.iterator();
+      int i=0;
+      while (it.hasNext()) {
+        Set c = (Set) it.next();
+        System.out.print(++i +
+                         ": [ ");
+        Iterator it2 = c.iterator();
+        while (it2.hasNext()) {
+          Integer id = (Integer) it2.next();
+          System.out.print(id.intValue()+" ");
+        }
+        System.out.println("]");
+      }
+      long dur = System.currentTimeMillis()-start;
+      System.out.println("time (msecs)="+dur);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+}

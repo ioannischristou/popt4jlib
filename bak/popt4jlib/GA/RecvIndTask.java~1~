@@ -1,0 +1,6 @@
+package popt4jlib.GA;
+
+public class RecvIndTask {
+  public RecvIndTask() {
+  }
+}

@@ -1,0 +1,8 @@
+class,mcs.function,tests.LND7Function
+mcs.arglength,1000
+mcs.maxargvalue,100.0
+mcs.minargvalue,-100.0
+rndgen,7,1
+mcs.numthreads,1
+mcs.numtries,1000000
+class,mcs.randomargmaker,popt4jlib.MonteCarlo.DblArray1ArgMaker

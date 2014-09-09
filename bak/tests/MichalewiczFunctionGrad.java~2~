@@ -1,0 +1,38 @@
+package tests;
+
+import popt4jlib.*;
+import java.util.*;
+
+/**
+ *
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ *
+ * This class implements the Michalewicz Function Gradient in n-dimensions
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+
+public class MichalewiczFunctionGrad implements VecFunctionIntf {
+  public MichalewiczFunctionGrad() {
+  }
+
+  public VectorIntf eval(VectorIntf x, Hashtable p) {
+    double m = ((Double) p.get("m")).doubleValue();
+    int n = x.getNumCoords();
+    VectorIntf g = x.newCopy();
+    for (int i=0; i<n; i++) {
+      double xi = x.getCoord(i);
+      double vala = (i+1)*xi*xi/Math.PI;
+      double val0 = Math.sin(vala);
+      double val1 = -Math.cos(xi)*Math.pow(val0, 2.0*m);
+      double val2 = -Math.sin(xi)*2.0*m*Math.pow(val0,(2*m-1))*Math.cos(vala)*2*(i+1)*xi/Math.PI;
+      double val = val1+val2;
+      g.setCoord(i, val);
+    }
+    return g;
+  }
+}
+

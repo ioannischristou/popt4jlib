@@ -1,0 +1,9 @@
+class,asd.function,tests.TridFunction
+class,asd.gradient,tests.TridFunctionGrad
+asd.functionargmaxval,10000.0
+asd.functionargminval,-10000.0
+rndgen,7,1
+asd.numthreads,1
+asd.numdimensions,100
+asd.numtries,1
+asd.maxiters,100000

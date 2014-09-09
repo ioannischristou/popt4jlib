@@ -1,0 +1,45 @@
+package parallel;
+
+public class BlockingMsgPassingTest {
+  static private int _numThreads = 10;
+  public static int getNumThreads() { return _numThreads; }
+
+  public BlockingMsgPassingTest() {
+  }
+
+  public static void main(String[] args) {
+    MPThread2 t0 = new MPThread2(0);
+    t0.start();
+    for (int i=1; i<_numThreads; i++) {
+      MPThread2 ti = new MPThread2(i);
+      ti.start();
+    }
+    try {
+      BlockingMsgPassingCoordinator.getInstance().sendData( -1, 0, new Object());
+    }
+    catch (Exception e) { e.printStackTrace(); }
+  }
+}
+
+
+class MPThread2 extends Thread {
+  private int _id;
+
+  public MPThread2(int i) {
+    _id = i;
+  }
+
+  public void run() {
+    final int numthreads = BlockingMsgPassingTest.getNumThreads();
+    int sendTo = _id+1;
+    if (sendTo>=numthreads) sendTo = 0;
+    try {
+      for (int i = 0; i < 10; i++) {
+        BlockingMsgPassingCoordinator.getInstance().recvData(_id);
+        System.out.println("Thread-" + _id + " doing iter " + i);
+        if (i<9 || _id<numthreads-1) BlockingMsgPassingCoordinator.getInstance().sendData(_id, sendTo, new Object());
+      }
+    }
+    catch (Exception e) { e.printStackTrace(); }
+  }
+}

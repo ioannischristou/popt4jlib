@@ -1,0 +1,6 @@
+package popt4jlib.EA;
+
+public class IntVarArray1MoveMaker {
+  public IntVarArray1MoveMaker() {
+  }
+}

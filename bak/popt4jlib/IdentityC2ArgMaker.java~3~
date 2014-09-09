@@ -1,0 +1,12 @@
+package popt4jlib;
+
+import java.util.*;
+
+public class IdentityC2ArgMaker implements Chromosome2ArgMakerIntf {
+  public IdentityC2ArgMaker() {
+  }
+
+  public Object getArg(Object c, Hashtable params) {
+    return c;
+  }
+}

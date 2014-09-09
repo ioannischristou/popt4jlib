@@ -1,0 +1,9 @@
+package parallel.distributed;
+
+public class PDBatchTaskExecutorException extends Exception {
+  private String _msg;
+  public PDBatchTaskExecutorException(String msg) {
+    _msg = msg;
+    System.err.println(msg);
+  }
+}

@@ -1,0 +1,193 @@
+package parallel.distributed;
+
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+
+/**
+ * class implements a worker process, that is capable of accepting (through
+ * network sockets) arrays of TaskObjects and executes them using a
+ * <CODE>parallel.distributed.PDBatchTaskExecutor</CODE>. The process connects
+ * on a server (hosting the
+ * <CODE>parallel.distributed.PDBatchTaskExecutorSrv</CODE> process) on the
+ * dedicated port for worker connections (default 7890) and starts listening in
+ * for <CODE>parallel.distributed.TaskObjectsExecutionRequest</CODE> requests,
+ * which it then processes and returns the results wrapped in a
+ * <CODE>parallel.distributed.TaskObjectsExecutionResults</CODE> object via the
+ * connecting socket to the server.
+ *
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class PDBatchTaskExecutorWrk {
+  private int _numthreads = 10;  // default number of threads of PDBatchTaskExecutor
+  private String _host = "localhost";  // default host
+  private int _port = 7890;  // default worker port
+  static Socket _s = null;
+
+
+  /**
+   * public no-arg constructor will assume host is localhost, workers' port is
+   * 7890, and the associated PDBatchTaskExecutor will have 10 threads.
+   */
+  public PDBatchTaskExecutorWrk() {
+  }
+
+
+  /**
+   * constructor provides values for the numthreads, host/port parameters for
+   * this worker.
+   * @param numthreads int
+   * @param host String
+   * @param port int
+   */
+  public PDBatchTaskExecutorWrk(int numthreads, String host, int port) {
+    _numthreads = numthreads;
+    _host = host;
+    _port = port;
+  }
+
+
+  /**
+   * auxiliary method called by main()
+   * @throws IOException
+   */
+  private void run() throws IOException {
+    _s=null;
+    ObjectInputStream ois=null;
+    ObjectOutputStream oos=null;
+    PDBatchTaskExecutor executor=null;
+    try {
+      System.out.println("Wrk: About to Connect to Srv at address(host,port)=("+_host+","+_port+")");
+      System.out.flush();
+      _s = new Socket(_host, _port);
+      System.err.println("Wrk: socket created"); System.err.flush();  // itc: HERE rm asap
+      oos = new ObjectOutputStream(_s.getOutputStream());
+      oos.flush();
+      ois = new ObjectInputStream(_s.getInputStream());
+      System.out.println("Wrk: Connected to Srv at address(host,port)=("+_host+","+_port+")");
+      System.out.flush();
+      executor = new PDBatchTaskExecutor(_numthreads);
+      while (true) {
+        try {
+          // get a request
+          System.err.println("Wrk: waiting to read a TaskObjectsExecutionRequest"); System.err.flush();  // itc: HERE rm asap
+          TaskObjectsExecutionRequest req = (TaskObjectsExecutionRequest) ois.readObject();
+          System.err.println("Wrk: got a TaskObjectsExecutionRequest"); System.err.flush();  // itc: HERE rm asap
+          if (req!=null) {
+            Vector tasks = new Vector();
+            for (int i=0; i<req._tasks.length; i++)
+              tasks.addElement(req._tasks[i]);
+            //  process the request and get back results
+            Vector results = executor.executeBatch(tasks);
+            System.err.println("Wrk: finished processing the TaskObjectsExecutionRequest"); System.err.flush();  // itc: HERE rm asap
+            System.err.print("Results: ");  // itc: HERE rm asap
+            Object[] arr = new Object[results.size()];
+            for (int i=0; i<results.size(); i++) {
+              arr[i] = results.elementAt(i);
+              System.err.print(arr[i]+" ");  // itc: HERE rm asap
+            }
+            System.err.println(".");  System.err.flush();  // itc: HERE rm asap
+            TaskObjectsExecutionResults res = new TaskObjectsExecutionResults(arr);
+            oos.writeObject(res);
+            oos.flush();
+            System.err.println("Wrk: sent a TaskObjectsExecutionResults response"); System.err.flush();  // itc: HERE rm asap
+          }
+        }
+        catch (SocketException e) {
+          //e.printStackTrace();
+          System.err.println("Socket Exception caught.Exiting.");System.err.flush();
+          break;
+        }
+        catch (IOException e2) {
+          //e2.printStackTrace();
+          System.err.println("I/O Exception caught.Exiting.");System.err.flush();
+          break;
+        }
+        catch (ClassCastException e3) {
+          e3.printStackTrace();
+          // don't disconnect
+        }
+      }
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+    finally {
+      if (ois!=null) ois.close();
+      if (oos!=null) oos.close();
+      if (_s!=null) _s.close();
+      if (executor!=null) {
+        try {
+          executor.shutDown();
+        }
+        catch (parallel.ParallelException e2) {
+          e2.printStackTrace();
+        }
+      }
+      System.out.println("Wrk: Closed Connection to Srv at address(host,port)=("+_host+","+_port+")");
+    }
+  }
+
+
+  /**
+   * invoke as:
+   * <CODE>java -cp &ltclasspath&gt parallel.distributed.PDBatchTaskExecutorWrk [numthreads(10)] [host(localhost)] [port(7890)]</CODE>
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    int numthreads = 10;
+    String host = "localhost";
+    int port = 7890;
+
+    // register handle to close socket if we stop the program via ctrl-c
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      public void run() {
+        try {
+          _s.shutdownOutput(); // Sends the 'FIN' on the network
+          _s.close(); // Now we can close the Socket
+        }
+        catch (IOException e) {
+          // silently ignore
+        }
+      }
+    }
+    );
+
+    if (args.length>0) {
+      try {
+        numthreads = Integer.parseInt(args[0]);
+        if (args.length>1) {
+          host = args[1];
+        }
+        if (args.length>2) {
+          port = Integer.parseInt(args[2]);
+        }
+      }
+      catch (Exception e) {
+        usage();
+        System.exit(-1);
+      }
+    }
+    PDBatchTaskExecutorWrk worker = new PDBatchTaskExecutorWrk(numthreads, host, port);
+    try {
+      worker.run();
+    }
+    catch (IOException e) {
+      //e.printStackTrace();
+      System.err.println("Wrk exits due to IOException.");
+    }
+  }
+
+
+  private static void usage() {
+    System.err.println("usage: java -cp <classpath> parallel.distributed.PDBatchTaskExecutorWrk [numthreads(10)] [host(localhost)] [port(7890)]");
+  }
+
+}
+

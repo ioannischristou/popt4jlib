@@ -1,0 +1,11 @@
+class,dde.function,tests.LND3Function
+dde.numdimensions,50
+dde.maxargval,100.0
+dde.minargval,-100.0
+dde.numtries,50000
+dde.popsize,50
+dde.w,4.0
+dde.px,0.8
+rndgen,7,1
+dde.numthreads,1
+dummy_class,dde.localoptimizer,popt4jlib.GradientDescent.AlternatingVariablesDescent

@@ -1,0 +1,1 @@
+java -Xmx1500m -cp ./dist/popt4jlib.jar;./lib/colt.jar tests.DEATest %1 %2 %3

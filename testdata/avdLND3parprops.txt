@@ -1,0 +1,8 @@
+class,avd.function,tests.LND3Function
+avd.numdimensions,50
+avd.maxargval,100.0
+avd.minargval,-100.0
+avd.numthreads,4
+avd.numtries,100
+avd.minstepsize,0.000001
+avd.ftol,0.0000001

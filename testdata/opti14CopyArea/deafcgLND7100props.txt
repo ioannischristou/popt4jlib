@@ -1,0 +1,17 @@
+class,dea.function,tests.LND7Function
+dea.chromosomelength,100
+dea.maxallelevalue,100.0
+dea.minallelevalue,-100.0
+dea.movesigma,10.0
+dea.numiters,10000
+dea.sendrecvperiod,1
+rndgen,1,1
+dea.numthreads,1
+class,dea.randomchromosomemaker,popt4jlib.EA.DblArray1CMaker
+class,dea.movemaker,popt4jlib.EA.DblArray1MoveMaker
+class,dea.localoptimizer,popt4jlib.GradientDescent.FletcherConjugateGradientST
+fcg.maxiters,1000
+fcg.maxbracketingiters,1000
+fcg.maxsectioningiters,1000
+fcg.gtol,1.e-5
+fcg.redrate,5.0

@@ -1,0 +1,6 @@
+package tests;
+
+public class Norm2FunctionGrad {
+  public Norm2FunctionGrad() {
+  }
+}

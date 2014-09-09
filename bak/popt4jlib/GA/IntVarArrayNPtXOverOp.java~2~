@@ -1,0 +1,52 @@
+package popt4jlib.GA;
+
+import popt4jlib.OptimizerException;
+import utils.*;
+import java.util.*;
+
+
+public class IntVarArrayNPtXOverOp implements XoverOpIntf {
+
+  private int _n=1;
+
+  public IntVarArrayNPtXOverOp(int n) {
+    if (n>1) _n = n;
+  }
+
+  public Pair doXover(Object c1, Object c2, Hashtable params) throws OptimizerException {
+    try {
+      final int id = ( (Integer) params.get("thread.id")).intValue();
+      int[] a1 = (int[]) c1;
+      int[] a2 = (int[]) c2;
+      int min = a1.length < a2.length ? a1.length : a2.length;
+      int max = a1.length > a2.length ? a1.length : a2.length;
+      int[] off1 = new int[a1.length];
+      int[] off2 = new int[a2.length];
+      int offset = 0;
+      for (int n=1; n<=_n; n++) {
+        int xoverind = offset + RndUtil.getInstance(id).getRandom().nextInt(min-offset);
+        for (int i = offset; i < max; i++) {
+          if (i <= xoverind) {
+            off1[i] = a1[i];
+            off2[i] = a2[i];
+          }
+          else {
+            if (i < min) off1[i] = a2[i];
+            else if (off1.length > i) off1[i] = a1[i];
+            if (i < min) off2[i] = a1[i];
+            else if (off2.length > i) off2[i] = a2[i];
+          }
+        }
+        offset += xoverind;
+      }
+      Pair p = new Pair(off1, off2);
+      return p;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("doXover(): failed");
+    }
+  }
+
+}
+

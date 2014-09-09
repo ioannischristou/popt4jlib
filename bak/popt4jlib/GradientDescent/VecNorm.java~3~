@@ -1,0 +1,35 @@
+package popt4jlib.GradientDescent;
+
+import popt4jlib.*;
+
+public class VecNorm {
+  public VecNorm() {
+  }
+
+
+  public static double norm(VectorIntf x, int k) throws IllegalArgumentException {
+    if (x==null) throw new IllegalArgumentException("x is null");
+    if (k<=0) throw new IllegalArgumentException("k<=0");
+    int n = x.getNumCoords();
+    double res = 0.0;
+    for (int i=0; i<n; i++) {
+      double xi = x.getCoord(i);
+      res += Math.pow(xi, k);
+    }
+    res = Math.pow(res, 1.0/(double) k);
+    return res;
+  }
+
+
+  public static double normInfinity(VectorIntf x) throws IllegalArgumentException {
+    if (x==null) throw new IllegalArgumentException("x is null");
+    int n = x.getNumCoords();
+    double res = 0.0;
+    for (int i=0; i<n; i++) {
+      double xi = x.getCoord(i);
+      if (Math.abs(xi)>res) res = Math.abs(xi);
+    }
+    return res;
+  }
+}
+

@@ -1,0 +1,123 @@
+package graph.packing;
+
+import java.util.*;
+import utils.*;
+import graph.*;
+
+public class BBGASPPacker {
+
+  private static int _totActiveNodes=0;
+
+  public BBGASPPacker() {
+  }
+
+
+  /**
+   * args[0]: graph file name
+   * args[1]: params file name
+   * args[2]: [optional] max num nodes to create in B&B procedure
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      if (args.length<2) {
+        System.err.println("usage: java -cp <classpath> packing.EPTester <graphfilename> <paramsfilename> [maxnumBBnodes] [numthreads]");
+        System.exit(-1);
+      }
+      /*
+      // register handle to show best soln if we stop the program via ctrl-c
+      Runtime.getRuntime().addShutdownHook(new Thread() {
+        public void run() {
+          System.err.println("best soln="+EPTester._totActiveNodes);
+          System.err.flush();
+        }
+      }
+      );
+      */
+      long start = System.currentTimeMillis();
+      Graph g = DataMgr.readGraphFromFile2(args[0]);
+      Hashtable params = DataMgr.readPropsFromFile(args[1]);
+      int maxnodes = -1;
+      if (args.length>2)
+        maxnodes = Integer.parseInt(args[2]);  // override max num nodes
+      if (args.length>3)
+        params.put("numthreads",new Integer(args[3]));  // override num threads
+
+      int nt = 1;
+      Integer num_threadsI = (Integer) params.get("numthreads");
+      if (num_threadsI!=null)
+        nt = num_threadsI.intValue();
+      if (nt>1) BBThreadPool.setNumthreads(nt);
+
+      Graph[] graphs = null;
+      if (g.getNumComponents()>1) graphs = g.getGraphComponents();
+      else {  // optimize when there is only one component in the graph
+        graphs = new Graph[1];
+        graphs[0] = g;
+      }
+      // now run the B&B algorithm for each sub-graph
+      for (int j=0; j<graphs.length; j++) {
+        Graph gj = graphs[j];
+        System.err.println("Solving for subgraph "+(j+1)+" w/ sz="+gj.getNumNodes()+" (/"+graphs.length+")");
+        if (gj.getNumNodes()<=3) {
+          ++_totActiveNodes;
+          continue;
+        }
+        BBTree t = null;
+        // double bound = Double.MAX_VALUE;
+        double bound = 0;
+        t = new BBTree(gj, bound);
+        if (maxnodes > 0) t.setMaxNodesAllowed(maxnodes);
+        Integer maxQSizeI = (Integer) params.get("maxqsize");
+        if (maxQSizeI != null && maxQSizeI.intValue() > 0)
+          t.setMaxQSize(maxQSizeI.intValue());
+        Boolean cutNodesB = (Boolean) params.get("cutnodes");
+        if (cutNodesB != null) t.setCutNodes(cutNodesB.booleanValue());
+        Integer tlvl = (Integer) params.get("tightenboundlevel");
+        if (tlvl != null && tlvl.intValue() >= 1) t.setTightenUpperBoundLvl(
+            tlvl.intValue());
+        Boolean usemaxsubsetsB = (Boolean) params.get("usemaxsubsets");
+        if (usemaxsubsetsB != null)
+          t.setUseMaxSubsets(usemaxsubsetsB.booleanValue());
+        Integer kmaxI = (Integer) params.get("maxitersinGBNS2A");
+        if (kmaxI!=null && kmaxI.intValue()>0)
+          t.setMaxAllowedItersInGBNS2A(kmaxI.intValue());
+        Double avgpercextranodes2addD = (Double) params.get("avgpercextranodes2add");
+        if (avgpercextranodes2addD!=null)
+          t.setAvgPercExtraNodes2Add(avgpercextranodes2addD.doubleValue());
+        Integer recentI = (Integer) params.get("recentqueuesize");
+        if (recentI != null && recentI.intValue() > 0
+            && t.getUseMaxSubsets()==false)
+          t.setRecentMaxLen(recentI.intValue());
+        Integer maxchildrenI = (Integer) params.get("maxnodechildren");
+        if (maxchildrenI != null && maxchildrenI.intValue() > 0)
+          t.setMaxChildrenNodesAllowed(maxchildrenI.intValue());
+        BBNodeComparatorIntf bbcomp = (BBNodeComparatorIntf) params.get("bbnodecomparator");
+        if (bbcomp!=null) t.setBBNodeComparator(bbcomp);
+        t.run();
+        int orsoln[] = t.getSolution();
+        int tan=0;
+        for (int i = 0; i < orsoln.length; i++) {
+          if (orsoln[i] == 1) {
+            System.out.print( (i + 1) + " ");
+            ++tan;
+          }
+        }
+        System.err.println("Total BB-nodes=" + t.getCounter());
+        _totActiveNodes += tan;
+        System.err.println("Total active nodes so far: "+_totActiveNodes);
+      }
+      long time = System.currentTimeMillis() - start;
+      System.out.println("Best Soln = "+_totActiveNodes);
+      System.out.println("\nWall-clock Time (msecs): "+time);
+      System.out.println("Done.");
+      System.exit(0);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+
+}
+

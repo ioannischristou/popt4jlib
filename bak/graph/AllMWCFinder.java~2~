@@ -1,0 +1,97 @@
+package graph;
+
+import java.util.*;
+
+/**
+ * The class computes all maximal weighted cliques in a Graph.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class AllMWCFinder {
+  private Graph _g;
+
+  public AllMWCFinder(Graph g) {
+    _g = g;
+  }
+
+
+  /**
+   * the method computes all maximal cliques in a Graph g so that each node in a
+   * resulting clique contributes to the clique with arc weights higher than
+   * the specified argument; therefore, it has exponential time and space
+   * complexity... Use only on small graphs.
+   * The higher the argument, the less cliques it searches for, and the more
+   * the computational savings.
+   * The method is iterative: for each node, it constructs all the max.
+   * cliques the node participates in.
+   * Duplicates are removed as they appear.
+   * It returns the cliques in a Set<Set<NodeId> >
+   * @param double minaccnodecliqueweight
+   * @return Set a Set<Set<Integer nodeId> >
+   */
+  public Set getAllMaximalCliques(double minaccnodecliqueweight) {
+    Set max_cliques = new HashSet();
+    final int n = _g.getNumNodes();
+    double[] nodeweights = new double[n];
+    for (int i=0; i<n; i++) {
+      nodeweights[i] = _g.getNode(i).getArcWeights(_g);
+    }
+    for (int i=0; i<n; i++) {
+      if (nodeweights[i]<minaccnodecliqueweight) continue;
+      Set maxcliquesi = new HashSet();  // Set<Set<Integer id> >
+      Set candi = new TreeSet();  // each clique is represented by a TreeSet.
+      candi.add(new Integer(i));
+      maxcliquesi.add(candi);
+      Set newcliquesi = new HashSet();  // Set<Set<Integer id> >
+      while (expandCliquesBy1(_g, maxcliquesi,newcliquesi, minaccnodecliqueweight)) {
+        maxcliquesi = new HashSet(newcliquesi);
+        newcliquesi = new HashSet();
+      }
+      // now put in max_cliques those members of maxcliquesi that are not already
+      // in.
+      addUnique(maxcliquesi, max_cliques);
+    }
+    return max_cliques;
+  }
+
+
+  protected Graph getGraph() {
+    return _g;
+  }
+
+
+  private static boolean expandCliquesBy1(Graph g, Set cliques, Set newcliques, double minval) {
+    Iterator iter = cliques.iterator();
+    while (iter.hasNext()) {
+      Set clique = (Set) iter.next();
+      Vector fullnbors = g.getFullNbors(clique, minval);
+      for (int i=0; i<fullnbors.size(); i++) {
+        Integer nid = (Integer) fullnbors.elementAt(i);
+        Set nclique = new TreeSet(clique);
+        nclique.add(nid);
+        newcliques.add(nclique);
+      }
+    }
+    return (newcliques.size()>0);
+  }
+
+
+  /**
+   * add all cliques in 1st arg. that are not already in 2nd arg. into 2nd arg.
+   * @param cliques2add Set
+   * @param cliques Set
+   */
+  private static void addUnique(Set cliques2add, Set cliques) {
+    Iterator iter = cliques2add.iterator();
+    while (iter.hasNext()) {
+      Set clique = (Set) iter.next();
+      cliques.add(clique);
+    }
+  }
+
+
+}

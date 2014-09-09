@@ -1,0 +1,186 @@
+package parallel.distributed;
+
+import java.net.*;
+import java.io.*;
+
+/**
+ * test-driver for the DBarrier class.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DBarrierTest {
+  static String _host = "localhost";
+  static int _port = 7896;
+  static String _bname = "DBarrierCoord_localhost_7896";
+  private DMsgPassingCoordinatorLongLivedConnClt _coordclt;
+
+
+  DBarrierTest() throws IOException {
+    try {
+      System.err.println("DBarrierTest connecting to server port "+DBarrierTest._port);
+      _coordclt = new DMsgPassingCoordinatorLongLivedConnClt(_host, _port, _bname);
+    }
+    catch (UnknownHostException e) {  // cannot happen
+      e.printStackTrace();
+    }
+  }
+
+
+  DBarrierTest(String host, int port, String bname) throws UnknownHostException, IOException {
+    _host = host;
+    _port = port;
+    _bname = bname;
+    System.err.println("DBarrierTest connecting to server port "+DBarrierTest._port);
+    _coordclt = new DMsgPassingCoordinatorLongLivedConnClt(_host, _port, _bname);
+  }
+
+
+  /**
+   * invoke as:
+   * <CODE>java -cp &ltclasspath&gt parallel.distributed.DBarrierTest &ltstartid&gt &ltendid&gt &ltjvmid&gt &ltmaxjvmid&gt
+   * [host(localhost)] [port(7896)] [barriername(DBarrierCoord_localhost_7896)]</CODE>
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    String host=null;
+    int port=-1;
+    String bname=null;
+    if (args.length<4) {
+      usage();
+      System.exit(-1);
+    }
+    int startid = Integer.parseInt(args[0]);
+    int endid = Integer.parseInt(args[1]);
+    int jvmid = Integer.parseInt(args[2]);
+    int maxjvmid = Integer.parseInt(args[3]);
+    if (args.length>4) {
+      host = args[4];
+    }
+    if (args.length>5) {
+      port = Integer.parseInt(args[5]);
+    }
+    if (args.length>6) {
+      bname = args[6];
+    }
+    else bname = "DBarrierCoord_"+(host==null ? _host : host) +"_"+ (port<1024 ? _port : port) ;
+
+    try {
+      DBarrierTest dbt = null;
+      if (host == null) dbt = new DBarrierTest(_host, _port, _bname);
+      else dbt = new DBarrierTest(host, port, bname);
+      // send a simple msg to every other JVM
+      for (int i=1; i<=maxjvmid; i++) {
+        if (i!=jvmid) {
+          dbt._coordclt.sendData(jvmid, i, new SimpleMessage(new Integer(jvmid).toString()));
+        }
+      }
+      parallel.ConditionCounter cond_counter = new parallel.ConditionCounter(endid-startid+1);
+      // threads started, and signal the cond_counter
+      DBTThread[] threads = new DBTThread[endid-startid+1];
+      for (int i = startid; i <= endid; i++) {
+        threads[i-startid] = new DBTThread(i, cond_counter);
+        threads[i-startid].start();
+      }
+      cond_counter.await();
+      // ok, all threads now waiting for this to call setCanStart()
+      // receive the simple msg from every other JVM
+      for (int i=1; i<=maxjvmid; i++) {
+        if (i!=jvmid) {
+          SimpleMessage mi = (SimpleMessage) dbt._coordclt.recvData(jvmid, i);
+          if (Integer.parseInt(mi.getMessage())!=i)
+            throw new parallel.ParallelException("sanity check: jvmid="+jvmid+" Message="+mi);
+        }
+      }
+      System.err.println("handshake with other JVMs done."); System.err.flush();
+      // now that everyone has participated, let's run them threads...
+      for (int i = startid; i <= endid; i++) {
+        threads[i-startid].setCanStart();
+      }
+      for (int i = startid; i <= endid; i++) {
+        threads[i-startid].join();
+      }
+      System.out.println("Done.");
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+
+
+  private static void usage() {
+    System.err.println("usage: java -cp <classpath> parallel.distributed.DBarrierTest <startid> <endid> <jvmid> <maxjvmid> "+
+                       "[host(localhost)] [port(7896)] [bname(DBarrierCoord_localhost_7896)]");
+  }
+}
+
+
+/**
+ * auxiliary class for the DBarrierTest main driver program, not part of the
+ * public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class DBTThread extends Thread {
+  private int _id;
+  private parallel.ConditionCounter _condCnt;
+  private Object _waitOn;
+  private boolean _canStart=false;
+
+  DBTThread(int id, parallel.ConditionCounter cnt) throws Exception {
+    _id = id;
+    _waitOn = new Object();
+    _condCnt = cnt;
+  }
+
+
+  public void run() {
+    try {
+      DBarrier dbclt = new DBarrier(DBarrierTest._host,
+                            DBarrierTest._port,
+                            DBarrierTest._bname);
+      System.err.println("Thread id="+_id+" entering synchronization with master"); System.err.flush(); // itc: HERE rm asap
+      _condCnt.increment();
+      // wait for permission
+      synchronized (_waitOn) {
+        while (_canStart == false) {
+          try {
+            _waitOn.wait();
+          }
+          catch (InterruptedException e) {
+            e.printStackTrace(); // ignore
+          }
+        }
+      }
+      System.err.println("Thread id="+_id+" entering barrier() calls iterations");  // itc: HERE rm asap
+      // ok, go!
+      for (int i=0; i<10; i++) {
+        dbclt.barrier();
+        System.err.println("thread id="+_id+" passed barrier iteration "+i+" at "+System.currentTimeMillis());
+      }
+      dbclt.removeCurrentThread();  // done
+      dbclt.closeConnection();
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+
+  void setCanStart() {
+    synchronized (_waitOn) {
+      _canStart = true;
+      _waitOn.notify();
+    }
+  }
+
+}
+

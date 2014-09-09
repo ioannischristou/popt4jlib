@@ -1,0 +1,71 @@
+package tests;
+
+import popt4jlib.*;
+import popt4jlib.GA.*;
+import popt4jlib.PS.*;
+import java.util.*;
+
+public class DGADPSOTest {
+  public DGADPSOTest() {
+  }
+
+  public static void main(String[] args) {
+    try {
+      long start_time = System.currentTimeMillis();
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      FunctionIntf func = (FunctionIntf) params.get("dga.function");
+      FunctionBase wrapper_func = new FunctionBase(func);
+      params.put("dga.function",wrapper_func);
+      params.put("dpso.function", wrapper_func);
+      DGA opter = new DGA(params);
+      DPSO opter2 = new DPSO(params);
+      opter.registerObserver(opter2);
+      opter2.registerObserver(opter);
+      OptThread t1 = new OptThread(opter, wrapper_func);
+      OptThread t2 = new OptThread(opter2, wrapper_func);
+      t1.start();
+      t2.start();
+      t1.join();
+      t2.join();
+      utils.PairObjDouble p1 = t1.getPairObjDouble();
+      utils.PairObjDouble p2 = t2.getPairObjDouble();
+      utils.PairObjDouble p = p1.getDouble()<=p2.getDouble() ? p1 : p2;
+      double[] arg =  (double[]) p.getArg();
+      if (arg!=null) {
+        System.out.print("best soln found:[");
+        for (int i = 0; i < arg.length; i++) System.out.print(arg[i] + " ");
+        System.out.println("] VAL=" + p.getDouble());
+      }  else System.err.println("DGA/DPSO did not find any solution.");
+      System.out.println("total function evaluations="+wrapper_func.getEvalCount());
+      long end_time = System.currentTimeMillis();
+      System.out.println("total time (msecs): "+(end_time-start_time));
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}
+
+class OptThread extends Thread {
+  private OptimizerIntf _opt;
+  private utils.PairObjDouble _result;
+  private FunctionIntf _f;
+
+  public OptThread(OptimizerIntf opt, FunctionIntf f) {
+    _opt = opt;
+    _f = f;
+  }
+
+  public utils.PairObjDouble getPairObjDouble() { return _result; }
+
+  public void run() {
+    try {
+      _result = _opt.minimize(_f);
+    }
+    catch (OptimizerException e) {
+      e.printStackTrace();
+    }
+  }
+}
+

@@ -1,0 +1,9 @@
+package graph.partitioning;
+
+import graph.coarsening.*;
+// import clustering.*;
+
+public interface ObjFncIntf {
+  double value(Graph g, Document[] docs, int[] partition);
+  double[] values(Graph g, int[] partition);
+}

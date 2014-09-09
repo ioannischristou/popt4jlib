@@ -1,0 +1,16 @@
+class,dde.function,tests.LND7Function
+dde.numdimensions,1000
+dde.maxargval,100.0
+dde.minargval,-100.0
+dde.numtries,5000
+dde.popsize,100
+dde.w,4.0
+dde.px,0.8
+rndgen,7,1
+dde.numthreads,1
+class,dde.localoptimizer,popt4jlib.GradientDescent.FletcherConjugateGradientST
+fcg.maxiters,1000
+fcg.maxbracketingiters,1000
+fcg.maxsectioningiters,1000
+fcg.gtol,1.e-5
+fcg.redrate,5.0

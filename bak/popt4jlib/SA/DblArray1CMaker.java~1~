@@ -1,0 +1,6 @@
+package popt4jlib.SA;
+
+public class DblArray1CMaker {
+  public DblArray1CMaker() {
+  }
+}

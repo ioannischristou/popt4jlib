@@ -1,0 +1,112 @@
+package parallel.distributed;
+
+import parallel.Lock;
+import parallel.ParallelException;
+import java.io.*;
+import java.net.*;
+
+
+/**
+ * implements a distributed lock, valid across JVMs and across multiple threads
+ * in each JVM.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DLock {
+  private String _host = "localhost";
+  private int _port = 7892;
+  private Lock _localLock;
+
+  public DLock() {
+    _localLock = new Lock();
+  }
+
+  public DLock(String host, int port) {
+    this();
+    _host = host;
+    _port = port;
+  }
+
+
+  public void getLock() throws ParallelException {
+    // 1. synch among threads in this JVM
+    _localLock.getLock();
+    // 2. synch among all participating JVMs
+    Socket s = null;
+    ObjectInputStream ois=null;
+    ObjectOutputStream oos=null;
+    try {
+      s = new Socket(_host, _port);
+      LockRequest lr = new LockRequest();
+      ois = new ObjectInputStream(s.getInputStream());
+      oos = new ObjectOutputStream(s.getOutputStream());
+      oos.flush();
+      oos.writeObject(lr);
+      oos.flush();
+      Object res = ois.readObject();
+      if (res instanceof LockResponse == false)
+        throw new ParallelException("unexpected response from LockServer");
+      // done
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      _localLock.releaseLock();
+      throw new ParallelException("network failure?");
+    }
+    finally {
+      try {
+        if (ois != null) ois.close();
+        if (oos != null) oos.close();
+        if (s != null) s.close();
+      }
+      catch (IOException e) {
+        e.printStackTrace();  // ignore
+      }
+    }
+  }
+
+
+  public void releaseLock() throws ParallelException {
+    // 1. notify server
+    Socket s = null;
+    ObjectInputStream ois=null;
+    ObjectOutputStream oos=null;
+    try {
+      s = new Socket(_host, _port);
+      UnlockRequest lr = new UnlockRequest();
+      ois = new ObjectInputStream(s.getInputStream());
+      oos = new ObjectOutputStream(s.getOutputStream());
+      oos.flush();
+      oos.writeObject(lr);
+      oos.flush();
+      Object res = ois.readObject();
+      if (res instanceof UnlockResponse == false) {
+        // don't release lock locally either
+        throw new ParallelException("unexpected response from LockServer");
+      }
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new ParallelException("network failure?");
+      // local lock not released either
+    }
+    finally {
+      try {
+        if (ois != null) ois.close();
+        if (oos != null) oos.close();
+        if (s != null) s.close();
+      }
+      catch (IOException e) {
+        e.printStackTrace();  // ignore
+      }
+    }
+    // 2. notify other threads in this JVM
+    _localLock.releaseLock();
+  }
+
+}
+

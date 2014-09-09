@@ -1,0 +1,89 @@
+package tests;
+
+import analysis.FixedPointApproximatorMT;
+import popt4jlib.VecFunctionIntf;
+import popt4jlib.VectorIntf;
+import popt4jlib.DblArray1Vector;
+import java.util.Hashtable;
+
+/**
+ *
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class FixedPointApproximatorMTTest {
+  public FixedPointApproximatorMTTest() {
+  }
+
+
+  /**
+   * invoke as
+   * <CODE> java -cp &ltclasspath&gt tests.FixedPointApproximatorMTTest <matrixdatafile> [numthreads(1)] [max_iters(10)] [tol(10^-6)] </CODE>
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      String filename = args[0];
+      int num_threads = 1;
+      if (args.length > 1) num_threads = Integer.parseInt(args[1]);
+      int max_iters = 10;
+      if (args.length > 2) max_iters = Integer.parseInt(args[2]);
+      double tol = 1.e-6;
+      if (args.length > 3) tol = Double.parseDouble(args[3]);
+      double[][] A = utils.DataMgr.readMatrixFromFile(filename);
+      Hashtable p = new Hashtable();
+      p.put("A",A);
+      long start = System.currentTimeMillis();
+      VectorIntf x0 = new DblArray1Vector(new double[A.length]);
+      FixedPointApproximatorMT appxtor = new FixedPointApproximatorMT(num_threads);
+      VectorIntf xstar = appxtor.findFixedPoint(new analysis.LinearOpFunction(), p, x0, max_iters, tol);
+      long dur = System.currentTimeMillis()-start;
+      System.out.println("Fixed Point x*="+xstar+" found in "+dur+" msecs.");
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+
+}
+
+
+/**
+ * test function for fixed-point computation
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class F2 implements VecFunctionIntf {
+
+  public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
+    if (x==null || x.getNumCoords()!=2 || x.getCoord(0) < 0 || x.getCoord(0) > 1 ||
+        x.getCoord(1) < 0 || x.getCoord(1) > 1)
+      throw new IllegalArgumentException("invalid x");
+    DblArray1Vector y = new DblArray1Vector(new double[2]);
+    y.setCoord(0, Math.cos(x.getCoord(0)));
+    y.setCoord(1, Math.exp(-Math.exp(-x.getCoord(1))));
+    return y;
+  }
+
+  public double evalCoord(VectorIntf x, Hashtable p, int i) throws IllegalArgumentException {
+    if (i<0 || i>1) throw new IllegalArgumentException("can't evaluate F2 with given index i="+i);
+    try {
+      if (i==0)
+        return Math.cos(x.getCoord(0));
+      else return Math.exp(-Math.exp(-x.getCoord(1)));
+    }
+    catch (Exception e) {
+      throw new IllegalArgumentException("can't evaluate F2 component with given args");
+    }
+  }
+}
+

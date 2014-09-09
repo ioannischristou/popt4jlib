@@ -1,0 +1,6 @@
+package parallel;
+
+public class DMCTest2 {
+  public DMCTest2() {
+  }
+}

@@ -1,0 +1,9 @@
+class,avd.function,tests.MichalewiczFunction
+m,10.0
+avd.numdimensions,100
+avd.maxargval,3.141592653589793
+avd.minargval,0.0
+avd.numthreads,8
+avd.numtries,10
+avd.minstepsize,0.0001
+avd.ftol,0.0001

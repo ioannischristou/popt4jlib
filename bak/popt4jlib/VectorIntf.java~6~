@@ -1,0 +1,12 @@
+package popt4jlib;
+
+public interface VectorIntf {
+  public VectorIntf newInstance(double[] arg) throws IllegalArgumentException;
+  public VectorIntf newCopy();
+  public VectorIntf newCopyMultBy(double multFactor);
+  public double getCoord(int coord) throws IndexOutOfBoundsException;
+  public void setCoord(int i, double val) throws IndexOutOfBoundsException;
+  public int getNumCoords();
+  public double[] getDblArray1();
+}
+

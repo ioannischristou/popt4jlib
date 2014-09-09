@@ -1,0 +1,8 @@
+package popt4jlib;
+
+import utils.*;
+
+public interface OptimizerIntf {
+
+  public PairObjDouble optimize(FunctionIntf f) throws OptimizerException;
+}

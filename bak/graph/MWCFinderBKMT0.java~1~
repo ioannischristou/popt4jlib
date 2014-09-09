@@ -1,0 +1,6 @@
+package graph;
+
+public class MWCFinderBKMT0 {
+  public MWCFinderBKMT0() {
+  }
+}

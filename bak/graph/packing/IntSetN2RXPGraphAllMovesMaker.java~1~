@@ -1,0 +1,6 @@
+package graph.packing;
+
+public class IntSetN2RXPGraphAllMovesMaker {
+  public IntSetN2RXPGraphAllMovesMaker() {
+  }
+}

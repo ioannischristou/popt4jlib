@@ -1,0 +1,86 @@
+package utils;
+
+/**
+ * utility class with the same semantics as PairIntDouble except the first (key)
+ * object in a PairObjDouble can be any Object.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class PairObjDouble implements Comparable {
+  Object _arg;
+  double _val;
+
+  /**
+   * public constructor
+   * @param arg Object
+   * @param val double
+   */
+  public PairObjDouble(Object arg, double val) {
+    _arg = arg;  _val = val;
+  }
+
+
+  /**
+   * return the first (key) object
+   * @return Object
+   */
+  public Object getArg() {
+    return _arg;
+  }
+
+
+  /**
+   * return the second (value) object, being a double
+   * @return double
+   */
+  public double getDouble() {
+    return _val;
+  }
+
+
+  /**
+   * comparison based on the value (<CODE>_val</CODE>) object
+   * @param o Object
+   * @return boolean
+   */
+  public boolean equals(Object o) {
+    if (o==null) return false;
+    try {
+      PairObjDouble dd = (PairObjDouble) o;
+      if (_val==dd._val) return true;
+      else return false;
+    }
+    catch (ClassCastException e) {
+      return false;
+    }
+  }
+
+
+  /**
+   * as in PairIntDouble
+   * @return int
+   */
+  public int hashCode() {
+    return (int) Math.floor(_val);
+  }
+
+
+  /**
+   * as in PairIntDouble
+   * @param o Object
+   * @return int
+   */
+  public int compareTo(Object o) {
+    PairObjDouble c = (PairObjDouble) o;
+    // this < c => return -1
+    // this == c => return 0
+    // this > c => return 1
+    if (_val < c._val) return -1;
+    else if (_val == c._val) return 0;
+    else return 1;
+  }
+}

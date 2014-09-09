@@ -1,0 +1,27 @@
+package graph.packing;
+
+import graph.*;
+import popt4jlib.*;
+import java.util.*;
+
+public class GraphPackingEvalFunction implements FunctionIntf {
+  private Graph _g;
+
+  public GraphPackingEvalFunction(Graph g) {
+    _g = g;
+  }
+
+  public double eval(Object arg, Hashtable params) throws IllegalArgumentException {
+    try {
+      double val = 0;
+      Set s = (Set) arg;
+      if (GRASPPacker.isFeasible(_g, s))
+        val = s.size();
+      else val = Double.NEGATIVE_INFINITY;
+      return val;
+    }
+    catch (ClassCastException e) {
+      throw new IllegalArgumentException("arg must be a Set<Integer>");
+    }
+  }
+}

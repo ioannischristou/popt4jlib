@@ -1,0 +1,75 @@
+package parallel;
+
+
+/**
+ * tests the FairDMCoordinator class methods.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class FIFOLockTest {
+
+  /**
+   * invoke as <CODE>java -cp &ltclasspath&gt parallel.FIFOLockTest [num_threads] </CODE>
+   * The program will spawn 1000 threads by default, and each thread will sleep for
+   * 1000/(thread_id+1) msecs. After its sleep time every thread will exit.
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    long now = System.currentTimeMillis();
+    int n = 1000;
+    if (args.length>0)
+      n = Integer.parseInt(args[0]);
+    FIFOLock lock = new FIFOLock();
+    Thread[] _threads = new Thread[n];
+    for (int i=0; i<n; i++) {
+      _threads[i] = new FIFOLockThread(i,lock);
+      _threads[i].start();
+      try {
+        Thread.sleep(20);
+      }
+      catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+    // wait for all threads to finish
+    for (int i=0; i<n; i++) {
+      try {
+        _threads[i].join();
+      }
+      catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+    long dur = System.currentTimeMillis() - now;
+    System.out.println("total duration (msecs): "+dur);
+  }
+}
+
+
+class FIFOLockThread extends Thread {
+  private int _i;
+  Lock _lock;
+  public FIFOLockThread(int i, Lock lock) {
+    super("T"+i);
+    _i = i;
+    _lock = lock;
+  }
+
+  public void run() {
+    try {
+      _lock.getLock();
+      System.out.println("Thread-" + _i + " got lock");
+      Thread.sleep((long) (1000/(_i+1)));
+      _lock.releaseLock();
+      System.out.println("Thread-" + _i + " released lock");
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+}
+

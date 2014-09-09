@@ -1,0 +1,35 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head><!--
+  Copyright (c) 2011 
+  All Rights Reserved.
+--></head>
+
+<body bgcolor="white">Package defines interfaces and implements algorithms for graph and hyper-graph
+partitioning.
+
+<h2>Package Specification</h2>
+The PartitionerIntf and HPartitionerIntf classes define the interfaces that 
+must be implemented by any class that will implement a partitioning algorithm 
+(for plain graphs or hyper-graphs, respectively).
+The ObjFncIntf (and HObjFncIntf) classes define the interfaces for the 
+objective function that will be minimized by any partitioning algorithm, and
+the CutEdgesObjFnc class implements the most common metric in graph partitioning
+namely the sum of weights of total cut-edges (the HObjFncSOED implements the 
+Sum-Of-External-Degrees metric, commonly used in hyper-graph partitioning for 
+VLSI CAD). The PartitionerXXX and HPartitionerXXX classes implement various 
+partitioning algorithms (including heuristics inspired from the 
+Fidducia-Matheyes algorithm).
+
+<ul>
+  <li><a href="">hyperlink</a>
+</ul>
+
+<h2>Related Documentation</h2>
+
+<ul>
+  <li><a href="">hyperlink</a>
+</ul>
+
+<!-- Put @see and @since tags here. --></body>
+</html>

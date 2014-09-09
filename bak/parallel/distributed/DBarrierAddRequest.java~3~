@@ -1,0 +1,21 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.io.*;
+
+public class DBarrierAddRequest implements DMsgIntf {
+  public final static long serialVersionUID=987654333330L;
+  private String _bname;
+
+  public DBarrierAddRequest(String bname) {
+    _bname = bname;
+  }
+
+
+  public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
+    ComplexBarrier.addThread(_bname, Thread.currentThread());
+    oos.writeObject(new OKReply());
+    oos.flush();
+  }
+}
+

@@ -1,0 +1,11 @@
+class,asd.function,tests.RastriginFunction
+class,asd.gradient,tests.RastriginFunctionGrad
+asd.functionargmaxval,5.12
+asd.functionargminval,-5.12
+A,10.0
+w,6.283185307179586
+rndgen,7,4
+asd.numthreads,4
+asd.numdimensions,10
+asd.numtries,1000
+asd.maxiters,1000

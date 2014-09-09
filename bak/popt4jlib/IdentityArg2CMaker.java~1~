@@ -1,0 +1,6 @@
+package popt4jlib;
+
+public class IdentityArg2CMaker {
+  public IdentityArg2CMaker() {
+  }
+}

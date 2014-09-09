@@ -1,0 +1,6 @@
+package popt4jlib.MSSC;
+
+public interface EvaluatorIntf {
+  public double eval(ClustererIntf cl) throws ClustererException;
+}
+

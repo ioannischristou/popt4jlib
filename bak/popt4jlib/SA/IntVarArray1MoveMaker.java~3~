@@ -1,0 +1,37 @@
+package popt4jlib.SA;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+public class IntVarArray1MoveMaker implements NewChromosomeMakerIntf {
+  public IntVarArray1MoveMaker() {
+  }
+
+  public Object createNewChromosome(Object chromosome, Hashtable params) throws OptimizerException {
+    int[] arg = (int[]) chromosome;  // chromosome is a int[] array of var. length
+    int[] res = new int[arg.length];
+    double delta = ((Double) params.get("dsa.movedelta")).doubleValue();
+    int maxv = ((Integer) params.get("dsa.maxallelevalue")).intValue();
+    int minv = ((Integer) params.get("dsa.minallelevalue")).intValue();
+    int tid = ((Integer) params.get("thread.id")).intValue();
+    for (int i=0; i<arg.length; i++) {
+      // ensure bounds, if any
+      int maxargvali = maxv;
+      Integer MaviI = (Integer) params.get("dsa.maxallelevalue"+i);
+      if (MaviI!=null && MaviI.intValue()<maxv)
+        maxargvali = MaviI.intValue();
+      int minargvali = minv;
+      Integer maviD = (Integer) params.get("dsa.minallelevalue"+i);
+      if (maviD!=null && maviD.intValue()>minv)
+        minargvali = maviD.intValue();
+
+      double rd = RndUtil.getInstance(tid).getRandom().nextDouble();
+      res[i] = arg[i] + (int) Math.round((2*rd-1)*delta);
+      if (res[i]<minargvali) res[i]=minargvali;
+      else if (res[i]>maxargvali) res[i]=maxargvali;
+    }
+    return res;
+  }
+}
+

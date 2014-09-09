@@ -1,0 +1,9 @@
+package popt4jlib.PS;
+
+import popt4jlib.*;
+import java.util.*;
+
+public interface RandomVelocityMakerIntf {
+  public Object createRandomVelocity(Hashtable params) throws OptimizerException;
+}
+

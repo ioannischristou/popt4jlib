@@ -1,0 +1,39 @@
+package popt4jlib.MonteCarlo;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+public class DblArray1ArgMaker implements RandomArgMakerIntf {
+  public DblArray1ArgMaker() {
+  }
+
+  public Object createRandomArgument(Hashtable params) throws OptimizerException {
+    try {
+      final int nmax = ( (Integer) params.get("mcs.arglength")).intValue();
+      final double maxalleleval=((Double) params.get("mcs.maxargvalue")).doubleValue();
+      final double minalleleval=((Double) params.get("mcs.minargvalue")).doubleValue();
+      final int id = ((Integer) params.get("thread.id")).intValue();
+      double[] arr = new double[nmax];
+      for (int i=0; i<nmax; i++) {
+        // restore within bounds, if any
+        double maxargvali = maxalleleval;
+        Double MaviD = (Double) params.get("mcs.maxargvalue"+i);
+        if (MaviD!=null && MaviD.doubleValue()<maxalleleval)
+          maxargvali = MaviD.doubleValue();
+        double minargvali = minalleleval;
+        Double maviD = (Double) params.get("mcs.minargvalue"+i);
+        if (maviD!=null && maviD.doubleValue()>minalleleval)
+          minargvali = maviD.doubleValue();
+
+        arr[i] = minargvali +
+            RndUtil.getInstance(id).getRandom().nextDouble()*(maxargvali-minargvali);
+      }
+      return arr;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("createRandomArgument: failed");
+    }
+  }
+}

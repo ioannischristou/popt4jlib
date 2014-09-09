@@ -1,0 +1,1 @@
+java -Xmx1200m -cp ./popt4jlib.jar graph.packing.GRASPPacker %1 %2 %3 %4

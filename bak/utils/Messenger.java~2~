@@ -1,0 +1,47 @@
+package utils;
+
+import java.io.*;
+import java.util.*;
+
+public class Messenger {
+  private PrintStream _os=null;
+  private int _dbgLvl=0;  // default: print all
+  private static Hashtable _instances=new Hashtable();
+
+
+  private Messenger(OutputStream os) {
+    _os = new PrintStream(os);
+  }
+
+
+  public static Messenger getInstance() {
+    Messenger instance = (Messenger) _instances.get("default");
+    if (instance==null) {
+      instance = new Messenger(System.err);
+      _instances.put("default", instance);
+    }
+    return instance;
+  }
+
+
+  public static Messenger getInstance(String name) {
+    Messenger instance = (Messenger) _instances.get(name);
+    return instance;
+  }
+  public synchronized static void setInstance(String name, OutputStream os) {
+    _instances.put(name, os);
+  }
+  public synchronized void setDebugLevel(int lvl) {
+    _dbgLvl = lvl;
+  }
+
+
+  public void msg(String msg, int lvl) {
+    if (lvl >= _dbgLvl) {
+      synchronized (this) {
+        _os.println(msg);
+        _os.flush();
+      }
+    }
+  }
+}

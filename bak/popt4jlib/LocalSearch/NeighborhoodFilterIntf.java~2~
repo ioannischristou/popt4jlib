@@ -1,0 +1,7 @@
+package popt4jlib.LocalSearch;
+
+import java.util.*;
+
+public interface NeighborhoodFilterIntf {
+  Vector filter(Object x, Object arg, Hashtable params);
+}

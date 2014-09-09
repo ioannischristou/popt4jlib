@@ -1,0 +1,135 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.net.*;
+import java.io.*;
+
+/**
+ * class implements a distributed barrier object across many threads living
+ * in many (remote) JVMs.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DBarrier {
+  private String _host = "localhost";
+  private int _port = 7896;
+  private String _coordname = "DBarrier_"+_port;  // coordname and barrier name are the same
+  private DMsgPassingCoordinatorLongLivedConnClt _coordclt=null;
+  private Thread _originatingThread = null;
+
+
+  /**
+   * no-arg constructor assumes the following defaults:
+   * <li> host="localhost"
+   * <li> port=7896
+   * <li> barrier/coord name = "DBarrier_7896"
+   * The constructor will actually register the current thread with the barrier
+   * object of the server, so that later invocations of the <CODE>barrier()</CODE>
+   * method of this object will synchronize the current thread with all other
+   * threads in all JVMs having constructed DBarrier objects connected to the
+   * default server, default port, and default barrier name.
+   * @throws UnknownHostException
+   * @throws IOException
+   * @throws ClassNotFoundException
+   * @throws ParallelException
+   */
+  public DBarrier() throws UnknownHostException, IOException, ClassNotFoundException, ParallelException {
+    _coordclt = new DMsgPassingCoordinatorLongLivedConnClt(_host, _port, _coordname);
+    _originatingThread = Thread.currentThread();
+    DBarrierAddRequest addreq = new DBarrierAddRequest(_coordname);
+    _coordclt.sendData(-1, addreq);
+    Object reply = _coordclt.recvData(-1);
+    if (reply instanceof OKReply == false) {
+      throw new ParallelException("DBarrier.<init>(): failed to add thread to remote Barrier object?");
+    }
+  }
+
+
+  /**
+   * constructor adds current thread to the barrier object of the server found
+   * in IP address specified by first two argument parameters with the name
+   * specified in the third parameter, so that later invocations of the
+   * <CODE>barrier()</CODE> method of this object will synchronize the current
+   * thread with all other threads in all JVMs having constructed DBarrier
+   * objects connected to the same server-port, and same barrier name.
+   * @param host String
+   * @param port int
+   * @param coordname String
+   * @throws UnknownHostException
+   * @throws IOException
+   * @throws ClassNotFoundException
+   * @throws ParallelException
+   */
+  public DBarrier(String host, int port, String coordname)
+      throws UnknownHostException, IOException, ClassNotFoundException,
+             ParallelException {
+    _host = host;
+    _port = port;
+    _coordname = coordname;
+    _originatingThread = Thread.currentThread();
+    _coordclt = new DMsgPassingCoordinatorLongLivedConnClt(_host, _port, _coordname);
+    DBarrierAddRequest addreq = new DBarrierAddRequest(_coordname);
+    _coordclt.sendData(-1, addreq);
+    Object reply = _coordclt.recvData(-1);
+    if (reply instanceof OKReply == false) {
+      throw new ParallelException("DBarrier.<init>(): failed to add thread to remote Barrier object?");
+    }
+  }
+
+
+  /**
+   * the main class method.
+   * @throws IOException if a network error occurs
+   * @throws ClassNotFoundException if the server JVM is not in synch with
+   * this JVM's classes.
+   * @throws ParallelException if this DBarrier object was constructed by a
+   * different thread than the one calling this method.
+   */
+  public void barrier() throws IOException, ClassNotFoundException, ParallelException {
+    // 0. check if thread is ok
+    if (Thread.currentThread()!=_originatingThread) {
+      throw new ParallelException("barrier(): method called from thread different than the one originating the object");
+    }
+    // 1. send a Barrier request
+    _coordclt.sendData(-1, new DBarrierRequest(_coordname));  // barrier and coord names are the same
+    // 2. when a DBarrierReply object is reeived, you're done.
+    Object reply = _coordclt.recvData(-1);
+    if (reply instanceof DBarrierReply) return;
+    else throw new ParallelException("unexpected response");
+  }
+
+
+  /**
+   * removes the current thread from this DBarrier object.
+   * @throws IOException
+   * @throws ClassNotFoundException
+   * @throws ParallelException
+   */
+  public void removeCurrentThread() throws IOException, ClassNotFoundException, ParallelException {
+    // 0. check if thread is ok
+    if (Thread.currentThread()!=_originatingThread) {
+      throw new ParallelException("removeCurrentThread(): method called from thread different than the one originating the object");
+    }
+    // 1. send a DBarrierRmRequest request
+    _coordclt.sendData(-1, new DBarrierRmRequest(_coordname));  // barrier and coord names are the same
+    // 2. when a DBarrierReply object is reeived, you're done.
+    Object reply = _coordclt.recvData(-1);
+    if (reply instanceof DBarrierReply) return;
+    else throw new ParallelException("unexpected response");
+  }
+
+
+  /**
+   * close the connection of the underlying DMsgPassingCoordinatorLongLivedConnClt
+   * @throws IOException
+   */
+  public void closeConnection() throws IOException {
+    _coordclt.closeConnection();
+  }
+
+}
+

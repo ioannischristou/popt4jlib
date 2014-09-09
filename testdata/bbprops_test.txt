@@ -1,0 +1,9 @@
+numthreads,10
+maxqsize,1000
+k,1
+#tightenboundlevel,5
+usemaxsubsets,true
+#cutnodes,true
+maxitersinGBNS2A,10
+maxnodechildren,3
+class,bbnodecomparator,graph.packing.BBNodeComparator1

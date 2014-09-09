@@ -1,0 +1,6 @@
+package popt4jlib.SA;
+
+public class DblArray1MoveMaker {
+  public DblArray1MoveMaker() {
+  }
+}

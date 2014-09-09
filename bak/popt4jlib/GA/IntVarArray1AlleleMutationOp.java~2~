@@ -1,0 +1,67 @@
+package popt4jlib.GA;
+
+import popt4jlib.OptimizerException;
+import utils.*;
+import java.util.*;
+
+public class IntVarArray1AlleleMutationOp implements MutationOpIntf {
+
+  public IntVarArray1AlleleMutationOp() {
+  }
+
+  /**
+   * the operation mutates each chromosome argument (not a DGAIndividual, not a
+   * Function() arg object) and stores the new chromosome in a Pair object that
+   * is returned.
+   * @param chromosome1 Object
+   * @param chromosome2 Object
+   * @param params Hashtable
+   * @throws OptimizerException
+   * @return Pair
+   */
+  public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
+    try {
+      final int id = ( (Integer) params.get("thread.id")).intValue();
+      int[] a1 = (int[]) chromosome1;
+      int[] a2 = (int[]) chromosome2;
+      int min = Integer.MAX_VALUE;
+      int max = Integer.MIN_VALUE;
+      int n1 = a1.length;
+      for (int i = 0; i < n1; i++) {
+        if (max < a1[i]) max = a1[i];
+        else if (min > a1[i]) min = a1[i];
+      }
+      int r1 = RndUtil.getInstance(id).getRandom().nextInt(n1);
+      double rv = RndUtil.getInstance(id).getRandom().nextGaussian();
+      a1[r1] += Math.floor((max - min) * rv);
+      // check if value exceeds any limits
+      Integer minargval = (Integer) params.get("dga.minallelevalue");
+      if (minargval != null && minargval.intValue() > a1[r1])
+        a1[r1] = minargval.intValue();
+      Integer maxargval = (Integer) params.get("dga.maxallelevalue");
+      if (maxargval != null && maxargval.intValue() < a1[r1])
+        a1[r1] = maxargval.intValue();
+
+      int n2 = a2.length;
+      for (int i = 0; i < n2; i++) {
+        if (max < a2[i]) max = a2[i];
+        else if (min > a2[i]) min = a2[i];
+      }
+      int r2 = RndUtil.getInstance(id).getRandom().nextInt(n2);
+      rv = RndUtil.getInstance(id).getRandom().nextGaussian();
+      a2[r2] += Math.floor((max - min) * rv);
+      if (minargval != null && minargval.intValue() > a2[r2])
+        a2[r2] = minargval.intValue();
+      if (maxargval != null && maxargval.intValue() < a2[r2])
+        a2[r2] = maxargval.intValue();
+
+      Pair p = new Pair(a1, a2);
+      return p;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("doMutation(): failed");
+    }
+  }
+
+}

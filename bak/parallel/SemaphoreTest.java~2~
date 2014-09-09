@@ -1,0 +1,53 @@
+package parallel;
+
+class ST extends Thread {
+  String _s1, _s2 = null;
+  Semaphore _sem1, _sem2 = null;
+
+  public ST(String s1, String s2, Semaphore sem1, Semaphore sem2) {
+    _s1 = s1; _s2 = s2;
+    _sem1 = sem1; _sem2 = sem2;
+  }
+
+  public void run() {
+
+    for (int i=0; i<200; i++) {
+      System.out.println(_s2+" "+i);
+    }
+
+    _sem1.acquire();
+    for (int i=200; i<250; i++) {
+      System.out.println(_s1+" "+ i);
+    }
+    try {
+      _sem1.release();
+    }
+    catch (Exception e) { e.printStackTrace(); }
+
+    for (int i=250; i<270; i++) {
+      System.out.println(_s2+" "+i);
+    }
+
+    _sem2.acquire();
+    for (int i=270; i<370; i++) {
+      System.out.println(_s1+" "+i);
+    }
+    try {
+      _sem2.release();
+    }
+    catch (Exception e) { e.printStackTrace(); }
+  }
+}
+
+public class SemaphoreTest {
+
+  public static void main(String[] args) {
+    Semaphore sem1 = new Semaphore(1);
+    Semaphore sem2 = new Semaphore(1);
+    ST t1 = new ST("a", "i", sem1, sem2);
+    ST t2 = new ST("b", "j", sem1, sem2);
+
+    t1.start();
+    t2.start();
+  }
+}

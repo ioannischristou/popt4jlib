@@ -1,0 +1,6 @@
+package popt4jlib;
+
+public class ReentrantFunctionBase {
+  public ReentrantFunctionBase() {
+  }
+}

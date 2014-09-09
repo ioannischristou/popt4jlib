@@ -1,0 +1,8 @@
+class,mcs.function,tests.RosenbrockFunction
+mcs.arglength,10
+mcs.maxargvalue,2.0
+mcs.minargvalue,-2.0
+rndgen,7,4
+mcs.numthreads,4
+mcs.numtries,100000
+class,mcs.randomargmaker,popt4jlib.MonteCarlo.DblArray1ArgMaker

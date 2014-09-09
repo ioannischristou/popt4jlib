@@ -1,0 +1,8 @@
+package popt4jlib.PS;
+
+import popt4jlib.OptimizerException;
+import java.util.Hashtable;
+
+interface ChromosomeVelocityAdderIntf {
+  public Object addVelocity2Chromosome(Object chromosome, Object velocity, Hashtable params) throws OptimizerException;
+}

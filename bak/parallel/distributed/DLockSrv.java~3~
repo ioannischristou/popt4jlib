@@ -1,0 +1,100 @@
+package parallel.distributed;
+
+import parallel.*;
+import java.io.*;
+import java.net.*;
+
+
+public class DLockSrv {
+  private int _port=7892;
+
+
+  public DLockSrv() {
+  }
+
+
+  public DLockSrv(int port) {
+    _port = port;
+  }
+
+
+  public void run() throws IOException {
+    ServerSocket ss = new ServerSocket(_port);
+    Lock lock = new FIFOLock();
+    while (true) {
+      Socket s = ss.accept();
+      DLockClientThread dlct = new DLockClientThread(s, lock);
+      dlct.start();
+    }
+  }
+
+
+  public static void main(String[] args) {
+    DLockSrv srv = null;
+    if (args.length>0)
+      srv = new DLockSrv(Integer.parseInt(args[0]));
+    else srv = new DLockSrv();
+    try {
+      srv.run();
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}
+
+
+class DLockClientThread extends Thread {
+  private Socket _s;
+  private Lock _lock;
+
+  public DLockClientThread(Socket s, Lock l) {
+    _s = s;
+    _lock = l;
+  }
+
+
+  public void run() {
+    ObjectInputStream ois=null;
+    ObjectOutputStream oos=null;
+    try {
+      ois = new ObjectInputStream(_s.getInputStream());
+      oos = new ObjectOutputStream(_s.getOutputStream());
+      oos.flush();
+      Object inobj = ois.readObject();
+      if (inobj instanceof LockRequest) {
+        _lock.getLock();
+        oos.writeObject(new LockResponse());
+        oos.flush();
+      }
+      else if (inobj instanceof UnlockRequest) {
+        _lock.releaseLock();
+        oos.writeObject(new UnlockResponse());
+        oos.flush();
+      }
+      else {
+        utils.Messenger.getInstance().msg("unexpected object received",0);
+        return;
+      }
+    }
+    catch (IOException e) {
+      e.printStackTrace();
+    }
+    catch (ClassNotFoundException e2) {
+      e2.printStackTrace();
+    }
+    finally {
+      try {
+        if (ois!=null) ois.close();
+        if (oos!=null) oos.close();
+        _s.close();
+      }
+      catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+}
+

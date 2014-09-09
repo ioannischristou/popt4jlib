@@ -1,0 +1,5 @@
+package popt4jlib;
+
+public interface FunctionIntf {
+  public double eval(Object o) throws IllegalArgumentException;
+}

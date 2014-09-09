@@ -1,0 +1,6 @@
+package popt4jlib.SA;
+
+public class LinScaleSchedule {
+  public LinScaleSchedule() {
+  }
+}

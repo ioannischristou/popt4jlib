@@ -1,0 +1,40 @@
+package tests;
+
+import popt4jlib.*;
+import java.util.*;
+
+/**
+ *
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ *
+ * This class implements the Griewangk Function Gradient in n-dimensions
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+
+public class GriewangkFunctionGrad implements VecFunctionIntf {
+  public GriewangkFunctionGrad() {
+  }
+
+  public VectorIntf eval(VectorIntf x, Hashtable p) {
+    int n = x.getNumCoords();
+    VectorIntf g = x.newCopy();
+    for (int i=0; i<n; i++) {
+      double xi = x.getCoord(i);
+      double val = xi/2000.0;
+      double sqrtip1 = Math.sqrt(i+1);
+      double prod = 1.0/sqrtip1;
+      for (int j=0; j<n; j++) {
+        if (j==i) prod *= Math.sin(xi/sqrtip1);
+        else prod *= Math.cos(xi/sqrtip1);
+      }
+      val += prod;
+      g.setCoord(i, val);
+    }
+    return g;
+  }
+}
+

@@ -1,0 +1,6 @@
+package tests;
+
+public class DGAAFTest {
+  public DGAAFTest() {
+  }
+}

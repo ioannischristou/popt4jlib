@@ -1,0 +1,107 @@
+package tests;
+
+import popt4jlib.*;
+import utils.*;
+import popt4jlib.GradientDescent.*;
+import java.util.*;
+
+/**
+ * A test driver class for testing the ArmijoSteepestDescent class for local
+ * unconstrained optimization implementing the classical Steepest Descent with
+ * Armijo rule for step-size determination algorithm.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class ASDTest {
+  /**
+   * public no-arg constructor
+   */
+  public ASDTest() {
+  }
+
+
+  /**
+   * invoke from the command-line as:
+   * <CODE> java -cp <classpath> tests.ASDTest <params_file> </CODE>
+   * where the <params_file> must contain lines of the form:
+   * where the params_file must contain lines of the following form:
+   * <li> <asd.numdimensions, <num> > mandatory, number of dimensions
+   * of the function to be optimized; the function to be optimized must accept
+   * as arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
+   * objects.
+   * <li> <asd.numtries, <num> > mandatory, the number of "tries" to
+   * attempt. Different random points will be used as initial points for each
+   * "try".
+   * <li> <class,asd.function, <fullclassnameoffunction> > mandatory, the
+   * classname of the java class defining the function to be optimized.
+   * <li> <asd.functionargmaxval, <num> > mandatory, the max. argument value for
+   * any component of the initial vectors x0 to compute
+   * <li> <asd.functionargminval, <num> > mandatory, the min. arg. value for any
+   * component of the initial vectors x0 to compute
+   *
+   * Plus in the file, the parameters for the method
+   * <CODE>ArmijoSteepestDescent.minimize(f)</CODE> must be specified:
+   *
+   * <asd.numthreads, <num> > optional, the number of threads to use in
+   * the optimization process. Default is 1.
+   * <asd.numtries, <num> > optional, the number of tries (starting
+   * from different initial points). Default is 1.
+   * <class,asd.gradient, <fullclassnameofgradient> > optional, the gradient of
+   * f, the function to be minimized. If this param-value pair doesn't exist the
+   * gradient will be computed using Richardson finite differences extrapolation
+   * <asd.gtol, <num> > optional, the minimum abs. value for each of the
+   * gradient's coordinates, below which if all coordinates of the gradient
+   * happen to be, the search stops assuming it has reached a stationary point.
+   * Default is 1.e-6.
+   * <asd.maxiters, <num> > optional, the maximum number of major
+   * iterations of the SD search before the algorithm stops. Default is
+   * Integer.MAX_VALUE.
+   * <asd.rho, <num> > optional, the value for the parameter ñ in the
+   * Armijo rule implementation. Default is 0.1.
+   * <asd.beta, <num> > optional, the value for the parameter â in the
+   * Armijo rule implementation. Default is 0.8.
+   * <asd.gamma, <num> > optional, the value for the parameter ã in the
+   * Armijo rule implementation. Default is 1.
+   * <asd.looptol, <num> > optional, the minimum step-size allowed. Default
+   * is 1.e-21.
+   *
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      long start_time = System.currentTimeMillis();
+      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      int n = ((Integer) params.get("asd.numdimensions")).intValue();
+      double maxargval = ((Double) params.get("asd.functionargmaxval")).doubleValue();
+      double minargval = ((Double) params.get("asd.functionargminval")).doubleValue();
+      // add the initial points
+      int numtries = ((Integer) params.get("asd.numtries")).intValue();
+      for (int i=0; i<numtries; i++) {
+        VectorIntf x0 = new DblArray1Vector(new double[n]);
+        for (int j=0; j<n; j++) {
+          double val = minargval+RndUtil.getInstance().getRandom().nextDouble()*(maxargval-minargval);
+          x0.setCoord(j, val);
+        }
+        params.put("asd.x"+i, x0);
+      }
+      FunctionIntf func = (FunctionIntf) params.get("asd.function");
+      ArmijoSteepestDescent opter = new ArmijoSteepestDescent(params);
+      utils.PairObjDouble p = opter.minimize(func);
+      VectorIntf arg = (VectorIntf) p.getArg();
+      System.out.print("best soln found:[");
+      for (int i=0;i<arg.getNumCoords();i++) System.out.print(arg.getCoord(i)+" ");
+      System.out.println("] VAL="+p.getDouble());
+      System.err.println("numSolutionsFound="+opter.getNumOK()+" numFailed="+opter.getNumFailed());
+      long dur = System.currentTimeMillis()-start_time;
+      System.out.println("total time (msecs): "+dur);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

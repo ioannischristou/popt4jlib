@@ -1,0 +1,29 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head><!--
+  Copyright (c) 2011 
+  All Rights Reserved.
+--></head>
+
+<body bgcolor="white">parallel package: an implementation of all the synchronization and
+coordination primitives required in popt4jlib.
+
+<h2>Package Specification</h2>
+Primitives required for the parallel implementation of the 
+optimization algorithms in this library, including semaphores, atomic execution
+of critical sections, message passing, read/write shared/exclusive access (with
+built-in checking of the validity of the calls), barrier and ordered barriers,
+thread-pools and limited-time task executors.
+
+<ul>
+  <li><a href="">hyperlink</a>
+</ul>
+
+<h2>Related Documentation</h2>
+
+<ul>
+  <li><a href="">hyperlink</a>
+</ul>
+
+<!-- Put @see and @since tags here. --></body>
+</html>

@@ -1,0 +1,14 @@
+package parallel;
+
+public interface TaskObject {
+  /**
+   * a computation to be carried out
+   */
+  public void run();
+  /**
+   * returns true only if the computation carried out by the run() method has
+   * been completed.
+   * @return boolean
+   */
+  public boolean isDone();
+}
