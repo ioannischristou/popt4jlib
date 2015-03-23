@@ -1,8 +1,21 @@
-class,mcs.function,tests.RastriginFunction
-mcs.arglength,50
+class,mcs.function,tests.RastriginFastDefFunction
+mcs.arglength,50000
 mcs.maxargvalue,5.12
 mcs.minargvalue,-5.12
 rndgen,7,8
 mcs.numthreads,8
-mcs.numtries,1000000
-class,mcs.randomargmaker,popt4jlib.MonteCarlo.FastDblArray1ArgMaker
+mcs.numtries,100000
+# to compare Thread-Local Object-Pool performance:
+# FIRST: run the tests.MonteCarloTest class with this file as the single argument.
+# java should run with the -Xmx64m flag set (which will invoke the GC).
+# run time should be around 31 seconds on a T530 laptop running on AC power.
+# SECOND: comment out the second line below and uncomment the first line below,
+# ensuring that the _USE_POOLS constants in DblArray1Vector and MCS classes are 
+# both TRUE. The arguments will now be pooled DblArray1Vector objects (just 1 for each thread).
+# run time should now be around 25 seconds on a T530 laptop running on AC power.
+# The first test runs at about 50-60% CPU utilization, the second  at 99%.
+# The differences should increase with increased mcs.arglength values.
+#Test #1
+class,mcs.randomargmaker,popt4jlib.MonteCarlo.FastDblArray1VectorArgMaker
+#Test #2
+#class,mcs.randomargmaker,popt4jlib.MonteCarlo.FastDblArray1ArgMaker

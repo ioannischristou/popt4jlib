@@ -78,7 +78,7 @@ public class RandomBallGraphMaker {
         }
       }
     }
-    Graph g = new Graph(_numnodes, numarcs);
+    Graph g = Graph.newGraph(_numnodes, numarcs);
     double[] dgnxpos = new double[numarcs];
     double[] dgnypos = new double[numarcs];
     int aind = 0;
@@ -120,7 +120,7 @@ public class RandomBallGraphMaker {
                                                     uniformr,
                                                     seed);
       Graph g = maker.buildUniformRandomDualGraph();
-      System.err.println("Dual graph has "+g.getNumComponents()+" components");  // itc: HERE rm asap
+      //System.err.println("Dual graph has "+g.getNumComponents()+" components");
       DataMgr.writeGraphToFile2(g, args[3]);
       long duration = System.currentTimeMillis()-start_time;
       System.out.println("total time (msecs): "+duration);

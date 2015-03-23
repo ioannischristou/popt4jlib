@@ -8,7 +8,7 @@ import java.util.*;
  * A parallel implementation of a Monte-Carlo Simulation-inspired random search
  * of the function domain space. The class is primarily useful only as benchmark
  * method provider to compare other algorithms against (any optimization process
- * should produce superior results as the MCS class given the same number of
+ * should produce superior results than the MCS class given the same number of
  * function evaluations.)
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -18,13 +18,17 @@ import java.util.*;
  * @version 1.0
  */
 public class MCS implements OptimizerIntf {
-
+	
   Hashtable _params;
   FunctionIntf _f;
   private MCSThread[] _threads=null;
   private double _min=Double.MAX_VALUE;
   private Object _argmin=null;
+	
 
+	/**
+	 * private constructor prohibits no-arg MCS object construction.
+	 */
   private MCS() {
   }
 
@@ -49,7 +53,9 @@ public class MCS implements OptimizerIntf {
 
   /**
    * set the optimization parameters to the arg passed in.
-   * @param params Hashtable
+   * @param params Hashtable see the documentation of the method
+	 * <CODE>minimize(f)</CODE> (@see MCS#minimize(FunctionIntf) minimize) for a 
+	 * discussion of the pairs that must be contained in it
    * @throws OptimizerException if another thread is concurrently running
    * <CODE>minimize(f)</CODE> of this object
    */
@@ -65,18 +71,19 @@ public class MCS implements OptimizerIntf {
    * "mcs.numtries" in the _params Hashtable, and return the best one (the arg
    * that produces the minimum function value).
    * The parameters that must have been passed in (via the constructor or via
-   * a call to the setParams(p) method are as follows:
-   * <li> <"mcs.numtries", Integer ntries> mandatory, the number of random attempts
+   * a call to the <CODE>setParams(p)</CODE> method are as follows:
+	 * <ul>
+   * <li> &lt"mcs.numtries", Integer ntries&gt mandatory, the number of random attempts
    * to perform in total (these attempts will be distributed among the number
-   * of threads that will be created.
-   * <li> <"mcs.randomargmaker", RandomArgMakerIntf amaker> mandatory, an object that
+   * of threads that will be created.)
+   * <li> &lt"mcs.randomargmaker", RandomArgMakerIntf amaker&gt mandatory, an object that
    * implements the RandomArgMakerIntf interface so that it can produce function
    * arguments for the function f to be minimized.
-   * <li> <"mcs.numthreads", Integer nt> optional, the number of threads to use,
+   * <li> &lt"mcs.numthreads", Integer nt&gt optional, the number of threads to use,
    * default is 1.
    * <li> any other parameters required for the evaluation of the function, or
    * by the objects passed in above (e.g. the RandomArgMakerIntf object etc.)
-   *
+   * </ul>
    * The method will throw OptimizerException if it is called while another
    * thread is also executing the same method on the same object.
    * @param f FunctionIntf
@@ -103,10 +110,10 @@ public class MCS implements OptimizerIntf {
       int triesperthread = ntries / numthreads;
       int rem = ntries;
       for (int i = 0; i < numthreads - 1; i++) {
-        _threads[i] = new MCSThread(i, triesperthread, this);
+        _threads[i] = new MCSThread(i, triesperthread);
         rem -= triesperthread;
       }
-      _threads[numthreads - 1] = new MCSThread(numthreads - 1, rem, this);
+      _threads[numthreads - 1] = new MCSThread(numthreads - 1, rem);
       // spawn work
       for (int i = 0; i < numthreads; i++) {
         _threads[i].start();
@@ -147,7 +154,7 @@ public class MCS implements OptimizerIntf {
    * <CODE>Constants.DMC</CODE> or some other value containing the given bit
    * must have been called before for this method to possibly throw)
    */
-  synchronized void setIncumbent(Object arg, double val)
+  private synchronized void setIncumbent(Object arg, double val)
       throws OptimizerException {
     if (val<_min) {
       if (Debug.debug(Constants.DMC)!=0) {
@@ -175,30 +182,49 @@ public class MCS implements OptimizerIntf {
    * introduced to keep FindBugs happy...
    * @return FunctionIntf
    */
-  synchronized FunctionIntf getFunction() {
+  private synchronized FunctionIntf getFunction() {
     return _f;
   }
 
 
-  // auxiliary nested class implementing the threads that will run the Monte-
-  // Carlo search
-  class MCSThread extends Thread {
+	/**
+	 * auxiliary nested class implementing the threads that will run the Monte-
+   * Carlo search.
+	 */
+  final class MCSThread extends Thread {
 
-    private MCS _master;
     private int _numtries;
     private int _id;
     private int _uid;
     private Hashtable _fp;
 
-    public MCSThread(int id, int numtries, MCS master) {
+		/**
+		 * compile-time constant used in benchmarking against no-pooling mechanism
+		 */
+		private final static boolean _USE_POOLS = true;
+
+		
+		/**
+		 * sole public constructor.
+		 * @param id int
+		 * @param numtries int
+		 */
+    public MCSThread(int id, int numtries) {
       _id = id;
       _uid = (int) DataMgr.getUniqueId();
-      _master=master;
       _numtries=numtries;
     }
 
+		
+		/**
+		 * implements the main loop of the thread where for as many times as were
+		 * specified in the second argument of the constructor, a random argument
+		 * is constructed and evaluated. The best among those tried, is then 
+		 * used to update the global incumbent found by any of the participating
+		 * threads.
+		 */
     public void run() {
-      Hashtable p = _master.getParams();
+      Hashtable p = getParams();
       p.put("thread.localid", new Integer(_id));
       p.put("thread.id", new Integer(_uid));  // used to be _id
       // create the _funcParams
@@ -240,15 +266,45 @@ public class MCS implements OptimizerIntf {
 					return;					
 				}
 			}
-      FunctionIntf f = _master.getFunction();
+      FunctionIntf f = getFunction();
       for (int i = 0; i < _numtries; i++) {
-        try {
+				try {
           Object argi = maker.createRandomArgument(p);
           double val = f.eval(argi, _fp);
-          if (val < bestval) {
-            bestval = val;
-            best = argi;
-          }
+					if (!_USE_POOLS) {  // for benchmarking against no-pooling mechanism
+	          if (val < bestval) {
+		          bestval = val;
+							best = argi;
+						}
+					}
+					else {  // _USE_POOLS==true
+						boolean pooling = argi instanceof PoolableObjectIntf;
+						if (val < bestval) {  // found better local incumbent
+							bestval = val;
+							if (pooling) {  // clone the argument and store the clone in best 
+								best = ((PoolableObjectIntf) argi).cloneObject();
+								((PoolableObjectIntf) argi).release();
+							}
+							else {  // if cloning of the arg-maker is supported clone it, and
+								      // keep the argument of the clone (to ensure the best soln
+									    // is not overwriten if argument caching is used by the 
+										  // arg-maker)
+								if (maker instanceof RandomArgMakerClonableIntf) {
+									RandomArgMakerClonableIntf clone = 
+										((RandomArgMakerClonableIntf) maker).newInstance(p);
+									try {
+										best = clone.getCurrentArgument();
+									}
+									catch (UnsupportedOperationException e) {  
+                    // arg-maker doesn't support getCurrentArgument() operation
+										best = argi;
+									}
+								} 
+								else best = argi;  // catch-all clause
+							}
+						}
+						else if (pooling) ((PoolableObjectIntf) argi).release();
+					}  // else (_USE_POOLS==true)
         }
         catch (Exception e) {
           e.printStackTrace();
@@ -256,7 +312,7 @@ public class MCS implements OptimizerIntf {
         }
       }
       try {
-        _master.setIncumbent(best, bestval);  // _f may throw, or may not be re-entrant
+        setIncumbent(best, bestval);  // _f may throw, or may not be re-entrant
       }
       catch (OptimizerException e) {
         e.printStackTrace();  // no further action

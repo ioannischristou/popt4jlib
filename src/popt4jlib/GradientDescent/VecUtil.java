@@ -58,7 +58,7 @@ public class VecUtil {
     final int n = x.getNumCoords();
     if (n!=y.getNumCoords())
       throw new IllegalArgumentException("dimensions don't match");
-    VectorIntf z = x.newCopy();
+    VectorIntf z = x.newInstance();  // x.newCopy();
     try {
       for (int i = 0; i < n; i++) {
         z.setCoord(i, x.getCoord(i) + y.getCoord(i));
@@ -86,7 +86,7 @@ public class VecUtil {
     final int n = x.getNumCoords();
     if (n!=y.getNumCoords())
       throw new IllegalArgumentException("dimensions don't match");
-    VectorIntf z = x.newCopy();
+    VectorIntf z = x.newInstance();  // x.newCopy();
     for (int i=0; i<n; i++) {
       try {
         z.setCoord(i, x.getCoord(i) - y.getCoord(i));

@@ -1,0 +1,14 @@
+numthreads,8
+maxqsize,10000
+k,1
+#tightenboundlevel,5
+usemaxsubsets,true
+#sortmaxsubsets,true
+minknownbound,100.0
+#cutnodes,true
+localsearch,true
+class,localsearchtype,graph.packing.IntSetN2RXPGraphAllMovesMaker,1
+maxitersinGBNS2A,100
+maxnodechildren,500
+ff,0.89
+class,bbnodecomparator,graph.packing.BBNodeComparator1DFS

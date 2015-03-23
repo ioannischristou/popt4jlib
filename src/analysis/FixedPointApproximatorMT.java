@@ -25,11 +25,11 @@ public class FixedPointApproximatorMT {
   /**
    * single constructor.
    * @param numthreads int
-   * @throws ParallelException if numthreads <= 0
+   * @throws ParallelException if numthreads &lte 0
    */
   public FixedPointApproximatorMT(int numthreads) throws ParallelException {
     _numThreads = numthreads;
-    _executor = new PDBatchTaskExecutor(_numThreads);
+    _executor = PDBatchTaskExecutor.newPDBatchTaskExecutor(_numThreads);
   }
 
 
@@ -87,9 +87,20 @@ public class FixedPointApproximatorMT {
         xstar = tmp;
       }
     }
+		if (x instanceof PoolableObjectIntf) {
+			((PoolableObjectIntf) x).release();
+		}
     if (cont==true) {
+			if (xstar instanceof PoolableObjectIntf) {
+				((PoolableObjectIntf) xstar).release();
+			}
       throw new ParallelException("failed to find fixed point with given tolerance "+tol+" within "+max_iters+" iterations");
     }
+		if (xstar instanceof PoolableObjectIntf) {
+			VectorIntf xtmp = (VectorIntf) ((PoolableObjectIntf) xstar).cloneObject();
+			((PoolableObjectIntf) xstar).release();
+			xstar = xtmp;
+		}
     return xstar;
   }
 

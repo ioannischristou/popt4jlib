@@ -5,7 +5,8 @@ import parallel.*;
 /**
  * wrapper class for the parallel.ParallelAsynchBatchTaskExecutor class. It
  * allows the creation of a unique thread-pool in the system (as a static
- * parallel.ParallelAsynchBatchTaskExecutor object data member).
+ * parallel.ParallelAsynchBatchTaskExecutor object data member). Not part of the
+ * public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -13,9 +14,9 @@ import parallel.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public final class BBThreadPool {
+final class BBThreadPool {
   static private int _numThreads = 1;  // default
-  static FasterParallelAsynchBatchTaskExecutor _pool = null;  // used to be ParallelAsynchBatchTaskExecutor
+  static private FasterParallelAsynchBatchTaskExecutor _pool = null;
 
 
   /**
@@ -26,7 +27,8 @@ public final class BBThreadPool {
   public static void setNumthreads(int n) {
     _numThreads = n;
     try {
-      _pool = new FasterParallelAsynchBatchTaskExecutor(_numThreads, true);
+      _pool = FasterParallelAsynchBatchTaskExecutor.
+							newFasterParallelAsynchBatchTaskExecutor(_numThreads, true);
     }
     catch (ParallelException e) {
       e.printStackTrace();  // cannot get here

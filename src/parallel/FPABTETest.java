@@ -20,7 +20,9 @@ public class FPABTETest {
       final int numthreads = Integer.parseInt(args[2]);
       int range = 1000;
       if (args.length>3) range = Integer.parseInt(args[3]);
-      FasterParallelAsynchBatchTaskExecutor fpabte = new FasterParallelAsynchBatchTaskExecutor(numthreads);
+      FasterParallelAsynchBatchTaskExecutor fpabte = 
+							FasterParallelAsynchBatchTaskExecutor.
+											newFasterParallelAsynchBatchTaskExecutor(numthreads);
       for (int i=0; i<numtries; i++) {
         long j1 = j0*r.nextInt();
         if (j1<0) j1 = -j1;

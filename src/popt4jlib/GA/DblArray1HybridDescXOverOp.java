@@ -31,6 +31,7 @@ public class DblArray1HybridDescXOverOp implements XoverOpIntf {
    * @param c1 Object double[]
    * @param c2 Object double[]
    * @param params Hashtable should contain the following key-value pairs:
+	 * <ul>
    * <li> &lt"dga.minallelevalue", $value$&gt optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
    * <li> &lt"dga.minallelevalue$i$", $value$&gt optional, the minimum value for
@@ -63,8 +64,10 @@ public class DblArray1HybridDescXOverOp implements XoverOpIntf {
    * optional. Default 0.1.
    * <li> &lt"dga.hybriddescxoverop.return2bounds", $boolean_value$&gt optional.
    * Default is false.
-   * @throws OptimizerException
-   * @return Pair containing two new <CODE>double[]</CODE> objects.
+	 * </ul>
+   * @throws OptimizerException if any of the params above are incorrectly set,
+	 * or if the process somehow fails
+   * @return Pair containing two new <CODE>double[]</CODE> objects
    */
   public Pair doXover(Object c1, Object c2, Hashtable params) throws OptimizerException {
     try {

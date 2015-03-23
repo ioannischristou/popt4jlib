@@ -2,7 +2,6 @@ package parallel;
 
 import utils.PairObjDouble;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Hashtable;
 
 
@@ -35,11 +34,11 @@ import java.util.Hashtable;
  * @version 1.0
  */
 public class MsgPassingCoordinator {
-  private static final int _maxSize=10000;
+  private static int _maxSize=10000;
   /**
    * maintains the RegisteredParcel objects to be exchanged between threads
    */
-  private ArrayList _data;  // Vector<RegisteredParcel>
+  private BoundedBufferArrayUnsynchronized _data;  // used to be Vector<RegisteredParcel>
 	private boolean _selectiveReceiveOn;  // used to block receiver threads from
 	                                      // reading data when a selective receive
 	                                      // operation is under way
@@ -51,7 +50,7 @@ public class MsgPassingCoordinator {
    * private constructor in accordance with the Singleton Design Pattern
    */
   private MsgPassingCoordinator() {
-    _data = new ArrayList();
+    _data = new BoundedBufferArrayUnsynchronized(_maxSize);
 		_selectiveReceiveOn=false;  // not needed, as default
   }
 
@@ -87,8 +86,26 @@ public class MsgPassingCoordinator {
    * return the _maxSize data member
    * @return int
    */
-  public static int getMaxSize() { return _maxSize; }
+  public synchronized static int getMaxSize() { return _maxSize; }
 
+	
+	/**
+	 * sets the size of the queue of messages. Must be called only prior to any 
+	 * other call to the <CODE>getInstance()</CODE> methods.
+	 * @param num int the new maximum size of the queue.
+	 * @throws ParallelException if a call to the <CODE>getInstance()</CODE> 
+	 * methods occurred before this call.
+	 * @throws IllegalArgumentException if the argument is &lte 0. 
+	 */
+	public synchronized static void setMaxSize(int num) throws ParallelException, IllegalArgumentException {
+		if (_instance!=null || _instances.size()>0)
+			throw new ParallelException(
+							"MsgPassingCoordinator.setMaxSize(num): call is only allowed "+
+							"before any call to getInstance([]) methods on this class");
+		if (num<=0) throw new IllegalArgumentException("argument must be > 0");
+		_maxSize = num;
+	}
+	
 
   /**
    * get the current number of tasks in the queue awaiting processing.
@@ -104,7 +121,6 @@ public class MsgPassingCoordinator {
    * method -regardless of which thread that is- as long as the thread is not
    * interested in who the sender is, or as long as it's interested in msgs from
    * thread with id myid. The method returns immediately.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myid int the id of the thread calling this method
    * @param data Object
    * @throws ParallelException if there are more data than _maxSize in the queue
@@ -114,9 +130,10 @@ public class MsgPassingCoordinator {
     if (_data.size()>=_maxSize)
       throw new ParallelException("MsgPassingCoordinator queue is full");
     // Pair p = new Pair(null, data);
-    // RegisteredParcel p = new RegisteredParcel(new Integer(myid), null, data);
-    RegisteredParcel p = RegisteredParcel.newInstance(myid, Integer.MAX_VALUE, data);
-    _data.add(p);
+    RegisteredParcel p = new RegisteredParcel(myid, Integer.MAX_VALUE, data);
+		// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+    // RegisteredParcel p = RegisteredParcel.newInstance(myid, Integer.MAX_VALUE, data);
+    _data.addElement(p);
     notifyAll();
   }
 
@@ -128,28 +145,29 @@ public class MsgPassingCoordinator {
    * thread with id myid. The method will wait if the queue is full until
    * another thread consumes a datum and allows this thread to write to the
    * _data buffer.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myid int the id of the thread calling this method
    * @param data Object
    */
   public synchronized void sendDataBlocking(int myid, Object data) {
     /*
     if (utils.Debug.debug(popt4jlib.Constants.MPC)>0) {
-      utils.Messenger.getInstance().msg("MsgPassingCoordinator.sendData(): _data.size()="+_data.size(),2);
+      utils.Messenger.getInstance().msg("MsgPassingCoordinator.sendDataBlocking(): _data.size()="+_data.size(),2);
     }
     */
     while (_data.size()>= _maxSize) {
       try {
+				utils.Messenger.getInstance().msg("WARNING: MsgPassingCoordinator.sendDataBlocking(myid,data): data queue is full.",0);
         wait();
       }
       catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
+        Thread.currentThread().interrupt();  // no interruptions allowed, so e is not re-thrown
       }
     }
     // Pair p = new Pair(null, data);
-    // RegisteredParcel p = new RegisteredParcel(new Integer(myid), null, data);
-    RegisteredParcel p = RegisteredParcel.newInstance(myid, Integer.MAX_VALUE, data);
-    _data.add(p);
+    RegisteredParcel p = new RegisteredParcel(myid, Integer.MAX_VALUE, data);
+		// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+    // RegisteredParcel p = RegisteredParcel.newInstance(myid, Integer.MAX_VALUE, data);
+    _data.addElement(p);
     notifyAll();
   }
 
@@ -160,7 +178,6 @@ public class MsgPassingCoordinator {
    * who the sender is, or as long as it's interested in msgs from thread with
    * id myid.
    * The method returns immediately.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myid int my thread's id
    * @param threadId int the id of the thread that is the recipient
    * @param data Object
@@ -173,11 +190,10 @@ public class MsgPassingCoordinator {
     if (_data.size()>=_maxSize)
       throw new ParallelException("MsgPassingCoordinator queue is full");
     // Pair p = new Pair(new Integer(threadId), data);
-    //RegisteredParcel p = new RegisteredParcel(new Integer(myid),
-    //                                          new Integer(threadId),
-    //                                          data);
-    RegisteredParcel p = RegisteredParcel.newInstance(myid, threadId, data);
-    _data.add(p);
+    RegisteredParcel p = new RegisteredParcel(myid, threadId, data);
+		// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+    // RegisteredParcel p = RegisteredParcel.newInstance(myid, threadId, data);
+    _data.addElement(p);
     notifyAll();
   }
 
@@ -189,7 +205,6 @@ public class MsgPassingCoordinator {
    * id myid.
    * The method will wait if the queue is full until another thread consumes a
    * datum and allows this thread to write to the _data buffer.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param threadId int
    * @param data Object
    * @throws ParallelException if the thread tries to send data to itself
@@ -199,18 +214,18 @@ public class MsgPassingCoordinator {
     if (myid==threadId) throw new ParallelException("cannot send to self");
     while (_data.size()>= _maxSize) {
       try {
+				utils.Messenger.getInstance().msg("WARNING: MsgPassingCoordinator.sendDataBlocking(myid,tid,data): data queue is full.",0);
         wait();
       }
       catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
+        Thread.currentThread().interrupt();  // no interruptions allowed, so e is not re-thrown
       }
     }
     // Pair p = new Pair(new Integer(threadId), data);
-    //RegisteredParcel p = new RegisteredParcel(new Integer(myid),
-    //                                          new Integer(threadId),
-    //                                          data);
-    RegisteredParcel p = RegisteredParcel.newInstance(myid, threadId, data);
-    _data.add(p);
+    RegisteredParcel p = new RegisteredParcel(myid, threadId, data);
+		// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+    //RegisteredParcel p = RegisteredParcel.newInstance(myid, threadId, data);
+    _data.addElement(p);
     notifyAll();
   }
 
@@ -222,7 +237,6 @@ public class MsgPassingCoordinator {
    * appropriate datum. This implementation will invoke wait() if a selective
 	 * receive operation is currently under way by another thread, and will
 	 * be notified when the selective receive finishes.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myid int
    * @return Object
    */
@@ -238,21 +252,22 @@ public class MsgPassingCoordinator {
     while (true) {
       Object res = null;
       for (int i=0; i<_data.size(); i++) {
-        RegisteredParcel p = (RegisteredParcel) _data.get(i);
+        RegisteredParcel p = (RegisteredParcel) _data.elementAt(i);
         // Integer toid = p.getToId();
         int toid = p.getToId();
         if (toid==Integer.MAX_VALUE || toid==myid) {  // toid==null || toid.intValue()==myid
           res = p.getData();
           _data.remove(i);
           notifyAll();
-          p.release();
+					// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+          // p.release();
           return res;
         }
       }
       try {
         wait();
       }
-      catch (InterruptedException e) {
+      catch (InterruptedException e) {  // no interruptions allowed
         Thread.currentThread().interrupt();  // recommended action
       }
     }
@@ -266,7 +281,6 @@ public class MsgPassingCoordinator {
 	 * first if a selective receive operation is currently under way by another
 	 * thread (without checking if any data exist or not), and will
 	 * be notified when the selective receive finishes.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param threadId int
    * @return Object
    */
@@ -281,14 +295,15 @@ public class MsgPassingCoordinator {
 		}
     Object res = null;
     for (int i=0; i<_data.size(); i++) {
-      RegisteredParcel p = (RegisteredParcel) _data.get(i);
+      RegisteredParcel p = (RegisteredParcel) _data.elementAt(i);
       // Integer id = p.getToId();
       int id = p.getToId();
       if (id==Integer.MAX_VALUE || id==myid) {  // id==null || id.intValue()==myid
         res = p.getData();
         _data.remove(i);
         notifyAll();
-        p.release();
+				// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+        // p.release();
         break;
       }
     }
@@ -305,7 +320,6 @@ public class MsgPassingCoordinator {
 	 * This implementation will invoke wait() first if a selective receive
 	 * operation is currently under way by another thread, and will
 	 * be notified when the selective receive finishes.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myid int
    * @param fromid int the sender's id
    * @return Object
@@ -330,7 +344,7 @@ public class MsgPassingCoordinator {
     while (true) {
       Object res = null;
       for (int i=0; i<_data.size(); i++) {
-        RegisteredParcel p = (RegisteredParcel) _data.get(i);
+        RegisteredParcel p = (RegisteredParcel) _data.elementAt(i);
         // Integer toid = (Integer) p.getToId();
         int toid = p.getToId();
         // Integer fId = (Integer) p.getFromId();
@@ -339,14 +353,15 @@ public class MsgPassingCoordinator {
           res = p.getData();
           _data.remove(i);
           notifyAll();
-          p.release();
+					// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+          // p.release();
           return res;
         }
       }
       try {
         wait();
       }
-      catch (InterruptedException e) {
+      catch (InterruptedException e) {  // don't allow interruptions
         Thread.currentThread().interrupt();  // recommended action
       }
     }
@@ -360,7 +375,6 @@ public class MsgPassingCoordinator {
 	 * first if a selective receive operation is currently under way by another
 	 * thread (without checking if any data exist or not), and will
 	 * be notified when the selective receive finishes.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myid int
    * @param fromId int the msg must be from this sender
    * @return Object
@@ -379,7 +393,7 @@ public class MsgPassingCoordinator {
 		}
     Object res = null;
     for (int i=0; i<_data.size(); i++) {
-      RegisteredParcel p = (RegisteredParcel) _data.get(i);
+      RegisteredParcel p = (RegisteredParcel) _data.elementAt(i);
       // Integer id = p.getToId();
       int id = p.getToId();
       // Integer fId = p.getFromId();
@@ -388,7 +402,8 @@ public class MsgPassingCoordinator {
         res = p.getData();
         _data.remove(i);
         notifyAll();
-        p.release();
+				// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+        // p.release();
         break;
       }
     }
@@ -423,7 +438,7 @@ public class MsgPassingCoordinator {
 	    while (true) {
 		    Object res = null;
 			  for (int i=0; i<_data.size(); i++) {
-				  RegisteredParcel p = (RegisteredParcel) _data.get(i);
+				  RegisteredParcel p = (RegisteredParcel) _data.elementAt(i);
 					// Integer toid = (Integer) p.getToId();
 					int toid = p.getToId();
 					// Integer fId = (Integer) p.getFromId();
@@ -433,7 +448,8 @@ public class MsgPassingCoordinator {
 						res = p.getData();
 						_data.remove(i);
 						notifyAll();
-						p.release();
+						// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+						// p.release();
 						return new PairObjDouble(res, fId);
 					}
 				}

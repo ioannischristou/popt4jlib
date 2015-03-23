@@ -134,8 +134,8 @@ public final class SSNode {
         }
       }
       ++iter;
-      System.err.println("iteration cnt="+iter);  // itc: HERE rm asap
-    }
+      //System.err.println("iteration cnt="+iter);  
+		}
   }
 
   /**

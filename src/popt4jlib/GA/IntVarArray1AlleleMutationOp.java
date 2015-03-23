@@ -25,11 +25,14 @@ public class IntVarArray1AlleleMutationOp implements MutationOpIntf {
 
   /**
    * the operation mutates each chromosome argument (not a DGAIndividual, not a
-   * Function() arg object) and stores the new chromosome in a Pair object that
-   * is returned.
+   * Function() arg object) and stores them in a Pair object that is returned.
+	 * Notice that the two chromosome arguments ARE actually changed as a result
+	 * of this call (NO new int[]'s are created). The mutations occur according to
+	 * Gaussian processes but obey the range of values specified in params.
    * @param chromosome1 Object int[]
    * @param chromosome2 Object int[]
    * @param params Hashtable must contain the following:
+	 * <ul>
    * <li> &lt"dga.minallelevalue", $integer_value$&gt optional, the minimum
    * value for any allele in the chromosome. Default -Infinity.
    * <li> &lt"dga.minallelevalue$i$", $integer_value$&gt optional, the minimum
@@ -45,8 +48,10 @@ public class IntVarArray1AlleleMutationOp implements MutationOpIntf {
    * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
-   * @throws OptimizerException
-   * @return Pair containing two <CODE>int[]</CODE> objects.
+	 * </ul>
+   * @throws OptimizerException if any of the above params is incorrectly set
+   * @return Pair containing the two <CODE>int[]</CODE> arguments: chromosome1 
+	 * and chromosome2
    */
   public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
     try {

@@ -10,7 +10,7 @@ import java.util.*;
  * KMeans++ initialization of seed cluster centers).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2014</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -37,7 +37,12 @@ public class GMeansMTClustererTest {
     final int num_iters = args.length>5 ? Integer.parseInt(args[5]) : -1;
     if (seed >= 0) RndUtil.getInstance().setSeed(seed);  // deterministic pseudo-random number generation
     try {
-      Vector docs = DataMgr.readVectorsFromFile(file);
+      System.err.print("Loading data");
+			TmThread tt = new TmThread();
+			tt.start();
+			Vector docs = DataMgr.readVectorsFromFile(file);
+			tt.quit();
+			System.err.println("Done.");
       start_compute = System.currentTimeMillis();
       final int n = docs.size();
       if (k>n) {
@@ -49,7 +54,7 @@ public class GMeansMTClustererTest {
       if (num_iters<=0) p.put("gmeansmt.TerminationCriteria", new popt4jlib.MSSC.ClustererTerminationNoMove());
       else p.put("gmeansmt.TerminationCriteria", new popt4jlib.MSSC.ClustererTerminationNumIters(num_iters));
       p.put("gmeansmt.evaluator", new popt4jlib.MSSC.KMeansSqrEvaluator());
-      Vector init_centers = new Vector();
+      List init_centers = new Vector();
       if (do_kmeanspp==false) {
         Set ics = new TreeSet();
         for (int i = 0; i < k; i++) {
@@ -62,9 +67,9 @@ public class GMeansMTClustererTest {
               break;
             }
           }
-          VectorIntf cj = ( (VectorIntf) docs.elementAt(rj)).newCopy();
-          // System.err.println("adding "+cj+" as initial center");  // itc: HERE rm asap
-          init_centers.addElement(cj);
+          VectorIntf cj = ( (VectorIntf) docs.elementAt(rj)).newInstance();  // used to be newCopy();
+          // System.err.println("adding "+cj+" as initial center");
+          init_centers.add(cj);
         }
       }
       else {
@@ -73,29 +78,53 @@ public class GMeansMTClustererTest {
         init_centers = kmpp.getInitialCenters(k);
       }
       GMeansMTClusterer gmclusterer = new GMeansMTClusterer();
+			System.err.println("Starting Clustering.");
       gmclusterer.addAllVectors(docs);
       gmclusterer.setParams(p);
-      gmclusterer.setInitialClustering(init_centers);
+      gmclusterer.setInitialClustering((Vector) init_centers);
       Vector centers = gmclusterer.clusterVectors();
       long dur = System.currentTimeMillis()-start;
       long dur_compute = System.currentTimeMillis()-start_compute;
+			System.err.println("Done Clustering.");
       /*
-      // itc: HERE from here rm asap
       int[] inds = gmclusterer.getClusteringIndices();
       System.err.print("final inds:[ ");
       for (int i=0; i<n; i++) {
         System.err.print(inds[i]+" ");
       }
       System.err.println("]");
-      // itc: HERE rm up to here
       */
       System.out.println("MSSC="+gmclusterer.eval(new popt4jlib.MSSC.KMeansSqrEvaluator())+" duration (msecs): "+dur+
                          " compute duration (msecs)="+dur_compute);
+			System.out.println("Sum-Of-Variances="+gmclusterer.eval(new popt4jlib.MSSC.SumOfVarianceEvaluator()));
     }
     catch (Exception e) {
       e.printStackTrace();
       System.exit(-1);
     }
   }
+	
+	private static class TmThread extends Thread {
+		private boolean _isDone=false;
+		
+		synchronized void quit() {
+			_isDone = true;
+			this.interrupt();
+		}
+		
+		synchronized boolean isDone() { return _isDone; }
+		
+		public void run() {
+			while (!isDone()) {
+				try {
+					Thread.sleep(1000);  // sleep 1 second
+					System.err.print(".");
+				}
+				catch (InterruptedException e) {
+					Thread.currentThread().interrupt();  // recommended
+				}
+			}
+		}
+	}
 }
 

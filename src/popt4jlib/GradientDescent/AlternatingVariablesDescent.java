@@ -305,12 +305,13 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
         // solve n 1-D problems in parallel
         Messenger.getInstance().msg("AVD.minimize(): minimizing using parallel searches",0);
         try {
-          PDBatchTaskExecutor pbtexecutor = new PDBatchTaskExecutor(numthreads);
+          PDBatchTaskExecutor pbtexecutor=PDBatchTaskExecutor.
+																				    newPDBatchTaskExecutor(numthreads);
           boolean cont=true;
-          VectorIntf x = x0.newCopy();
+          VectorIntf x = x0.newInstance();  // used to be x0.newCopy();
           double c = f.eval(x,_params);
           double fbest = c;
-          Vector batch = new Vector();
+          List batch = new ArrayList();  // used to be Vector
           int k;
           for (k = 0; k < ntries && cont; k++) {
             cont = false;
@@ -341,7 +342,7 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
             }
             if (ibest>=0) {  // found an improving solution
               x.setCoord(ibest, xibest);
-              Messenger.getInstance().msg("AVD.minimize(x"+ibest+") new incumbent fval="+fbest,0);  // itc: HERE rm asap
+              Messenger.getInstance().msg("AVD.minimize(x"+ibest+") new incumbent fval="+fbest,0);
               cont = true;
             }
           }
@@ -362,7 +363,7 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
         Messenger.getInstance().msg("AVD.minimize(): minimizing using sequential searches",0);
         OneDStepQuantumOptimizer onedopt = new OneDStepQuantumOptimizer();
         boolean cont=true;
-        VectorIntf x = x0.newCopy();
+        VectorIntf x = x0.newInstance();  // used to be x0.newCopy();
         int k;
         for(k=0; k<ntries & cont; k++) {
           cont=false;
@@ -377,9 +378,9 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
               x.setCoord(j, xj_opt);
               double fx = f.eval(x, _params);
               if (fx < _incValue) {
-                _inc = x.newCopy();
+                _inc = x.newInstance();  // used to be x.newCopy();
                 _incValue = fx;
-                Messenger.getInstance().msg("AVD.minimize(x"+j+") new incumbent fval="+_incValue,0);  // itc: HERE rm asap
+                Messenger.getInstance().msg("AVD.minimize(x"+j+") new incumbent fval="+_incValue,0);
                 cont=true;
               }
             }
@@ -489,7 +490,7 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
                      int j, double ss, double lb, double ub,
                      int niterbnd, int mul, double ftol) {
       _f = f;
-      _x0 = x0.newCopy();
+      _x0 = x0.newInstance();  // used to be x0.newCopy();
       _params = new Hashtable(p);
       _j = j;
       _stepsize = ss;

@@ -11,7 +11,7 @@ import java.io.*;
  * are unique with respect to any given coordinator name chosen.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2014</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -35,7 +35,8 @@ public class DMsgPassingCoordinatorSrv {
         maxthreads = 9999;  // the max. number of threads
                             // cannot be restricted as it
                             // may introduce starvation locks.
-      _pool = new DynamicAsynchTaskExecutor(2, maxthreads);
+      _pool = DynamicAsynchTaskExecutor.
+								newDynamicAsynchTaskExecutor(2, maxthreads);
     }
     catch (ParallelException e) {
       e.printStackTrace();  // cannot get here
@@ -69,7 +70,7 @@ public class DMsgPassingCoordinatorSrv {
    */
   public static void main(String[] args) {
     int port = -1;
-    int maxthreads = 9999;
+    int maxthreads = 10000;
     DMsgPassingCoordinatorSrv srv=null;
     if (args.length>0) {
       port = Integer.parseInt(args[0]);

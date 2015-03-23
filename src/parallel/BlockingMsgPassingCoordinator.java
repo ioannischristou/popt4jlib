@@ -28,14 +28,14 @@ import java.util.Hashtable;
  * datum to where.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
 public class BlockingMsgPassingCoordinator {
   private static final int _maxSize=10000;  // The max. size of the _data Vector
-  private Vector _data;  // Vector<RegisteredParcel>
+  private BoundedBufferArrayUnsynchronized _data;  // used to be Vector<RegisteredParcel> 
   private static BlockingMsgPassingCoordinator _instance=null;
   private static Hashtable _instances=new Hashtable();  // map<String name, BMPC instance>
 
@@ -44,7 +44,7 @@ public class BlockingMsgPassingCoordinator {
    * private constructor, in accordance with the Singleton Design Pattern
    */
   private BlockingMsgPassingCoordinator() {
-    _data = new Vector();
+    _data = new BoundedBufferArrayUnsynchronized(_maxSize);
   }
 
 
@@ -81,7 +81,6 @@ public class BlockingMsgPassingCoordinator {
    * stores the data object to be consumed by any thread that invokes recvData()
    * method -regardless of which thread that is. The method waits until the
    * data is retrieved.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myid int the sender's id
    * @param data Object
    * @throws ParallelException if there are more data than _maxSize in the queue
@@ -93,8 +92,9 @@ public class BlockingMsgPassingCoordinator {
     if (_data.size()>=_maxSize)
       throw new ParallelException("MsgPassingCoordinator queue is full");
     // Pair p = new Pair(null, data);
-    // RegisteredParcel p = new RegisteredParcel(new Integer(myid), null, data);
-    RegisteredParcel p = RegisteredParcel.newInstance(myid, Integer.MAX_VALUE, data);
+    RegisteredParcel p = new RegisteredParcel(myid, Integer.MAX_VALUE, data);
+		// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+		// RegisteredParcel p = RegisteredParcel.newInstance(myid, Integer.MAX_VALUE, data);
     _data.addElement(p);
     notifyAll();
     // wait until item is retrieved
@@ -113,7 +113,6 @@ public class BlockingMsgPassingCoordinator {
    * stores the data object to be consumed only by the first thread that invokes
    * the method recvData(threadId). The method will wait until the data is
    * received.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myid int
    * @param threadId int
    * @param data Object
@@ -127,10 +126,9 @@ public class BlockingMsgPassingCoordinator {
     if (_data.size()>=_maxSize)
       throw new ParallelException("BlockingMsgPassingCoordinator queue is full");
     // Pair p = new Pair(new Integer(threadId), data);
-    //RegisteredParcel p = new RegisteredParcel(new Integer(myid),
-    //                                          new Integer(threadId),
-    //                                          data);
-    RegisteredParcel p = RegisteredParcel.newInstance(myid, threadId, data);
+    RegisteredParcel p = new RegisteredParcel(myid, threadId, data);
+		// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+    // RegisteredParcel p = RegisteredParcel.newInstance(myid, threadId, data);
     _data.addElement(p);
     notifyAll();
     // wait until item is retrieved
@@ -150,7 +148,6 @@ public class BlockingMsgPassingCoordinator {
    * another thread) to sendData(sendid,data) or sendData(sendid,recvId,data).
    * If no such data exists the calling thread will wait until the right thread
    * stores an appropriate datum.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myId int
    * @return Object
    */
@@ -165,7 +162,8 @@ public class BlockingMsgPassingCoordinator {
           res = p.getData();
           _data.remove(i);
           notifyAll();
-          p.release();  // release the object
+					// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+          // p.release();  // release the object
           return res;
         }
       }
@@ -182,7 +180,6 @@ public class BlockingMsgPassingCoordinator {
   /**
    * same as recvData(myid) but will only retrieve a datum from the specified
    * sender thread (whose id is specified in the 2nd argument).
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myId int
    * @param fromId int
    * @return Object
@@ -203,7 +200,8 @@ public class BlockingMsgPassingCoordinator {
           res = p.getData();
           _data.remove(i);
           notifyAll();
-          p.release();  // release the object
+					// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+          // p.release();  // release the object
           return res;
         }
       }

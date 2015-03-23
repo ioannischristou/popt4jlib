@@ -7,8 +7,8 @@ import java.io.Serializable;
 
 /**
  * Class implements thread-pooling to allow its users to execute
- * concurrently a batch of tasks implementing the TaskObject interface. The
- * <CODE>run()</CODE> method of each task must clearly
+ * concurrently a batch of tasks implementing the <CODE>TaskObject</CODE> 
+ * interface. The <CODE>run()</CODE> method of each task must clearly
  * be thread-safe!, and also, after calling executeBatch(tasks), no thread
  * should be able to manipulate in any way the submitted tasks or their
  * container (the Collection argument to the call). Unfortunately, there is no
@@ -50,15 +50,47 @@ public final class PDBatchTaskExecutor {
   private MsgPassingCoordinator _mpc_for;
   private MsgPassingCoordinator _mpc_bak;
 
+	
   /**
-   * public constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
-   * @throws ParallelException if numthreads <= 0.
+	 * @return PDBatchTaskExecutor properly initialized
+   * @throws ParallelException if numthreads &lte 0.
+   */	
+	public static PDBatchTaskExecutor 
+				newPDBatchTaskExecutor(int numthreads) throws ParallelException {
+		PDBatchTaskExecutor ex = new PDBatchTaskExecutor(numthreads);
+		ex.initialize();
+		return ex;
+	}
+
+	
+  /**
+   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * @param numthreads int the number of threads in the thread-pool
+   * @param bsize int the batch size to be submitted each time to the threadpool
+	 * @return PDBatchTaskExecutor properly initialized
+   * @throws ParallelException if numthreads &lte 0.
+   */	
+	public static PDBatchTaskExecutor 
+				newPDBatchTaskExecutor(int numthreads, int bsize) 
+								throws ParallelException {
+		PDBatchTaskExecutor ex = new PDBatchTaskExecutor(numthreads, bsize);
+		ex.initialize();
+		return ex;
+	}
+
+	
+  /**
+   * private constructor, constructing a thread-pool of numthreads threads.
+   * @param numthreads int the number of threads in the thread-pool
+   * @throws ParallelException if numthreads &lte 0.
    */
-  public PDBatchTaskExecutor(int numthreads) throws ParallelException {
+  private PDBatchTaskExecutor(int numthreads) throws ParallelException {
     if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
     _id = getNextObjId();
     _threads = new PDBTEThread[numthreads];
+		/* itc: 2015-01-15 moved below code to initialize() method
     for (int i=0; i<numthreads; i++) {
       _threads[i] = new PDBTEThread(this);
       _threads[i].setDaemon(true);  // thread will end when main thread ends
@@ -72,26 +104,47 @@ public final class PDBatchTaskExecutor {
         MsgPassingCoordinator.getInstance("PDBatchTaskExecutor"+_id);
     _mpc_bak =
         MsgPassingCoordinator.getInstance("PDBatchTaskExecutor_ack"+_id);
-
+		*/
   }
 
 
   /**
-   * public constructor, allowing to reduce the size of the batches submitted
+   * private constructor, allowing to reduce the size of the batches submitted
    * to the thread pool. If the 2nd (bsize) argument is greater than the default
    * batch size, namely MsgPassingCoordinator.getMaxSize()/2, it is simply
    * ignored.
    * @param numthreads int the number of threads in the thread-pool
    * @param bsize int the batch size to be submitted each time to the threadpool
-   * @throws ParallelException if numthreads <= 0
+   * @throws ParallelException if numthreads &lte 0
    */
-  public PDBatchTaskExecutor(int numthreads, int bsize)
+  private PDBatchTaskExecutor(int numthreads, int bsize)
       throws ParallelException {
     this(numthreads);
     if (bsize < _batchSize) _batchSize = bsize;
   }
 
+	
+	/**
+	 * called exactly once right after this object is constructed.
+	 */
+	private void initialize() {
+    _isRunning = true;
+    _isIdle = true;
+    _batchSize = MsgPassingCoordinator.getMaxSize()/2;
+    _rwLocker = FairDMCoordinator.getInstance("PDBatchTaskExecutor"+_id);
+    _mpc_for =
+        MsgPassingCoordinator.getInstance("PDBatchTaskExecutor"+_id);
+    _mpc_bak =
+        MsgPassingCoordinator.getInstance("PDBatchTaskExecutor_ack"+_id);		
+		final int numthreads = _threads.length;
+    for (int i=0; i<numthreads; i++) {
+      _threads[i] = new PDBTEThread(this);
+      _threads[i].setDaemon(true);  // thread will end when main thread ends
+      _threads[i].start();
+    }
+	}
 
+	
   /**
    * the main method of the class. Executes all tasks in the argument collection
    * (must be objects implementing the TaskObject interface in package parallel)
@@ -182,7 +235,14 @@ public final class PDBatchTaskExecutor {
       MsgPassingCoordinator.getInstance("PDBatchTaskExecutor"+_id).
                               sendDataBlocking(getNextId(), new PoissonPill());
     }
-    _isRunning = false;
+		try {
+			_rwLocker.getWriteAccess();
+			_isRunning = false;
+			_rwLocker.releaseWriteAccess();
+		}
+		catch (ParallelException e) {  // cannot happen
+			e.printStackTrace();
+		}
     return;
   }
 
@@ -191,8 +251,19 @@ public final class PDBatchTaskExecutor {
    * returns true iff shutDown() has not yet been called on this object.
    * @return boolean
    */
-  public synchronized boolean isLive() {
-    return _isRunning;
+  public boolean isLive() {
+    try {
+      _rwLocker.getReadAccess();
+      return _isRunning;
+    }
+    finally {
+			try {
+				_rwLocker.releaseReadAccess();
+			}
+			catch (ParallelException e) {  // cannot happen
+				e.printStackTrace();
+			}
+    }
   }
 
 
@@ -210,16 +281,20 @@ public final class PDBatchTaskExecutor {
   /**
    * report if at this particular moment, the executor is idle or if its thread
    * pool is currently running some tasks.
-   * @throws ParallelException
    * @return boolean
    */
-  public boolean isIdle() throws ParallelException {
+  public boolean isIdle() {
     try {
       _rwLocker.getReadAccess();
       return _isIdle;
     }
     finally {
-      _rwLocker.releaseReadAccess();
+			try {
+				_rwLocker.releaseReadAccess();
+			}
+			catch (ParallelException e) {
+				e.printStackTrace();  // cannot happen
+			}
     }
   }
 
@@ -296,7 +371,7 @@ class PDBTEThread extends Thread {
 
 
   private static synchronized int getNextId(PDBatchTaskExecutor e) {
-    // this method must be the same as the one in ParallelBatchTaskExecutor
+    // this method must be the same as the one in PDBatchTaskExecutor
     // return ++_curId;
     Integer curId = (Integer) _ids.get(e);
     int nextid = curId.intValue()+1;

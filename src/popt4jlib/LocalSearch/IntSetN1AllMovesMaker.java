@@ -5,7 +5,7 @@ import java.util.*;
 
 /**
  * the class implements the notion of the N_1 neighborhood of a set of integers.
- * In particular, given a subset S of the set M={1,2,...n}, the N_1(S) is the set
+ * In particular, given a subset S of set M={1,2,...n}, the N_1(S) is the set
  * whose members are the subsets S_i of S with cardinality ||S||-1 as well as
  * the supersets S_i of S with cardinality ||S||+1 that are still subsets of M.
  * <p>Title: popt4jlib</p>
@@ -25,14 +25,16 @@ public class IntSetN1AllMovesMaker  implements AllChromosomeMakerIntf {
 
   /**
    * implements the N_1 neighborhood for sets of integers.
-   * @param chromosome Object Set<Integer>
+   * @param chromosome Object // Set&ltInteger&gt
    * @param params Hashtable must contain:
-   * <li> a key-value pair <"dls.maxvalue", num> mandatory
-   * <li> a key-value pair <"dls.minvalue", num> optional (default is 0).
-   * <li> a key-value pair <"dls.augmentonly", boolean> optional (default is false).
-   * <li> a key-value pair <"dls.shrinkonly", boolean> optional (default is false).
-   * @throws OptimizerException
-   * @return Vector Vector<Set points>
+	 * <ul>
+   * <li> a key-value pair &lt"dls.maxvalue", int_num&gt mandatory
+   * <li> a key-value pair &lt"dls.minvalue", int_num&gt optional (default is 0)
+   * <li> a key-value pair &lt"dls.augmentonly", boolean&gt optional (default is false)
+   * <li> a key-value pair &lt"dls.shrinkonly", boolean&gt optional (default is false)
+	 * </ul>
+   * @throws OptimizerException if any of the above params is incorrectly set
+   * @return Vector // Vector&ltSet points&gt
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN1AllMovesMaker.createAllChromosomes(): null chromosome");

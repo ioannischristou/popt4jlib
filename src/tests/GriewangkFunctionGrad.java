@@ -32,7 +32,7 @@ public class GriewangkFunctionGrad implements VecFunctionIntf {
   public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null argument");
     int n = x.getNumCoords();
-    VectorIntf g = x.newCopy();
+    VectorIntf g = x.newInstance();  // x.newCopy();
     for (int i=0; i<n; i++) {
       double xi = x.getCoord(i);
       double val = xi/2000.0;

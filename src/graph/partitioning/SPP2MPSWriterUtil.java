@@ -38,7 +38,7 @@ public class SPP2MPSWriterUtil {
     // NumberFormat nf = new DecimalFormat("0.#######E0");
     NumberFormat nf = new DecimalFormat("00000000E0");
     for (int i=0; i<num_vars; i++) {
-      if (i%1000==0) System.out.println("Now writing column "+i);  // itc: HERE rm asap
+      //if (i%1000==0) System.out.println("Now writing column "+i);
       StringBuffer l = newMPSLineBuffer();
       writeMPSFieldFast(l, 1, "X"+i);
       writeMPSFieldFast(l, 2, "COST");
@@ -131,7 +131,7 @@ public class SPP2MPSWriterUtil {
     // NumberFormat nf = new DecimalFormat("0.#######E0");
     NumberFormat nf = new DecimalFormat("00000000E0");
     for (int i=0; i<num_vars; i++) {
-      if (i%1000==0) System.out.println("Now writing column "+i);  // itc: HERE rm asap
+      //if (i%1000==0) System.out.println("Now writing column "+i);
       StringBuffer l = newMPSLineBuffer();
       writeMPSFieldFast(l, 1, "X"+i);
       writeMPSFieldFast(l, 2, "COST");

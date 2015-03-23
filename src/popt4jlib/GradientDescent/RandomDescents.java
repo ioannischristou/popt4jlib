@@ -310,7 +310,7 @@ public class RandomDescents implements LocalOptimizerIntf {
         if (x0==null)
           throw new OptimizerException("null x0 initial point passed");
       }
-      VectorIntf x = x0.newCopy();  // don't modify the initial soln
+      VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
       final int n = x.getNumCoords();
       double gtol = 1e-8;
       try {
@@ -392,6 +392,9 @@ public class RandomDescents implements LocalOptimizerIntf {
       // normalize the direction s
       len = Math.sqrt(len);
       if (len<gtol) {  // the search vector chosen is too small
+				if (s instanceof PoolableObjectIntf) {
+					((PoolableObjectIntf) s).release();
+				}
         return null;
       }
       for (int i=0; i<n; i++) {
@@ -435,6 +438,9 @@ public class RandomDescents implements LocalOptimizerIntf {
           e.printStackTrace();
         }
       }
+			if (s instanceof PoolableObjectIntf) {
+				((PoolableObjectIntf) s).release();
+			}
       fx = f.eval(x,p);  // was _master._f
       if (fx < f0) return new PairObjDouble(x, fx);
       else return null;

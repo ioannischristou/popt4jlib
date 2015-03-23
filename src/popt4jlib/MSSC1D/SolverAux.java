@@ -68,7 +68,7 @@ class SolverAux {
     }
     // OK, now set values
     _starti = starti; _endi = endi; _k = k;
-    notify();  // itc: HERE do I need notifyAll(); ?
+    notify();  // is notifyAll() needed?
   }
 
 

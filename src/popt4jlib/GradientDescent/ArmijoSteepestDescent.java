@@ -293,7 +293,7 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
           (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
           (VectorIntf) p.get("asd.x"+solindex);
       if (x0==null) throw new OptimizerException("no asd.x"+solindex+" initial point in _params passed");
-      VectorIntf x = x0.newCopy();  // don't modify the initial soln
+      VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
       final int n = x.getNumCoords();
       double gtol = 1e-6;
       Double gtolD = (Double) p.get("asd.gtol");

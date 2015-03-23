@@ -5,9 +5,12 @@ import java.util.*;
 
 /**
  * the class implements the notion of the N_2 neighborhood of a set of integers.
- * In particular, given a subset S of the set M={1,2,...n}, the N_2(S) is the set
- * whose members S_ij are subsets of M, have the same cardinality ||S_ij|| as S,
- * and have ||S||-1 members in common with S.
+ * In particular, given a subset S of set M={1,2,...n}, the N_2(S) is the set
+ * whose members S_{ij} are subsets of M, have the same cardinality ||S_ij|| as 
+ * S, and have ||S||-1 members in common with S. 
+ * It is equivalent to the N_{-1+P} where P=1 neighborhood defined in the 
+ * <CODE>graph.packing.IntSetN1RXPFirstImprovingGraphAllMovesMaker</CODE> class,
+ * without being related/specific to graphs.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -16,6 +19,7 @@ import java.util.*;
  * @version 1.0
  */
 public class IntSetN2AllMovesMaker  implements AllChromosomeMakerIntf {
+	
   /**
    * public constructor.
    */
@@ -25,21 +29,21 @@ public class IntSetN2AllMovesMaker  implements AllChromosomeMakerIntf {
 
   /**
    * implements the N_2 neighborhood for sets of integers.
-   * @param chromosome Object Set<Integer>
-   * @param params Hashtable must contains either a key-value pair
-   * <"dls.maxvalue", num> or a pair
-   * <"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter>
-   * and optionally a key-value pair <"dls.minvalue", num> (default is 0). If
-   * the filter is present, it specifies the ints to be tried for addition to
+   * @param chromosome Object // Set&ltInteger&gt
+   * @param params Hashtable must contain either a key-value pair
+   * &lt"dls.maxvalue", int_num&gt or a pair
+   * &lt"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt
+   * and optionally a key-value pair &lt"dls.minvalue", int_num&gt (default=0). 
+	 * If the filter is present, it specifies the ints to be tried for addition to
    * the set given an int to be removed from the set, and therefore the min and
    * max values are not used.
    * @throws OptimizerException
-   * @return Vector Vector<Set points>
+   * @return Vector // Vector&ltSet&ltInteger&gt &gt
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN2AllMovesMaker.createAllChromosomes(): null chromosome");
     try {
-      Set x0 = (Set) chromosome;
+      Set x0 = (Set) chromosome;  // Set<Integer>
       Vector result = new Vector();
       IntSetNeighborhoodFilterIntf filter = (IntSetNeighborhoodFilterIntf)
           params.get("dls.intsetneighborhoodfilter");
@@ -47,13 +51,13 @@ public class IntSetN2AllMovesMaker  implements AllChromosomeMakerIntf {
         Iterator iter = x0.iterator();
         while (iter.hasNext()) {
           Integer id = (Integer) iter.next();
-          Vector tryids = filter.filter(id, x0, params);
+          List tryids = filter.filter(id, x0, params);  // List<Integer>
           if (tryids!=null) {
             final int sz = tryids.size();
             for (int i=0; i<sz; i++) {
               Set xnew = new TreeSet(x0);
               xnew.remove(id);
-              xnew.add(tryids.elementAt(i));
+              xnew.add(tryids.get(i));
               result.add(xnew);
             }
           }

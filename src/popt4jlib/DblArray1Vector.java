@@ -16,7 +16,9 @@ package popt4jlib;
  */
 public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
   // private final static long serialVersionUID=-1953111744690308391L;
-  private double _x[]=null;
+	private final static boolean _USE_POOLS=true;  // compile-time flag indicates use of pools or not
+  private final static boolean _DO_RESET_ON_RELEASE=false;  // compile-time flag for resetting vector elems on reset
+	private double _x[]=null;
 	// pool-related data
 	private DblArray1VectorPool _pool=null;
   private int _poolPos=-1;
@@ -87,7 +89,8 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
    * @param poolpos int
    */
   DblArray1Vector(int n, DblArray1VectorPool pool, int poolpos) {
-    _pool=pool;
+    if (_USE_POOLS==false) throw new IllegalArgumentException("_USE_POOLS==false: this ctor should not be used");
+		_pool=pool;
     _poolPos=poolpos;
     _isUsed=false;
 		_x = new double[n];
@@ -101,10 +104,17 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
 
   /**
    * return a new VectorIntf object containing a copy of the data of this object.
+	 * This implementation will try to fetch a vector from the thread-local object
+	 * pool if _USE_POOLS is true.
    * @return VectorIntf
    */
   public VectorIntf newCopy() {
-    DblArray1Vector x = new DblArray1Vector(_x);
+    // DblArray1Vector x = new DblArray1Vector(_x);
+		final int n = _x.length;
+		DblArray1Vector x = DblArray1Vector.newInstance(n);
+		for (int i=0; i<n; i++) {
+			x.setCoord(i, _x[i]);
+		}
     return x;
   }
 
@@ -122,25 +132,39 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
 
 
   /**
-   * return a DblArray1Vector object containing as data the arg passed in.
+   * return an (unmanaged) DblArray1Vector object containing as data the arg 
+	 * passed in.
    * @param arg double[]
    * @return VectorIntf
    */
   public VectorIntf newInstance(double[] arg) {
     return new DblArray1Vector(arg);
   }
+	
+	
+	/**
+	 * return an (unmanaged) DblArray1Vector object containing a copy of the data
+	 * of this object.
+	 * @return VectorIntf
+	 */
+	public VectorIntf newInstance() {
+		return new DblArray1Vector(_x);
+	}
 
 
 	/**
 	 * this factory method shall first try to obtain an object from the thread-
-	 * local object pool of DblArray1Vector objects, and if it can't find one,
-	 * will then produce an unmanaged one. The produced object is always at the
-	 * origin.
+	 * local object pool of DblArray1Vector objects (as long as the _USE_POOLS 
+	 * compile-time constant flag is true), and if it can't find one (or if the
+	 * _USE_POOLS flag is false), it will then produce an unmanaged one. 
+	 * The produced object is guaranteed at the origin only if the 
+	 * _DO_RESET_ON_RELEASE flag is true or if _US_POOLS is false.
 	 * @param n int the vector size or dimension
 	 * @return DblArray1Vector
 	 */
   public static DblArray1Vector newInstance(int n) {
-    return DblArray1VectorPool.getObject(n);
+		if (_USE_POOLS) return DblArray1VectorPool.getObject(n);
+		else return new DblArray1Vector(n);
   }
 
 
@@ -278,8 +302,10 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
   public void release() {
     if (_pool!=null) {
       _isUsed=false;
-			for (int i=0; i<_x.length; i++) _x[i] = 0.0;  // reset
-      _pool.returnObjectToPool(this);
+			if (_DO_RESET_ON_RELEASE) {
+				for (int i=0;i<_x.length; i++) _x[i] = 0.0;  // reset
+			}
+			_pool.returnObjectToPool(this);
     }
   }
 	/**

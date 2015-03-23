@@ -34,7 +34,7 @@ public class MichalewiczFunctionGrad implements VecFunctionIntf {
     try {
       double m = ( (Double) p.get("m")).doubleValue();
       int n = x.getNumCoords();
-      VectorIntf g = x.newCopy();
+      VectorIntf g = x.newInstance();  // x.newCopy();
       for (int i = 0; i < n; i++) {
         double xi = x.getCoord(i);
         double vala = (i + 1) * xi * xi / Math.PI;

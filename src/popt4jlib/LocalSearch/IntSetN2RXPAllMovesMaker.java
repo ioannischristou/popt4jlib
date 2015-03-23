@@ -17,7 +17,7 @@ import java.util.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerIntf {
+public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerClonableIntf {
 
   /**
    * public constructor.
@@ -25,57 +25,68 @@ public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerIntf {
   public IntSetN2RXPAllMovesMaker() {
   }
 
+	
+	/**
+	 * return a new IntSetN2RXPAllMovesMaker instance.
+	 * @return IntSetN2RXPAllMovesMaker
+	 */
+	public AllChromosomeMakerClonableIntf newInstance() {
+		return new IntSetN2RXPAllMovesMaker();
+	}
+	
 
   /**
    * implements the N_{-2+P} neighborhood for sets of integers.
-   * @param chromosome Object Set<Integer>
+   * @param chromosome Object // Set&ltInteger&gt
    * @param params Hashtable must contain a key-value pair
-   * <"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter>
+   * &lt"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt
    * The filter must both specify what two numbers to remove, as well as what
    * ints to be tried for addition to the set given a vector of 2 ints to be
    * removed from the set. In particular, the filter(Integer x, Set s, Hashtable params)
-   * method must return a Vector<IntSet> that comprise all the 2-int combinations
-   * that may be tried for removal.
+   * method must return a Vector&ltIntSet&gt that comprise all the 2-int 
+	 * combinations that may be tried for removal.
    * @throws OptimizerException
-   * @return Vector Vector<Set<Integer> >
+   * @return Vector // Vector&ltSet&ltInteger&gt &gt
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN2RXPAllMovesMaker.createAllChromosomes(): null chromosome");
     try {
       TreeSet result = new TreeSet();  // Set<IntSet>
       Set x0 = (Set) chromosome;
-      //System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): working w/ a soln of size="+x0.size());  // itc: HERE rm asap
+      //System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): working w/ a soln of size="+x0.size());
       IntSetNeighborhoodFilterIntf filter = (IntSetNeighborhoodFilterIntf)
           params.get("dls.intsetneighborhoodfilter");
       Iterator iter = x0.iterator();
+			Set res = new TreeSet();  // Set<IntSet>
       while (iter.hasNext()) {
         Integer id = (Integer) iter.next();
-        //System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): working w/ id="+id);  // itc: HERE rm asap
-        Vector twoint_sets = filter.filter(id, x0, params);  // Vector<IntSet>
-        Iterator iter2 = twoint_sets.iterator();
+        //System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): working w/ id="+id);
+        List twoint_sets = filter.filter(id, x0, params);  // Vector<IntSet>
+        final int tissz = twoint_sets.size();
         int cnt = 0;
-        while (iter2.hasNext()) {
-          Set rmids = (Set) iter2.next();
-          Vector tryids = filter.filter(rmids, x0, params);  // Vector<Integer>
+        for (int i=0; i<tissz; i++) {
+          Set rmids = (Set) twoint_sets.get(i);
+          List tryids = filter.filter(rmids, x0, params);  // Vector<Integer>
           if (tryids!=null) {
             IntSet xnew = new IntSet(x0);
             xnew.removeAll(rmids);
             // add up to as many as the filter suggests.
-            Set res = new TreeSet();  // Set<IntSet>
+            res.clear();  // itc 2015-03-02: used to be Set res = new TreeSet();  // Set<IntSet>
             res.add(xnew);
-            Set allres = createSets(res, rmids, tryids, filter.getMaxCardinality4Search(), params);
-            // res is Set<IntSet>
+						tryids.removeAll(rmids);  // remove now all rmids from tryids so as not to have to do the check below
+            Set allres = createSets(res, null, tryids, filter.getMaxCardinality4Search(), params);
+            // res, allres is Set<IntSet>
             result.addAll(allres);
             cnt += allres.size();
           }
         }
         //System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): done w/ id="+id+
-        //           " returned "+cnt+" sets.");  // itc: HERE rm asap
+        //           " returned "+cnt+" sets.");
       }
       // convert Set<IntSet> to Vector<IntSet>
-      Vector res = new Vector(result);
-      //System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");  // itc: HERE rm asap
-      return res;
+      Vector fres = new Vector(result);
+      //System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");
+      return fres;
     }
     catch (Exception e) {
       e.printStackTrace();
@@ -88,19 +99,19 @@ public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerIntf {
    * hook method in the context of the Template Method Design Pattern.
    * Sub-classes with more domain knowledge may override this method to modify
    * the behavior of this move-maker.
-   * @param res Set TreeSet<IntSet>
-   * @param rmids Set IntSet
-   * @param tryids Vector Vector<Integer>
+   * @param res Set // TreeSet&ltIntSet&gt
+   * @param rmids Set // IntSet
+   * @param tryids List // List&ltInteger&gt
    * @param maxcard int
-   * @param params Hashtable
-   * @return Set  TreeSet<IntSet>
+   * @param params Hashtable unused
+   * @return Set // TreeSet&ltIntSet&gt
    */
-  protected Set createSets(Set res, Set rmids, Vector tryids, int maxcard, Hashtable params) {
+  protected Set createSets(Set res, Set rmids, List tryids, int maxcard, Hashtable params) {
     if (maxcard==0) return res;
     Set res2 = new TreeSet(res);  // was new TreeSet();
     for (int i=0; i<tryids.size(); i++) {
-      Integer tid = (Integer) tryids.elementAt(i);
-      if (rmids.contains(tid)==false) {
+      Integer tid = (Integer) tryids.get(i);
+      if (rmids==null || !rmids.contains(tid)) {
         Iterator iter = res.iterator();
         while (iter.hasNext()) {
           IntSet x = (IntSet) iter.next();
@@ -117,13 +128,13 @@ public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerIntf {
 
 
   /**
-   * hook method in the context of the Template Method Design Pattern.
-   * Sub-classes with more domain knowledge may override this method to modify
-   * the behavior of this move-maker.
-   * @param tid Integer
-   * @param x IntSet
-   * @param params Hashtable
-   * @return boolean
+   * always returns true. Hook method in the context of the Template Method 
+	 * Design Pattern. Sub-classes with more domain knowledge may override this 
+	 * method to modify the behavior of this move-maker.
+   * @param tid Integer unused
+   * @param x IntSet unused
+   * @param params Hashtable unused
+   * @return boolean true
    */
   protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
     return true;

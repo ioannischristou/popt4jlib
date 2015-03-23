@@ -30,7 +30,7 @@ public class TridFunctionGrad implements VecFunctionIntf {
   public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
     try {
       int n = x.getNumCoords();
-      VectorIntf g = x.newCopy();
+      VectorIntf g = x.newInstance();  // x.newCopy();
       for (int i = 0; i < n; i++) {
         double xi = x.getCoord(i);
         double xim1 = i > 0 ? x.getCoord(i - 1) : 0.0;

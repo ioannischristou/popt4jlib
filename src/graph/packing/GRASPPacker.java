@@ -16,7 +16,7 @@ import java.io.*;
  * constructed.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -48,14 +48,15 @@ public final class GRASPPacker {
 
   /**
    * create a dist-_k packing for Graph _g via a GRASP method and return it
-   * as a Set<Node> of the active nodes.
-   * @param Set addfirstfrom a set of Nodes to add from
+   * as a Set&ltNode&gt of the active nodes.
+   * @param Set addfirstfrom // Set&ltNode&gt to add from
    * @throws PackingException
    * @throws ParallelException
-   * @return Set  // Set<Node>
+   * @return Set  // Set&ltNode&gt
    */
   public Set pack(Set addfirstfrom) throws PackingException, ParallelException {
     Set res = new HashSet();  // Set<Node>
+		Random rand = RndUtil.getInstance().getRandom();
     if (addfirstfrom!=null) {
       Iterator it = addfirstfrom.iterator();
       while (it.hasNext()) {
@@ -86,20 +87,13 @@ public final class GRASPPacker {
 						// 2nd condition used to be:
 						// (_k==1 && n.getNbors().size() == first.getNbors().size())
             candidates.add(n);
-            /*
-            System.err.println("Adding n=" + n.getId() +
-                               " to candidates set w/ card=" +
-                               n.getNNbors().size());
-            */
             continue; // keep adding
           }
-          else break;
+          else if (_k==2 || !isApproximatelyEqualWeight(n,first)) break;
         }  // while it.hasNext()
-        // Pair p = findNearestFree2Cover(candidates, res, nprev);
-        // n = (Node) p.getFirst();
         //System.err.println("candidates.size()=" + candidates.size());
         // pick a candidate node at random
-        int pos = RndUtil.getInstance().getRandom().nextInt(candidates.size());
+        int pos = rand.nextInt(candidates.size());
         Iterator it2 = candidates.iterator();
         for (int i = 0; i < pos; i++) it2.next();
         n = (Node) it2.next();
@@ -122,10 +116,11 @@ public final class GRASPPacker {
 
 
   /**
-   * g.makeNNbors() must have been called prior to this call
+   * the method <CODE>g.makeNNbors()</CODE> must have been called prior to this 
+	 * call if k==2.
    * @param g Graph
-   * @param active Set Set<Integer nodeid>
-	 * @param k int
+   * @param active Set // Set&ltInteger nodeid&gt
+	 * @param k int // denotes 1- or 2-packing problem
    * @return boolean
    */
   static boolean isFeasible(Graph g, Set active, int k) {
@@ -135,7 +130,7 @@ public final class GRASPPacker {
 			while (it.hasNext()) {
 				Integer nid = (Integer) it.next();
 				Node n = g.getNode(nid.intValue());
-				Set nbors = n.getNbors();
+				Set nbors = n.getNborsUnsynchronized();  // used to be n.getNbors();
 				Iterator it2 = nbors.iterator();
 				while (it2.hasNext()) {
 					Node n2 = (Node) it2.next();
@@ -167,7 +162,7 @@ public final class GRASPPacker {
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set  // Set<Node>
+   * @param active Set  // Set&ltNode&gt
    * @return boolean // true iff nj can be added to active
    * @throws ParallelException
    */
@@ -179,17 +174,28 @@ public final class GRASPPacker {
 			if (nnborsj.size()>0) return false;
 			return true;
 		} else {  // _k==1
+			/* slow
 			Set nborsj = new HashSet(nj.getNbors());
 			nborsj.retainAll(active);
 			if (nborsj.size()>0) return false;
 			return true;
+			*/
+			// /* faster: no need for HashSet creation
+			Set nborsj = nj.getNborsUnsynchronized();  // no modification to take place
+			Iterator itj = nborsj.iterator();
+			while (itj.hasNext()) {
+				Node nnj = (Node) itj.next();
+				if (active.contains(nnj)) return false;
+			}
+			return true;
+			// */
 		}
   }
 
 
 	/**
 	 * checks whether the node n is nearly equal to the currently "best" node
-	 * to enter the partial solution.
+	 * to enter the partial solution of a 1-packing problem (MWIS problem).
 	 * @param n Node
 	 * @param first Node
 	 * @return true iff the two nodes are "nearly" equal (n's weight is no worse
@@ -197,20 +203,37 @@ public final class GRASPPacker {
 	 * equal)
 	 */
 	private boolean isApproximatelyEqual(Node n, Node first) {
-		Double nwD = n.getWeightValue("value");
+		Double nwD = n.getWeightValueUnsynchronized("value");
 		double nw = nwD==null ? 1.0 : nwD.doubleValue();
-		Double fwD = first.getWeightValue("value");
+		Double fwD = first.getWeightValueUnsynchronized("value");
 		double fw = fwD==null ? 1.0 : fwD.doubleValue();
 		if (fw*_alphaFactor > nw) return false;
-		if (first.getNbors().size()<n.getNbors().size()) return false;
+		if (first.getNborsUnsynchronized().size()<n.getNborsUnsynchronized().size()) return false;
 		return true;
 	}
 
+	
+	/**
+	 * check whether node n is "close enough" to the first (and "best") node 
+	 * according to the node-weight criterion for the MWIS problem.
+	 * @param n Node
+	 * @param first Node
+	 * @return true iff the two nodes are "nearly" equal (n's weight is no worse
+	 * than the first's times the fudge factor <CODE>_alphaFactor</CODE>).
+	 */
+	private boolean isApproximatelyEqualWeight(Node n, Node first) {
+		Double nwD = n.getWeightValueUnsynchronized("value");
+		double nw = nwD==null ? 1.0 : nwD.doubleValue();
+		Double fwD = first.getWeightValueUnsynchronized("value");
+		double fw = fwD==null ? 1.0 : fwD.doubleValue();
+		return fw*_alphaFactor <= nw;
+	}
 
+	
   private void updateQueue(Node n) throws PackingException, ParallelException {
     // 0. remove the node n and the nnbors of n from _nodesq
     _nodesq.remove(n);
-    Set nnbors = _k==2 ? n.getNNbors() : n.getNbors();
+    Set nnbors = _k==2 ? n.getNNbors() : n.getNborsUnsynchronized();  // used to be n.getNbors();
     _nodesq.removeAll(nnbors);
     // 1. create the nnnbors set of the nbors of _nnbors U n set
     Set nnnbors = new HashSet();  // Set<Node>
@@ -218,7 +241,7 @@ public final class GRASPPacker {
     Iterator it = nbors.iterator();
     while (it.hasNext()) {
       Node nbor = (Node) it.next();
-      Set nnbors2 = _k==2 ? nbor.getNNbors() : nbor.getNbors();
+      Set nnbors2 = _k==2 ? nbor.getNNbors() : nbor.getNborsUnsynchronized();  // used to be nbor.getNbors();
       nnnbors.addAll(nnbors2);
     }
     nnnbors.removeAll(nnbors);
@@ -245,7 +268,7 @@ public final class GRASPPacker {
   /**
    * return true iff all nodes in active set can be set to one without
    * violating feasibility.
-   * @param active Set  // Set<Node>
+   * @param active Set  // Set&ltNode&gt
    * @return boolean
    * @throws ParallelException
    */
@@ -270,11 +293,11 @@ public final class GRASPPacker {
 			return true;
 		}
 		else {  // _k==1
-			_g.makeNbors(true);  // re-establish nbors
+			// _g.makeNbors(true);  // no need to re-establish nbors: never modified
 			Iterator it = active.iterator();
 			while (it.hasNext()) {
 				Node n1 = (Node) it.next();
-				Set n1bors = n1.getNbors();
+				Set n1bors = n1.getNborsUnsynchronized();
 				Iterator it2 = n1bors.iterator();
 				while (it2.hasNext()) {
 					Node n1nbor = (Node) it2.next();
@@ -287,8 +310,9 @@ public final class GRASPPacker {
 
 
   /**
-   * _g.makeNNbors() must have been called before. This method is only called
-   * once from this object's constructor.
+   * the method <CODE>_g.makeNNbors()</CODE> must have been called before if 
+	 * <CODE>_k==2</CODE>. This method is only called once from this object's 
+	 * constructor.
    */
   private void setup() {
     final int gsz = _g.getNumNodes();
@@ -303,7 +327,7 @@ public final class GRASPPacker {
       _origNodesq.add(_g.getNode(i));
     }
     _nodesq = new TreeSet(_origNodesq);
-    //System.err.println("done sorting");  // itc: HERE rm asap
+    //System.err.println("done sorting");
   }
 
 
@@ -313,7 +337,7 @@ public final class GRASPPacker {
    */
   private void reset() throws ParallelException {
 		if (_k==2) _g.makeNNbors(true); // force reset (from cache)
-		else _g.makeNbors(true);  // force reset (from cache)
+		// else _g.makeNbors(true);  // don't force reset (from cache): no need
     _nodesq = new TreeSet(_origNodesq);
   }
 
@@ -329,25 +353,32 @@ public final class GRASPPacker {
    * has the internal id of the node +1 (so the range of nodes is
    * [1,...Graph.getNumNodes()].
    * @param args String[] are as follows:
-	 * args[0] graph_file_name mandatory, the name of the file containing the graph
-	 * args[1] k mandatory, must be 1 or 2, describing the type of the problem
-	 * args[2] numinitnodes optional, if present describes the cardinality of an
+	 * <ul>
+	 * <li> args[0] graph_file_name mandatory, the name of the file containing the graph
+	 * <li> args[1] k mandatory, must be 1 or 2, describing the type of the problem
+	 * <li> args[2] numinitnodes optional, if present describes the cardinality of an
 	 * initial random population from which to attempt to construct a first partial
 	 * solution, Default is 0.
-	 * args[3] numiterations optional, if present describes the number of major
+	 * <li> args[3] numiterations optional, if present describes the number of major
 	 * outer iterations to run. Default is 1.
-	 * args[4] do_local_search optional, if "true" implies a local search via the
-	 * popt4jlib.LocalSearch.DLS algorithm to be performed when a solution is
-	 * constructed in a major outer iteration. Default is false.
-	 * args[5] num_dls_threads optional, if present describes the number of threads
+	 * <li> args[4] do_local_search optional, if "true" implies a local search via 
+	 * the <CODE>popt4jlib.LocalSearch.DLS</CODE> algorithm to be performed when a 
+	 * solution is constructed in a major outer iteration. Default is false.
+	 * <li> args[5] num_dls_threads optional, if present describes the number of threads
 	 * to use in the DLS procedure if activated. Default is 1.
-	 * args[6] max_allowed_time optional, if present, sets the max. allowed time
+	 * <li> args[6] max_allowed_time optional, if present, sets the max. allowed time
 	 * for the process to run (in milliseconds). Default is +infinity.
+	 * <li> args[7] use_N2RXP_4_DLS optional, if present and true, will force 
+	 * the use of the <CODE>IntSetN2RXPGraphAllMovesMaker</CODE> move-maker in the
+	 * local search (if args[4] evaluates to true). Otherwise, if local-search is
+	 * asked for, the <CODE>IntSetN1RXPFirstImprovingGraphAllMovesMaker</CODE> 
+	 * class will be used as moves-maker in local-search. Default is false.
+	 * </ul>
    * @throws ParallelException
    */
   public static void main(String[] args) throws ParallelException {
 		if (args.length < 2) {
-			System.err.println("usage: java -cp <classpath> <graphfile> <k> [numinitnodes] [numiterations] [do_local_search] [num_dls_threads] [max_allowed_time_millis]");
+			System.err.println("usage: java -cp <classpath> <graphfile> <k> [numinitnodes] [numiterations] [do_local_search] [num_dls_threads] [max_allowed_time_millis] [use_N2RXP_4_DLS]");
 			System.exit(-1);
 		}
     try {
@@ -356,6 +387,7 @@ public final class GRASPPacker {
 			int k = Integer.parseInt(args[1]);
       double best = 0;
       boolean do_local_search = false;
+			boolean use_N2RXP_4_ls = false;
       int num_threads = 1;
 			long max_time_ms = Long.MAX_VALUE;  // indicates the max allowed time to run (in millis)
       GRASPPacker p = new GRASPPacker(g,k);
@@ -373,9 +405,10 @@ public final class GRASPPacker {
         Graph gp = p._g;
         int gsz = gp.getNumNodes();
         init = k==2 ? new TreeSet(new NodeComparator2()) : new TreeSet(new NodeComparator4());
+				Random rnd = RndUtil.getInstance().getRandom();
         for (int i=0; i<numinit; i++) {
-          int nid = RndUtil.getInstance().getRandom().nextInt(gsz);
-          Node n = gp.getNode(nid);
+          int nid = rnd.nextInt(gsz);
+          Node n = gp.getNodeUnsynchronized(nid);
           init.add(n);
         }
         if (args.length>3) {
@@ -398,6 +431,8 @@ public final class GRASPPacker {
 									catch (Exception e) {
 										e.printStackTrace();
 									}
+									if (args.length>7) 
+										use_N2RXP_4_ls = "true".equals(args[7]);
 								}
               }
               catch (Exception e) {
@@ -424,9 +459,11 @@ public final class GRASPPacker {
           }
           // now do the local search
           DLS dls = new DLS();
-          AllChromosomeMakerIntf movesmaker = new IntSetN1RXPFirstImprovingGraphAllMovesMakerMT(k);
+          AllChromosomeMakerIntf movesmaker;
+					if (use_N2RXP_4_ls) movesmaker = new IntSetN2RXPGraphAllMovesMaker(k);
+					else movesmaker = new IntSetN1RXPFirstImprovingGraphAllMovesMakerMT(k);
           IntSetNeighborhoodFilterIntf filter = new GRASPPackerIntSetNbrhoodFilter2(k);
-          FunctionIntf f = new SetSizeEvalFunction();
+          FunctionIntf f = k==2 ? new SetSizeEvalFunction() : new SetWeightEvalFunction(g);
           Hashtable dlsparams = new Hashtable();
           dlsparams.put("dls.movesmaker",movesmaker);
           dlsparams.put("dls.x0", nodeids);
@@ -453,11 +490,11 @@ public final class GRASPPacker {
         Iterator it = s.iterator();
         while (it.hasNext()) {
           Node n = (Node) it.next();
-          Double nwD = n.getWeightValue("value");
+          Double nwD = n.getWeightValueUnsynchronized("value");  // used to be n.getWeightValue("value");
           double nw = nwD==null ? 1.0 : nwD.doubleValue();
           iter_w_best += nw;
         }
-        System.err.println("GRASPPacker.main(): iter: "+i+": soln size found="+iter_best+" soln weight="+iter_w_best);  // itc: HERE rm asap
+        System.err.println("GRASPPacker.main(): iter: "+i+": soln size found="+iter_best+" soln weight="+iter_w_best);
         if (iter_w_best > best) {
           best_found = s;
           best = iter_w_best;
@@ -571,14 +608,14 @@ class NodeComparator4 implements Comparator, Serializable {
   public int compare(Object o1, Object o2) {
     Node n1 = (Node) o1;
     Node n2 = (Node) o2;
-		Double n1wD = n1.getWeightValue("value");
-		Double n2wD = n1.getWeightValue("value");
+		Double n1wD = n1.getWeightValueUnsynchronized("value");  // used to be n1.getWeightValue("value");
+		Double n2wD = n2.getWeightValueUnsynchronized("value");  // used to be n2.getWeightValue("value);
 		double n1w = n1wD == null ? 1.0 : n1wD.doubleValue();
 		double n2w = n2wD == null ? 1.0 : n2wD.doubleValue();
 		if (n1w>n2w) return -1;
 		else if (Double.compare(n2w, n1w)==0) {
-			double n1sz = n1.getNbors().size();
-			double n2sz = n2.getNbors().size();
+			double n1sz = n1.getNborsUnsynchronized().size();
+			double n2sz = n2.getNborsUnsynchronized().size();
 			try {
 				double n1szaux = n1.getNborWeights("value");
 				double n2szaux = n2.getNborWeights("value");

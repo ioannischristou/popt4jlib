@@ -20,19 +20,20 @@ public class DblArray1VectorRndMaker {
   /**
    * constructor.
    * The parameters that must be passed in (the Hashtable arg) are as follows:
-   * <li> <"dde.numdimensions", Integer nd> mandatory, the number of dimensions
-   * <li> <"dde.minargval", Double v> optional, the min. value that any
+	 * <ul>
+   * <li> &lt"dde.numdimensions", Integer nd&gt mandatory, the number of dimensions
+   * <li> &lt"dde.minargval", Double v&gt optional, the min. value that any
    * component of the returned vector may assume
-   * <li> <"dde.maxargval", Double v> optional, the max. value that any
+   * <li> &lt"dde.maxargval", Double v&gt optional, the max. value that any
    * component of the returned vector may assume
-   * <li> <"dde.minargval"+$i$, Double v> optional, the min. value that the i-th
+   * <li> &lt"dde.minargval"+$i$, Double v&gt optional, the min. value that the i-th
    * component of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * <li> <"dde.maxargval"+$i$, Double v> optional, the max. value that the i-th
+   * <li> &lt"dde.maxargval"+$i$, Double v&gt optional, the max. value that the i-th
    * component of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * The "local" constraints can only impose more strict constraints on the
+   * </ul>
+   * <br>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
-   * the domain of the variable wider.
-   *
+   * the domain of the variable wider.</br>
    * @param params Hashtable
    */
   public DblArray1VectorRndMaker(Hashtable params) {

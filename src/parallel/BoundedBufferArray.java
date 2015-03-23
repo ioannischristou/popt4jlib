@@ -67,7 +67,30 @@ public class BoundedBufferArray {
     return result;
   }
 
+	
+	/**
+	 * removes the <CODE>i</CODE>-th element in this array. Much slower than the
+	 * other operations.
+	 * @param i int 
+	 * @return Object 
+	 * @throws ParallelException if the index is out of the range {0,...size()-1} 
+	 */
+	public synchronized Object remove(int i) throws ParallelException {
+		if (i==0) return remove();  // remove the first element (pointed by _head)
+		if (i<0 || i>=size()) throw new ParallelException("index "+i+" out of range");
+		Object res=null;
+		int opos = _head+i;
+		if (opos>=_buffer.length) opos -= _buffer.length;
+		res = _buffer[opos];
+		for (; opos!=_tail; opos = next(opos)) {
+			_buffer[opos] = _buffer[next(opos)];
+		}
+		_buffer[_tail] = null;  // avoid memory leaks
+		_tail = prev(_tail);
+		return res;
+	}
 
+	
   /**
    * return the datum at position i.
    * @param i int
@@ -75,7 +98,7 @@ public class BoundedBufferArray {
    * @return Object
    */
   public synchronized Object elementAt(int i) throws ParallelException {
-    if (i<0 || i>= size()) throw new ParallelException("index "+i+"out of range");
+    if (i<0 || i>=size()) throw new ParallelException("index "+i+" out of range");
     int opos = _head+i;
     if (opos<_buffer.length) return _buffer[opos];
     else return _buffer[i - (_buffer.length - _head)];
@@ -91,6 +114,15 @@ public class BoundedBufferArray {
     if (_head<=_tail) return _tail - _head + 1;
     else return _buffer.length - (_head - _tail) + 1;
   }
+
+	
+	/**
+	 * return the buffer array's length.
+	 * @return int
+	 */
+	public int getMaxSize() {
+		return _buffer.length;
+	}
 
 
   private int prev(int head) {

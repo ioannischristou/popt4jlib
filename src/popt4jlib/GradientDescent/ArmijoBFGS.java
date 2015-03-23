@@ -85,36 +85,37 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
    * the main method of the class. Optimizes the function f using Newton-type
    * search with BFGS updates of the inverse Hessian and Armijo rule step-size
    * determination. The method is re-entrant in that it is thread-safe: if some
-   * thread calls the method minimize() on this object while another thread is
-   * executing the minimize(f) method, the second thread to call the method will
-   * throw an OptimizerException.
-   * Prior to this call, some parameters for the optimization process may be
+   * thread calls the method <CODE>minimize(f)</CODE> on this object while 
+	 * another thread is executing the <CODE>minimize(.)</CODE> method, the second 
+	 * thread to call the method will throw an OptimizerException.
+   * <p>Prior to this call, some parameters for the optimization process may be
    * set-up. These are:
-   * <"abfgs.numtries", ntries> optional, the number of initial starting points
-   * to use (must either exist then ntries <"x$i$",VectorIntf v> pairs in the
-   * parameters or a pair <"gradientdescent.x0",VectorIntf v> pair in params).
-   * Default is 1.
-   * <"abfgs.numthreads", Integer nt> optional, the number of threads to use.
-   * Default is 1.
-   * <"abfgs.gradient", VecFunctionIntf g> optional, the gradient of f, the
-   * function to be minimized. If this param-value pair does not exist, the
+	 * <ul>
+   * <li>&lt"abfgs.numtries", ntries&gt optional, the number of initial starting 
+	 * points to use (must either exist then ntries &lt"x$i$",VectorIntf v&gt 
+	 * pairs in the parameters or a pair &lt"gradientdescent.x0",VectorIntf v&gt 
+	 * pair in params). Default is 1.
+   * <li>&lt"abfgs.numthreads", Integer nt&gt optional, the number of threads to 
+	 * use. Default is 1.
+   * <li>&lt"abfgs.gradient", VecFunctionIntf g&gt optional, the gradient of f, 
+	 * the function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * <"abfgs.gtol", Double v> optional, the minimum abs. value for each of the
-   * gradient's coordinates, below which if all coordinates of the gradient
-   * happen to be, the search stops assuming it has reached a stationary point.
-   * Default is 1.e-6.
-   * <"abfgs.maxiters", Integer miters> optional, the maximum number of major
-   * iterations of the Newton-type search before the algorithm stops. Default is
-   * Integer.MAX_VALUE.
-   * <"abfgs.rho", Double v> optional, the value for the parameter ñ in the
-   * Armijo rule implementation. Default is 0.1.
-   * <"abfgs.beta", Double v> optional, the value for the parameter â in the
-   * Armijo rule implementation. Default is 0.2.
-   * <"abfgs.gamma", Double v> optional, the value for the parameter ã in the
-   * Armijo rule implementation. Default is 1.
-   * <"abfgs.maxarmijoiters", Integer v> optional, the maximum number of Armijo
-   * rule iterations allowed. Default is Integer.MAX_VALUE.
-   *
+   * <li>&lt"abfgs.gtol", Double v&gt optional, the minimum abs. value for each 
+	 * of the gradient's coordinates, below which if all coordinates of the 
+	 * gradient happen to be, the search stops assuming it has reached a 
+	 * stationary point. Default is 1.e-6.
+   * <li>&lt"abfgs.maxiters", Integer miters&gt optional, the maximum number of 
+	 * major iterations of the Newton-type search before the algorithm stops. 
+	 * Default is Integer.MAX_VALUE.
+   * <li> &lt"abfgs.rho", Double v&gt optional, the value for the parameter &rho 
+	 * in the Armijo rule implementation. Default is 0.1.
+   * <li>&lt"abfgs.beta", Double v&gt optional, the value for the parameter 
+	 * &beta in the Armijo rule implementation. Default is 0.2.
+   * <li>&lt"abfgs.gamma", Double v&gt optional, the value for the parameter 
+	 * &gamma in the Armijo rule implementation. Default is 1.
+   * <li>&lt"abfgs.maxarmijoiters", Integer v&gt optional, the maximum number of 
+	 * Armijo rule iterations allowed. Default is Integer.MAX_VALUE.
+   *</ul>
    * @param f FunctionIntf
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object or if the optimization
@@ -147,10 +148,10 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
       int triesperthread = ntries / numthreads;
       int rem = ntries;
       for (int i = 0; i < numthreads - 1; i++) {
-        _threads[i] = new ABFGSThread(i, triesperthread, this);
+        _threads[i] = new ABFGSThread(i, triesperthread);
         rem -= triesperthread;
       }
-      _threads[numthreads - 1] = new ABFGSThread(numthreads - 1, rem, this);
+      _threads[numthreads - 1] = new ABFGSThread(numthreads - 1, rem);
       for (int i = 0; i < numthreads; i++) {
         _threads[i].start();
       }
@@ -202,7 +203,7 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
                           (VectorIntf) _params.get("gradientdescent.x0") :  // attempt to retrieve generic point
                           (VectorIntf) _params.get("abfgs.x"+solindex);
     if (x0==null) throw new OptimizerException("no abfgs.x"+solindex+" initial point in _params passed");
-    VectorIntf x = x0.newCopy();  // don't modify the initial soln
+    VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
     final int n = x.getNumCoords();
     double gtol = 1e-6;
     try {
@@ -327,7 +328,7 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
 
 
   /**
-   * Armijo rule implementation: given the initial point x and the search dir.
+   * Armijo rule implementation: given the initial point x and the search dir
    * s, it computes the step-size h according to the Armijo rule.
    * @param f FunctionIntf the function to minimize
    * @param x VectorIntf the initial point
@@ -408,35 +409,44 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
     return res;
   }
 
-  // inner class implementing the threads that will do the concurrent computations
-  // from different starting points.
-  class ABFGSThread extends Thread {
+	/**
+	 * inner class implementing the threads that will do the concurrent 
+	 * computations from different starting points. Not part of the public API.
+	 */
+	class ABFGSThread extends Thread {
 
-    private ArmijoBFGS _master;
     private int _numtries;
     private int _id;
     private int _uid;
 
-
-    public ABFGSThread(int id, int numtries, ArmijoBFGS master) {
+		
+		/**
+		 * sole public constructor.
+		 * @param id int thread-id
+		 * @param numtries int the number of attempts to execute (from different 
+		 * starting points)
+		 */
+    public ABFGSThread(int id, int numtries) {
       _id = id;
       _uid = (int) DataMgr.getUniqueId();
-      _master=master;
       _numtries=numtries;
     }
 
 
+		/**
+		 * implements the main loop of the thread.
+		 */
     public void run() {
-      Hashtable p = new Hashtable(_master._params);
+      Hashtable p = new Hashtable(_params);
       p.put("thread.localid", new Integer(_id));
       p.put("thread.id", new Integer(_uid));  // used to be _id
       VectorIntf best = null;
       double bestval = Double.MAX_VALUE;
-      FunctionIntf f = _master.getFunction();  // used to be _master._f;
+      FunctionIntf f = getFunction();  // used to be _master._f;
       for (int i=0; i<_numtries; i++) {
         try {
           int index = _id*_numtries+i;  // this is the starting point soln index
-          PairObjDouble pair = _master.min(f, index);
+          PairObjDouble pair = min(f, index);
           double val = pair.getDouble();
           if (val<bestval) {
             bestval=val;
@@ -449,7 +459,7 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
         }
       }
       try {
-        _master.setIncumbent(best, bestval);
+        setIncumbent(best, bestval);
       }
       catch (OptimizerException e) {
         e.printStackTrace();

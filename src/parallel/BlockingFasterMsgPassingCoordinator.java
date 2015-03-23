@@ -1,6 +1,5 @@
 package parallel;
 
-import java.util.Vector;
 import java.util.Hashtable;
 
 
@@ -50,7 +49,7 @@ import java.util.Hashtable;
 public class BlockingFasterMsgPassingCoordinator {
   private static final int _maxSize=10000;  // the max. data size in the _data
                                             // queue
-  private Vector _data;  // Vector<RegisteredParcel>
+  private BoundedBufferArrayUnsynchronized _data;  // used to be Vector<RegisteredParcel>
   private static BlockingFasterMsgPassingCoordinator _instance=null;
   private static Hashtable _instances=new Hashtable();  // map<String name, BFMPC instance>
 
@@ -58,7 +57,7 @@ public class BlockingFasterMsgPassingCoordinator {
    * private constructor in agreement with the Singleton(s) Design Pattern
    */
   private BlockingFasterMsgPassingCoordinator() {
-    _data = new Vector();
+    _data = new BoundedBufferArrayUnsynchronized(_maxSize);  // used to be new Vector();
   }
 
 
@@ -221,6 +220,7 @@ public class BlockingFasterMsgPassingCoordinator {
    */
   public Object recvData(int myId) {
     RegisteredParcel p=null;
+		int hint_pos = -1;
     synchronized (this) {
       // check if msg is waiting to be received
       for (int i=0; i<_data.size(); i++) {
@@ -247,6 +247,7 @@ public class BlockingFasterMsgPassingCoordinator {
       // p = new RegisteredParcel(null, new Integer(myId), null);
       p = RegisteredParcel.newInstance(Integer.MAX_VALUE, myId, null);
       _data.addElement(p);
+			hint_pos = _data.size()-1;
     }
     synchronized (p) {
       while (p.getData()==null) {
@@ -260,7 +261,8 @@ public class BlockingFasterMsgPassingCoordinator {
       }
       p.setDelivered();
       synchronized(this) {
-        _data.remove(p);
+        _data.remove(p,hint_pos);  // removes p from _data, 
+				                           // starting the search for it from hint_pos
       }
       Object pdata = p.getData();
       // only now release the p we created using RegisteredParcel.newInstance()
@@ -282,7 +284,8 @@ public class BlockingFasterMsgPassingCoordinator {
       throws ParallelException {
     if (myId==fromId)
       throw new ParallelException("BlockingFasterMsgPassingCoordinator.recvData(): cannot receive from self");
-    RegisteredParcel p=null;
+    int hint_pos = -1;
+		RegisteredParcel p=null;
     synchronized (this) {
       // check if msg is waiting to be received
       for (int i=0; i<_data.size(); i++) {
@@ -312,6 +315,7 @@ public class BlockingFasterMsgPassingCoordinator {
       // p = new RegisteredParcel(new Integer(fromId), new Integer(myId), null);
       p = RegisteredParcel.newInstance(fromId, myId, null);
       _data.addElement(p);
+			hint_pos = _data.size()-1;
     }
     synchronized (p) {
       while (p.getData()==null) {
@@ -325,7 +329,8 @@ public class BlockingFasterMsgPassingCoordinator {
       }
       p.setDelivered();
       synchronized(this) {
-        _data.remove(p);
+        _data.remove(p,hint_pos);  // removes p from _data, 
+				                           // starting the search for it from hint_pos
       }
       Object pdata = p.getData();
       // only now release the p we created using RegisteredParcel.newInstance()

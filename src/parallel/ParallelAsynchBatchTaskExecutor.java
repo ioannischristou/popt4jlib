@@ -33,19 +33,54 @@ public final class ParallelAsynchBatchTaskExecutor {
   private boolean _runOnCurrent=true;
   private MsgPassingCoordinator _mpc;
 
-
+	
   /**
-   * public constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
-   * @throws ParallelException if numthreads <= 0 or if too many threads are
+	 * @return ParallelAsynchBatchTaskExecutor properly initialized
+   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * asked to be created.
+   */	
+	public static ParallelAsynchBatchTaskExecutor 
+				newParallelAsynchBatchTaskExecutor(int numthreads) 
+								throws ParallelException {
+		ParallelAsynchBatchTaskExecutor ex = new ParallelAsynchBatchTaskExecutor(numthreads);
+		ex.initialize();
+		return ex;
+	}
+
+				
+  /**
+   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * @param numthreads int the number of threads in the thread-pool
+   * @param runoncurrent boolean if false no task will on current thread in case
+   * the threads in the pool are full.
+	 * @return ParallelAsynchBatchTaskExecutor properly initialized
+   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * asked to be created.
+   */	
+	public static ParallelAsynchBatchTaskExecutor 
+				newParallelAsynchBatchTaskExecutor(int numthreads, boolean runoncurrent) 
+								throws ParallelException {
+		ParallelAsynchBatchTaskExecutor ex = new ParallelAsynchBatchTaskExecutor(numthreads, runoncurrent);
+		ex.initialize();
+		return ex;
+	}
+
+	
+  /**
+   * private constructor, constructing a thread-pool of numthreads threads.
+   * @param numthreads int the number of threads in the thread-pool
+   * @throws ParallelException if numthreads &lte 0 or if too many threads are
    * asked to be created.
    */
-  public ParallelAsynchBatchTaskExecutor(int numthreads) throws ParallelException {
+  private ParallelAsynchBatchTaskExecutor(int numthreads) throws ParallelException {
     if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
     if (numthreads > MsgPassingCoordinator.getMaxSize()/2)
       throw new ParallelException("cannot construct so many threads");
     _id = getNextObjId();
     _threads = new PABTEThread[numthreads];
+		/* itc 2015-15-01: moved to initialize() method
     for (int i=0; i<numthreads; i++) {
       _threads[i] = new PABTEThread(this, -(i+1));
       _threads[i].setDaemon(true);  // thread will end when main thread ends
@@ -53,21 +88,37 @@ public final class ParallelAsynchBatchTaskExecutor {
     }
     _isRunning = true;
     _mpc = MsgPassingCoordinator.getInstance("ParallelAsynchBatchTaskExecutor"+_id);
+		*/
   }
 
 
   /**
-   * public constructor, constructing a thread-pool of numthreads threads.
+   * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
    * @param runoncurrent boolean if false no task will on current thread in case
    * the threads in the pool are full.
-   * @throws ParallelException if numthreads <= 0.
+   * @throws ParallelException if numthreads &lte 0.
    */
-  public ParallelAsynchBatchTaskExecutor(int numthreads, boolean runoncurrent) throws ParallelException {
+  private ParallelAsynchBatchTaskExecutor(int numthreads, boolean runoncurrent) throws ParallelException {
     this(numthreads);
     _runOnCurrent = runoncurrent;
   }
 
+	
+	/**
+	 * called exactly once right after this object is constructed.
+	 */
+	private void initialize() {
+		final int numthreads = _threads.length;
+    for (int i=0; i<numthreads; i++) {
+      _threads[i] = new PABTEThread(this, -(i+1));
+      _threads[i].setDaemon(true);  // thread will end when main thread ends
+      _threads[i].start();
+    }
+    _isRunning = true;
+    _mpc = MsgPassingCoordinator.getInstance("ParallelAsynchBatchTaskExecutor"+_id);		
+	}
+	
 
   /**
    * get the current number of tasks in the queue awaiting processing.

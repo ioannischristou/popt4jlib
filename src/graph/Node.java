@@ -6,10 +6,10 @@ import java.io.Serializable;
 
 
 /**
- * represents nodes in Graph objects.
+ * represents nodes in <CODE>Graph</CODE> objects.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -18,7 +18,7 @@ public class Node implements Comparable, Serializable {
   // private final static long serialVersionUID = 5324201953509651254L;
 
   private int _id;
-  private Graph _g;
+  private Graph _g;  // pointer back to the owning graph
   private Set _outlinks;  // Set<Integer linkid>
   private Set _inlinks;  // Set<Integer linkid>
   private Set _nbors;  // Set<Node nbor>
@@ -128,8 +128,9 @@ public class Node implements Comparable, Serializable {
 
 
   /**
-   * set the weight of the node for the property named <name> to the value val
-   * passed in the 2nd argument.
+   * set the weight of the node for the property named &ltname&gt to the value 
+	 * val passed in the 2nd argument, and updates the relevant property's max 
+	 * node weight value in the graph to which this node belongs.
    * @param name String
    * @param val Double
    * @throws ParallelException if the current thread has read-lock on the graph
@@ -153,7 +154,7 @@ public class Node implements Comparable, Serializable {
 
 
   /**
-   * get the node value for the property named <name> in the passed argument
+   * get the node value for the property named &ltname&gt in the passed argument
    * @param name String
    * @return Double
    */
@@ -172,10 +173,23 @@ public class Node implements Comparable, Serializable {
     }
   }
 
+	
+	/**
+   * get the node value for the property named &ltname&gt in the passed argument.
+	 * This operation is unsynchronized, and therefore, if used in a multi-
+	 * threaded context, should be externally synchronized or otherwise provide
+	 * guarantees that prevent race-conditions from occurring.
+   * @param name String
+   * @return Double
+   */
+  public Double getWeightValueUnsynchronized(String name) {
+    return (Double) _weights.get(name);
+  }
+
 
   /**
-   * return the neighboring nodes of this Node
-   * @return Set Set<Node>
+   * return the neighboring nodes of this Node.
+   * @return Set // Set&ltNode&gt
    */
   public final Set getNbors() {
     try {
@@ -192,6 +206,18 @@ public class Node implements Comparable, Serializable {
     }
   }
 
+	
+  /**
+   * return the neighboring nodes of this Node.
+	 * This operation is unsynchronized, and therefore, if used in a multi-
+	 * threaded context, should be externally synchronized or otherwise provide
+	 * guarantees that prevent race-conditions from occurring.
+   * @return Set // Set&ltNode&gt
+   */
+  public final Set getNborsUnsynchronized() {
+		return _nbors;
+  }
+
 
   /**
    * return all immediate neighbors of this node.
@@ -199,7 +225,7 @@ public class Node implements Comparable, Serializable {
    * @param force boolean if true it forces the re-computation of the neighbors
    * (unless a cache exists in which case the nbors are not re-computed as
    * there is no need)
-   * @return Set Set<Node>
+   * @return Set // Set&ltNode&gt
    * @throws ParallelException if the current thread has read-lock on the graph
    * and there is another thread currently owning a read-lock as well.
    */
@@ -297,10 +323,37 @@ public class Node implements Comparable, Serializable {
     }
   }
 
+	
+  /**
+   * return the neighboring nodes of this Node that are connected by an arc with
+   * weight greater than the value val passed in the 2nd argument.
+	 * This operation is unsynchronized, and therefore, if used in a multi-
+	 * threaded context, should be externally synchronized or otherwise provide
+	 * guarantees that prevent race-conditions from occurring.
+   * @param val double
+   * @return Set // Set&ltInteger nodeid&gt
+   */
+  public Set getNborIndicesUnsynchronized(double val) {
+    Set indices = new HashSet(); // Set<Integer nid>
+    Iterator it = _inlinks.iterator();
+    while (it.hasNext()) {
+      Integer lid = (Integer) it.next();
+      Link l = _g.getLink(lid.intValue());
+      if (l.getWeight() >= val) indices.add(new Integer(l.getStart()));
+    }
+    Iterator it2 = _outlinks.iterator();
+    while (it2.hasNext()) {
+      Integer lid = (Integer) it2.next();
+      Link l = _g.getLink(lid.intValue());
+      if (l.getWeight() >= val) indices.add(new Integer(l.getEnd()));
+    }
+    return indices;
+  }
+
 
   /**
    * return this Node's neighbors' indices (excluding this Node's id)
-   * @return Set Set<Integer nodeid>
+   * @return Set // Set&ltInteger nodeid&gt
    */
   public Set getNNborIndices() {
     try {
@@ -325,16 +378,48 @@ public class Node implements Comparable, Serializable {
     }
   }
 
+	
+  /**
+   * return this Node's neighbors' indices (excluding this Node's id).
+	 * This operation is unsynchronized, and therefore, if used in a multi-
+	 * threaded context, should be externally synchronized or otherwise provide
+	 * guarantees that prevent race-conditions from occurring.
+   * @return Set // Set&ltInteger nodeid&gt
+   */
+  public Set getNNborIndicesUnsynchronized() {
+    Set indices = new HashSet();
+    Iterator iter = _nbors.iterator();
+    while (iter.hasNext()) {
+      Node n = (Node) iter.next();
+      indices.add(new Integer(n.getId()));
+      Set nnbors = n.getNborIndicesUnsynchronized(Double.NEGATIVE_INFINITY);
+      indices.addAll(nnbors);
+    }
+    return indices;
+  }
+
 
   /**
    * return all neighbors of this node at distance 1 or 2
-   * @return Set Set<Node>
+   * @return Set // Set&ltNode&gt
    * @throws ParallelException
    */
   public final Set getNNbors() throws ParallelException {
     return getNNbors(false);
   }
 
+	
+	/**
+	 * returns the cache member _nnbors without any locking. The method 
+	 * <CODE>makeNNbors()</CODE> must have been called in advance therefore (if by
+	 * another thread, memory visibility must be ensured somehow), otherwise the
+	 * result will be null or undetermined.
+	 * @return Set // Set&ltNode&gt
+	 */
+	public final Set getNNborsUnsynchronized() {
+		return _nnbors;
+	}
+	
 
   /**
    * return all neighbors of this node at distance 1 or 2.
@@ -346,7 +431,7 @@ public class Node implements Comparable, Serializable {
    * @param force boolean if true it forces the re-computation of the neighbors
    * (unless a cache exists in which case the nnbors are not re-computed as
    * there is no need)
-   * @return Set Set<Node>
+   * @return Set // Set&ltNode&gt
    * @throws ParallelException if the current thread has read-lock on the graph
    * and there is another thread currently owning a read-lock as well.
    */
@@ -405,7 +490,7 @@ public class Node implements Comparable, Serializable {
 
   /**
    * return the ids of the incoming links to this Node.
-   * @return Set Set<Integer linkid>
+   * @return Set // Set&ltInteger linkid&gt
    */
   public Set getInLinks() {
     try {
@@ -425,7 +510,7 @@ public class Node implements Comparable, Serializable {
 
   /**
    * return the ids of the outgoing links from this Node.
-   * @return Set Set<Integer linkid>
+   * @return Set // Set&ltInteger linkid&gt
    */
   public Set getOutLinks() {
     try {
@@ -488,7 +573,7 @@ public class Node implements Comparable, Serializable {
       getReadAccess();
 			got_read=true;
       double res = 0.0;
-			Set nodes = getNbors(true);
+			Set nodes = getNbors();  // used to be getNbors(true);
 			Iterator it = nodes.iterator();
 			while (it.hasNext()) {
 				Node nbor = (Node) it.next();
@@ -510,13 +595,21 @@ public class Node implements Comparable, Serializable {
 
 
 	/**
-	 * copies the weights of the Node passed in, in a new hash-table.
+	 * copies the weights of the Node passed in, in a new hash-table, and updates
+	 * the relevant max node weight values in the graph this node belongs to.
 	 * @param n Node
 	 */
 	void copyWeightsFrom(Node n) {
 		try {
 			n.getReadAccess();
 			_weights = new Hashtable(n._weights);
+			// update max-weight values in the graph
+			Iterator key_it = _weights.keySet().iterator();
+			while (key_it.hasNext()) {
+				String name = (String) key_it.next();
+				double val = ((Double) _weights.get(name)).doubleValue();
+				_g.updateMaxNodeWeight(name, val);
+			}
 		}
 		finally {
 			try {

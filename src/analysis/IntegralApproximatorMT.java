@@ -199,7 +199,8 @@ public class IntegralApproximatorMT implements FunctionIntf {
         double rs = simpson(x, intvarind, c, b, level, epshalf, p);
         return ls + rs;
       }
-      ParallelBatchTaskExecutor executor = new ParallelBatchTaskExecutor(2);
+      ParallelBatchTaskExecutor executor = 
+							ParallelBatchTaskExecutor.newParallelBatchTaskExecutor(2);
       synchronized (this) {
         _numExistingThreads += 2;
       }
@@ -235,7 +236,7 @@ public class IntegralApproximatorMT implements FunctionIntf {
 
     public SimpsonTask(VectorIntf x, int ivi, double a, double b, int level,
                        double eps, Hashtable p) {
-      _x = x.newCopy();
+      _x = x.newInstance();  // used to be x.newCopy();
       _ivi = ivi;
       _a = a;
       _b = b;

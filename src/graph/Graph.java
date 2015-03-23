@@ -9,10 +9,12 @@ import java.util.*;
 
 
 /**
- * Graph class represents (directed) graphs, and is thread-safe (re-entrant).
+ * Graph class represents (directed) graphs, and is thread-safe with the 
+ * exception of the methods ending with "Unsynchronized" which for performance
+ * purposes are not.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -20,7 +22,8 @@ import java.util.*;
 public class Graph implements Serializable {
   // serializable so that it can be transported over sockets and data-streams
   // private final static long serialVersionUID = 1284981207616820009L;
-  private long _id;  // unique id
+  private long _id;  // unique id -- uniqueness property not guaranteed when 
+                     // "transported" (e.g. via sockets) to other JVMs
   private Node[] _nodes;
   private Link[] _arcs;
   private Object[] _nodeLabels;  // if not null, it contains label for each
@@ -38,39 +41,94 @@ public class Graph implements Serializable {
                               // Graph
 	private Hashtable _maxNodeWeights;  // map<String wname, Double val> maintains
 	                                    // the max. node weight value for a wname.
+	private Hashtable _sortedNodeArrays;  // map<String name, 
+	                                      //     Node[] nodes_sorted_desc>
   private DMCoordinator _rwLocker=null;  // used for ensuring that the methods
                                          // are re-entrant (i.e. thread-safe)
 
+	
+	/**
+	 * public factory construction method to avoid escaping this in the 2-arg 
+	 * constructor of Graph. The public static factory construction methods are
+	 * in essence the only methods to construct new Graph objects.
+	 * @param numnodes int
+	 * @param numarcs int
+	 * @return Graph
+	 */
+	public static Graph newGraph(int numnodes, int numarcs) {
+		Graph g = new Graph(numnodes, numarcs);
+		g.initialize();
+		return g;
+	}
+
+	/**
+	 * factory construction method to replace calls of the form
+	 * <CODE>Graph g = new Graph(numnodes, numarcs, labels)</CODE>, so as to avoid
+	 * escaping this in the constructor.
+	 * @param numnodes int
+	 * @param numarcs int
+	 * @param labels Object[] the labels of the nodes of the newly constructed
+	 * Graph. Notice that the method will fail if the length of this array is not
+	 * equal to the <CODE>numnodes</CODE> argument. The labels must also have 
+	 * distinct hash-codes so that they can serve as keys in the reverse map from 
+	 * label-object to node-id.
+	 * @return Graph 
+	 * @throws 
+	 */
+	public static Graph newGraph(int numnodes, int numarcs, Object[] labels) {
+		Graph g = new Graph(numnodes, numarcs, labels);
+		g.initialize();
+		return g;
+	}
+	
+	
+	/**
+	 * factory construction method serving as the copy-constructor for Graph 
+	 * objects. Avoids escaping this in the construction process.
+	 * @param g Graph
+	 * @return Graph 
+	 */
+	public static Graph newGraph(Graph g) {
+		Graph g2 = new Graph(g);
+		g2.initialize(g);
+		return g2;
+	}
+	
+	
   /**
-   * public Graph constructor, given the number of nodes and the number of arcs
-   * that this Graph object will contain
+   * private Graph constructor, given the number of nodes and the number of arcs
+   * that this Graph object will contain.
    * @param numnodes int
    * @param numarcs int
    */
-  public Graph(int numnodes, int numarcs) {
+  private Graph(int numnodes, int numarcs) {
     _nodes = new Node[numnodes];
     if (numarcs>0) _arcs = new Link[numarcs];
     _nodeLabels = null;
     _labelMap = null;
 		_maxNodeWeights = new Hashtable();
+		_sortedNodeArrays = new Hashtable();
 
-    for (int i=0; i<numnodes; i++) _nodes[i] = new Node(this, i);
+    // itc 2015-02-25: move Node initialization to avoid escaping this
+		// for (int i=0; i<numnodes; i++) _nodes[i] = new Node(this, i);
 
-    for (int i=0; i<numarcs; i++) _arcs[i] = null;
+    // for (int i=0; i<numarcs; i++) _arcs[i] = null;  // redundant
     _id = DataMgr.getUniqueId();
     _rwLocker = DMCoordinator.getInstance("Graph"+_id);
   }
 
 
   /**
-   * public Graph constructor, taking as arguments the number of nodes, the
+   * private Graph constructor, taking as arguments the number of nodes, the
    * number of acrs, and an Object array to form the labels of the nodes of this
-   * Graph.
+   * Graph. The labels must have distinct hash-codes so as to serve as keys in 
+	 * a reverse map (from label to node-id), and the labels must have the same
+	 * length as the <CODE>numnodes</CODE> argument.
    * @param numnodes int
    * @param numarcs int
    * @param labels Object[]
    */
-  public Graph(int numnodes, int numarcs, Object[] labels) {
+  private Graph(int numnodes, int numarcs, Object[] labels) {
     this(numnodes, numarcs);
     _nodeLabels = labels;
     _labelMap = new Hashtable();
@@ -87,13 +145,16 @@ public class Graph implements Serializable {
    * original Graph's labels.
    * @param g Graph
    */
-  public Graph(Graph g) {
+  private Graph(Graph g) {
     // 0. initialization
     _nodeLabels = null;
     _labelMap = null;
     _id = DataMgr.getUniqueId();
     // set the read/write lock correctly
     _rwLocker = DMCoordinator.getInstance("Graph"+_id);
+		// itc 2015-02-25: moved below functionality to initialize(g) method
+		// to avoid escaping this in the constructor.
+		/*
 		g.getReadAccess();
 		if (g.getNumArcs()>0) _arcs = new Link[g.getNumArcs()];
 		final int numnodes = g.getNumNodes();
@@ -129,30 +190,93 @@ public class Graph implements Serializable {
 		}
 		if (g._maxNodeWeights!=null) 
 			_maxNodeWeights = new Hashtable(g._maxNodeWeights);
+		// don't bother with _sortedNodeWeights: they will be re-generated on demand
 		try {
 			g.releaseReadAccess();
 		}
 		catch (ParallelException e) {
 			e.printStackTrace();  // cannot occur
 		}
+		*/
   }
 
+	
+	/**
+	 * method exists to avoid escaping this in the constructors.
+	 */
+	private void initialize() {
+		final int numnodes = _nodes.length;
+		for (int i=0; i<numnodes; i++) _nodes[i] = new Node(this, i);		
+	}
+	
+	
+	/**
+	 * method exists to avoid escaping this in the copy-ctor.
+	 * @param g Graph
+	 */
+	private void initialize(Graph g) {
+		g.getReadAccess();
+		if (g.getNumArcs()>0) _arcs = new Link[g.getNumArcs()];
+		final int numnodes = g.getNumNodes();
+		_nodes = new Node[numnodes];
+		// 1. copy arcs and make nodes in the process
+		for (int i=0; i<numnodes; i++) _nodes[i] = new Node(this, g.getNode(i), i);
+		if (_arcs!=null) {
+			for (int i = 0; i < _arcs.length; i++) {
+				Link ai = g.getLink(i);
+				try {
+					addLink(ai.getStart(), ai.getEnd(), ai.getWeight());
+				}
+				catch (GraphException e) {
+					e.printStackTrace(); // cannot occur
+				}
+				catch (ParallelException e) {
+					e.printStackTrace();  // cannot occur
+				}
+			}
+		}
+		// 2. set the _nodeLabels, _labelMap and _maxNodeWeights if not null
+		if (g._nodeLabels!=null) {
+			_nodeLabels = new Object[numnodes];
+			for (int i=0; i<numnodes; i++) {
+				try {
+					setNodeLabel(i, g._nodeLabels[i]);
+				}
+				catch (ParallelException e) {
+					// cannot get here: no-op
+					e.printStackTrace();
+				}
+			}
+		}
+		if (g._maxNodeWeights!=null) 
+			_maxNodeWeights = new Hashtable(g._maxNodeWeights);
+		// don't bother with _sortedNodeWeights: they will be re-generated on demand
+		try {
+			g.releaseReadAccess();
+		}
+		catch (ParallelException e) {
+			e.printStackTrace();  // cannot occur
+		}		
+	}
+	
 
   /**
    * add a (directed) link between nodes with id starta and enda.
    * @param starta int (in the interval [0, this.getNumNodes()-1])
    * @param enda int (in the interval [0, this.getNumNodes()-1]
    * @param weight double
-   * @throws GraphException if the method addLink(startnode,endnode) has been
-   * called this.getNumArcs() times already, or if the startnode or endnode
-   * arguments are out-of-bounds
+   * @throws GraphException if the <CODE>addLink(starta,enda)</CODE> has 
+	 * been called <CODE>getNumArcs()</CODE> times already, or if the starta or 
+	 * enda arguments are out-of-bounds
    * @throws ParallelException if the current thread also had the read-lock
    * but there was at least another reader thread in the system
    */
   public void addLink(int starta, int enda, double weight)
       throws GraphException, ParallelException {
-    try {
+    boolean got_wlock=false;
+		try {
       getWriteAccess();
+			got_wlock = true;
       if (_arcs == null)throw new GraphException("null _arcs array.");
       if (_addLinkPos >= _arcs.length)throw new GraphException(
           "cannot add more arcs.");
@@ -164,13 +288,10 @@ public class Graph implements Serializable {
     }
     finally {
       try {
-        releaseWriteAccess();
+        if (got_wlock) releaseWriteAccess();
       }
       catch (ParallelException e) {
-        // will get here only if the write-lock was never obtained in the first
-        // place, and that could only be if the current thread also had the
-        // read lock when it called the getWriteAccess() in the beginning of the
-        // method
+        // never gets here
         // no-op
         e.printStackTrace();
       }
@@ -244,6 +365,20 @@ public class Graph implements Serializable {
     }
   }
 
+	
+  /**
+   * return the Node object with the given id.
+	 * This operation is unsynchronized, and therefore, if used in a multi-
+	 * threaded context, should be externally synchronized or otherwise provide
+	 * guarantees that prevent race-conditions from occurring.
+   * The method will throw OutOfBoundsException if the id is out-of-bounds
+   * @param id int
+   * @return Node
+   */
+  public Node getNodeUnsynchronized(int id) {
+    return _nodes[id];
+  }
+
 
   /**
    * return the number of nodes of this Graph
@@ -253,7 +388,7 @@ public class Graph implements Serializable {
 
 
   /**
-   * return the number of links of this Graph
+   * return the number of links of this Graph.
    * @return int
    */
   public int getNumArcs() {
@@ -263,7 +398,7 @@ public class Graph implements Serializable {
 
 
   /**
-   * return the label of the node with id i (if any exists).
+   * return the label of the node with id i (if any exists; else null).
    * @param i int
    * @return Object
    */
@@ -289,7 +424,8 @@ public class Graph implements Serializable {
    * return the id of the node whose label is passed in the argument label (if
    * it exists, otherwise throw GraphException)
    * @param label Object
-   * @throws GraphException
+   * @throws GraphException if label doesn't exist in the map from labels to 
+	 * node-ids
    * @return int
    */
   public int getNodeIdByLabel(Object label) throws GraphException {
@@ -312,15 +448,17 @@ public class Graph implements Serializable {
 
 
   /**
-   * set the node with id i's label to the Object o
+   * set the node with id i's label to the Object o.
    * @param i int
    * @param o Object
    * @throws ParallelException if the current thread has the read-lock and there
    * was at least another thread with a read-lock
    */
   public void setNodeLabel(int i, Object o) throws ParallelException {
-    try {
+    boolean got_wlock=false;
+		try {
       getWriteAccess();
+			got_wlock=true;
       if (_nodeLabels == null) {
         _nodeLabels = new Object[_nodes.length];
         _labelMap = new Hashtable();
@@ -330,18 +468,13 @@ public class Graph implements Serializable {
       _labelMap.put(o, new Integer(i));
     }
     finally {
-      try {
-        releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
+      if (got_wlock) releaseWriteAccess();
     }
   }
 
 
   /**
-   * obtain the read-lock for this Graph object
+   * obtain the read-lock for this Graph object.
    */
   public void getReadAccess() {
     _rwLocker.getReadAccess();
@@ -447,8 +580,25 @@ public class Graph implements Serializable {
   }
 
 
+	/**
+	 * get the number of independent components of this graph. Uses a cache-based
+	 * lazy evaluation technique that computes the graph's components on-demand,
+	 * and is appropriately guarded with this graph's read/write locks.
+	 * @return int the number of components of this graph.
+	 * @throws ParallelException if <CODE>getComponents()</CODE> has not been 
+	 * invoked yet, the current thread has a read-lock, and another thread has the 
+	 * read-lock on this graph as well.
+	 */
   public int getNumComponents() throws ParallelException {
-    if (_compindex==-1) getComponents();
+    int ci;
+		try {
+			getReadAccess();
+			ci = _compindex;
+		}
+		finally {
+			releaseReadAccess();
+		}
+		if (ci==-1) getComponents();
     return _compindex;
   }
 
@@ -459,8 +609,9 @@ public class Graph implements Serializable {
    * and the i-th element has a value from [0...#Components-1]
    * indicating to which component the node belongs.
    * @return int[]
-   * @throws ParallelException if the current thread has a read-lock and there
-   * is also another thread with a read-lock
+   * @throws ParallelException if this is the first time the method is invoked,
+	 * the current thread has a read-lock and there is also another thread with a 
+	 * read-lock.
    */
   public int[] getComponents() throws ParallelException {
     boolean do_rel = true;
@@ -553,7 +704,7 @@ public class Graph implements Serializable {
           map[nit.getId()] = cnt;
           rmap[cnt++] = new Integer(nit.getId());
         }
-        graphs[i] = new Graph(gnodes[i].size(), ginumarcs, rmap);
+        graphs[i] = newGraph(gnodes[i].size(), ginumarcs, rmap);
         it = ginodes.iterator();
         while (it.hasNext()) {
           Node nit = (Node) it.next();
@@ -625,11 +776,11 @@ public class Graph implements Serializable {
    * construct and return the dual of this graph. This is accomplished by
    * creating a node in the dual for each arc in this graph, and connecting
    * nodes in the dual that correspond to neighboring arcs in the original.
+	 * The arcs in the new graph will have unit weight.
    * @return Graph
-   * @throws GraphException
-   * @throws ParallelException
+   * @throws GraphException if there are no edges in this Graph
    */
-  public Graph getDual() throws GraphException, ParallelException {
+  public Graph getDual() throws GraphException {
     if (_arcs==null)
       throw new GraphException("getDual(): dual does not exist.");
     try {
@@ -644,8 +795,10 @@ public class Graph implements Serializable {
         numarcs += e.getNbors().size() - 1;
       }
       numarcs /= 2;
-      Graph dg = new Graph(_arcs.length, numarcs);
+			// 2. construct new graph object
+      Graph dg = newGraph(_arcs.length, numarcs);
       int count = 0;
+			// 3. create all new graph links
       for (int i = 0; i < _nodes.length; i++) {
         Node ni = _nodes[i];
         Set ni_links = new HashSet(ni.getOutLinks());
@@ -660,20 +813,31 @@ public class Graph implements Serializable {
             int ljd = ( (Integer) it2.next()).intValue();
             if (ljd > lid) {
               // add link (lid,ljd)
-              dg.addLink(lid, ljd, 1);
-              ++count;
+							try {
+								dg.addLink(lid, ljd, 1);
+	              ++count;
+							}
+							catch (ParallelException e) {  // cannot happen
+								e.printStackTrace();
+							}
             }
           }
         }
       }
-      // now add weights to dual nodes
+      // 4. now add weights to dual nodes
       for (int i = 0; i < _arcs.length; i++) {
-        dg.getNode(i).setWeight("value", new Double(_arcs[i].getWeight()));
+				try {
+					dg.getNode(i).setWeight("value", new Double(_arcs[i].getWeight()));
+				}
+				catch (ParallelException e) {  // cannot happen
+					e.printStackTrace();
+				}
       }
       if (count != numarcs) {
         throw new GraphException("error counting arcs: numarcs should be " +
                                  numarcs + " but has count " + count);
       }
+			// 5. done
       return dg;
     }
     finally {
@@ -686,13 +850,61 @@ public class Graph implements Serializable {
       }
     }
   }
+	
+	
+	/**
+	 * get the complement of this (assumed undirected) Graph. The complement of a 
+	 * graph g is a graph with the same nodes as g, but its arc-set is the 
+	 * complement of g's arcs-set in other words, an arc (i,j) (with i &lt j) is 
+	 * in the complement of g if and only if i and j are not direct neighbors in g.
+	 * The arcs in the new graph will have unit weight. Any node labels will be 
+	 * shared in the new graph.
+	 * @return Graph
+	 * @throws GraphException if this graph is directed: there exists a pair of
+	 * nodes (i,j) such that both (i,j) and (j,i) are arcs of this Graph.
+	 */
+	public Graph getComplement() throws GraphException {
+		getReadAccess();
+		final int n = _nodes.length;
+		final int _a = _arcs==null ? 0 : _arcs.length;
+		final int a = (n*(n-1))/2 - _a;
+		// 0. make new graph object
+		Graph cg = _nodeLabels==null ? newGraph(n,a) : newGraph(n, a, _nodeLabels);
+		// 1. make arcs
+		for (int i=0; i<n; i++) {
+			Node ni = getNode(i);
+			for (int j=i+1; j<n; j++) {
+				if (ni.getNborIndices(Double.NEGATIVE_INFINITY).contains(new Integer(j)))
+					continue;
+				try {
+					cg.addLink(i, j, 1);
+				}
+				catch (ParallelException e) {  // cannot get here
+					// no-op
+					e.printStackTrace();
+				}
+			}
+		}
+		// 2. finally, take care of nodes' weights
+		for (int i=0; i<n; i++) {
+			cg.getNode(i).copyWeightsFrom(getNode(i));
+		}
+		try {
+			releaseReadAccess();
+		}
+		catch (ParallelException e) {  // cannot get here
+			// no-op
+			e.printStackTrace();
+		}
+		return cg;
+	}
 
 
   /**
    * get the support of a clique of this node in the other Graph g, in terms of
    * their labels. The method compares how many arcs in the clique also appear
    * in the Graph g, when the labels of the endpoints of the two nodes are used.
-   * @param nodes Set<Integer node_id>
+   * @param nodes Set&ltInteger node_id&gt
    * @param g Graph
    * @return double the percentage of arcs from the clique that are also present
    * in the Graph g
@@ -784,7 +996,7 @@ public class Graph implements Serializable {
    * each other. (For k=1 this should be fast enough method)
    * @param k int the max. number of hops away any two arcs are allowed to be.
    * @throws GraphException
-   * @return Set Set<Set<Integer linkid> >
+   * @return Set // Set&ltSet&ltInteger linkid&gt &gt
    */
   public Set getAllConnectedLinks(int k) throws GraphException {
     try {
@@ -829,12 +1041,12 @@ public class Graph implements Serializable {
 
 
   /**
-   * return a Set<Set<Integer nodeId> > that is the set of all sets of nodeids
-   * in the result set that have the property that are maximal sets of nodes
-   * that are connected with each other with at most 1 hop.
+   * return a Set&ltSet&ltInteger nodeId&gt &gt that is the set of all sets of 
+	 * nodeids in the result set that have the property that are maximal sets of 
+	 * nodes that are connected with each other with at most 1 hop.
    * @param k int
    * @throws GraphException
-   * @return Set
+   * @return Set // Set&ltSet&ltInteger nodeId&gt &gt
    */
   public Set getAllConnectedNodes(int k) throws GraphException {
     if (k!=2) throw new GraphException("currently, input k must be 2");
@@ -910,12 +1122,12 @@ public class Graph implements Serializable {
 
 
   /**
-   * return the Set<IntSet nodeids> of all sets of nodeids with the property
+   * return the Set&ltIntSet nodeids&gt of all sets of nodeids with the property
    * that they are independent (maximal) and at distance at most 2 from each
    * other within the set they are in.
    * @param maxcount Integer if not null denotes the max number of 5-cycle based
    * sets of nodes to return
-   * @return Set
+   * @return Set // Set&ltIntSet nodeids&gt
    * @throws GraphException
    */
   public Set getAllConnectedBy1Nodes(Integer maxcount) throws GraphException {
@@ -995,10 +1207,10 @@ public class Graph implements Serializable {
 
 
   /**
-   * return a Set containing a Set<Integer nodeid> for each node i in this Graph
-   * where each Set will comprise the immediate neighbors of node i, plus the
-   * node i itself (its id)
-   * @return Set
+   * return a Set containing a Set&ltInteger nodeid&gt for each node i in this 
+	 * Graph where each Set will comprise the immediate neighbors of node i, plus 
+	 * the node i itself (its id)
+   * @return Set // Set&ltSet&ltInteger nodeid&gt &gt
    */
   public Set getAllNborSets() {
     try {
@@ -1026,11 +1238,11 @@ public class Graph implements Serializable {
 
   /**
    * return all node ids of the nodes that are immediate neighbors of any of the
-   *  nodes whose ids are in the input set argument, excluding the nodes in the
+   * nodes whose ids are in the input set argument, excluding the nodes in the
    * input argument set.
-   * @param nodeids Set Set<Integer nodeid>
-   * @throws GraphException
-   * @return Set Set<Integer nodeid>
+   * @param nodeids Set // Set&ltInteger nodeid&gt
+   * @throws GraphException if nodeids is null or empty
+   * @return Set // Set&ltInteger nodeid&gt
    */
   public Set getNborIds(Set nodeids) throws GraphException {
     try {
@@ -1061,7 +1273,7 @@ public class Graph implements Serializable {
 
 
   /**
-   * create a cache of the 2-distance neighbors of each node for faster access
+   * create a cache of the 2-distance neighbors of each node for faster access.
    * @throws ParallelException
    */
   public void makeNNbors() throws ParallelException {
@@ -1072,7 +1284,7 @@ public class Graph implements Serializable {
   /**
    * forces the recomputation of the cache holding the 2-distance neighbors of
    * a node if the argument is true. Otherwise, the computation occurs only
-   * if the cache is empty
+   * if the cache is empty.
    * @param force boolean
    * @throws ParallelException
    */
@@ -1105,7 +1317,7 @@ public class Graph implements Serializable {
     try {
       getWriteAccess();
       for (int i = 0; i < _nodes.length; i++) {
-        _nodes[i].getNbors(force); // force computation of all NNbors and storage in _nnbors cache
+        _nodes[i].getNbors(force); // force computation of all Nbors and storage in _nbors cache
       }
     }
     finally {
@@ -1119,6 +1331,15 @@ public class Graph implements Serializable {
   }
 
 	
+	/**
+	 * return the max node weight value of the property with given name. When 
+	 * nodes set their weights, an appropriate cache is updated and is returned
+	 * in this call via a simple hash-table look-up. Therefore it is a constant
+	 * time operation.
+	 * @param name String
+	 * @return Double null if the given property name does not have a value for
+	 * any node in this graph
+	 */
 	public Double getMaxNodeWeight(String name) {
     try {
       getReadAccess();
@@ -1133,8 +1354,56 @@ public class Graph implements Serializable {
       }
     }		
 	}
+	
+	
+	/**
+	 * return the max node weight value of the property with given name. 
+	 * This operation is unsynchronized, and therefore, if used in a multi-
+	 * threaded context, should be externally synchronized or otherwise provide
+	 * guarantees that prevent race-conditions from occurring. Otherwise, it is
+	 * identical to the <CODE>getMaxNodeWeight(name)</CODE> method.
+	 * @param name String
+	 * @return Double null if the given property name does not have a value for
+	 * any node in this graph
+	 */
+	public Double getMaxNodeWeightUnsynchronized(String name) {
+		return (Double) _maxNodeWeights.get(name);
+	}
+	
+	
+	/**
+	 * return the max node weight value of the property with given name among all
+	 * nodes in this graph EXCEPT those in the forbiddenNodes set. The operation
+	 * runs in expected constant time in the size of the forbidden set, and linear 
+	 * time in the size of the nodes of the graph.
+	 * @param name String
+	 * @param forbiddenNodes Set  // Set&ltNode&gt
+	 * @return Double or null if there is no node not in forbiddenNodes
+	 */
+	public Double getMaxNodeWeight(String name, Set forbiddenNodes) {
+		if (forbiddenNodes==null || forbiddenNodes.size()==0) 
+			return getMaxNodeWeight(name);
+		// do the work
+		try {
+			getReadAccess();
+			Node[] arr = getNodesSortedDescByWeight(name);
+			for (int i=0; i<arr.length; i++) {
+				Node ai = arr[i];
+				if (!forbiddenNodes.contains(ai)) return ai.getWeightValue(name);
+			}
+			return null;  // no free node available
+		}
+    finally {
+      try {
+        releaseReadAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();
+      }
+    }		
+	}
 
-
+	
   /**
    * return a "printout" of this Graph.
    * @return String
@@ -1162,9 +1431,9 @@ public class Graph implements Serializable {
 
   /**
    *
-   * @param clique Set
+   * @param clique Set // Set&ltInteger nodeid&gt
    * @param minval double
-   * @return Vector Vector<Integer nodeid>
+   * @return Vector // Vector&ltInteger nodeid&gt
    */
   Vector getFullNbors(Set clique, double minval) {
     try {
@@ -1201,22 +1470,56 @@ public class Graph implements Serializable {
 	
 	/**
 	 * updates the max node weight for the given weight name. Only called from 
-	 * <CODE>Node.setWeight(String, double)</CODE>.
-	 * @param name
-	 * @param val 
+	 * <CODE>Node.setWeight(String, double)</CODE> and 
+	 * <CODE>Node.copyWeightsFrom(Node)</CODE>.
+	 * @param name String
+	 * @param val double
 	 */
 	void updateMaxNodeWeight(String name, double val) {
 		Double cur_mnw = (Double) _maxNodeWeights.get(name);
 		if (cur_mnw==null || cur_mnw.doubleValue()<val) {
 			_maxNodeWeights.put(name, new Double(val));
 		}
+		// finally, reset _sortedNodeArrays field
+		_sortedNodeArrays.remove(name);
 	}
 
+	
+	/**
+	 * only called from <CODE>getMaxNodeWeight(name,forbiddennodes)</CODE>, so has
+	 * already read-lock of this graph.
+	 * @param wname String
+	 * @return Node[] sorted descending by weight value of the property wname
+	 */
+	private Node[] getNodesSortedDescByWeight(String wname) {
+		try {
+			Node[] arr = (Node[]) _sortedNodeArrays.get(wname);
+			if (arr==null) {
+				releaseReadAccess();
+				getWriteAccess();
+				if (arr==null) {  // Double-Check Locking style but correct
+					// do the work
+					arr = new Node[_nodes.length];
+					for (int i=0; i<arr.length; i++) arr[i] = _nodes[i];
+					Arrays.sort(arr, new NodeWeightComparator(wname));
+					_sortedNodeArrays.put(wname, arr);
+				}
+				getReadAccess();
+				releaseWriteAccess();
+			}
+			return arr;
+		}
+		catch (ParallelException e) {  // cannot happen
+			e.printStackTrace();
+			throw new Error("unexpected parallel exception in getNodesSortedDescByWeight("+wname+")");
+		}
+	}
+	
 
   /**
-   * nid is a Node id
+   * nid is a Node id,
    * c is the component which this node and all nodes reachable by it
-   * belong to.
+   * belong to. Updates the <CODE>_comps</CODE> data member.
    * @param nid int
    * @param c int
    * @return int number of nodes labeled
@@ -1258,7 +1561,7 @@ public class Graph implements Serializable {
   /**
    *
    * @param lid int
-   * @return Set Set<Integer linkid>
+   * @return Set // Set&ltInteger linkid&gt
    */
   private Set getFullLinkNbors(int lid) {
     try {
@@ -1317,7 +1620,7 @@ public class Graph implements Serializable {
    * returns true iff each node w/ id in the arg. set, can reach any
    * other node whose id is in the arg set by using at most 1 hop that must also
    * be inside the arg. set.
-   * @param nodeids Set
+   * @param nodeids Set // Set&ltInteger nodeid&gt
    * @throws GraphException if arg set is empty or null
    * @return boolean
    */
@@ -1373,7 +1676,7 @@ public class Graph implements Serializable {
    * @param li Link
    * @param maxsetcount Integer
    * @throws GraphException
-   * @return Set
+   * @return Set // Set&ltSet&ltInteger nodeid&gt &gt
    */
   private Set get5CycleBasedConnectedNodes(Link li, Integer maxsetcount)
       throws GraphException {
@@ -1470,7 +1773,7 @@ public class Graph implements Serializable {
 
   /**
    * was used for debugging purposes
-   * @param clique Collection
+   * @param clique Collection  // Collection&ltInteger nid&gt
    */
   private void print(Collection clique) {
     System.out.print("[");
@@ -1481,6 +1784,47 @@ public class Graph implements Serializable {
     }
     System.out.print("]");
   }
+	
+	
+	/**
+	 * auxiliary nested inner class used to sort the graph's nodes.
+	 */
+	class NodeWeightComparator implements Comparator {
+		private String _name;
+		
+		NodeWeightComparator(String name) {
+			_name = name;
+		}
+		public int compare(Object o1, Object o2) {
+			Node n1 = (Node) o1;
+			Node n2 = (Node) o2;
+			Double w1 = n1.getWeightValue(_name);
+			if (w1==null) w1 = new Double(1.0);
+			Double w2 = n2.getWeightValue(_name);
+			if (w2==null) w2 = new Double(1.0);
+			return Double.compare(w2.doubleValue(), w1.doubleValue());
+		}
+	}
 
+	
+	/**
+	 * faster auxiliary nested inner class used to sort the graph's nodes.
+	 */
+	class NodeWeightComparatorUnsynchronized implements Comparator {
+		private String _name;
+		
+		NodeWeightComparatorUnsynchronized(String name) {
+			_name = name;
+		}
+		public int compare(Object o1, Object o2) {
+			Node n1 = (Node) o1;
+			Node n2 = (Node) o2;
+			Double w1 = n1.getWeightValueUnsynchronized(_name);
+			if (w1==null) w1 = new Double(1.0);
+			Double w2 = n2.getWeightValueUnsynchronized(_name);
+			if (w2==null) w2 = new Double(1.0);
+			return Double.compare(w2.doubleValue(), w1.doubleValue());
+		}
+	}
 }
 

@@ -68,12 +68,12 @@ public class Params {
       arr[i] = cm + Math.floor(Math.random() * gap);
       // cm = arr[i];  // by commenting this line out, arr[] is NOT sorted
     }
-    // itc: HERE rm next print out ASAP
-    System.out.print("array  =");
+		/*
+		System.out.print("array  =");
     for (int i=0; i<arr.length; i++) {
       System.out.print(arr[i]+", ");
     }
-
+		*/
     _p = Double.MAX_VALUE;
     _M = k;
     sortArray(arr);

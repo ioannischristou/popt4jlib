@@ -9,8 +9,8 @@ import java.util.*;
 import java.io.Serializable;
 
 /**
- * Multi-threaded version of the IntSetN1RXPFirstImprovingGraphAllMovesMaker
- * class.
+ * Multi-threaded version of the 
+ * <CODE>IntSetN1RXPFirstImprovingGraphAllMovesMaker</CODE> class.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -18,7 +18,7 @@ import java.io.Serializable;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMakerIntf {
+public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMakerClonableIntf {
   private IntSet _soln=null;
 	private int _k;
 	
@@ -26,7 +26,7 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMak
   /**
    * no-arg constructor sets problem type to 2-packing.
    */
-  IntSetN1RXPFirstImprovingGraphAllMovesMakerMT() {
+  public IntSetN1RXPFirstImprovingGraphAllMovesMakerMT() {
     // default _k=2
 		_k = 2;
   }
@@ -37,27 +37,47 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMak
 	 * max weighted independent set problem or the 2-packing problem. 
 	 * @param k 
 	 */
-  IntSetN1RXPFirstImprovingGraphAllMovesMakerMT(int k) {
+  public IntSetN1RXPFirstImprovingGraphAllMovesMakerMT(int k) {
 		_k = k;
   }
+	
+	
+	/**
+	 * cloning method.
+	 * @return IntSetN1RXPFirstImprovingGraphAllMovesMakerMT
+	 */
+	public AllChromosomeMakerClonableIntf newInstance() {
+		return new IntSetN1RXPFirstImprovingGraphAllMovesMakerMT(_k);
+	}
 	
 
   /**
    * implements the N_{-1+P} neighborhood for sets of integers.
-   * @param chromosome Object Set<Integer>
-   * @param params Hashtable must contain a key-value pair
-   * <"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter>
+   * @param chromosome Object Set&ltInteger node-id&gt
+   * @param params Hashtable must contain the following key-value pairs:
+	 * <ul>
+   * <li> &lt"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt
+	 * <li> &lt"dls.graph", Graph g&gt the original problem graph
+	 * </ul>
    * It may also optionally contain the following pairs:
-   * <li> <"dls.intsetneighborhoodmaxnodestotry", Integer max_nodes> which if present
-   * will indicate the maximum number of nodes to try to remove from the current
-   * solution in the "1RXP" local search.
-   * <li> <"dls.numthreads", Integer num_threads> which if present denotes the
-   * number of threads that an a-synchronous batch-task executor will create and
-   * use to execute the generated tasks, default is 1.
-   * The filter must specify what ints to be tried for addition to the set given
-   * an int to be removed from the set.
-   * @throws OptimizerException
-   * @return Vector Vector<Set<Integer> >
+	 * <ul>
+   * <li> &lt"dls.intsetneighborhoodmaxnodestotry", Integer max_nodes&gt which 
+	 * if present will indicate the maximum number of nodes to try to remove from 
+	 * the current solution in the "1RXP" local search.
+   * <li> &lt"dls.numthreads", Integer num_threads&gt which if present denotes 
+	 * the number of threads that an a-synchronous batch-task executor will create 
+	 * and use to execute the generated tasks, default is 1.
+	 * <li> &lt"dls.fpabte", FasterParallelAsynchronousBatchTaskExecutor extor&gt
+	 * which if present is the parallel executor to use, default is null. If such
+	 * an executor is present, the "dls.numthreads" value is ignored.
+	 * <li> &lt"dls.lock_graph", Boolean val&gt which if present and false, 
+	 * indicates that the graph and its elements will be accessed without any
+	 * synchronization. Default is true.
+	 * </ul>
+   * <br>The filter must specify what ints to be tried for addition to the set given
+   * an int to be removed from the set.</br>
+   * @throws OptimizerException if any of the parameters are incorrectly set
+   * @return Vector Vector&ltSet&ltInteger nodeid&gt &gt
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): null chromosome");
@@ -68,6 +88,14 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMak
     Graph g = null;
     FasterParallelAsynchBatchTaskExecutor executor = null;
     try {
+			boolean do_rlock = true;
+			try {
+				Boolean drlB = (Boolean) params.get("dls.lock_graph");
+				if (drlB!=null && drlB.booleanValue()==false) do_rlock=false;
+			}
+			catch (ClassCastException e) {
+				e.printStackTrace();  // ignore
+			}
       int numthreads = 1;
       try {
         Integer ntI = (Integer) params.get("dls.numthreads");
@@ -76,13 +104,18 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMak
       catch (ClassCastException e) {
         e.printStackTrace();  // ignore
       }
-      executor = new FasterParallelAsynchBatchTaskExecutor(numthreads);
+			if (params.containsKey("dls.fpabte")) 
+				executor = (FasterParallelAsynchBatchTaskExecutor) params.get("dls.fpabte");
+			else executor = FasterParallelAsynchBatchTaskExecutor.
+							newFasterParallelAsynchBatchTaskExecutor(numthreads);
       g = (Graph) params.get("dls.graph");
-      g.getReadAccess();
-      rlocked_graph = true;
+      if (do_rlock) {
+				g.getReadAccess();
+				rlocked_graph = true;
+			}
       Set result = null;  // Set<IntSet>
       Set x0 = (Set) chromosome;
-      //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): working w/ a soln of size="+x0.size());  // itc: HERE rm asap
+      //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMakerMT.createAllChromosomes(): working w/ a soln of size="+x0.size());  
       IntSetNeighborhoodFilterIntf filter = (IntSetNeighborhoodFilterIntf)
           params.get("dls.intsetneighborhoodfilter");
       int max_nodes2try = Integer.MAX_VALUE;
@@ -102,10 +135,10 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMak
       while (iter.hasNext() && cont) {
         if (--max_nodes2try==0) return null;  // done with the search
         Integer id = (Integer) iter.next();
-        //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): working w/ id="+id);  // itc: HERE rm asap
+        //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMakerMT.createAllChromosomes(): working w/ id="+id);
         Set rmids = new IntSet();
         rmids.add(id);
-        Vector tryids = filter.filter(rmids, x0, params);  // Vector<Integer>
+        List tryids = filter.filter(rmids, x0, params);  // List<Integer>
         if (tryids!=null) {
           IntSet xnew = new IntSet(x0);
           xnew.removeAll(rmids);
@@ -142,7 +175,7 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMak
       Vector res = null;
       if (result!=null) {
         res = new Vector(result);
-        //System.err.println("IntSetN1RXPAllFirstImprovingGraphMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");  // itc: HERE rm asap
+        //System.err.println("IntSetN1RXPAllFirstImprovingGraphMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");
       }
       return res;
     }
@@ -160,18 +193,20 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMak
           throw new OptimizerException("insanity: ParallelException should not have been thrown");
         }
       }
-      try {
-        executor.shutDown();
-      }
-      catch (ParallelException e) {  // can never get here
-        e.printStackTrace();
-        throw new OptimizerException("insanity: ParallelException should not have been thrown");
-      }
-      catch (ParallelExceptionUnsubmittedTasks e) {  // can never get here
-        e.printStackTrace();
-        throw new OptimizerException("insanity: ParallelExceptionUnsubmittedTasks should not have been thrown:"+
-                                     " total of "+e.getUnsubmittedTasks().size()+" pills reported failing?");
-      }
+			if (params.get("dls.fpabte")==null) {
+				try {
+					executor.shutDown();  // executor was created inside this call
+				}
+				catch (ParallelException e) {  // can never get here
+					e.printStackTrace();
+					throw new OptimizerException("insanity: ParallelException should not have been thrown");
+				}
+	      catch (ParallelExceptionUnsubmittedTasks e) {  // can never get here
+		      e.printStackTrace();
+			    throw new OptimizerException("insanity: ParallelExceptionUnsubmittedTasks should not have been thrown:"+
+				                               " total of "+e.getUnsubmittedTasks().size()+" pills reported failing?");
+				}
+			}
     }
   }
 
@@ -182,24 +217,27 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMak
    * the behavior of this move-maker. This method implements a depth-first
    * search on the space of neighbors to find the first improving solution
    * which it returns immediately (the soln is a maximally-improving soln in the
-   * DF fashion)
-   * @param res Set IntSet
+   * DF fashion). The implementation is recursive.
+   * @param res Set // IntSet
    * @param rmid Integer
-   * @param tryids Vector Vector<Integer>
+   * @param tryids List // List&ltInteger&gt
    * @param maxcard int
-   * @param params Hashtable
-   * @return Set IntSet
+   * @param params Hashtable must contain the pair &lt"dls.graph", Graph g&gt, 
+	 * and may optionally contain the pair &lt"dls.lock_graph", Boolean val&gt 
+	 * which if present and val is false, indicates no read-locking of the graph 
+	 * elements
+   * @return Set // IntSet
    */
-  protected Set createSet(Set res, int rmid, Vector tryids, int maxcard, Hashtable params) {
+  protected Set createSet(Set res, int rmid, List tryids, int maxcard, Hashtable params) {
     IntSet x = (IntSet) res;
     for (int i=0; i<tryids.size(); i++) {
-      Integer tid = (Integer) tryids.elementAt(i);
+      Integer tid = (Integer) tryids.get(i);
       if (tid.intValue()!=rmid) {
         if (x.contains(tid)==false && isOK2Add(tid, x, params)) {
           IntSet x2 = new IntSet(x);
           x2.add(tid);
           Vector tryids2 = new Vector(tryids);
-          tryids2.remove(i);
+          tryids2.remove(i);  // remove the i-th element
           Set res3 = createSet(x2, rmid, tryids2, maxcard-1, params);
           if (res3!=null) return res3;
         }
@@ -215,19 +253,28 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMak
    * Overrides this method to modify the behavior of the base move-maker.
    * @param tid Integer
    * @param x IntSet
-   * @param params Hashtable
+   * @param params Hashtable must contain the pair &lt"dls.graph, Graph g&gt, 
+	 * and may optionally contain the pair &lt"dls.lock_graph, Boolean val&gt 
+	 * which if present and val is false, indicates no read-locking of the graph 
+	 * elements.
    * @return boolean
    */
   protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
     try {
       Graph g = (Graph) params.get("dls.graph");
-      Node n = g.getNode(tid.intValue());
+			boolean do_rlock = true;
+			Object drlO = params.get("dls.lock_graph");
+			if (drlO!=null && drlO instanceof Boolean && ((Boolean) drlO).booleanValue()==false)
+				do_rlock = false;
+      Node n = do_rlock ? g.getNode(tid.intValue()) : g.getNodeUnsynchronized(tid.intValue());
       Set nodes = new TreeSet();
       Iterator xiter = x.iterator();
       while (xiter.hasNext()) {
-        nodes.add(g.getNode(((Integer) xiter.next()).intValue()));
+				Node nx = do_rlock ? g.getNode(((Integer) xiter.next()).intValue()) :
+								             g.getNodeUnsynchronized(((Integer) xiter.next()).intValue());
+        nodes.add(nx);
       }
-      return isFree2Cover(n, nodes, _k);
+      return isFree2Cover(n, nodes, _k, do_rlock);
     }
     catch (Exception e) {
       e.printStackTrace();
@@ -239,22 +286,39 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMak
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set  // Set<Node>
+   * @param active Set  // Set&ltNode&gt
 	 * @param k int
+	 * @param lock boolean // if false then accesses to graph elements will be 
+	 * unsynchronized
    * @return boolean // true iff nj can be added to active
    * @throws ParallelException
    */
-  private static boolean isFree2Cover(Node nj, Set active, int k) throws ParallelException {
+  private static boolean isFree2Cover(Node nj, Set active, int k, boolean do_rlock) 
+	    throws ParallelException {
     if (active==null) return true;
     if (active.contains(nj)) return false;
-    Set activated = new HashSet(active);
+		/* slow
+		Set activated = new HashSet(active);
     Iterator it = active.iterator();
     while (it.hasNext()) {
       Node ni = (Node) it.next();
-      Set nnbors = k==2 ? ni.getNNbors() : ni.getNbors();
+      Set nnbors = k==2 ? 
+							(do_rlock ? ni.getNNbors() : ni.getNNborsUnsynchronized()) : 
+							(do_rlock ? ni.getNbors() : ni.getNborsUnsynchronized());
       activated.addAll(nnbors);
     }
     return !activated.contains(nj);
+		*/
+		// /* faster: no need for HashSet's creation
+		Set nborsj = k==1 ? (do_rlock ? nj.getNbors() : nj.getNborsUnsynchronized()) :
+						            (do_rlock ? nj.getNNbors() : nj.getNNborsUnsynchronized());
+		Iterator itj = nborsj.iterator();
+		while (itj.hasNext()) {
+			Node nnj = (Node) itj.next();
+			if (active.contains(nnj)) return false;
+		}
+		// */
+    return true;
   }
 
 
@@ -268,17 +332,22 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMak
   }
 
 
+	/**
+	 * nested auxiliary class encapsulates the tasks to be sent to the executor 
+	 * created in each call of the <CODE>createAllChromosomes()</CODE> method. 
+	 * Not part of the public API.
+	 */
   class SetCreatorTaskObject implements TaskObject {
-    private final static long serialVersionUID =  -1079591307175127226L;
+    // private final static long serialVersionUID =  -1079591307175127226L;
     private Set _x0;
     private int _id;
-    private Vector _tryids;
+    private List _tryids;
     private int _maxCard;
     private Hashtable _params;
     private boolean _isDone=false;
     private ConditionCounter _cond = null;
 
-    SetCreatorTaskObject(IntSet x, int id, Vector tryids, int maxcard, Hashtable params) {
+    SetCreatorTaskObject(IntSet x, int id, List tryids, int maxcard, Hashtable params) {
       _x0 = x;
       _id = id;
       _tryids = tryids;

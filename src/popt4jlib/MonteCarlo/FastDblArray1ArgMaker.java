@@ -13,8 +13,14 @@ import utils.RndUtil;
 
 
 /**
- *
- * @author itc
+ * creates random <CODE>double[]</CODE> objects of fixed length, according to 
+ * parameters passed in a <CODE>Hashtable</CODE> object.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
  */
 public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
 	private int _arglen;
@@ -23,8 +29,12 @@ public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
 	private double _maxargval;
 	private List _maxargvali;
 	private Random _r;
+	private double[] _lastArg;
 
 
+	/**
+	 * sole public constructor.
+	 */
 	public FastDblArray1ArgMaker() {
 		// no-op
 	}
@@ -33,7 +43,10 @@ public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
 	/**
 	 * creates a new instance that can be used without the need for any
 	 * synchronization when invoked, as different threads own different objects.
+	 * Notice that the <CODE>_lastArg</CODE> data member, if not null, is also 
+	 * deep-copied into the new instance that is returned.
 	 * @param p Hashtable must contain the following params:
+	 * <ul>
    * <li> &lt"mcs.arglength", $integer_value$&gt mandatory, the length
    * of the argument.
    * <li> &lt"mcs.minargvalue", $value$&gt mandatory, the minimum value for
@@ -51,7 +64,8 @@ public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
    * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
-   * @throws OptimizerException
+	 * </ul>
+   * @throws OptimizerException if any of the params above are incorrectly set
    * @return FastDblArray1ArgMaker new instance according to the params passed in
    */
   public RandomArgMakerClonableIntf newInstance(Hashtable params) throws OptimizerException {
@@ -70,6 +84,10 @@ public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
       clone._minargval = ((Double) params.get("mcs.minargvalue")).doubleValue();
       final int id = ((Integer) params.get("thread.id")).intValue();
       clone._r = RndUtil.getInstance(id).getRandom();
+			clone._lastArg = new double[clone._arglen];
+			if (_lastArg!=null) {
+				for (int i=0; i<_arglen; i++) clone._lastArg[i] = _lastArg[i];
+			}
       return clone;
     }
     catch (Exception e) {
@@ -80,8 +98,11 @@ public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
 
 
   /**
-   * creates fixed-length <CODE>double[]</CODE> objects, according to its
-   * data member params.
+   * creates fixed-length <CODE>double[]</CODE> objects, according to the params
+	 * passed in the invocation <CODE>newInstance(params);</CODE> that created
+	 * this object. As a side-effect, the created double[] random vector is also
+	 * stored in the <CODE>_lastArg</CODE> data member, so it can be retrieved by
+	 * a call to <CODE>getCurrentArgument()</CODE>. 
    * @param params Hashtable unused
 	 * @return Object double[].
    */
@@ -100,6 +121,7 @@ public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
           minargvali = maviD.doubleValue();
         arr[i] = minargvali + _r.nextDouble()*(maxargvali-minargvali);
       }
+			_lastArg = arr;  // keep last arg created
       return arr;
     }
     catch (Exception e) {
@@ -107,5 +129,17 @@ public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
       throw new OptimizerException("createRandomArgument: failed");
     }
   }
+	
+	
+	/**
+	 * returns the argument held in the <CODE>_lastArg</CODE> data member, where
+	 * the last argument created by <CODE>createRandomArgument(unused)</CODE> is
+	 * stored.
+	 * @return Object double[] 
+	 */
+	public Object getCurrentArgument() {
+		return _lastArg;
+	}
 
 }
+

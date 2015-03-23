@@ -6,7 +6,7 @@ import java.util.*;
  * Holds BBNodeBase objects to execute (to submit to the BBThreadPool).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -68,6 +68,12 @@ final class BBQueue extends Thread {
   }
 
 
+	/**
+	 * checks if this BBQueue object is done and the thread has already completed
+	 * execution or else will end in the next iteration of the loop in its run()
+	 * method.
+	 * @return boolean true iff done 
+	 */
   synchronized boolean isDone() { return _isDone; }
 
 
@@ -80,6 +86,15 @@ final class BBQueue extends Thread {
   }
 
 
+	/**
+	 * pops and returns the "best" BBNodeBase object in the <CODE>_nodes</CODE>
+	 * queue, according to the <CODE>BBNodeComparatorIntf</CODE> object that is
+	 * returned by the <CODE>BBTree</CODE> object <CODE>getBBNodeComparator</CODE>
+	 * method.
+	 * @return BBNodeBase the current best BBNode* in the _nodes queue
+	 * @throws InterruptedException
+	 * @throws PackingException 
+	 */
   synchronized BBNodeBase popNode() throws InterruptedException, PackingException {
     while (_nodes.size()==0) {
       if (_isDone) return null;
@@ -101,6 +116,19 @@ final class BBQueue extends Thread {
     return _nodes.size();
   }
 
+	
+	/**
+	 * return the estimate on the number of currently busy threads in the pool.
+	 * Notice that while the call executes, it will block any threads in the pool 
+	 * from submitting more work to this queue, as the thread submit their jobs
+	 * via the insertNodes() methods of this object (which are all synchronized as
+	 * well).
+	 * @return int
+	 */
+	synchronized int getNumBusyThreads() {
+		return BBThreadPool.getPool().getNumBusyThreads();
+	}
+	
 
   /**
    * insert a BBNode* object in the queue to be later "run".

@@ -25,12 +25,14 @@ public class DblVarArray1PtXOverOp implements XoverOpIntf {
 
   /**
    * implements standard 1-point crossover between two variable length
-   * arrays of doubles.
+   * arrays of doubles. 
    * @param c1 Object (a double[])
    * @param c2 Object (a double[])
-   * @param params Hashtable must contain a pair <"thread.id", $integer_value$>
-   * @throws OptimizerException
-   * @return Pair containing two new <CODE>double[]</CODE> objects.
+   * @param params Hashtable must contain a pair &lt"thread.id", $integer_value$&gt
+   * @throws OptimizerException if the params are not correctly set
+   * @return Pair containing two new <CODE>double[]</CODE> objects, the first
+	 * having the same dimension as the first argument c1, and the second having
+	 * the same dimension as the second argument c2
    */
   public Pair doXover(Object c1, Object c2, Hashtable params) throws OptimizerException {
     try {

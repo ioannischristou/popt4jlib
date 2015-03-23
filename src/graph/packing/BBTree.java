@@ -3,12 +3,13 @@ package graph.packing;
 import graph.*;
 import parallel.*;
 import java.util.*;
+import popt4jlib.AllChromosomeMakerClonableIntf;
 
 /**
  * represents the Branch&Bound Tree of the method.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -22,7 +23,10 @@ final class BBTree {
   private BBQueue _q;
   private int _maxQSz=Integer.MAX_VALUE;
   private boolean _cutNodes=false;
+	private boolean _sortBestCandsInGBNS2A = false;
   private boolean _localSearch = false;
+	private AllChromosomeMakerClonableIntf _localSearchMovesMaker = null;
+	private double _expandLocalSearchF = 1.0;
   private double _bound;
   private BBNodeBase _root2;
   private int _maxNodesAllowed=Integer.MAX_VALUE;
@@ -34,12 +38,23 @@ final class BBTree {
   private int _maxChildrenNodesAllowed=Integer.MAX_VALUE;
   private int _maxItersInGBNS2A=100000;
   private double _avgPercExtraNodes2Add=0.0;
+	private boolean _useGWMIN24BestNodes2Add=false;
+	private double _minKnownBound = Double.NEGATIVE_INFINITY;
   private BBNodeComparatorIntf _bbnodecomp = null;
 	private int _k;  // _k is the parameter specifying the type of problem 
 	                 // 1 means max. weighted independent set problem, 
-	                 // 2 means 2-packing problem.
+	                 // 2 means 2-packing problem
 	private int _totLeafNodes=0;  // counts total leaf nodes created (representing a maximal solution)
+	private long _numDLSPerformed=0;  // counts total number of local-searches done in this tree
+	private long _timeSpentOnDLS = 0;  // counts total time spend on local-searches in this tree
 
+	static Set _curIncumbent;  // maintains a static cache to the "current BBTree"
+	                           // being explored by BBGASPPacker. The reference is
+	                           // kept only in case of BBGASPPacker.main(args) 
+	                           // interruption happening so that we can print the 
+	                           // current best solution of the currently executing
+	                           // tree. Notice that in case there were many trees 
+	                           // executing in parallel, this wouldn't be possible.
 
   BBTree(Graph g, double initbound, int k) throws PackingException {
     if (g==null) throw new IllegalArgumentException("null graph passed in BBTree ctor");
@@ -54,6 +69,9 @@ final class BBTree {
 			case 2: _root2 = new BBNode2(this, null, null); break;
 			default: throw new IllegalArgumentException("k must be in the set {1,2}");
 		}
+		synchronized (BBTree.class) {
+			_curIncumbent = null;  // delete any previous BBTree's best solution
+		}
   }
 
 
@@ -64,15 +82,24 @@ final class BBTree {
       int nndeg = _g.getNode(i).getNNbors().size();
       if (nndeg>_maxnndeg) _maxnndeg = nndeg;
     }
-    System.err.println("Done making NNbors");  // itc: HERE rm asap
+    // System.err.println("Done making NNbors");
     // use BBQueue
     _q = new BBQueue(_maxQSz, _recentMaxLen);
     _q.insertNode(_root2);
     _q.start();
+		double avg_num_busy_threads = 0.0;
+		int num_checks = 0;
     while (!_q.isDone()) {
       Thread.currentThread().sleep(100);
+			int num_busy_threads = _q.getNumBusyThreads();
+			++num_checks;
+			avg_num_busy_threads = ((num_checks-1)*avg_num_busy_threads+num_busy_threads)/(double)num_checks;
     }
+		System.err.println("avg_num_busy_threads="+avg_num_busy_threads);
     System.out.println("Soln found: "+getBound());  // keep FindBugs happy...
+		synchronized (BBTree.class) {
+			_curIncumbent = null;  // done, reset current-incumbent member.
+		}
   }
 
 
@@ -92,7 +119,11 @@ final class BBTree {
 
   double getAvgPercExtraNodes2Add() { return _avgPercExtraNodes2Add; }
   void setAvgPercExtraNodes2Add(double p) { _avgPercExtraNodes2Add = p; }
-
+	boolean getUseGWMIN24BestNodes2Add() { return _useGWMIN24BestNodes2Add; }
+	void setUseGWMIN24BestNodes2Add(boolean v) { _useGWMIN24BestNodes2Add=v; }
+	void setLocalSearchExpandFactor(double v) { _expandLocalSearchF = v; }
+	double getLocalSearchExpandFactor() { return _expandLocalSearchF; }
+	
   void setMaxQSize(int s) {
     _maxQSz = s;
   }
@@ -128,6 +159,14 @@ final class BBTree {
   void setMaxChildrenNodesAllowed(int n) { _maxChildrenNodesAllowed=n; }
   int getMaxChildrenNodesAllowed() { return _maxChildrenNodesAllowed; }
 
+	void setSortBestCandsInGBNS2A(boolean v) { 
+		_sortBestCandsInGBNS2A = v; 
+	}
+	boolean getSortBestCandsInGBNS2A() {
+		return _sortBestCandsInGBNS2A;
+	}
+	void setMinKnownBound(double v) { _minKnownBound = v; }
+	double getMinKnownBound() { return _minKnownBound; }
   synchronized void setTightenUpperBoundLvl(int lvl) {
     _tightenUpperBoundLvl=lvl;
   }
@@ -138,18 +177,41 @@ final class BBTree {
   }
   void setCutNodes(boolean v) { _cutNodes = v; }
   boolean getCutNodes() { return _cutNodes; }
+	
   void setLocalSearch(boolean v) { _localSearch = v; }
   boolean getLocalSearch() { return _localSearch; }
+	void setLocalSearchType(AllChromosomeMakerClonableIntf maker) {
+		_localSearchMovesMaker = maker;
+	}
+	AllChromosomeMakerClonableIntf getNewLocalSearchMovesMaker() { 
+		return _localSearchMovesMaker==null ?
+						null : _localSearchMovesMaker.newInstance();
+	}
+	/**
+	 * get the total number of local-searches performed in this BB-Tree.
+	 * @return 
+	 */
+	synchronized long getNumDLSPerformed() {
+		return _numDLSPerformed;
+	}
+	/**
+	 * stats book-keeping of DLS's performed.
+	 */
+	synchronized void incrNumDLSPerformed() { ++_numDLSPerformed; }
+	synchronized void incrTimeSpentOnDLS(long dur) { _timeSpentOnDLS += dur; }
+	synchronized long getTimeSpentOnDLS() { return _timeSpentOnDLS; }
   synchronized int incrementCounter() { return ++_counter; }
   synchronized int getCounter() { return _counter; }  // used to be unsynchronized
 
 
   synchronized void setIncumbent(BBNodeBase n) {
-    if (n.getCost()>_bound) {
+		double ncost = n.getCost();
+    if (ncost>_bound) {
       //_incumbent = n;
       _incumbent = new HashSet(n.getNodes());
-      _bound = n.getCost();
+      _bound = ncost;
       System.err.println("new soln found w/ val=" + _bound);
+			_curIncumbent = new HashSet(n.getNodes());  // store new incumbent in static member too
     }
   }
 /*

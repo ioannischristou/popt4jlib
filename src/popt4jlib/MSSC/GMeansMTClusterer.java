@@ -148,7 +148,7 @@ final public class GMeansMTClusterer implements ClustererIntf {
     int ind[];  // to which cluster each doc belongs
     int numi[];  // how many docs each cluster has
     if (_clusterIndices==null) {
-      //System.err.println("GMeansMTClusterer.clusterVectors(): initializing _clusterIndices");  // itc: HERE rm asap
+      //System.err.println("GMeansMTClusterer.clusterVectors(): initializing _clusterIndices");
       ind = new int[n];  // to which cluster each doc belongs
       numi = new int[k];  // how many docs each cluster has
       for (int i = 0; i < k; i++) numi[i] = 0;
@@ -174,13 +174,13 @@ final public class GMeansMTClusterer implements ClustererIntf {
       }
       _clusterIndices = ind;
       //System.err.println("GMeansMTClusterer.clusterVectors(): "+
-      //                   "done initializing _clusterIndices (length="+_clusterIndices.length+")");  // itc: HERE rm asap
+      //                   "done initializing _clusterIndices (length="+_clusterIndices.length+")");
     }
     else {
       // _clusterIndices already exists, and is assumed to have at least one
       // element for each cluster.
       //System.err.println("GMeansMTClusterer.clusterVectors(): "+
-      //                   "_clusterIndices were already initialized (length="+_clusterIndices.length+")");  // itc: HERE rm asap
+      //                   "_clusterIndices were already initialized (length="+_clusterIndices.length+")");
       ind = _clusterIndices;
       numi = getClusterCards();
     }
@@ -221,7 +221,6 @@ final public class GMeansMTClusterer implements ClustererIntf {
       // ind[] is already computed correctly as each thread had a reference to it
       _clusterIndices = ind;
 /*
-      // itc: HERE rm asap from HERE
       System.err.print("inds: [ ");
       for (int i=0; i<n; i++) {
         System.err.print(ind[i]+" ");
@@ -232,7 +231,6 @@ final public class GMeansMTClusterer implements ClustererIntf {
         System.err.print(_centersA[i]+" ");
       }
       System.err.println("]");
-      // itc: HERE rm asap to here
 */
       // finally compute the new centers
       // all threads except last have floor((k-1)/numthreads) work to do
@@ -269,7 +267,7 @@ final public class GMeansMTClusterer implements ClustererIntf {
       stop = ct.isDone();  // check if we're done
       // break up clusters that are not "compact enough"
       if (stop && try_compacting>=0) {
-        System.err.println("trying compacting clusters");  // itc: HERE rm asap
+        // System.err.println("trying compacting clusters");
         try {
           compactClusters(try_compacting);
         }
@@ -330,7 +328,7 @@ final public class GMeansMTClusterer implements ClustererIntf {
     _centers = new Vector();
     try {
       for (int i = 0; i < centers.size(); i++) {
-        _centersA[i] = ((VectorIntf) centers.elementAt(i)).newCopy();
+        _centersA[i] = ((VectorIntf) centers.elementAt(i)).newInstance();  // used to be newCopy();
         _centers.addElement(_centersA[i]);
       }
     }
@@ -758,7 +756,7 @@ class GMClustererAux {
           if (_projectOnEmpty) centers[i] = v;
         }
         else if (!_projectOnEmpty) {
-          //System.err.println("re-assigning center-"+i);  // itc: HERE rm asap
+          //System.err.println("re-assigning center-"+i);
           // centers[i] has no assigned points,
           // assign it to most distant point from thread's centers
           double max_dist = 0.0;
@@ -774,7 +772,7 @@ class GMClustererAux {
               }
             }
           }
-          centers[i] = d_max.newCopy();
+          centers[i] = d_max.newInstance();  // d_max.newCopy();
         }
       }
     }
@@ -829,9 +827,9 @@ class GMClustererThread extends Thread {
 
 
   public void run() {
-    //System.err.println("GMClustererThread.run(): starting");  // itc: HERE rm asap
+    //System.err.println("GMClustererThread.run(): starting");
     _r.go();
-    //System.err.println("GMClustererThread.run(): done");  // itc: HERE rm asap
+    //System.err.println("GMClustererThread.run(): done");
   }
 
 

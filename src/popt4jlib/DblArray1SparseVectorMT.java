@@ -3,7 +3,9 @@ package popt4jlib;
 import parallel.*;
 import parallel.distributed.PDBatchTaskExecutor;
 import utils.DataMgr;
+import java.util.List;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.io.Serializable;
 
 /**
@@ -153,6 +155,30 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
     }
   }
 
+	
+	/**
+   * return a new VectorIntf object containing a copy of the data of this object
+	 * guaranteeing that the returned object is un-managed (not part of any pool).
+	 * @return VectorIntf
+	 */
+	public VectorIntf newInstance() {
+    try {
+      _rwLocker.getReadAccess();
+      if (getIndices()==null) {
+        return new DblArray1SparseVectorMT(getNumCoords());
+      } else return new DblArray1SparseVectorMT(getIndices(), getValues(),
+                                                getNumCoords());
+    }
+    finally {
+      try {
+        _rwLocker.releaseReadAccess();
+      }
+      catch (ParallelException e) {
+        e.printStackTrace();  // never gets here
+      }
+    }		
+	}
+	
 
   /**
    * return a DblArray1SparseVectorMT object containing as data the arg passed
@@ -195,19 +221,23 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
       if (getIndices()==null) {  // vector at origin
         return x;
       }
-      if (_executor!=null && _executor.isLive()) {
+			boolean exec_ok = false;
+			synchronized (DblArray1SparseVectorMT.class) {
+				exec_ok = _executor!=null && _executor.isLive();
+			}
+      if (exec_ok) {
         final int nt = _executor.getNumThreads();
         final int chunk_size = getILen()/nt;
         int j=0;
-        Vector tasks = new Vector();
+        List tasks = new ArrayList();
         for (int i=0; i<nt-1; i++) {
           PopulateTask ti = new PopulateTask(j, j+chunk_size-1, x);
-          tasks.addElement(ti);
+          tasks.add(ti);
           j += chunk_size;
         }
         // last task
         PopulateTask tlast = new PopulateTask(j, getILen()-1, x);
-        tasks.addElement(tlast);
+        tasks.add(tlast);
         try {
           _executor.executeBatch(tasks);
           return x;
@@ -339,21 +369,25 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
       if (ilen == indices.length) { // increase arrays' capacity 20%
         int[] indices2 = new int[ilen + ilen / 5 + 1];
         double[] values2 = new double[ilen + ilen / 5 + 1];
-        if (_executor != null && _executor.isLive() && ilen > MIN_REQ_ILEN) {
+				boolean exec_ok = false;
+				synchronized (DblArray1SparseVectorMT.class) {
+					exec_ok = _executor!=null && _executor.isLive();
+				}
+        if (exec_ok && ilen > MIN_REQ_ILEN) {
           final int nt = _executor.getNumThreads();
           final int chunk_size = getILen() / nt;
           int k = 0;
-          Vector tasks = new Vector();
+          List tasks = new ArrayList();
           for (int ii = 0; ii < nt - 1; ii++) {
             SetCoordTask ti = new SetCoordTask(k, k + chunk_size - 1, indices2,
                                                values2, i, val);
-            tasks.addElement(ti);
+            tasks.add(ti);
             k += chunk_size;
           }
           // last task
           SetCoordTask tlast = new SetCoordTask(k, getILen() - 1, indices2,
                                                 values2, i, val);
-          tasks.addElement(tlast);
+          tasks.add(tlast);
           try {
             _executor.executeBatch(tasks);
             setIndices(indices2);
@@ -418,20 +452,24 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
         }
       }
       else { // use same arrays as there is capacity
-        if (_executor!=null && _executor.isLive() && ilen > MIN_REQ_ILEN) {
+				boolean exec_ok = false;
+				synchronized (DblArray1SparseVectorMT.class) {
+					exec_ok = _executor!=null && _executor.isLive();
+				}
+        if (exec_ok && ilen > MIN_REQ_ILEN) {
           try {
             final int nt = _executor.getNumThreads();
             final int chunk_size = getILen() / nt;
             int k = 0;
-            Vector tasks = new Vector();
+            List tasks = new ArrayList();
             for (int ii = 0; ii < nt - 1; ii++) {
               SetCoordTask2 ti = new SetCoordTask2(k, k + chunk_size - 1, i, val);
-              tasks.addElement(ti);
+              tasks.add(ti);
               k += chunk_size;
             }
             // last task
             SetCoordTask2 tlast = new SetCoordTask2(k, getILen() - 1, i, val);
-            tasks.addElement(tlast);
+            tasks.add(tlast);
             _executor.executeBatch(tasks);
             incrILen();
             return;
@@ -666,21 +704,25 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
       final double[] values = getValues();
       final int[] indices = getIndices();
       if (indices==null) return 0;  // short-cut: vector at origin
-      if (_executor!=null && _executor.isLive() && ilen > MIN_REQ_ILEN) {
+			boolean exec_ok = false;
+			synchronized (DblArray1SparseVectorMT.class) {
+				exec_ok = _executor!=null && _executor.isLive();
+			}
+      if (exec_ok && ilen > MIN_REQ_ILEN) {
         try {
           do_single_thread=false;
           int nt = _executor.getNumThreads();
           int chunk_size = ilen/nt;
-          Vector tasks = new Vector();
+          List tasks = new ArrayList();
           int j=0;
           for (int i=0; i<nt-1; i++) {
             IPTask ti = new IPTask(j, j+chunk_size-1, other);
-            tasks.addElement(ti);
+            tasks.add(ti);
             j += chunk_size;
           }
           // last task
           IPTask last = new IPTask(j, ilen-1, other);
-          tasks.addElement(last);
+          tasks.add(last);
           Vector sums = _executor.executeBatch(tasks);
           double sum = 0.0;
           for (int i=0; i<sums.size(); i++) {
@@ -845,7 +887,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    */
   public synchronized static void setExecutor(int numthreads) throws ParallelException {
     if (_executor==null) {
-      _executor = new PDBatchTaskExecutor(numthreads);
+      _executor = PDBatchTaskExecutor.newPDBatchTaskExecutor(numthreads);
     }
   }
 

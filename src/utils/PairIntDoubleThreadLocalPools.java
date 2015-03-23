@@ -26,6 +26,7 @@ public class PairIntDoubleThreadLocalPools {
     PairIntDoublePool p = (PairIntDoublePool) _pools.get();
     if (p==null) {
       p = new PairIntDoublePool();
+			p.initialize();
       _pools.set(p);
     }
     return p;

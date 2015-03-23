@@ -65,8 +65,8 @@ public class NeuralGasMTClustererTest {
             break;
           }
         }
-        VectorIntf cj = ( (VectorIntf) docs.elementAt(rj)).newCopy();
-        // System.err.println("adding "+cj+" as initial center");  // itc: HERE rm asap
+        VectorIntf cj = ( (VectorIntf) docs.elementAt(rj)).newInstance();  // used to be newCopy();
+        // System.err.println("adding "+cj+" as initial center");
         init_centers.addElement(cj);
       }
       // done initializing clustering

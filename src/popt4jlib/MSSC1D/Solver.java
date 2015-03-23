@@ -442,7 +442,7 @@ public class Solver {
     }
     _incV = part[0][M-1];
     _incumbent = null;
-    // itc: HERE compute the best partition and create a ClusterSet for it in
+    // compute the best partition and create a ClusterSet for it in
     // _incumbent
     _incumbent = new ClusterSet();
     int st = 0;
@@ -450,7 +450,7 @@ public class Solver {
     int k = M;
     while (k>0) {
       en = partcs[st][--k];
-      // System.err.println("going from ["+st+"..."+en+"]");  // itc: HERE rm ASAP
+      // System.err.println("going from ["+st+"..."+en+"]");
       if (en==n) --en;
       Cluster s = new Cluster();
       for (int i = st; i <= en; i++) {

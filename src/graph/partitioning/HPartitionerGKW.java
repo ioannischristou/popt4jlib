@@ -57,7 +57,7 @@ public class HPartitionerGKW implements HPartitionerIntf {
     // modify _devPerc if specified in props overrides metis spec.
     Number dp = (Number) props.get("partitioning.HPartitioner.partitiondevperc");
     if (dp!=null) _devPerc = dp.doubleValue();
-    System.err.println("HPartitionerGKW._devPerc="+_devPerc);  // itc: HERE rm asap
+    //System.err.println("HPartitionerGKW._devPerc="+_devPerc);
     if (init_partition==null) {
       // no, no initial partition
       // create initial partition ensuring no empty block

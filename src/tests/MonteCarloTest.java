@@ -47,15 +47,14 @@ public class MonteCarloTest {
    * <p> if the second optional argument is passed in, it overrides the random
    * seed specified in the params_file.
    * <p> The optional third argument, if present, overrides any max. limit set
-   * on the number of function evaluations allowed. After this limit, the
-   * function will always return Double.MAX_VALUE instead, and won't increase
-   * the evaluation count.
+   * on the number of function evaluations allowed specified in the params_file.
    *
    * @param args String[]
    */
   public static void main(String[] args) {
     try {
       long start_time = System.currentTimeMillis();
+			DblArray1VectorThreadLocalPools.setPoolSize(1);  // 1 vector/thread needed
       Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
       if (args.length>1) {
         long seed = Long.parseLong(args[1]);
@@ -63,17 +62,26 @@ public class MonteCarloTest {
       }
       if (args.length>2) {
         long num = Long.parseLong(args[2]);
-        params.put("maxfuncevalslimit",new Long(num));
+        params.put("maxfuncevalslimit",new Long(num));  // this only "cuts" any 
+				// larger limit set; also it is useless without the wrapper_func
+				// the below method correctly sets the limit on function evaluations
+				params.put("mcs.numtries", new Integer(Integer.parseInt(args[2])));
       }
       FunctionIntf func = (FunctionIntf) params.get("mcs.function");
       FunctionBase wrapper_func = new FunctionBase(func);
-      params.put("mcs.function",wrapper_func);
+      params.put("mcs.function",func);  // used to be wrapper_func
       // FunctionIntf func = (FunctionIntf) params.get("mcs.function");
       MCS opter = new MCS(params);
-      utils.PairObjDouble p = opter.minimize(wrapper_func);  
-      double[] arg = (double[]) p.getArg();
-      System.out.print("best soln found:[");
-      for (int i=0;i<arg.length;i++) System.out.print(arg[i]+" ");
+      utils.PairObjDouble p = opter.minimize(func);  // used to be wrapper_func  
+			if (p.getArg() instanceof double[]) {
+				double[] arg = (double[]) p.getArg();
+				System.out.print("best soln found:[");
+				for (int i=0;i<arg.length;i++) System.out.print(arg[i]+" ");
+			} else if (p.getArg() instanceof DblArray1Vector) {
+				DblArray1Vector arg = (DblArray1Vector) p.getArg();
+				System.out.print("best soln found:[");
+				for (int i=0;i<arg.getNumCoords();i++) System.out.print(arg.getCoord(i)+" ");
+			}
       System.out.println("] VAL="+p.getDouble());
       long dur = System.currentTimeMillis()-start_time;
       System.out.println("total time (msecs): "+dur);

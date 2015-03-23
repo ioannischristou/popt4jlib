@@ -13,9 +13,9 @@ import java.util.*;
  * <CODE>BBNode2</CODE> objects enter a priority queue (<CODE>BBQueue</CODE>)
  * from which nodes are selected for processing (passing them to the
  * <CODE>BBThreadPool</CODE> that is a proxy for a
- * <CODE>parallel.ParallelAsynchBatchTaskExecutor</CODE> executor). It also
- * implements the Runnable interface as the executor requires runnable objects
- * to process.
+ * <CODE>parallel.FasterParallelAsynchBatchTaskExecutor</CODE> executor). It 
+ * also implements the Runnable interface as the executor requires runnable 
+ * objects to process.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -469,7 +469,7 @@ class BBNode2 extends BBNodeBase {
     }
     if (temp.isEmpty()==false) {  // broke out because of too many combinations
 /*
-      System.err.println("adding max. subsets from "+temp.size()+" possible sets");  // itc: HERE rm asap
+      System.err.println("adding max. subsets from "+temp.size()+" possible sets");
       Iterator it = temp.iterator();
       while (it.hasNext()) {
         Set t = (Set) it.next();

@@ -338,7 +338,7 @@ class FCGThread extends Thread {
                           (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
                           (VectorIntf) p.get("fcg.x"+solindex);
     if (x0==null) throw new OptimizerException("no fcg.x"+solindex+" initial point in _params passed");
-    VectorIntf x = x0.newCopy();  // don't modify the initial soln
+    VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
     final int n = x.getNumCoords();
     double gtol = 1e-8;
     try {
@@ -527,18 +527,34 @@ class FCGThread extends Thread {
         }
       }
       double fa = f.eval(xa, p);
-      if (fa<=fbar) return alpha;
+      if (fa<=fbar) {
+				if (xa instanceof PoolableObjectIntf) {
+					((PoolableObjectIntf) xa).release();
+				}
+				return alpha;
+			}
       if (fa>fx+rho*alpha*sTg || fa>=faprev) {
         b = alpha;
         a=aprev;
+				if (xa instanceof PoolableObjectIntf) {
+					((PoolableObjectIntf) xa).release();
+				}
         break;
       }
       // evaluate f'(alpha)
       VectorIntf ga = grad.eval(xa,p);
       double fpa = VecUtil.innerProduct(s,ga);
-      if (Math.abs(fpa) <= -sigma*sTg) return alpha;
+      if (Math.abs(fpa) <= -sigma*sTg) {
+				if (xa instanceof PoolableObjectIntf) {
+					((PoolableObjectIntf) xa).release();
+				}
+				return alpha;
+			}
       if (fpa >= 0) {
         a = alpha; b = aprev;
+				if (xa instanceof PoolableObjectIntf) {
+					((PoolableObjectIntf) xa).release();
+				}
         break;
       }
       double a2aprev = 2.0*alpha - aprev;
@@ -552,6 +568,9 @@ class FCGThread extends Thread {
         alpha = (a2aprev + min_miu_aaprev) / 2.0;
       }
       faprev = fa;
+			if (xa instanceof PoolableObjectIntf) {
+				((PoolableObjectIntf) xa).release();
+			}
     }
     // 2. sectioning phase: find the right h to return
     aprev = a;
@@ -597,7 +616,15 @@ class FCGThread extends Thread {
         // evaluate f'(alpha)
         VectorIntf ga = grad.eval(xa,p);
         double fpa = VecUtil.innerProduct(s,ga);
-        if (Math.abs(fpa) <= -sigma*sTg) return alpha;
+        if (Math.abs(fpa) <= -sigma*sTg) {
+					if (xa instanceof PoolableObjectIntf) {
+						((PoolableObjectIntf) xa).release();
+					}		
+					if (xaj instanceof PoolableObjectIntf) {
+						((PoolableObjectIntf) xaj).release();
+					}
+					return alpha;
+				}
         aprev = a;
         // a = alpha;
         if ((b-a)*fpa>=0) {

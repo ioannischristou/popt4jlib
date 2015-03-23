@@ -80,7 +80,7 @@ public class HPartitionerMLSPP2 implements HPartitionerIntf {
       catch (Exception e) {
         e.printStackTrace();
         // remove this coarsener from the coarseners as it didn't work
-        // coarseners.remove(coarseners.size()-1);  // itc: HERE the coarsener didn't enter the vector so it must not be rm'ed
+        // coarseners.remove(coarseners.size()-1);  // the coarsener didn't enter the vector so it must not be rm'ed
         break;
       }
     }

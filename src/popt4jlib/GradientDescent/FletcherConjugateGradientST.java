@@ -217,7 +217,7 @@ public class FletcherConjugateGradientST implements LocalOptimizerIntf, Observer
                           (VectorIntf) p.get("fcg.x0");
     if (x0==null) throw new OptimizerException("no fcg.x0"+
                                                " initial point in _params passed");
-    VectorIntf x = x0.newCopy();  // don't modify the initial soln
+    VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
     final int n = x.getNumCoords();
     double gtol = 1e-8;
     try {

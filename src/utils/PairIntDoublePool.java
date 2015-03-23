@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * point runs out of space in its thread-local pool.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2014</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -22,6 +22,10 @@ public class PairIntDoublePool {
   private static final int _NUMOBJS = 20000;
   private ArrayList _pool;
   private int _maxUsedPos=-1;
+	private int _minUsedPos=_NUMOBJS;
+	
+	private static final boolean _DO_GET_SANITY_TEST=false;
+	
 
   /**
    * sole public constructor. Creates <CODE>_NUMOBJS</CODE> "empty"
@@ -29,9 +33,11 @@ public class PairIntDoublePool {
    */
   PairIntDoublePool() {
     _pool = new ArrayList(_NUMOBJS);
+		/* itc: 2015-01-15: moved code below to initialize() method
     for (int i=0; i<_NUMOBJS; i++) {
       _pool.add(new PairIntDouble(this, i));
     }
+		*/
   }
 
 
@@ -55,29 +61,70 @@ public class PairIntDoublePool {
   }
 
 
+	/**
+	 * method is only called from <CODE>PairIntDoubleThreadLocalPools</CODE>
+	 * right after this object is constructed to avoid escaping "this" in the 
+	 * constructor.
+	 */
+	void initialize() {
+    for (int i=0; i<_NUMOBJS; i++) {
+      _pool.add(new PairIntDouble(this, i));
+    }		
+	}
+	
+
   /**
-   * return an unmanaged "free" objec from the pool, or null if it cannot find
+   * return an unmanaged "free" object from the pool, or null if it cannot find
    * one.
    * @return PairIntDouble
    */
   PairIntDouble getObjectFromPool() {
-    if (_maxUsedPos<_NUMOBJS-1) {
+    if (_maxUsedPos<_NUMOBJS-1) {  // try the right end
       _maxUsedPos++;
       PairIntDouble dlp = (PairIntDouble) _pool.get(_maxUsedPos);
       dlp.setIsUsed();
       return dlp;
-    }
-    else return null;
+    } else {  // try the left end
+			if (_minUsedPos>0) {
+				_minUsedPos--;
+				PairIntDouble dlp = (PairIntDouble) _pool.get(_minUsedPos);
+				if (_DO_GET_SANITY_TEST && dlp.isUsed()) {
+					Integer yI = null;
+					System.err.println("getObjectFromPool(): left doesn't work: null ref yI="+yI.intValue());  // force NullPointerException
+				}
+				dlp.setIsUsed();
+				if (_minUsedPos>_maxUsedPos) _maxUsedPos = _minUsedPos;
+				return dlp;
+			}
+		}
+    return null;
   }
 
+	
+	/**
+	 * return the argument into the pool.
+	 * @param dlp PairIntDouble
+	 */
   void returnObjectToPool(PairIntDouble dlp) {
+		// corner case: the returned object was the only one "out-of-the-pool"
+		if (_maxUsedPos==_minUsedPos) {
+			_maxUsedPos = -1;
+			_minUsedPos = _NUMOBJS;
+			return;
+		}
     if (dlp.getPoolPos()==_maxUsedPos) {
       --_maxUsedPos;
       while (_maxUsedPos>=0 &&
              ((PairIntDouble)_pool.get(_maxUsedPos)).isUsed()==false)
         --_maxUsedPos;
     }
-    return;
+  	if (dlp.getPoolPos()==_minUsedPos) {
+			++_minUsedPos;
+			while (_minUsedPos<_NUMOBJS &&
+						 ((PairIntDouble)_pool.get(_minUsedPos)).isUsed()==false)
+				++_minUsedPos;
+		}
+		return;
   }
 
 }

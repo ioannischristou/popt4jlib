@@ -25,11 +25,15 @@ public class DblArray1Vector1AlleleMutationOp implements MutationOpIntf {
 
   /**
    * the operation mutates each chromosome argument (not a DGAIndividual, not a
-   * Function() arg object) and stores the new chromosome in a Pair object that
-   * is returned.
+   * Function() arg object) and stores them in a Pair object that is returned.
+	 * Notice that the arguments themselves ARE actually changed after this call
+	 * (NO new vectors are created by this process). The mutations occur using
+	 * Gaussian processes (not uniform), but return values in the ranges specified
+	 * in the params argument.
    * @param chromosome1 Object DblArray1Vector
    * @param chromosome2 Object DblArray1Vector
    * @param params Hashtable should contain the following key-value pairs:
+	 * <ul>
    * <li> &lt"dga.minallelevalue", $value$&gt optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
    * <li> &lt"dga.minallelevalue$i$", $value$&gt optional, the minimum value for
@@ -45,8 +49,10 @@ public class DblArray1Vector1AlleleMutationOp implements MutationOpIntf {
    * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
-   * @throws OptimizerException
-   * @return Pair
+	 * </ul>
+   * @throws OptimizerException if any of the above params are incorrectly set
+	 * or if the process somehow fails
+   * @return Pair Pair&ltDblArray1Vector, DblArray1Vector&gt
    */
   public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
     try {

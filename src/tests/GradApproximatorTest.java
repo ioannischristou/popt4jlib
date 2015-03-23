@@ -62,7 +62,7 @@ public class GradApproximatorTest {
         VectorIntf ga0 = ga.eval(x0, p);
         double normga0 = VecUtil.norm(ga0, 2);
         System.out.println("ga0(" + x0 + ")=" + ga0 + " norm2=" + normga0);
-        VectorIntf g2 = ga0.newCopy();
+        VectorIntf g2 = ga0.newInstance();  // ga0.newCopy();
         for (int i = 0; i < n; i++) {
           g2.setCoord(i, ga0.getCoord(i) - g0.getCoord(i));
         }
@@ -79,7 +79,7 @@ public class GradApproximatorTest {
         VectorIntf ga0 = ga.eval(x0, p);
         double normga0 = VecUtil.norm(ga0, 2);
         System.out.println("ga0(" + x0 + ")=" + ga0 + " norm2=" + normga0);
-        VectorIntf g2 = ga0.newCopy();
+        VectorIntf g2 = ga0.newInstance();  // ga0.newCopy();
         for (int i = 0; i < n; i++) {
           g2.setCoord(i, ga0.getCoord(i) - g0.getCoord(i));
         }

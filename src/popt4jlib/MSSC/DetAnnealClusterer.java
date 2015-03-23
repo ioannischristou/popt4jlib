@@ -98,7 +98,7 @@ public final class DetAnnealClusterer implements ClustererIntf {
     if (_centers!=null) _centers.clear();
     else _centers = new Vector();  // _centers is not supposed to be initialized
     VectorIntf y1 = VecUtil.getCenter(_docs);
-    VectorIntf y1_dup = y1.newCopy();  // duplicate the center
+    VectorIntf y1_dup = y1.newInstance();  // used to be y1.newCopy();  // duplicate the center
     try {
       y1_dup.addMul(delta, one);
     }
@@ -180,9 +180,9 @@ public final class DetAnnealClusterer implements ClustererIntf {
             utils.Messenger.getInstance().msg("Phase Transition for cluster center j=" + j,0);
             VectorIntf yj = (VectorIntf) _centers.elementAt(j);
             // set the duplicate of yj to be the same again
-            VectorIntf yj_dup = yj.newCopy();
+            VectorIntf yj_dup = yj.newInstance();  // yj.newCopy();
             _centers.set(j + 1, yj_dup);
-            VectorIntf y_new = yj.newCopy();
+            VectorIntf y_new = yj.newInstance();  // yj.newCopy();
             try {
               y_new.addMul(delta, one);
             }
@@ -191,7 +191,7 @@ public final class DetAnnealClusterer implements ClustererIntf {
             }
             utils.Messenger.getInstance().msg("Added new center (tot.real centers=" +
                                k_cur / 2 + ") : " + y_new,1);
-            VectorIntf y_new2 = y_new.newCopy();
+            VectorIntf y_new2 = y_new.newInstance();  // y_new.newCopy();
             try {
               y_new2.addMul(delta, one);
             }
@@ -224,7 +224,7 @@ public final class DetAnnealClusterer implements ClustererIntf {
       _centers.remove(i);
     }
     k_cur = _centers.size();
-    utils.Messenger.getInstance().msg("final k_cur="+k_cur,1);  // itc: HERE rm asap
+    //utils.Messenger.getInstance().msg("final k_cur="+k_cur,1);
     _clusterIndices = new int[n];
     for (int j=0; j<n; j++) {
       VectorIntf dj = (VectorIntf) _docs.elementAt(j);

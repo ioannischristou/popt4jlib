@@ -19,7 +19,7 @@ import java.util.*;
  * The thread-pool will grow in size when tasks are submitted and there are
  * no available threads to run them (up to a certain max capacity threshold).
  *
- * Notice that the max. capacity on threads to be created entails a hidden
+ * <p>Notice that the max. capacity on threads to be created entails a hidden
  * possibility for starvation: if up to capacity tasks are sent to this
  * executor, and will all be waiting for messages (or, are more generally
  * dependent upon) other tasks to be created and executed later from this same
@@ -28,10 +28,11 @@ import java.util.*;
  * latter tasks that are waiting for the former ones to finish. In general,
  * such an application must know in advance the maximum number of tasks that
  * may be waiting concurrently for others, and specify a thread-capacity above
- * this maximum. Another option would be to use the <CODE>LimitedTimeTaskExecutor</CODE>
+ * this maximum. 
+ * Another option would be to use the <CODE>LimitedTimeTaskExecutor</CODE>
  * with no upper bound on the task execution time (the latter mentioned executor
  * does not pose any upper bound on the number of threads that may be created
- * in its thread-pool.)
+ * in its thread-pool.)</p>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -42,7 +43,7 @@ import java.util.*;
 public final class DynamicAsynchTaskExecutor {
   private static int _nextId = 0;
   private int _id;  // DynamicAsynchTaskExecutor id
-  private Vector _threads;
+  private List _threads;  // used to be Vector
   private int _maxNumThreads;
   private boolean _isRunning;
   private boolean _runOnCurrent=true;
@@ -50,22 +51,53 @@ public final class DynamicAsynchTaskExecutor {
   private long _numTasksSubmitted=0;
   private SimpleFasterMsgPassingCoordinator _sfmpc;
 
+	
+	/**
+	 * replaces public constructor.
+	 * @param numthreads int
+	 * @param maxthreads int
+	 * @return DynamicAsynchTaskExecutor properly initialized
+	 * @throws ParallelException 
+	 */
+	public static DynamicAsynchTaskExecutor newDynamicAsynchTaskExecutor(int numthreads, int maxthreads) throws ParallelException {
+		DynamicAsynchTaskExecutor ex = new DynamicAsynchTaskExecutor(numthreads, maxthreads);
+		ex.initialize();
+		return ex;
+	}
+	
+	
+	/**
+	 * replaces public constructor.
+	 * @param numthreads int
+	 * @param maxthreads int
+	 * @param runoncurrent boolean
+	 * @return DynamicAsynchTaskExecutor properly initialized
+	 * @throws ParallelException 
+	 */
+	public static DynamicAsynchTaskExecutor newDynamicAsynchTaskExecutor(int numthreads, int maxthreads, 
+					                                                             boolean runoncurrent) throws ParallelException {
+		DynamicAsynchTaskExecutor ex = new DynamicAsynchTaskExecutor(numthreads, maxthreads, runoncurrent);
+		ex.initialize();
+		return ex;
+	}	
+	
 
   /**
-   * public constructor, constructing a thread-pool of numthreads threads.
+   * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of initial threads in the thread-pool
    * @param maxthreads int the max. number of threads in the thread-pool
-   * @throws ParallelException if numthreads <= 0 or if too many threads are
-   * asked to be created or if maxthreads < numthreads.
+   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * asked to be created or if maxthreads &lt numthreads.
    */
-  public DynamicAsynchTaskExecutor(int numthreads, int maxthreads) throws ParallelException {
+  private DynamicAsynchTaskExecutor(int numthreads, int maxthreads) throws ParallelException {
     if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
     if (maxthreads > SimpleFasterMsgPassingCoordinator.getMaxSize() ||
         numthreads > maxthreads)
       throw new ParallelException("cannot construct so many threads");
     _id = getNextObjId();
-    _threads = new Vector(numthreads);  // numthreads arg. denotes capacity
+    _threads = new ArrayList(numthreads);  // numthreads arg. denotes capacity
     _maxNumThreads = maxthreads;
+		/* itc 2015-15-01: moved to initialize() method
     for (int i=0; i<numthreads; i++) {
       Thread ti = new DATEThread(this, -(i+1));
       _threads.addElement(ti);
@@ -74,24 +106,41 @@ public final class DynamicAsynchTaskExecutor {
     }
     _isRunning = true;
     _sfmpc = SimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor" + _id);
+		*/
   }
 
 
   /**
-   * public constructor, constructing a thread-pool of numthreads threads.
+   * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool.
    * @param maxthreads int the max number of threads in the thread-pool.
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full and no new thread can be created.
-   * @throws ParallelException if numthreads <= 0 or if numthreads>maxthreads.
+   * @throws ParallelException if numthreads &lte 0 or if numthreads>maxthreads.
    */
-  public DynamicAsynchTaskExecutor(int numthreads, int maxthreads,
+  private DynamicAsynchTaskExecutor(int numthreads, int maxthreads,
                                    boolean runoncurrent)
       throws ParallelException {
     this(numthreads, maxthreads);
     _runOnCurrent = runoncurrent;
   }
 
+	
+	/**
+	 * called exactly once, right after an object has been constructed.
+	 */
+	private void initialize() {
+		final int numthreads = _threads.size();
+    for (int i=0; i<numthreads; i++) {
+      Thread ti = new DATEThread(this, -(i+1));
+      _threads.add(ti);
+      ti.setDaemon(true);  // thread will end when main thread ends
+      ti.start();
+    }
+    _isRunning = true;
+    _sfmpc = SimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor" + _id);		
+	}
+	
 
   /**
    * get the current number of tasks in the queue awaiting processing.
@@ -132,13 +181,13 @@ public final class DynamicAsynchTaskExecutor {
     synchronized (this) {
       ++_numTasksSubmitted;
       utils.Messenger.getInstance().msg("Current total #threads="+getNumThreads(),1);
-      if (isOK2SubmitTask()) {
+      if (isOK2SubmitTask() || task instanceof DATEPoissonPill) {
         _sfmpc.sendDataBlocking(_id, task);
       }
       else {
         if (getNumThreads() < _maxNumThreads) { // create new thread
           Thread ti = new DATEThread(this, - (getNumThreads() + 1));
-          _threads.addElement(ti);
+          _threads.add(ti);
           ti.setDaemon(true); // thread will end when main thread ends
           ti.start();
           _sfmpc.sendDataBlocking(_id, task);
@@ -212,11 +261,11 @@ public final class DynamicAsynchTaskExecutor {
    * compute the difference between total tasks submitted to the associated
    * <CODE>SimpleFasterMsgPassingCoordinator</CODE> object, and the total tasks
    * run by the threads in the thread-pool, and return ok if this number is less
-   * than the total current number of threads - 1.
+   * than the total current number of threads.
    * @return boolean
    */
   private synchronized boolean isOK2SubmitTask() {
-    return _numTasksSubmitted - _numTasksHandled < _threads.size()-1;
+    return _numTasksSubmitted - _numTasksHandled < _threads.size();
   }
 
   private synchronized boolean isRunning() { return _isRunning; }
@@ -226,7 +275,7 @@ public final class DynamicAsynchTaskExecutor {
 
 
   /**
-   * helper class for DynamicAsynchTaskExecutor.
+   * nested helper class for DynamicAsynchTaskExecutor.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
    * <p>Copyright: Copyright (c) 2011</p>
@@ -286,7 +335,7 @@ public final class DynamicAsynchTaskExecutor {
 
 
   /**
-   * class indicates shut-down of thread-pool
+   * nested helper class indicates shut-down of thread-pool
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
    * <p>Copyright: Copyright (c) 2011</p>

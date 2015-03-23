@@ -112,6 +112,17 @@ public class DblArray1SparseVector implements SparseVectorIntf {
     return new DblArray1SparseVector(_indices, _values, _n, multFactor);
   }
 
+	
+	/**
+   * return a new VectorIntf object containing a copy of the data of this object
+	 * guaranteeing that the return object is not managed (not part of any pool).
+	 * @return VectorIntf
+	 */
+	public VectorIntf newInstance() {
+    if (_indices==null) return new DblArray1SparseVector(_n);
+    return new DblArray1SparseVector(_indices, _values, _n);		
+	}
+	
 
   /**
    * return a DblArray1SparseVector object containing as data the arg passed in.

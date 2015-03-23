@@ -37,12 +37,12 @@ public final class GASPPacker {
     _g.makeNNbors();
     final int gsz = _g.getNumNodes();
     NodeComparator comp = new NodeComparator();
-    //System.err.println("done making dist-2 nbors");  // itc: HERE rm asap
+    //System.err.println("done making dist-2 nbors");
     _nodesq = new TreeSet(comp);
     for (int i=0; i<gsz; i++) {
       _nodesq.add(g.getNode(i));
     }
-    //System.err.println("done sorting");  // itc: HERE rm asap
+    //System.err.println("done sorting");
   }
 
 

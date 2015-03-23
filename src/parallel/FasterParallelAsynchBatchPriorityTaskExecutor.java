@@ -5,7 +5,10 @@ import java.io.*;
 
 /**
  * A faster class that implements thread-pooling to allow its users to execute
- * concurrently batch of tasks implementing the ComparableTaskObject interface.
+ * concurrently batch of tasks implementing the 
+ * <CODE>ComparableTaskObject</CODE> interface (or the extending interface,
+ * <CODE>ThreadSpecificComparableTaskObject</CODE> encapsulating the requirement
+ * that the task be run on a thread with a particular thread-id).
  * The run() method of each task must clearly
  * be thread-safe!, and also, after calling executeBatch(tasks), no thread
  * (including the one in which the call originated) should manipulate in any
@@ -21,7 +24,7 @@ import java.io.*;
  * different objects as long as the constraints mentioned above are satisfied.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2014</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -34,43 +37,90 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
   private boolean _runOnCurrent=true;
   private SimplePriorityMsgPassingCoordinator _spmpc;
 
-
+	
   /**
-   * public constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
-   * @throws ParallelException if numthreads <= 0 or if too many threads are
+	 * @return FasterParallelAsynchBatchPriorityTaskExecutor properly initialized
+   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * asked to be created.
+   */	
+	public static FasterParallelAsynchBatchPriorityTaskExecutor newFasterParallelAsynchBatchPriorityTaskExecutor(int numthreads) throws ParallelException {
+		FasterParallelAsynchBatchPriorityTaskExecutor ex = new FasterParallelAsynchBatchPriorityTaskExecutor(numthreads);
+		ex.initialize();
+		return ex;
+	}
+
+	
+  /**
+   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * @param numthreads int the number of threads in the thread-pool
+   * @param runoncurrent boolean if false no task will run on current thread in
+   * case the threads in the pool are full.
+	 * @return FasterParallelAsynchBatchPriorityTaskExecutor properly initialized
+   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * asked to be created.
+   */		
+	public static FasterParallelAsynchBatchPriorityTaskExecutor newFasterParallelAsynchBatchPriorityTaskExecutor(int numthreads, boolean runoncurrent) throws ParallelException {
+		FasterParallelAsynchBatchPriorityTaskExecutor ex = new FasterParallelAsynchBatchPriorityTaskExecutor(numthreads, runoncurrent);
+		ex.initialize();
+		return ex;
+	}
+
+	
+  /**
+   * private constructor, constructing a thread-pool of numthreads threads.
+   * @param numthreads int the number of threads in the thread-pool
+   * @throws ParallelException if numthreads &lte 0 or if too many threads are
    * asked to be created.
    */
-  public FasterParallelAsynchBatchPriorityTaskExecutor(int numthreads) throws ParallelException {
+  private FasterParallelAsynchBatchPriorityTaskExecutor(int numthreads) throws ParallelException {
     if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
     if (numthreads > SimplePriorityMsgPassingCoordinator.getMaxSize()/2)
       throw new ParallelException("cannot construct so many threads");
     _id = getNextObjId();
     _threads = new FPABPTEThread[numthreads];
-    for (int i=0; i<numthreads; i++) {
+    /* itc: 2015-15-01: moved to initialize() method
+		for (int i=0; i<numthreads; i++) {
       _threads[i] = new FPABPTEThread(this, -(i+1));
       _threads[i].setDaemon(true);  // thread will end when main thread ends
       _threads[i].start();
     }
     _isRunning = true;
     _spmpc = SimplePriorityMsgPassingCoordinator.getInstance("FasterParallelAsynchBatchPriorityTaskExecutor" + _id);
+		*/
   }
 
 
   /**
-   * public constructor, constructing a thread-pool of numthreads threads.
+   * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full.
-   * @throws ParallelException if numthreads <= 0.
+   * @throws ParallelException if numthreads &lte 0.
    */
-  public FasterParallelAsynchBatchPriorityTaskExecutor(int numthreads,
+  private FasterParallelAsynchBatchPriorityTaskExecutor(int numthreads,
                                                        boolean runoncurrent)
       throws ParallelException {
     this(numthreads);
     _runOnCurrent = runoncurrent;
   }
 
+	
+	/**
+	 * called exactly once after this object is constructed.
+	 */
+	private void initialize() {
+		final int numthreads = _threads.length;
+		for (int i=0; i<numthreads; i++) {
+      _threads[i] = new FPABPTEThread(this, -(i+1));
+      _threads[i].setDaemon(true);  // thread will end when main thread ends
+      _threads[i].start();
+    }
+    _isRunning = true;
+    _spmpc = SimplePriorityMsgPassingCoordinator.getInstance("FasterParallelAsynchBatchPriorityTaskExecutor" + _id);		
+	}
+	
 
   /**
    * get the current number of tasks in the queue awaiting processing.
@@ -114,7 +164,11 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * running tasks in the current thread and some tasks could not be sent to
    * the thread-pool due to a full <CODE>SimplePriorityMsgPassingCoordinator</CODE>
    * msg-queue; in this case the unsubmitted tasks are returned inside the
-   * exception object.
+   * exception object, along with any object in the <CODE>tasks</CODE> argument
+	 * that does not implement the <CODE>ComparableTaskObject</CODE> interface (if 
+	 * there is even a single such object, this exception will be thrown as well,
+	 * even though all other <COCE>ComparableTaskObject</CODE> objects in the arg.
+	 * will be submitted normally for execution).
    */
   public void executeBatch(Collection tasks) throws ParallelException, ParallelExceptionUnsubmittedTasks {
     if (tasks == null)return;
@@ -136,7 +190,9 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
           unsubmitted_tasks.add(t);
           continue; // ignore task and continue
         }
-        if ( (!_runOnCurrent && existsRoom()) || existsIdleThread()) { // ok
+        if ( (!_runOnCurrent && existsRoom()) || 
+								existsIdleThread() || 
+								task instanceof ComparablePoissonPill) {  // ok
           _spmpc.sendDataBlocking(task);
         }
         else {
@@ -168,7 +224,10 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
 
   /**
    * executes in one of the threads in the thread-pool of this executor the
-   * task argument. The task will never run on the current thread.
+   * task argument. The task will never be attempted to run on the current 
+	 * thread (but it might eventually run on this thread, if this call is made
+	 * from one of the executor's threads, and it's the same one eventually chosen
+	 * to run the submitted task).
    * @param task ComparableTaskObject
    * @return boolean true iff the task was successfully submitted.
    * @throws ParallelException if the executor is not running
@@ -198,7 +257,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
   /**
    * shut-down all the threads in this executor's thread-pool. It is the
    * caller's responsibility to ensure that after this method has been called
-   * no other thread (including the threads in the thread-pool) won't call the
+   * no other thread (including the threads in the thread-pool) will call the
    * executeBatch() method. Use of condition-counters or similar (e.g. as in the
    * class <CODE>graph.AllMWCFinderBKMT</CODE>) may be necessary when tasks
    * given to the thread-pool for execution may call the
@@ -243,7 +302,16 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
     else return 0;
   }
 
+	
+	/**
+	 * method exists for debugging purposes only.
+	 * @return String 
+	 */
+	public String getDataQueueAsString() {
+		return _spmpc.toString();
+	}
 
+	
   int getObjId() { return _id; }
 
 
@@ -254,7 +322,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    */
   private synchronized boolean existsRoom() {
     return getNumTasksInQueue() <
-           SimpleFasterMsgPassingCoordinator.getMaxSize()-2*_threads.length;
+           SimplePriorityMsgPassingCoordinator.getMaxSize()-2*_threads.length;
   }
 
 
@@ -288,7 +356,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
  * @author Ioannis T. Christou
  * @version 1.0
  */
-class FPABPTEThread extends Thread {
+class FPABPTEThread extends Thread implements popt4jlib.IdentifiableIntf {
   private FasterParallelAsynchBatchPriorityTaskExecutor _e;
   private int _id;
   private boolean _isIdle=true;
@@ -306,9 +374,11 @@ class FPABPTEThread extends Thread {
 
   /**
    * the run() method of the thread, loops continuously, waiting for a task
-   * to arrive via the SimpleFasterMsgPassingCoordinator class and executes it.
+   * to arrive via the <CODE>SimplePriorityMsgPassingCoordinator</CODE> class 
+	 * and executes it.
    * Any exceptions the task throws are caught & ignored. In case the data that
-   * arrives is a PoissonPill, the thread exits its run() loop.
+   * arrives is a <CODE>ComparablePoissonPill</CODE>, the thread exits its 
+	 * <CODE>run()</CODE> loop.
    */
   public void run() {
     final int fpbteid = _e.getObjId();
@@ -316,7 +386,7 @@ class FPABPTEThread extends Thread {
         SimplePriorityMsgPassingCoordinator.getInstance("FasterParallelAsynchBatchPriorityTaskExecutor"+fpbteid);
     boolean do_run = true;
     while (do_run) {
-      Object data = fpabptetmpc.recvData();
+      Object data = fpabptetmpc.recvData(_id);  // used to be recvData();
       setIdle(false);
       try {
         if (data instanceof ComparableTaskObject) ( (ComparableTaskObject) data).run();
@@ -333,6 +403,19 @@ class FPABPTEThread extends Thread {
     }
   }
 
+	// IdentifiableIntf method below
+	/**
+	 * This implementation returns the id this object gets in construction time.
+	 * Therefore, if there exist more than one 
+	 * <CODE>FasterParallelAsynchBatchPriorityTaskExecutor</CODE> objects in a JVM
+	 * there will be more than one <CODE>FPABPTEThread</CODE> objects with the 
+	 * same id. However, if the id is always only used with the same executor,
+	 * there is no problem as there will never be two threads created by the same
+	 * executor, both (threads) having the same id.
+	 * @return long _id
+	 */
+	public long getId() { return _id; }
+	
   synchronized void setIdle(boolean v) { _isIdle = v; }
   synchronized boolean isIdle() { return _isIdle; }
 }

@@ -5,10 +5,11 @@ import utils.*;
 import java.util.*;
 
 /**
- * the class implements the notion of the N_2+1 neighborhood of a set of integers.
- * In particular, it is the same as the IntSetN2AllMovesMaker plus it adds to
- * each one of the previously created sets one or more integers (the
- * selection is only from the set of filter results).
+ * the class implements the notion of the N_{2+1} neighborhood of a set of 
+ * integers. In particular, it is the same as the 
+ * <CODE>IntSetN2AllMovesMaker</CODE> plus it adds to each one of the previously 
+ * created sets one or more integers (the selection is only from the set of 
+ * filter results).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -26,13 +27,13 @@ public class IntSetN21AllMovesMaker  implements AllChromosomeMakerIntf {
 
   /**
    * implements the N_2+1 neighborhood for sets of integers.
-   * @param chromosome Object Set<Integer>
+   * @param chromosome Object // Set&ltInteger&gt
    * @param params Hashtable must contain a key-value pair
-   * <"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter>
+   * &lt"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt
    * The filter specifies the ints to be tried for addition to
    * the set given an int to be removed from the set.
    * @throws OptimizerException
-   * @return Vector Vector<Set<Integer> >
+   * @return Vector // Vector&ltIntSet&gt
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN21AllMovesMaker.createAllChromosomes(): null chromosome");
@@ -44,7 +45,7 @@ public class IntSetN21AllMovesMaker  implements AllChromosomeMakerIntf {
       Iterator iter = x0.iterator();
       while (iter.hasNext()) {
         Integer id = (Integer) iter.next();
-        Vector tryids = filter.filter(id, x0, params);  // Vector<Integer>
+        List tryids = filter.filter(id, x0, params);  // List<Integer>
         if (tryids!=null) {
           IntSet xnew = new IntSet(x0);
           xnew.remove(id);  // remove one
@@ -58,7 +59,7 @@ public class IntSetN21AllMovesMaker  implements AllChromosomeMakerIntf {
       }
       // convert Set<IntSet> to Vector<IntSet>
       Vector res = new Vector(result);
-      //System.err.println("IntSetN21AllMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");  // itc: HERE rm asap
+      //System.err.println("IntSetN21AllMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");  
       return res;
     }
     catch (Exception e) {
@@ -72,18 +73,18 @@ public class IntSetN21AllMovesMaker  implements AllChromosomeMakerIntf {
    * hook method in the context of the Template Method Design Pattern.
    * Sub-classes with more domain knowledge may override this method to modify
    * the behavior of this move-maker.
-   * @param res Set TreeSet<IntSet>
+   * @param res Set // TreeSet&ltIntSet&gt
    * @param id Integer
-   * @param tryids Vector Vector<Integer>
+   * @param tryids List // List&ltInteger&gt
    * @param maxcard int
    * @param params Hashtable
-   * @return Set  TreeSet<IntSet>
+   * @return Set // TreeSet&ltIntSet&gt
    */
-  protected Set createSets(Set res, Integer id, Vector tryids, int maxcard, Hashtable params) {
+  protected Set createSets(Set res, Integer id, List tryids, int maxcard, Hashtable params) {
     if (maxcard==0) return res;
     Set res2 = new TreeSet(res);  // was new TreeSet();
     for (int i=0; i<tryids.size(); i++) {
-      Integer tid = (Integer) tryids.elementAt(i);
+      Integer tid = (Integer) tryids.get(i);
       if (tid.intValue()!=id.intValue()) {
         Iterator iter = res.iterator();
         while (iter.hasNext()) {
@@ -101,13 +102,13 @@ public class IntSetN21AllMovesMaker  implements AllChromosomeMakerIntf {
 
 
   /**
-   * hook method in the context of the Template Method Design Pattern.
-   * Sub-classes with more domain knowledge may override this method to modify
-   * the behavior of this move-maker.
-   * @param tid Integer
-   * @param x IntSet
-   * @param params Hashtable
-   * @return boolean
+   * always returns true. Hook method in the context of the Template Method 
+	 * Design Pattern. Sub-classes with more domain knowledge may override this 
+	 * method to modify the behavior of this move-maker.
+   * @param tid Integer unused
+   * @param x IntSet unused
+   * @param params Hashtable unused
+   * @return boolean true
    */
   protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
     return true;

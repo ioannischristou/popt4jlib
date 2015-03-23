@@ -86,7 +86,10 @@ public final class OneDStepQuantumOptimizer {
       if (_dir>0) {
         if (news>=upperbound) {  // return closest feasible point to upperbound
           long k = (long) Math.floor((upperbound-x0.getCoord(varindex))/stepquantum);
-          return x0.getCoord(varindex) + k*stepquantum;
+          if (x instanceof PoolableObjectIntf) {
+						((PoolableObjectIntf) x).release();
+					}
+					return x0.getCoord(varindex) + k*stepquantum;
         }
         s += step;
         if (prevdir<0 && step>stepquantum) {
@@ -97,6 +100,9 @@ public final class OneDStepQuantumOptimizer {
       else {  // _dir<0
         if (news<=lowerbound) {  // return closest feasible point to lowerbound
           long k = (long) Math.ceil((x0.getCoord(varindex)-lowerbound)/stepquantum);
+          if (x instanceof PoolableObjectIntf) {
+						((PoolableObjectIntf) x).release();
+					}
           return x0.getCoord(varindex) - k*stepquantum;
         }
         s -= step;
@@ -108,6 +114,9 @@ public final class OneDStepQuantumOptimizer {
       prevdir = _dir;
     }  // while true
     if (Math.abs(sqt-x0.getCoord(varindex))<=ftol) _dir = -2;  // indicate no change
+    if (x instanceof PoolableObjectIntf) {
+			((PoolableObjectIntf) x).release();
+		}
     return sqt;
   }
 
@@ -149,7 +158,7 @@ public final class OneDStepQuantumOptimizer {
           x.setCoord(j, s2);
           cnew = f.eval(x, params);
           //utils.Messenger.getInstance().msg("ODSQO.detdir(): f(x" + j + "=" +
-          //                                  s2 + ")=" + cnew+" eps3="+eps, 0); // itc: HERE rm asap
+          //                                  s2 + ")=" + cnew+" eps3="+eps, 0);
         }
         if (cnew < c - ftol) {
           _dir = 1;

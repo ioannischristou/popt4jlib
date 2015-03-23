@@ -28,23 +28,28 @@ public class DblArray1MoveMaker implements NewChromosomeMakerIntf {
    * create and return a <CODE>double[]</CODE> object that will represent a
    * random "move" from the current chromosome argument passed in as first
    * argument. The parameters passed in the second argument are as follows:
-   * <li> <"dea.movesigma", Double v> optional, the ä value to use as ó when
+	 * <ul>
+   * <li> &lt"dea.movesigma", Double v&gt optional, the &delta value to use as &sigma when
    * determining the distance to move in each dimension. Default is 1.0.
-   * <li> <"dea.movesigma$i$", Double v> optional, the ä value to use as ó when
+   * <li> &lt"dea.movesigma$i$", Double v&gt optional, the &delta value to use as &sigma when
    * determining the distance to move in the i-th dimension. Default is null.
-   * <li> <"dea.minallelevalue", Double v> optional, the min. value that any
+   * <li> &lt"dea.minallelevalue", Double v&gt optional, the min. value that any
    * component of the returned vector may assume.
-   * <li> <"dea.maxallelevalue", Double v> optional, the max. value that any
+   * <li> &lt"dea.maxallelevalue", Double v&gt optional, the max. value that any
    * component of the returned vector may assume.
-   * <li> <"dea.minallelevalue"+$i$, Double v> optional, the min. value that the
+   * <li> &lt"dea.minallelevalue"+$i$, Double v&gt optional, the min. value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * <li> <"dea.maxallelevalue"+$i$, Double v> optional, the max. value that the
+   * <li> &lt"dea.maxallelevalue"+$i$, Double v&gt optional, the max. value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * The "local" constraints can only impose more strict constraints on the
+   * </ul>
+	 * <br>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
-   * the domain of the variable wider.
-   * @param chromosome Object must be a double[] object.
-   * @param params Hashtable
+   * the domain of the variable wider.</br>
+	 * <p>Notice that the &sigma values are used in determining the variance of 
+	 * the Gaussian distribution from which the random distance measures are
+	 * computed along each dimension.</p>
+   * @param chromosome Object must be a double[].
+   * @param params Hashtable see discussion above
    * @throws OptimizerException
    * @return Object a double[]
    */

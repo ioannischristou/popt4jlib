@@ -14,7 +14,6 @@ import java.util.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-
 public class IntVarArray1CMaker implements RandomChromosomeMakerIntf {
 
   /**
@@ -27,22 +26,24 @@ public class IntVarArray1CMaker implements RandomChromosomeMakerIntf {
   /**
    * creates and returns a <CODE>int[]</CODE> object with length up to the
    * (Integer) value mapped to the key "dea.maxchromosomelength" in the
-   * <CODE>params</CODE> argument passed in, and also obeying the following
+   * <CODE>params</CODE> argument passed in. It will also obey the following
    * bounding box constraints:
-   * <li> <"dea.minallelevalue", Integer v> optional, the min. value that any
+	 * <ul>
+   * <li> &lt"dea.minallelevalue", Integer v&gt optional, the min. value that any
    * component of the returned vector may assume
-   * <li> <"dea.maxallelevalue", Integer v> optional, the max. value that any
+   * <li> &lt"dea.maxallelevalue", Integer v&gt optional, the max. value that any
    * component of the returned vector may assume
-   * <li> <"dea.minallelevalue"+$i$, Integer v> optional, the min value that the
+   * <li> &lt"dea.minallelevalue"+$i$, Integer v&gt optional, the min value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * <li> <"dea.maxallelevalue"+$i$, Integer v> optional, the max value that the
+   * <li> &lt"dea.maxallelevalue"+$i$, Integer v&gt optional, the max value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * The "local" constraints can only impose more strict constraints on the
+   * </ul>
+	 * <br>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
-   * the domain of the variable wider.
-   * @param params Hashtable
+   * the domain of the variable wider.</br>
+   * @param params Hashtable see discussion above
    * @throws OptimizerException
-   * @return Object an int[]
+   * @return Object int[]
    */
   public Object createRandomChromosome(Hashtable params) throws OptimizerException {
     try {

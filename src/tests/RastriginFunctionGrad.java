@@ -36,7 +36,7 @@ public class RastriginFunctionGrad implements VecFunctionIntf {
   public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
     try {
       int n = x.getNumCoords();
-      VectorIntf g = x.newCopy();
+      VectorIntf g = x.newInstance();  // x.newCopy();
       double a = ( (Double) p.get("A")).doubleValue();
       double w = ( (Double) p.get("w")).doubleValue();
       for (int i = 0; i < n; i++) {

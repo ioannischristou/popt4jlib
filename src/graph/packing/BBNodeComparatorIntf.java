@@ -1,7 +1,7 @@
 package graph.packing;
 
 /**
- * comparator for BBNode2 objects.
+ * comparator for BBNodeBase objects.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>

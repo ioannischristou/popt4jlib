@@ -40,16 +40,47 @@ public final class ParallelBatchTaskExecutor {
   private MsgPassingCoordinator _mpcFwd=null;
   private MsgPassingCoordinator _mpcBak=null;
 
-
+	
   /**
-   * public constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
-   * @throws ParallelException if numthreads <= 0.
+	 * @return ParallelBatchTaskExecutor properly initialized
+   * @throws ParallelException if numthreads &lte 0.
+   */	
+	public static ParallelBatchTaskExecutor 
+				newParallelBatchTaskExecutor(int numthreads) throws ParallelException {
+		ParallelBatchTaskExecutor ex = new ParallelBatchTaskExecutor(numthreads);
+		ex.initialize();
+		return ex;
+	}
+
+	
+  /**
+   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * @param numthreads int the number of threads in the thread-pool
+   * @param bsize int the batch size to be submitted each time to the threadpool
+	 * @return ParallelBatchTaskExecutor properly initialized
+   * @throws ParallelException if numthreads &lte 0.
+   */	
+	public static ParallelBatchTaskExecutor 
+				newParallelBatchTaskExecutor(int numthreads, int bsize) 
+								throws ParallelException {
+		ParallelBatchTaskExecutor ex = new ParallelBatchTaskExecutor(numthreads, bsize);
+		ex.initialize();
+		return ex;
+	}
+
+	
+  /**
+   * private constructor, constructing a thread-pool of numthreads threads.
+   * @param numthreads int the number of threads in the thread-pool
+   * @throws ParallelException if numthreads &lte 0.
    */
-  public ParallelBatchTaskExecutor(int numthreads) throws ParallelException {
+  private ParallelBatchTaskExecutor(int numthreads) throws ParallelException {
     if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
     _id = getNextObjId();
     _threads = new PBTEThread[numthreads];
+		/* itc 2015-01-15: moved code below to initialize() method
     for (int i=0; i<numthreads; i++) {
       _threads[i] = new PBTEThread(this);
       _threads[i].setDaemon(true);  // thread will end when main thread ends
@@ -59,25 +90,44 @@ public final class ParallelBatchTaskExecutor {
     _batchSize = MsgPassingCoordinator.getMaxSize()/2;
     // get refs to MsgPassingCoordinator's
     _mpcFwd = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+_id);
-    _mpcBak = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+_id);
+    _mpcBak = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+_id); 
+		*/
   }
 
 
   /**
-   * public constructor, allowing to reduce the size of the batches submitted
+   * private constructor, allowing to reduce the size of the batches submitted
    * to the thread pool. If the 2nd (bsize) argument is greater than the default
    * batch size, namely MsgPassingCoordinator.getMaxSize()/2, it is simply
    * ignored.
    * @param numthreads int the number of threads in the thread-pool
    * @param bsize int the batch size to be submitted each time to the threadpool
-   * @throws ParallelException if numthreads <= 0
+   * @throws ParallelException if numthreads &lte 0
    */
-  public ParallelBatchTaskExecutor(int numthreads, int bsize)
+  private ParallelBatchTaskExecutor(int numthreads, int bsize)
       throws ParallelException {
     this(numthreads);
     if (bsize < _batchSize) _batchSize = bsize;
   }
 
+	
+	/**
+	 * called exactly once right after this object is constructed.
+	 */
+	private void initialize() {
+    _isRunning = true;
+    _batchSize = MsgPassingCoordinator.getMaxSize()/2;
+    // get refs to MsgPassingCoordinator's
+    _mpcFwd = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+_id);
+    _mpcBak = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+_id); 		
+		final int numthreads = _threads.length;
+    for (int i=0; i<numthreads; i++) {
+      _threads[i] = new PBTEThread(this);
+      _threads[i].setDaemon(true);  // thread will end when main thread ends
+      _threads[i].start();
+    }
+	}
+	
 
   /**
    * the main method of the class. Executes all tasks in the argument collection

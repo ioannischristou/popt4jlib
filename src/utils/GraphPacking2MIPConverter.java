@@ -31,11 +31,14 @@ public class GraphPacking2MIPConverter {
 		pw.println("Problem\n mippacker\nMaximize");
 		// 2. objective
 		pw.print(" obj:   ");
-		for (int i=0; i<_g.getNumNodes(); i++) {
+		final int gn = _g.getNumNodes();
+		for (int i=0; i<gn; i++) {
 			Node ni = _g.getNode(i);
 			Double wiD = ni.getWeightValue("value");
 			double wi = (_k==2) ? 1.0 : (wiD==null ? 1.0 : wiD.doubleValue());
-			pw.print(wi+"x"+i+" + ");
+			if (Double.compare(wi, 0.0)==0) continue;  // don't include zero coeffs
+			pw.print(wi+"x"+i);
+			if (i<gn-1) pw.print(" + ");
 			if (i>0 && i % 10 == 0) pw.print("\n        ");
 			else if (i==_g.getNumNodes()-1) pw.println("");
 		}

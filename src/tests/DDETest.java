@@ -97,7 +97,7 @@ public class DDETest {
 			utils.PairObjDouble p2 = null;
       LocalOptimizerIntf lasdst = (LocalOptimizerIntf) params.get("dde.localoptimizer");
       if (lasdst!=null) {
-        VectorIntf x0 = arg.newCopy();
+        VectorIntf x0 = arg.newInstance();  // arg.newCopy();
         params.put("gradientdescent.x0", x0);
         lasdst.setParams(params);
         p2 = lasdst.minimize(wrapper_func);

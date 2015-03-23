@@ -14,7 +14,6 @@ import java.util.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-
 public class IntVarArray1MoveMaker implements NewChromosomeMakerIntf {
 
   /**
@@ -28,26 +27,31 @@ public class IntVarArray1MoveMaker implements NewChromosomeMakerIntf {
    * create and return a <CODE>int[]</CODE> object that will represent a
    * random "move" from the current chromosome argument passed in as first
    * argument. The parameters passed in the second argument are as follows:
-   * <li> <"dea.movesigma", Double v> optional, the ä value to use as ó when
+   * <li> &lt"dea.movesigma", Double v&gt optional, the &delta value to use as &sigma when
    * determining the distance to move in each dimension. Default is 1.0.
-   * <li> <"dea.movesigma$i$", Double v> optional, the ä value to use as ó when
+   * <li> &lt"dea.movesigma$i$", Double v&gt optional, the &delta value to use as &sigma when
    * determining the distance to move in the i-th dimension. Default is null.
-   * <li> <"dea.minallelevalue", Integer v> optional, the min. value that any
+   * <li> &lt"dea.minallelevalue", Integer v&gt optional, the min. value that any
    * component of the returned vector may assume.
-   * <li> <"dea.maxallelevalue", Integer v> optional, the max. value that any
+   * <li> &lt"dea.maxallelevalue", Integer v&gt optional, the max. value that any
    * component of the returned vector may assume.
-   * <li> <"dea.minallelevalue"+$i$, Integer v> optional, the min value that the
+   * <li> &lt"dea.minallelevalue"+$i$, Integer v&gt optional, the min value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * <li> <"dea.maxallelevalue"+$i$, Integer v> optional, the max value that the
+   * <li> &lt"dea.maxallelevalue"+$i$, Integer v&gt optional, the max value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * The "local" constraints can only impose more strict constraints on the
+   * <br>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
-   * the domain of the variable wider.
-   * @param chromosome Object must be a int[] object.
+   * the domain of the variable wider.</br>
+	 * <p>Notice that the &sigma values are used in determining the variance of 
+	 * the Gaussian distribution from which the random distance measures are
+	 * computed along each dimension. Double computations are finally rounded
+	 * into the nearest integer value when setting the values of the array that is
+	 * returned.</p>
+   * @param chromosome Object must be an int[]
    * @param params Hashtable
    * @throws OptimizerException if any of the parameters are not passed in
    * properly
-   * @return Object an int[]
+   * @return Object int[]
    */
   public Object createNewChromosome(Object chromosome, Hashtable params) throws OptimizerException {
     try {

@@ -134,7 +134,7 @@ public class CoarsenerIEC extends Coarsener {
       }
     }
 
-    _coarseG = new Graph(new_nodes, new_arcs);
+    _coarseG = Graph.newGraph(new_nodes, new_arcs);
     Enumeration new_arcs_table_iter = new_arcs_table.keys();
     while (new_arcs_table_iter.hasMoreElements()) {
       Integer new_start = (Integer) new_arcs_table_iter.nextElement();

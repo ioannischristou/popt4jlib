@@ -34,7 +34,7 @@ public class DLS implements OptimizerIntf {
 
   /**
    * public constructor of a DLS OptimizerIntf. Assigns unique id among all DLS
-   * objects.
+   * objects (in the same JVM).
    */
   public DLS() {
     _id = incrID();
@@ -45,7 +45,7 @@ public class DLS implements OptimizerIntf {
    * public constructor of a DLS OptimizerIntf object. Assigns unique id among
    * all DLS objects, and sets the appropriate parameters for the optimization
    * process via the setParams(params) process. The parameters are discussed in
-   * the javadoc for the minimize(f) method.
+   * the javadoc for the <CODE>minimize(f)</CODE> method.
    * @param params Hashtable
    */
   public DLS(Hashtable params) {
@@ -95,9 +95,10 @@ public class DLS implements OptimizerIntf {
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object. Note that unless the 2-arg
    * constructor DLS(params, use_from_same_thread_only=true) is used to create
-   * this object, it is perfectly possible for one thread to call setParams(p),
-   * then another to setParams(p2) to some other param-set, and then the
-   * first thread to call minimize(f).
+   * this object, it is perfectly possible for one thread to call 
+	 * <CODE>setParams(p)</CODE>, then another to <CODE>setParams(p2)</CODE> to 
+	 * some other param-set, and then the first thread to call 
+	 * <CODE>minimize(f)</CODE>.
    */
   public synchronized void setParams(Hashtable p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
@@ -133,37 +134,37 @@ public class DLS implements OptimizerIntf {
    * Prior to calling this method, some parameters must have been set, either
    * during construction of the object, or via a call to setParams(p).
    * The parameters are as follows:
-   *
-   * <"dls.x0", Object arg> mandatory, the initial point from which to start
+   * <ul>
+   * <li> &lt"dls.x0", Object arg&gt mandatory, the initial point from which to start
    * the local search.
-   * <"dls.movesmaker", AllChromosomeMakerIntf movesmaker> mandatory, the object
+   * <li> &lt"dls.movesmaker", AllChromosomeMakerIntf movesmaker&gt mandatory, the object
    * responsible for implementing the interface that allows creating ALL
    * chromosome Objects from an existing one (produces -by definition- the
    * entire neighborhood of the object).
-   * <"dls.maxiters", Integer niters> optional, the max number of iterations the
-   * process will go through, default is Integer.MAX_VALUE.
-   * <"dls.numthreads", Integer nt> optional, the number of threads in the
+   * <li> &lt"dls.maxiters", Integer niters&gt optional, the max number of iterations the
+   * process will go through, default is <CODE>Integer.MAX_VALUE</CODE>.
+   * <li> &lt"dls.numthreads", Integer nt&gt optional, the number of threads in the
    * threadpool to be used for exploring each possible move in the neighborhood.
    * Default is 1.
-   * <"dls.a2cmaker", Arg2ChromosomeMakerIntf a2cmaker> optional, an object
+   * <li> &lt"dls.a2cmaker", Arg2ChromosomeMakerIntf a2cmaker&gt optional, an object
    * implementing the Arg2ChromosomeMakerIntf that transforms objects that can
    * be passed directly to the FunctionIntf being minimized to Chromomome objects
    * that can be used in the local-search process -and manipulated by the Object
    * implementing the AllChromosomeMakerIntf interface. Default is
    * null, which results in the arg objects being passed "as-is" to the
    * AllChromosomeMakerIntf object.
-   * <"dls.c2amaker", Chromosome2ArgMakerIntf c2amaker> optional, an object
+   * <li> &lt"dls.c2amaker", Chromosome2ArgMakerIntf c2amaker&gt optional, an object
    * implementing the Chromosome2ArgMakerIntf that transforms chromosome Objects
    * used in the localsearch process -and manipulated by the Object implementing
    * the AllChromosomeMakerIntf interface- into argument Objects that can be
    * passed into the FunctionIntf object that the process minimizes. Default is
    * null, which results in the chromosome objects being passed "as-is" to the
    * FunctionIntf object being minimized.
-   *
-   * The result is a PairObjDouble object that contains the best function arg.
+   * </ul>
+   * <br>The result is a PairObjDouble object that contains the best function arg.
    * along with the minimum function value obtained by this argument (or null
-   * if the process fails to find any valid function argument).
-   * @param f FunctionIntf
+   * if the process fails to find any valid function argument).</br>
+   * @param f FunctionIntf the function to optimize locally
    * @throws OptimizerException if another thread is concurrently running the
    * same method of this object or if the optimization process fails
    * @return PairObjDouble an object that holds both the best value found by the
@@ -206,7 +207,8 @@ public class DLS implements OptimizerIntf {
       try {
         ParallelBatchTaskExecutor executor = null;
         try {
-          executor = new ParallelBatchTaskExecutor(Math.max(nt,1));
+          executor = ParallelBatchTaskExecutor.
+										   newParallelBatchTaskExecutor(Math.max(nt,1));
         }
         catch (ParallelException e) {
           // no-op: never happens
@@ -224,8 +226,9 @@ public class DLS implements OptimizerIntf {
         if (_a2cmaker!=null) x = _a2cmaker.getChromosome(x0, p);
         int i=0;
         boolean cont = true;
+				Messenger mger = Messenger.getInstance();
         while (i++ < max_iters && cont) {
-          System.err.println("LocalSearch: executing iteration "+i);  // itc: HERE rm asap
+          mger.msg("LocalSearch: executing iteration "+i,1);
           // createAllChromosomes(x,p) can be, and usually is, the hardest computing task
           // therefore, should be parallelized whenever possible
           Vector newchromosomes = _allmovesmaker.createAllChromosomes(x, p);
@@ -244,10 +247,13 @@ public class DLS implements OptimizerIntf {
           cont = false;
           for (int j=0; j<newtasks.size(); j++) {
             FunctionEvaluationTask ftj = (FunctionEvaluationTask) newtasks.elementAt(j);
-            if (ftj.isDone()==false) continue;  // this task failed to evaluate
+            if (ftj.isDone()==false) {  // this task failed to evaluate
+							System.err.println("Task "+ftj+" failed to evaluate???");  // itc: HERE rm asap
+							continue;
+						}  
             double ftjval = ftj.getObjValue();
             if (ftjval<_incValue) {
-              System.err.println("DLS.minimize(f): found better solution="+ftjval);  // itc: HERE rm asap
+              mger.msg("DLS.minimize(f): found better solution="+ftjval,0);
               _incValue = ftjval;
               _inc = newchromosomes.elementAt(j);
               x = _c2amaker==null || _c2amaker instanceof IdentityC2ArgMaker ?
@@ -258,6 +264,7 @@ public class DLS implements OptimizerIntf {
         }
         // shutdown the executor
         executor.shutDown();
+        mger.msg("LocalSearch: completed after "+i+" iterations.",1);
       }
       catch (Exception e) {
         e.printStackTrace();

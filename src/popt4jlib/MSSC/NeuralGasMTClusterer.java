@@ -112,7 +112,9 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
     final int n = _docs.size();
     final int k = _centersA.length;
     try {
-      FasterParallelAsynchBatchTaskExecutor executor = new FasterParallelAsynchBatchTaskExecutor(nt);
+      FasterParallelAsynchBatchTaskExecutor executor = 
+							FasterParallelAsynchBatchTaskExecutor.
+											newFasterParallelAsynchBatchTaskExecutor(nt);
       ConditionCounter cdt_counter = new ConditionCounter(nt);
       ConditionCounter uct_counter = new ConditionCounter(nt);
       ConditionCounter uit_counter = new ConditionCounter(nt);
@@ -260,7 +262,8 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
     final int n = _docs.size();
     final int k = _centersA.length;
     try {
-      PDBatchTaskExecutor executor = new PDBatchTaskExecutor(nt);
+      PDBatchTaskExecutor executor = PDBatchTaskExecutor.
+																		   newPDBatchTaskExecutor(nt);
       ArrayList docs = new ArrayList(_docs);
       ArrayList cdtasks = new ArrayList(k);  // List<ComputeDistanceTaskOldnSlow>
       ArrayList uctasks = new ArrayList(k);  // List<UpdateCenterTaskOldnSlow>
@@ -391,7 +394,7 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
     _centers = new Vector();
     try {
       for (int i = 0; i < centers.size(); i++) {
-        _centersA[i] = ((VectorIntf) centers.elementAt(i)).newCopy();
+        _centersA[i] = ((VectorIntf) centers.elementAt(i)).newInstance();  // used to be newCopy();
         _centers.addElement(_centersA[i]);
       }
     }

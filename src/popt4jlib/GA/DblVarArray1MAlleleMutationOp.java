@@ -25,11 +25,13 @@ public class DblVarArray1MAlleleMutationOp implements MutationOpIntf {
 
   /**
    * the operation mutates each chromosome argument (not a DGAIndividual, not a
-   * Function() arg object) and stores the new chromosome in a Pair object that
-   * is returned.
+   * Function() arg object) and stores them in a Pair object that is returned.
+	 * Notice that the arguments chromosome1, chromosome2 ARE actually changed as
+	 * a result of this call (NO new double[]'s are created).
    * @param chromosome1 Object double[]
    * @param chromosome2 Object double[]
    * @param params Hashtable may contain the following key-value pairs:
+	 * <ul>
    * <li> &lt"dga.mutoprate", $value$&gt optional, the probability with which
    * any given allele in a chromosome will get mutated. Default is 0.1.
    * <li> &lt"dga.minallelevalue", $value$&gt optional, the minimum value for
@@ -47,8 +49,9 @@ public class DblVarArray1MAlleleMutationOp implements MutationOpIntf {
    * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
-   * @throws OptimizerException
-   * @return Pair containing two double[] objects.
+	 * </ul>
+   * @throws OptimizerException if any of the above params is incorrectly set
+   * @return Pair containing the two double[] chromosome arguments
    */
   public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
     try {

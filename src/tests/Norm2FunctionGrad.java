@@ -33,7 +33,7 @@ public class Norm2FunctionGrad implements VecFunctionIntf {
   public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
     try {
       int n = x.getNumCoords();
-      VectorIntf g = x.newCopy();
+      VectorIntf g = x.newInstance();  // x.newCopy();
       for (int i = 0; i < n; i++) {
         double val = 2.0*x.getCoord(i);
         if (p!=null) {

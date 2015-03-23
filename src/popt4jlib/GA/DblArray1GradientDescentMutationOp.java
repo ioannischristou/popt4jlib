@@ -34,7 +34,8 @@ public class DblArray1GradientDescentMutationOp implements MutationOpIntf {
    * @param chromosome1 Object double[]
    * @param chromosome2 Object double[]
    * @param params Hashtable must contain the following key-value pairs:
-   * <li> &lt"dga.mutationrate", $double_value$&gt optional, default 0.1.
+	 * <ul>
+   * <li> &lt"dga.mutationrate", $value$&gt optional, default 0.1.
    * <li> &lt"dga.minallelevalue", $value$&gt optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
    * <li> &lt"dga.minallelevalue$i$", $value$&gt optional, the minimum value for
@@ -56,8 +57,9 @@ public class DblArray1GradientDescentMutationOp implements MutationOpIntf {
    * non-null, the value must point to a <CODE>LocalOptimizerIntf</CODE> that
    * can apply some of the methods in the <CODE>popt4jlib.GradientDescent</CODE>
    * package.
+	 * </ul>
    * @throws OptimizerException
-   * @return Pair whose two elements are both <CODE>double[]</CODE> objects.
+   * @return Pair whose two elements are both <CODE>double[]</CODE> objects
    */
   public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
     try {

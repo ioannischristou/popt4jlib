@@ -334,7 +334,7 @@ class PRCGThread extends Thread {
                           (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
                           (VectorIntf) p.get("prcg.x"+solindex);
     if (x0==null) throw new OptimizerException("no prcg.x"+solindex+" initial point in _params passed");
-    VectorIntf x = x0.newCopy();  // don't modify the initial soln
+    VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
     final int n = x.getNumCoords();
     double gtol = 1e-8;
     try {
@@ -453,6 +453,9 @@ class PRCGThread extends Thread {
       }
       b = VecUtil.innerProduct(gdiff,gnew)/(normg*normg);
       if (b<0) b = 0;  // automatic direction reset
+			if (gdiff instanceof PoolableObjectIntf) {
+				((PoolableObjectIntf) gdiff).release();
+			}
     }
     // end main loop
 

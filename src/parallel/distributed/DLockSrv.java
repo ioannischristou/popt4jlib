@@ -27,7 +27,7 @@ public class DLockSrv {
    */
   public DLockSrv() {
     try {
-      _pool = new DynamicAsynchTaskExecutor(1, 1000);
+      _pool = DynamicAsynchTaskExecutor.newDynamicAsynchTaskExecutor(1, 1000);
     }
     catch (ParallelException e) {
       e.printStackTrace();  // cannot happen

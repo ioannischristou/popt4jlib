@@ -109,7 +109,7 @@ public class SparseVectorTest {
     System.err.println("sv1k.nnz="+sv1k.getNumNonZeros());
     System.err.println("after sv1k="+sv1k);
 
-    DblArray1SparseVectorMT svcopy = (DblArray1SparseVectorMT) sv.newCopy();
+    DblArray1SparseVectorMT svcopy = (DblArray1SparseVectorMT) sv.newInstance();  // used to be sv.newCopy();
     if (svcopy.equals(sv)) System.err.println("DblArray1SparseVectorMT.newCopy() works");
     else System.err.println("insanity on newCopy() or equals() for DblArray1SparseVectorMT");
     svcopy.setCoord(0,-1);

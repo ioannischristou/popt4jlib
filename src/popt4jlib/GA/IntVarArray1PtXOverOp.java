@@ -29,8 +29,10 @@ public class IntVarArray1PtXOverOp implements XoverOpIntf {
    * @param c1 Object (a double[])
    * @param c2 Object (a double[])
    * @param params Hashtable must contain a pair <"thread.id", $integer_value$>
-   * @throws OptimizerException
-   * @return Pair containing two new <CODE>double[]</CODE> objects.
+   * @throws OptimizerException if the params are incorrectly set
+   * @return Pair containing two new <CODE>int[]</CODE> objects, the first
+	 * having dimension equal to c1' dimension, the second having dimension equal
+	 * to c2's dimension
    */
   public Pair doXover(Object c1, Object c2, Hashtable params) throws OptimizerException {
     try {

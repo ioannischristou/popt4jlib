@@ -108,6 +108,19 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
     return new DblArray1SparseVectorFE(_indices, values, _n, multFactor);
   }
 
+	
+	/**
+   * return a new VectorIntf object containing a copy of the data of this object
+	 * guaranteeing that the returned object is not managed (part of any pool).
+	 * @return VectorIntf 
+	 */
+	public VectorIntf newInstance() {
+    if (_indices==null) return new DblArray1SparseVectorFE(_n);
+    double[] values = new double[_ilen];
+    for (int i=0; i<_ilen; i++) values[i] = _x[_indices[i]];
+    return new DblArray1SparseVectorFE(_indices, values, _n);		
+	}
+	
 
   /**
    * return a DblArray1SparseVectorFE object containing as data the arg passed in.

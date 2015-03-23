@@ -9,7 +9,12 @@ package popt4jlib;
 /**
  * interface specifies the contract for objects that can participate in
  * thread-local object pools.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2014-2015</p>
+ * <p>Company: </p>
  * @author Ioannis T. Christou
+ * @version 1.0
  */
 public interface PoolableObjectIntf {
 	/**

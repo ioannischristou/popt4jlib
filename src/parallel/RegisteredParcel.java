@@ -43,7 +43,7 @@ final class RegisteredParcel {
    * or via a call to <CODE>new RegisteredParcel(f,t,d);</CODE>.)
    * @param i int
    * @param val double
-   * @return PairIntDouble
+   * @return RegisteredParcel
    */
   static RegisteredParcel newInstance(int from, int to, Object data) {
     return RegisteredParcelPool.getObject(from, to, data);

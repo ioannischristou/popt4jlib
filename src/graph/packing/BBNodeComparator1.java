@@ -14,7 +14,7 @@ import parallel.*;
  * parts of the B&B-tree.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -29,10 +29,11 @@ public class BBNodeComparator1 implements BBNodeComparatorIntf {
       double osct = o2.getCost();  // used to be o2.getNodes().size();
       double bd = o1.getBound();
       double obd = o2.getBound();
-      //double ct = bd/sct + sct - 1.0;
-      //double oct = obd/osct + osct - 1.0;
-      double ct = bd + sct / Math.max(Math.log(bd), 1.0);
-      double oct = obd + osct / Math.max(Math.log(obd), 1.0);
+      double ct = bd/sct + sct - 1.0;
+      double oct = obd/osct + osct - 1.0;
+			// with random wgts, the bd is usually highly over-estimated until too late
+      //double ct = bd + sct / Math.max(Math.log(bd), 1.0);
+      //double oct = obd + osct / Math.max(Math.log(obd), 1.0);
       int ct_oct_comp = Double.compare(oct, ct);
       // if (ct > oct)return -1;
       // else if (ct == oct) {

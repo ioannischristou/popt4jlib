@@ -21,8 +21,20 @@ public interface VectorIntf extends Serializable {
    * @return VectorIntf
    */
   public VectorIntf newInstance(double[] arg) throws IllegalArgumentException;
+	
+	
+	/**
+	 * return a new (un-managed) <CODE>VectorIntf</CODE> object that is an exact
+	 * copy of this object. The only difference between this method and the method 
+	 * <CODE>newCopy()</CODE> is that the latter method may choose to return an
+	 * object that is gotten from an object-pool, thus requiring invocation of 
+	 * <CODE>release()</CODE> methods eventually, if the implementing class also
+	 * implements the <CODE>PoolableObjectIntf</CODE> interface.
+	 * @return VectorIntf 
+	 */
+	public VectorIntf newInstance();
 
-
+	
   /**
    * return a new <CODE>VectorIntf</CODE> that is an exact copy of this object.
    * @return VectorIntf

@@ -54,7 +54,7 @@ public class HCoarsenerIEC extends HCoarsener {
           continue;  // node cannot be matched at this point
                      // e.g. may be isolated
         }
-        // System.err.println("merging nodeid="+pos.intValue()+" with nodeid="+best.getId());  // itc: HERE rm asap
+        // System.err.println("merging nodeid="+pos.intValue()+" with nodeid="+best.getId());
         ++num_seen;
         Integer best_id = new Integer(best.getId());
         // match node at pos with best

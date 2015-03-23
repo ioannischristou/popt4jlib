@@ -26,22 +26,24 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
   /**
    * creates and returns a <CODE>double[]</CODE> object with length equal to the
    * (Integer) value mapped to the key "dea.chromosomelength" in the
-   * <CODE>params</CODE> argument passed in, and also obeying the following
+   * <CODE>params</CODE> argument passed in. It will and also obey the following
    * bounding box constraints:
-   * <li> <"dea.minallelevalue", Double v> optional, the min. value that any
+	 * <ul>
+   * <li> &lt"dea.minallelevalue", Double v&gt optional, the min. value that any
    * component of the returned vector may assume
-   * <li> <"dea.maxallelevalue", Double v> optional, the max. value that any
+   * <li> &lt"dea.maxallelevalue", Double v&gt optional, the max. value that any
    * component of the returned vector may assume
-   * <li> <"dea.minallelevalue"+$i$, Double v> optional, the min. value that the
+   * <li> &lt"dea.minallelevalue"+$i$, Double v&gt optional, the min. value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * <li> <"dea.maxallelevalue"+$i$, Double v> optional, the max. value that the
+   * <li> &lt"dea.maxallelevalue"+$i$, Double v&gt optional, the max. value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * The "local" constraints can only impose more strict constraints on the
+	 * </ul>
+   * <br>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
-   * the domain of the variable wider.
+   * the domain of the variable wider.</br>
    * @param params Hashtable
    * @throws OptimizerException if the mandatory parameters are not passed in
-   * @return Object an int[]
+   * @return Object double[]
    */
   public Object createRandomChromosome(Hashtable params) throws OptimizerException {
     try {

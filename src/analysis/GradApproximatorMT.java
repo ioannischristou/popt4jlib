@@ -62,23 +62,23 @@ public class GradApproximatorMT implements VecFunctionIntf {
     }
     PDBatchTaskExecutor executor = null;
     try {
-      executor = new PDBatchTaskExecutor(nt);
+      executor = PDBatchTaskExecutor.newPDBatchTaskExecutor(nt);
     }
     catch (ParallelException e) {
       e.printStackTrace();  // can never happen
     }
 
-    VectorIntf grad = x.newCopy();
+    VectorIntf grad = x.newInstance();  // x.newCopy();
     int wlength = n / nt;
     int start = 0;
-    Vector tasks = new Vector();  // Vector<GradApproxTaskObject>
+    List tasks = new ArrayList();  // used to be Vector<GradApproxTaskObject>
     for (int i=0; i<nt-1; i++) {
       GradApproxTaskObject to = new GradApproxTaskObject(x, _f, params, start, start+wlength-1);
-      tasks.addElement(to);
+      tasks.add(to);
       start += wlength;
     }
     GradApproxTaskObject fin = new GradApproxTaskObject(x, _f, params, start, n-1);
-    tasks.addElement(fin);
+    tasks.add(fin);
     try {
       Vector results = executor.executeBatch(tasks);
       for (int i=0; i<results.size(); i++) {
@@ -144,6 +144,9 @@ public class GradApproximatorMT implements VecFunctionIntf {
         }
         h = h / 2.0;
       }
+			if (xc instanceof PoolableObjectIntf) {
+				((PoolableObjectIntf) xc).release();
+			}
     }
     catch (ParallelException e) {  // can never get here
       e.printStackTrace();
@@ -166,8 +169,8 @@ class GradApproxTaskObject implements TaskObject {
 
 
   GradApproxTaskObject(VectorIntf x, FunctionIntf f, Hashtable params, int start, int end) {
-    _x = x.newCopy();  // work with copy so as to avoid memory corruption issues
-                       // in multi-threaded accesses of the vector
+    _x = x.newInstance();  // work with copy so as to avoid memory corruption 
+		                       // issues in multi-threaded accesses of vector
     _f = f;
     _gradf = x.newCopyMultBy(0);
     _start = start;

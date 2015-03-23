@@ -7,29 +7,45 @@ import utils.*;
 import parallel.*;
 import java.util.*;
 
-class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromosomeMakerIntf {
+/**
+ * class is an implementation of the <CODE>AllChromosomeMakerIntf</CODE> 
+ * interface, and implements local search in the N_{-1+P} neighborhood of ints:
+ * a set of integers S1 is a neighbor of another set S, if S1 is the result of
+ * subtracting one member of S, and then augmenting S by as many integers as 
+ * possible without violating feasibility of the solution.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromosomeMakerIntf {
 
   /**
-   * no-op constructor
+   * no-arg, no-op constructor.
    */
-  IntSetN1RXPFirstImprovingGraphAllMovesMaker() {
+  public IntSetN1RXPFirstImprovingGraphAllMovesMaker() {
     // no-op
   }
 
 
   /**
    * implements the N_{-1+P} neighborhood for sets of integers.
-   * @param chromosome Object Set<Integer>
-   * @param params Hashtable must contain a key-value pair
-   * <"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter>
+   * @param chromosome Object Set&ltInteger node-id&gt
+   * @param params Hashtable must contain the following key-value pairs:
+	 * <ul>
+	 * <li>&lt"dls.graph", Graph g&gt the graph of the problem
+   * <li>&lt"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt
+	 * </ul>
    * It may also optionally contain a pair
-   * <"dls.intsetneighborhoodmaxnodestotry", Integer max_nodes> which if present
-   * will indicate the maximum number of nodes to try to remove from the current
-   * solution in the "1RXP" local search.
+   * &lt"dls.intsetneighborhoodmaxnodestotry", Integer max_nodes&gt which if 
+	 * present will indicate the maximum number of nodes to try to remove from the 
+	 * current solution in the "1RXP" local search.
    * The filter must specify what ints to be tried for addition to the set given
    * an int to be removed from the set.
    * @throws OptimizerException
-   * @return Vector Vector<Set<Integer> >
+   * @return Vector // Vector&ltSet&ltInteger&gt &gt
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): null chromosome");
@@ -41,7 +57,7 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromosomeMaker
       rlocked_graph = true;
       Set result = null;  // Set<IntSet>
       Set x0 = (Set) chromosome;
-      //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): working w/ a soln of size="+x0.size());  // itc: HERE rm asap
+      //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): working w/ a soln of size="+x0.size());
       IntSetNeighborhoodFilterIntf filter = (IntSetNeighborhoodFilterIntf)
           params.get("dls.intsetneighborhoodfilter");
       int max_nodes2try = Integer.MAX_VALUE;
@@ -58,14 +74,14 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromosomeMaker
       while (iter.hasNext() && cont) {
         if (--max_nodes2try==0) return null;  // done with the search
         Integer id = (Integer) iter.next();
-        //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): working w/ id="+id);  // itc: HERE rm asap
+        //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): working w/ id="+id);
         Set rmids = new IntSet();
         rmids.add(id);
-        Vector tryids = filter.filter(rmids, x0, params);  // Vector<Integer>
+        List tryids = filter.filter(rmids, x0, params);  // List<Integer>
         if (tryids!=null) {
           IntSet xnew = new IntSet(x0);
           xnew.removeAll(rmids);
-          // add up to as many as possible, 2 are needed for an improving soln.
+          // add up to as many as possible, 2 are needed for an improving soln when no weights exist.
           Set impr_res = createSet(xnew, id.intValue(), tryids, 2, params);
           // impr_res is IntSet
           if (impr_res!=null) {
@@ -75,13 +91,13 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromosomeMaker
           }
         }
         //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): done w/ id="+id+
-        //           " returned "+cnt+" sets.");  // itc: HERE rm asap
+        //           " returned "+cnt+" sets.");
       }
       // convert Set<IntSet> to Vector<IntSet>
       Vector res = null;
       if (result!=null) {
         res = new Vector(result);
-        //System.err.println("IntSetN1RXPAllFirstImprovingGraphMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");  // itc: HERE rm asap
+        //System.err.println("IntSetN1RXPAllFirstImprovingGraphMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");
       }
       return res;
     }
@@ -112,15 +128,15 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromosomeMaker
    * DF fashion)
    * @param res Set IntSet
    * @param rmid Integer
-   * @param tryids Vector Vector<Integer>
+   * @param tryids List // List&ltInteger&gt
    * @param maxcard int
    * @param params Hashtable
-   * @return Set IntSet
+   * @return Set // IntSet
    */
-  protected Set createSet(Set res, int rmid, Vector tryids, int maxcard, Hashtable params) {
+  protected Set createSet(Set res, int rmid, List tryids, int maxcard, Hashtable params) {
     IntSet x = (IntSet) res;
     for (int i=0; i<tryids.size(); i++) {
-      Integer tid = (Integer) tryids.elementAt(i);
+      Integer tid = (Integer) tryids.get(i);
       if (tid.intValue()!=rmid) {
         if (x.contains(tid)==false && isOK2Add(tid, x, params)) {
           IntSet x2 = new IntSet(x);
@@ -166,7 +182,7 @@ class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromosomeMaker
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set  // Set<Node>
+   * @param active Set  // Set&ltNode&gt
    * @return boolean // true iff nj can be added to active
    * @throws ParallelException
    */

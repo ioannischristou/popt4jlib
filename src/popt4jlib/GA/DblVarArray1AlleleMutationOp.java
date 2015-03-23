@@ -5,7 +5,7 @@ import utils.*;
 import java.util.*;
 
 /**
- * Class implements the "standard" mutation operator for chromosomes represented
+ * implements the "standard" mutation operator for chromosomes represented
  * as <CODE>double[]</CODE> objects, of varying length.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -25,11 +25,14 @@ public class DblVarArray1AlleleMutationOp implements MutationOpIntf {
 
   /**
    * the operation mutates each chromosome argument (not a DGAIndividual, not a
-   * Function() arg object) and stores the new chromosome in a Pair object that
-   * is returned.
-   * @param chromosome1 Object double[]
-   * @param chromosome2 Object double[]
+   * Function() arg object) and stores them in a Pair object that is returned.
+	 * Notice that the chromosome1 and chromosome2 arguments themselves ARE
+	 * actually changed as a result of this call (NO new double[] objects are 
+	 * created).
+   * @param chromosome1 Object must be double[]
+   * @param chromosome2 Object must be double[]
    * @param params Hashtable should contain the following key-value pairs:
+	 * <ul>
    * <li> &lt"dga.minallelevalue", $value$&gt optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
    * <li> &lt"dga.minallelevalue$i$", $value$&gt optional, the minimum value for
@@ -45,8 +48,9 @@ public class DblVarArray1AlleleMutationOp implements MutationOpIntf {
    * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
-   * @throws OptimizerException
-   * @return Pair
+	 * </ul>
+   * @throws OptimizerException if any of the above params is incorrectly set
+   * @return Pair Pair&ltdouble[], double[]&gt
    */
   public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
     try {

@@ -72,7 +72,7 @@ public class PDBatchTaskExecutorWrk {
       ois = new ObjectInputStream(_s.getInputStream());
       System.out.println("Wrk: Connected to Srv at address(host,port)=("+_host+","+_port+")");
       System.out.flush();
-      executor = new PDBatchTaskExecutor(_numthreads);
+      executor = PDBatchTaskExecutor.newPDBatchTaskExecutor(_numthreads);
       while (true) {
         try {
           // get a request

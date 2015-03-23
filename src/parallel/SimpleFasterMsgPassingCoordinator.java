@@ -8,7 +8,11 @@ import java.util.Hashtable;
  * sending and receiving (synchronous and asynchronous) data between threads.
  * It behaves as the more general MsgPassingCoordinator, except that senders
  * cannot choose which thread will receive the data they submit, and receivers
- * cannot choose from which thread they will receive data.
+ * cannot choose from which thread they will receive data. 
+ * However, this restriction can effectively
+ * be bypassed by sending <CODE>ThreadSpecificTaskObject</CODE> objects (see the
+ * documentation for that interface for the exact semantics of the interface 
+ * method <CODE>getThreadIdToRunOn()</CODE>.)
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -17,12 +21,15 @@ import java.util.Hashtable;
  * @version 1.0
  */
 public class SimpleFasterMsgPassingCoordinator {
-  private static final int _maxSize=10000;
-  //private Vector _data;  // Vector<RegisteredParcel>
+	/**
+	 * compile-time constant, forces class to act as a synchronizer between 
+	 * producers and consumers
+	 */
+	private static final int _maxSize=10000;
   /**
    * maintains RegisteredParcel objects to be exchanged between threads
    */
-  private BoundedBufferArray _data;
+  private BoundedBufferArrayUnsynchronized _data;  // Vector<RegisteredParcel>
   private static SimpleFasterMsgPassingCoordinator _instance=null;
   private static Hashtable _instances=new Hashtable();  // map<String name, SFMPC instance>
 
@@ -31,8 +38,7 @@ public class SimpleFasterMsgPassingCoordinator {
    * private constructor in accordance with the Singleton Design Pattern
    */
   private SimpleFasterMsgPassingCoordinator() {
-    //_data = new Vector();
-    _data = new BoundedBufferArray(_maxSize);
+    _data = new BoundedBufferArrayUnsynchronized(_maxSize);
   }
 
 
@@ -64,7 +70,7 @@ public class SimpleFasterMsgPassingCoordinator {
 
 
   /**
-   * return the _maxSize data member
+   * return the constant _maxSize data member
    * @return int
    */
   public static int getMaxSize() { return _maxSize; }
@@ -82,7 +88,6 @@ public class SimpleFasterMsgPassingCoordinator {
   /**
    * stores the data object to be consumed by any thread that invokes recvData()
    * method -regardless of which thread that is. The method returns immediately.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myid int the id of the thread calling this method
    * @param data Object
    * @throws ParallelException if there are more data than _maxSize in the queue
@@ -91,9 +96,10 @@ public class SimpleFasterMsgPassingCoordinator {
       throws ParallelException {
     if (_data.size()>=_maxSize)
       throw new ParallelException("SimpleFasterMsgPassingCoordinator queue is full");
-    // Pair p = new Pair(null, data);
-    // RegisteredParcel p = new RegisteredParcel(new Integer(myid), null, data);
-    RegisteredParcel p = RegisteredParcel.newInstance(myid, Integer.MAX_VALUE, data);
+    RegisteredParcel p = new RegisteredParcel(myid, Integer.MAX_VALUE, data);
+		// commented code below is unsafe: see RegisteredParcelPool class documentation
+		// and the RegisteredParcelPoolFailTest class.
+    // RegisteredParcel p = RegisteredParcel.newInstance(myid, Integer.MAX_VALUE, data);
     _data.addElement(p);
     notifyAll();
   }
@@ -104,7 +110,6 @@ public class SimpleFasterMsgPassingCoordinator {
    * method -regardless of which thread that is. The method will wait if the
    * queue is full until another thread consumes a datum and allows this thread
    * to write to the _data buffer.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
    * @param myid int the id of the thread calling this method
    * @param data Object
    */
@@ -122,14 +127,14 @@ public class SimpleFasterMsgPassingCoordinator {
         Thread.currentThread().interrupt();
       }
     }
-    // Pair p = new Pair(null, data);
-    // RegisteredParcel p = new RegisteredParcel(new Integer(myid), null, data);
-    RegisteredParcel p = RegisteredParcel.newInstance(myid, Integer.MAX_VALUE, data);
+    RegisteredParcel p = new RegisteredParcel(myid, Integer.MAX_VALUE, data);
+		// commented code below is unsafe: see RegisteredParcelPool class documentation
+		// and the RegisteredParcelPoolFailTest class.
+    // RegisteredParcel p = RegisteredParcel.newInstance(myid, Integer.MAX_VALUE, data);
     try {
       _data.addElement(p);
     }
-    catch (ParallelException e) {
-      // cannot get here
+    catch (IllegalStateException e) {  // cannot get here
       e.printStackTrace();
     }
     notifyAll();
@@ -138,27 +143,47 @@ public class SimpleFasterMsgPassingCoordinator {
 
   /**
    * retrieves the first data Object that has been stored via a call (from
-   * another thread) to sendData(threadId, data). If no such
-   * data exists, the calling thread will wait until another thread stores an
-   * appropriate datum.
-   * Note: senders "create" RegisteredParcel objects, receivers "release" them.
-   * @param myid int unused
+   * another thread) to sendData(threadId, data). If no such data exists, the 
+	 * calling thread will wait until another thread stores an appropriate datum.
+   * @param myid int 
    * @return Object
    */
   public synchronized Object recvData(int myid) {
     while (true) {
       Object res = null;
-      if (_data.size()>0) {
+			final int dsz = _data.size();
+      if (dsz>0) {
         try {
           RegisteredParcel p = (RegisteredParcel) _data.elementAt(0);  // pick the first datum
           res = p.getData();
-          _data.remove();
-          notifyAll();
-          p.release();
-          return res;
+					int i=0;
+					boolean found=true;
+					while (res instanceof ThreadSpecificTaskObject) {
+						ThreadSpecificTaskObject tsto = (ThreadSpecificTaskObject) res;
+						final int tstoid = tsto.getThreadIdToRunOn();
+						if (tstoid!=myid && tstoid!=Integer.MAX_VALUE && (sameSign(tstoid,myid) || tstoid==-myid)) {
+							found = false;
+							if (i<dsz-1) {
+								p = (RegisteredParcel) _data.elementAt(++i);
+								res = p.getData();
+								found = true;  // reset to true
+							} else break;
+						} else {
+							found = true;
+							break;
+						}
+					}
+					if (found) {
+						_data.remove(i);  // used to be _data.remove();
+						notifyAll();
+						// commented code below is part of an unsafe idiom: 
+						// see RegisteredParcelPool class documentation
+						// and the RegisteredParcelPoolFailTest class.
+						// p.release();
+						return res;
+					}
         }
-        catch (ParallelException e) {
-          // cannot get here
+        catch (IndexOutOfBoundsException e) {  // cannot get here
           e.printStackTrace();
         }
       }
@@ -171,6 +196,61 @@ public class SimpleFasterMsgPassingCoordinator {
       }
     }
   }
+
+	
+	/**
+   * the method has the same semantics as the recvData(myid) method except that
+   * it returns immediately with null if no appropriate data exist at the time
+   * of the call. 
+   * @param myid int 
+   * @return Object
+	 */
+  public synchronized Object recvDataIfAnyExist(int myid) {
+    Object res = null;
+    final int dsz = _data.size();
+    if (dsz>0) {
+	    try {
+	      RegisteredParcel p = (RegisteredParcel) _data.elementAt(0);  // pick the first datum
+        res = p.getData();
+				int i=0;
+				boolean found=true;
+				while (res instanceof ThreadSpecificTaskObject) {
+					ThreadSpecificTaskObject tsto = (ThreadSpecificTaskObject) res;
+					final int tstoid = tsto.getThreadIdToRunOn();
+					if (tstoid!=myid && tstoid!=Integer.MAX_VALUE  && (sameSign(tstoid,myid) || tstoid==-myid)) {
+						found = false;
+						if (i<dsz-1) {
+							p = (RegisteredParcel) _data.elementAt(++i);
+							res = p.getData();
+							found = true;  // reset to true
+						} else break;
+					} else {
+						found = true;
+						break;
+					}
+				}
+				if (found) {
+					_data.remove(i);  // used to be _data.remove();
+					notifyAll();
+					// commented code below is part of an unsafe idiom: 
+					// see RegisteredParcelPool class documentation
+					// and the RegisteredParcelPoolFailTest class.
+					// p.release();
+					return res;
+				}
+      }
+      catch (IndexOutOfBoundsException e) {
+        // cannot get here
+        e.printStackTrace();
+      }
+    }
+		return null;
+  }
+
+	
+	private static boolean sameSign(int x, int y) {
+		return x>=0 ? y>=0 : y<=0;
+	}
 
 }
 

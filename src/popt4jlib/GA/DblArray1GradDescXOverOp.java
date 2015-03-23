@@ -35,6 +35,7 @@ public class DblArray1GradDescXOverOp implements XoverOpIntf {
    * @param c1 Object double[]
    * @param c2 Object double[]
    * @param params Hashtable must contain the following key-value pairs:
+	 * <ul>
    * <li> &lt"dga.minallelevalue", $value$&gt optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
    * <li> &lt"dga.minallelevalue$i$", $value$&gt optional, the minimum value for
@@ -62,8 +63,10 @@ public class DblArray1GradDescXOverOp implements XoverOpIntf {
    * <li> &lt"dga.graddescxoverop.minaccvaldiffperc", $double_value$&gt optional. Default 0.01.
    * <li> &lt"dga.graddescxoverop.maxinittries", $integer_value$&gt optional.
    * Default 20.
-   * @throws OptimizerException
-   * @return Pair
+	 * </ul>
+   * @throws OptimizerException if any of the params is not set correctly or if
+	 * the process otherwise fails
+   * @return Pair Pair&ltdouble[], double[]&gt
    */
   public Pair doXover(Object c1, Object c2, Hashtable params) throws OptimizerException {
     try {

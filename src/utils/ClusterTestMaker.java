@@ -138,15 +138,20 @@ public class ClusterTestMaker {
       plotwriter.println("invisible "+x1+" "+y1);
       plotwriter.println("invisible "+x2+" "+y2);  // specify the plot's bbox
     }
-
+		// read total num vectors to create
+		int num_vecs = getTotalNumVectors(ifname);
     // read ifname
     BufferedReader br = new BufferedReader(new FileReader(ifname));
     String line=null;
     StringTokenizer st=null;
     //double tot_obj=0.0;
     int i=0;
+		int sind = 0;
+		double[] dimsA = new double[dims];
+		PrintWriter vpw = new PrintWriter(new FileWriter(ofname));
+		vpw.println(num_vecs+" "+dims);
     if (br.ready()) {
-      Vector all_clusters = new Vector();
+      // Vector all_clusters = new Vector();
       while (true) {
         line = br.readLine();
         if (line == null || line.length() == 0) break;
@@ -154,9 +159,10 @@ public class ClusterTestMaker {
         st = new StringTokenizer(line, ",");
         int card_i = Integer.parseInt(st.nextToken());
         // make the ith cluster of Documents
+				//System.err.println("ClusterTestMaker: creating the "+i+"-th cluster");
         Vector cluster_i = new Vector();  // Vector<VectorIntf>
         for (int j=0; j<card_i; j++) {
-          cluster_i.addElement(new popt4jlib.DblArray1Vector(new double[dims]));
+          cluster_i.addElement(new popt4jlib.DblArray1Vector(dimsA));
           if (labelwriter!=null) labelwriter.println(i);
         }
         // populate the cluster-i:
@@ -176,7 +182,7 @@ public class ClusterTestMaker {
         }
         if (make_graph) {
           int num_links = (int) (link_dens*cluster_i.size()*Math.random()*2);
-          final int sind = all_clusters.size();
+          // final int sind = all_clusters.size();
           final int eind = sind+cluster_i.size()-1;
           int starta, enda;
           for (int nl=0; nl<num_links; nl++) {
@@ -189,7 +195,16 @@ public class ClusterTestMaker {
             }
           }
         }
-        all_clusters.addAll(cluster_i);
+        // all_clusters.addAll(cluster_i);
+				// write the cluster_i to file
+				for (int j=0; j<card_i; j++) {
+					popt4jlib.VectorIntf vj = (popt4jlib.VectorIntf) cluster_i.get(j);
+					for (int k=0; k<dims; k++) {
+						vpw.print((k+1)+","+vj.getCoord(k));
+					}
+					vpw.println();
+				}
+				sind += card_i;
         if (plotwriter!=null) {
           // write the cluster for plotting
           writeDataForPlotting(plotwriter, i, cluster_i);
@@ -202,17 +217,21 @@ public class ClusterTestMaker {
       }
       if (labelwriter!=null) labelwriter.close();
       // write the Documents to ofile
-      DataMgr.writeVectorsToFile(all_clusters, dims, ofname);
+			// DataMgr.writeVectorsToFile(all_clusters, dims, ofname);
+			vpw.flush();
+			vpw.close();
       if (make_graph) {
         // create random connections, where starta, enda are in
         // [0, all_clusters.size()-1]
-        final int sind=0;
-        final int eind=all_clusters.size()-1;
+        // final int sind=0;
+        // final int eind=all_clusters.size()-1;
+				final int sind2 = 0;
+				final int eind2 = sind-1;
         int starta, enda;
         for (int nl=0; nl<rand_links; nl++) {
-          // starta, enda are in [all_clusters.size(), all_clusters.size()+cluster_i.size()-1]
-          starta = (int) Math.rint(sind + Math.random()*(eind-sind));
-          enda = (int) Math.rint(sind + Math.random()*(eind-sind));
+					// sind2 and eind2 used to be sind and eind
+          starta = (int) Math.rint(sind2 + Math.random()*(eind2-sind2));  
+          enda = (int) Math.rint(sind2 + Math.random()*(eind2-sind2));
           if (starta!=enda) {
             String gline = starta + " " + enda + " 1.0";
             graph_lines.addElement(gline);
@@ -220,13 +239,15 @@ public class ClusterTestMaker {
         }
         // write graph to file
         PrintWriter gpw = new PrintWriter(new FileOutputStream(graph_file));
-        gpw.println(all_clusters.size()+" "+graph_lines.size());
-        for (int nl=0; nl<graph_lines.size(); nl++) {
+        // gpw.println(all_clusters.size()+" "+graph_lines.size());
+				gpw.println(sind+" "+graph_lines.size());
+				for (int nl=0; nl<graph_lines.size(); nl++) {
           gpw.println((String) graph_lines.elementAt(nl));
         }
         gpw.close();
       }
-      //System.out.println(tot_obj);
+			//System.err.println("Done.");
+			//System.out.println(tot_obj);
     }
   }
 
@@ -249,4 +270,19 @@ public class ClusterTestMaker {
       pw.println(shapei+" "+djx+" "+djy);
     }
   }
+	
+	
+	private static int getTotalNumVectors(String ifname) throws IOException {
+		int res = 0;
+		BufferedReader br = new BufferedReader(new FileReader(ifname));
+		while (true) {
+			String line = br.readLine();
+			if (line==null) break;  // EOF
+			StringTokenizer st = new StringTokenizer(line,",");
+			int n = Integer.parseInt(st.nextToken());
+			res += n;
+		}
+		br.close();
+		return res;
+	}
 }

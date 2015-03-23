@@ -33,7 +33,8 @@ public class AllMWCFinderBKMT0 extends AllMWCFinder {
    */
   public AllMWCFinderBKMT0(Graph g, int numthreads) throws GraphException, ParallelException {
     super(g);
-    _executor = new FasterParallelAsynchBatchTaskExecutor(numthreads, false);
+    _executor = FasterParallelAsynchBatchTaskExecutor.
+						newFasterParallelAsynchBatchTaskExecutor(numthreads, false);
     // don't run on current thread when thread-pool is full
   }
 

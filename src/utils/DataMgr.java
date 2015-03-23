@@ -21,7 +21,7 @@ import java.lang.reflect.*;
  * The class is thread-safe (reentrant).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -41,20 +41,54 @@ public class DataMgr {
 
 
   /**
-   * In case key is the keyword class, the key value is the next token in
+   * Reads properties from the given file and stores them as %ltkey,value&gt
+	 * pairs in the returned <CODE>Hashtable</CODE>.
+	 * Unless the key string is a special keyword (see below), the value is 
+	 * assumed first to be an int value, and if value does not represent an int
+	 * it is then assumed to be a long value; if value does not represent a long
+	 * it is then assumed to be a double value; if value does not represent a 
+	 * double either, value is assumed to be representing a boolean value (the 
+	 * strings "true" or "false" in all lower- or upper-case letters); if this 
+	 * also fails, value is kept in the hash-table as-is, that is, as a 
+	 * <CODE>String</CODE> type.
+	 * <p>In case key is the keyword "graph", the key value is the next token in
+	 * the line, and the full filename of the file containing the graph to be 
+	 * constructed using the method <CODE>readGraphFromFile2(String)</CODE> is the 
+	 * next token.
+	 * <p>In case key is the keyword "class", the key value is the next token in
    * the line, and the object to be constructed together with its string
-   * arguments is given in the rest of the line
-   * In case key is the keyword rndgen, the RndUtil class's seed is populated
-   * with the value of this line (long int). The seed does not need to be stored
-   * in the Hashtable returned. Also, if a 3rd argument is provided, it indicates
-   * the number of distinct threads to require access to RndUtil, and thus it
-   * sets the required extra instances of Random objects needed.
-   *
-   * file format is
-   * key,value[,classname][,opts]
+   * arguments is given in the rest of the line.
+   * <p>In case key is the keyword "rndgen", the <CODE>RndUtil</CODE> class's 
+	 * seed is populated with the value of this line (long int). The seed does not 
+	 * need to be stored in the <CODE>Hashtable</CODE> returned. Also, if a 3rd 
+	 * argument is provided, it indicates the number of distinct threads to 
+	 * require access to RndUtil, and thus it sets the required extra instances of 
+	 * Random objects needed.
+	 * <p>In case key is the keyword "dbglvl", the method 
+	 * <CODE>utils.Messenger.getInstance(classname).setDebugLevel(lvl)</CODE> is 
+	 * invoked where the value of the string classname is the next comma separated
+	 * value in the line, and the lvl value is the value after that in the same
+	 * line. If the classname is omitted in the line, the value "default" is 
+	 * assumed.
+	 * <p>In case key is the keyword "dbgclasses" then value is assumed to be 
+	 * an integer, and the method <CODE>utils.Debug.setDebugBit(val)</CODE> is 
+	 * called with the value represented by the value string.
+   * <p>In case key is the keyword "mpc.maxsize", the 
+	 * <CODE>parallel.MsgPassingCoordinator</CODE> class's max data size is set to 
+	 * the value of this line (int), via a call to 
+	 * <CODE>MsgPassingCoordinator.setMaxSize(val)</CODE>.
+   * <p>In case key is the keyword "rpp.poolsize", the 
+	 * <CODE>parallel.RegisteredParcelPool</CODE> 
+	 * class's pool size is set to the value of this line (int), via a call to 
+	 * <CODE>RegisteredParcelThreadLocalPools.setPoolSize(val)</CODE>.
+	 * 
+   * <p>file format is
+	 * <PRE>
+   * key,value[,classname|graphfilename][,opts]
    * [...]
-   *
-   * Empty lines and lines starting with # are ignored.
+	 * </PRE>
+   * </p>
+   * <p>Empty lines and lines starting with # are ignored.</p>
    * @param filename String
    * @throws IOException
    * @return Hashtable
@@ -77,9 +111,11 @@ public class DataMgr {
           String strval = st.nextToken();
           if ("class".equals(key)) {
             String classname = st.nextToken();
-            String ctrargs = null;
-            if (st.hasMoreTokens()) {
-              ctrargs = st.nextToken().trim();
+            String ctrargs = "";
+            while (st.hasMoreTokens()) {
+              // ctrargs = st.nextToken().trim();
+							ctrargs += st.nextToken();
+							if (st.hasMoreTokens()) ctrargs+=",";
             }
             try {
               if (ctrargs != null && ctrargs.length() > 0) {
@@ -113,6 +149,34 @@ public class DataMgr {
             }
             continue;
           }
+					else if ("mpc.maxsize".equals(key)) {
+						try {
+							int maxsize = Integer.parseInt(strval);
+							parallel.MsgPassingCoordinator.setMaxSize(maxsize);
+						}
+						catch (Exception e) {
+							e.printStackTrace();  // ignore
+						}
+					}
+					else if ("rpp.poolsize".equals(key)) {
+						try {
+							int maxsize = Integer.parseInt(strval);
+							parallel.RegisteredParcelThreadLocalPools.setPoolSize(maxsize);
+						}
+						catch (Exception e) {
+							e.printStackTrace();  // ignore
+						}
+					}
+					else if ("graph".equals(key)) {
+						try {
+							String graphfilename = st.nextToken();
+							Graph g = readGraphFromFile2(graphfilename);
+							props.put(strval, g);
+						}
+						catch (Exception e) {
+							e.printStackTrace();  // ignore
+						}
+					}
           else if ("dbglvl".equals(key)) {
             String msgername=null;
             int dbglvl=0;
@@ -178,27 +242,35 @@ public class DataMgr {
             }
             continue;
           }
-          // figure out what is strval
+          // figure out what is strval: try int, long, double, boolean in that 
+					// order.
+					// as catch-all, keep as String.
           try {
             Integer v = new Integer(strval);
             props.put(key, v);
           }
           catch (NumberFormatException e) {
             try {
-              Double v = new Double(strval);
-              props.put(key, v);
-            }
-            catch (NumberFormatException e2) {
-              // strval cannot be interpreted as a number.
-              // check out if it is boolean
-              if ("true".equals(strval) || "TRUE".equals(strval) ||
-                  "false".equals(strval) || "FALSE".equals(strval)) {
-                Boolean b = new Boolean(strval);
-                props.put(key, b);
-              }
-              // finally, cannot represent as anything else, store as string
-              else props.put(key, strval);
-            }
+							Long v = new Long(strval);
+							props.put(key, v);
+						}
+						catch (NumberFormatException e1) {
+							try {
+								Double v = new Double(strval);
+								props.put(key, v);
+							}
+							catch (NumberFormatException e2) {
+								// strval cannot be interpreted as a number.
+								// check out if it is boolean
+								if ("true".equals(strval) || "TRUE".equals(strval) ||
+									  "false".equals(strval) || "FALSE".equals(strval)) {
+									Boolean b = new Boolean(strval);
+									props.put(key, b);
+								}
+								// finally, cannot represent as anything else, store as string
+								else props.put(key, strval);
+							}
+						}
           }
         }
       }
@@ -213,49 +285,56 @@ public class DataMgr {
   private static Pair getArgTypesAndObjs(String line, Hashtable currentProps) {
     if (line == null || line.length() == 0) return null;
     StringTokenizer st = new StringTokenizer(line, ",");
-    int numargs = st.countTokens()/2;
+    int numargs = st.countTokens();  // used to be st.countTokens()/2;
     Class[] argtypes = new Class[numargs];
     Object[] argvals = new Object[numargs];
     Pair result = new Pair(argtypes, argvals);
     int i=0;
     while (st.hasMoreTokens()) {
-      String objname = st.nextToken();
+      //String objname = st.nextToken();
       String objval = st.nextToken();
-      // figure out what is strval
+      // figure out what is strval: try int, long, double, boolean, already-read-in-prop, string
       try {
         Integer v = new Integer(objval);
-        argtypes[i++] = v.getClass();
-        argvals[i] = v;
+        argtypes[i] = int.class;  // used to be v.getClass();
+        argvals[i++] = v;
       }
       catch (NumberFormatException e) {
         try {
-          Double v = new Double(objval);
-          argtypes[i++] = v.getClass();
-          argvals[i] = v;
-        }
-        catch (NumberFormatException e2) {
-          // strval cannot be interpreted as a number.
-          // check out if it is boolean
-          if ("true".equals(objval) || "TRUE".equals(objval) ||
-              "false".equals(objval) || "FALSE".equals(objval)) {
-            Boolean b = new Boolean(objval);
-            argtypes[i++] = b.getClass();
-            argvals[i] = b;
-          }
-          else {
-            // check if it is already in currentProps
-            Object v = currentProps.get(objname);
-            if (v!=null) {
-              argtypes[i++] = v.getClass();
-              argvals[i] = v;
-            }
-            else {
-              // finally, cannot represent as anything else, must be a string
-              argtypes[i++] = "".getClass();
-              argvals[i] = objval;
-            }
-          }
-        }
+					Long v = new Long(objval);
+          argtypes[i] = long.class;  // used to be v.getClass();
+          argvals[i++] = v;
+				}
+				catch (NumberFormatException e1) {
+					try {
+	          Double v = new Double(objval);
+		        argtypes[i] = double.class;  // used to be v.getClass();
+			      argvals[i++] = v;
+				  }
+					catch (NumberFormatException e2) {
+						// strval cannot be interpreted as a number.
+						// check out if it is boolean
+						if ("true".equals(objval) || "TRUE".equals(objval) ||
+							  "false".equals(objval) || "FALSE".equals(objval)) {
+							Boolean b = new Boolean(objval);
+							argtypes[i] = boolean.class;  // used to be b.getClass();
+							argvals[i++] = b;
+						}
+						else {
+							// check if it is already in currentProps
+							Object v = currentProps.get(objval);  // used to be objname
+							if (v!=null) {
+								argtypes[i] = v.getClass();
+								argvals[i++] = v;
+							}
+							else {
+								// finally, cannot represent as anything else, must be a string
+								argtypes[i] = "".getClass();
+								argvals[i++] = objval;
+							}
+						}
+					}
+				}
       }
     }
     return result;
@@ -264,18 +343,20 @@ public class DataMgr {
 
   /**
    * reads the vectors from a file of the form
+	 * <PRE>
    * [
    * numdocs totaldimensions
-   * dim,val [dim,val]
+   * dim,val [ dim,val]*
    * [...]
    * ]
+	 * </PRE>
    * dim is in [1...totaldimensions]
    * the documents are represented as a vector representation of
-   * a vector in a vector space of dimension totaldimensions. If a <dim,val>
+   * a vector in a vector space of dimension totaldimensions. If a &ltdim,val&gt
    * pair does not appear for a vector, the value for this coordinate is assumed
    * zero.
    * @param filename String
-   * @return Vector Vector<VectorIntf>
+   * @return Vector // Vector&ltVectorIntf&gt
    * @throws IOException, ClustererException
    */
   public static Vector readVectorsFromFile(String filename)
@@ -313,19 +394,82 @@ public class DataMgr {
     }
   }
 
+	
+	/**
+	 * same functionality as in <CODE>readVectorsFromFile(String)</CODE> method,
+	 * except that it only reads and returns the vectors in the lines in the range
+	 * [fromIndex, toIndex] (fromIndex and toIndex take values in 
+	 * {0,...,<CODE>readNumVectorsInFile(String)</CODE>-1})
+	 * @param filename String 
+	 * @param fromIndex int 
+	 * @param toIndex int
+	 * @return Vector // Vector&ltDblArray1Vector&gt
+	 * @throws IOException 
+	 * @throws IllegalArgumentException if fromIndex &gt toIndex or any of the two
+	 * is outside the valid range of indices.
+	 * @throws IndexOutOfBoundsException if fromIndex or toIndex are out of range.
+	 */
+	public static Vector readVectorsFromFileInRange(String filename, int fromIndex, int toIndex)
+	    throws IOException, IllegalArgumentException, IndexOutOfBoundsException {
+		if (fromIndex>toIndex) 
+			throw new IllegalArgumentException("fromIndex("+fromIndex+
+							                           ") cannot be > toIndex("+toIndex+")");
+		if (fromIndex < 0 || toIndex < 0)
+			throw new IndexOutOfBoundsException("fromIndex or toIndex is less than zero");
+    BufferedReader br = new BufferedReader(new FileReader(filename));
+    try {
+      Vector v = new Vector();
+      if (br.ready()) {
+        String line = br.readLine();
+        StringTokenizer st = new StringTokenizer(line, " ");
+        int numdocs = Integer.parseInt(st.nextToken());
+				if (toIndex>=numdocs) throw new IndexOutOfBoundsException("toIndex is >= #docs in file "+filename);
+        int totaldims = Integer.parseInt(st.nextToken());
+        Integer dim = null;
+        double val = 0.0;
+				int lcnt = 0;  // line counter
+        while (true) {
+          line = br.readLine();
+          if (line == null) break;  // end-of-file
+					lcnt++;
+					int lcntm1 = lcnt-1;
+					if (lcntm1<fromIndex) continue;  // skip
+					else if (lcntm1>toIndex) break;  // done
+          DblArray1Vector d = new DblArray1Vector(new double[totaldims]);
+          st = new StringTokenizer(line, " ");
+          while (st.hasMoreTokens()) {
+            String pair = st.nextToken();
+            StringTokenizer st2 = new StringTokenizer(pair, ",");
+            dim = new Integer(Integer.parseInt(st2.nextToken()) - 1);
+            // dimension value is from 1...totdims
+            val = Double.parseDouble(st2.nextToken());
+            d.setCoord(dim.intValue(), val);
+          }
+          v.addElement(d);
+        }
+				if (lcnt!=numdocs && toIndex > lcnt) 
+					throw new IOException("bad file header (numdocs="+numdocs+" but there are only "+lcnt+" data lines.");
+      }
+      return v;
+    }
+    finally {
+      if (br!=null) br.close();
+    }		
+	}
+	
 
   /**
    * reads the vectors from a file of the form
-   * [
+   * <PRE>
    * numdocs totaldimensions
    * dim,val [dim,val]
    * [...]
-   * ]
+   * </PRE>
    * dim is in [1...totaldimensions]
    * the documents are represented as a sparse vector representation of
    * a vector in a vector space of dimension totaldimensions
    * @param filename String
-   * @return Vector Vector<DblArray1SparseVector>
+   * @return Vector // Vector&ltDblArray1SparseVector&gt
    * @throws IOException, ClustererException
    */
   public static Vector readSparseVectorsFromFile(String filename)
@@ -378,18 +522,18 @@ public class DataMgr {
 
   /**
    * reads the vectors from a file of the form
-   * [
+   * <PRE>
    * numdocs totaldimensions
    * dim,val [dim,val]
    * [...]
-   * ]
+   * </PRE>
    * dim is in [1...totaldimensions]
    * the documents are represented using full storage requirements (as a normal
    * double[]) taking up a lot of space, but also maintaining an index of the
    * non-zero positions for very fast <CODE>getQuick(i)</CODE> and
    * <CODE>getIthNonnZeroPos(i)</CODE> operations.
    * @param filename String
-   * @return Vector Vector<DblArray1SparseVectorFE>
+   * @return Vector // Vector&ltDblArray1SparseVectorFE&gt
    * @throws IOException, ClustererException
    */
   public static Vector readSparseVectorsFEFromFile(String filename)
@@ -442,16 +586,16 @@ public class DataMgr {
 
   /**
    * reads the vectors from a file of the form
-   * [
+   * <PRE>
    * numdocs totaldimensions
    * dim,val [dim,val]
    * [...]
-   * ]
+   * </PRE>
    * dim is in [1...totaldimensions]
    * the documents are represented as a sparse vector representation of
    * a vector in a vector space of dimension totaldimensions
    * @param filename String
-   * @return Vector Vector<DblArray1SparseVectorMT>
+   * @return Vector // Vector&ltDblArray1SparseVectorMT&gt
    * @throws IOException, ClustererException
    */
   public static Vector readSparseVectorsMTFromFile(String filename)
@@ -508,7 +652,7 @@ public class DataMgr {
    * to unity.
    * @param filename String
    * @throws IOException
-   * @return Vector Vector<VectorIntf>
+   * @return Vector // Vector&ltVectorIntf&gt
    */
   public static Vector readVectorsFromFileAndNormalize(String filename)
       throws IOException {
@@ -559,7 +703,7 @@ public class DataMgr {
    * to unity.
    * @param filename String
    * @throws IOException
-   * @return Vector Vector<VectorIntf>
+   * @return Vector // Vector&ltVectorIntf&gt
    */
   public static Vector readSparseVectorsMTFromFileAndNormalize(String filename)
       throws IOException {
@@ -609,6 +753,31 @@ public class DataMgr {
       if (br!=null) br.close();
     }
   }
+	
+	
+	/**
+	 * returns the number in the header (first line) of the file stating the 
+	 * number of vectors in the file.
+	 * @param filename String name of file containing the vectors
+	 * @return number of vectors in file
+	 * @throws IOException 
+	 */
+	public static int readNumVectorsInFile(String filename) throws IOException {
+    BufferedReader br = new BufferedReader(new FileReader(filename));
+		int res = -1;
+    try {
+      if (br.ready()) {
+				String line = br.readLine();
+				StringTokenizer st = new StringTokenizer(line, " ");
+				String numdocs = st.nextToken();
+				res = Integer.parseInt(numdocs);
+			}
+			return res;
+		}
+		finally {
+			if (br!=null) br.close();
+		}
+	}
 
 
   /**
@@ -696,7 +865,7 @@ public class DataMgr {
    * centers in space separated coordinates.
    * @param filename String
    * @throws IOException
-   * @return Vector Vector<VectorIntf>
+   * @return Vector // Vector&ltVectorIntf&gt
    */
   public static Vector readCentersFromFile(String filename) throws IOException {
     BufferedReader br=null;
@@ -734,14 +903,41 @@ public class DataMgr {
     }
   }
 
+	
+	/**
+	 * read a set of null-space separated integer values in a text file.
+	 * @param filename String
+	 * @return IntSet
+	 * @throws IOException 
+	 */
+	public static IntSet readIntegersFromFile(String filename) throws IOException {
+		BufferedReader br = new BufferedReader(new FileReader(filename));
+		if (br.ready()) {
+			IntSet set = new IntSet();
+			while (true) {
+				String line = br.readLine();
+				if (line==null) break;
+				if (line.length()==0) continue;
+				StringTokenizer st = new StringTokenizer(line);  // uses default delimiter set
+				while (st.hasMoreTokens()) {
+					String n = st.nextToken();
+					int num = Integer.parseInt(n);
+					set.add(new Integer(num));
+				}
+			}
+			return set;
+		}
+		return null;
+	}
+	
 
   /**
    * filename format is of the form:
-   * [
+   * <PRE>
    * numnodes numarcs
    * starta enda [weighta]
    * [...]
-   * ]
+   * </PRE>
    * The starta, enda are in [0...num_nodes-1]
    * weighta is double (non-negative)
    * @param filename String
@@ -761,7 +957,7 @@ public class DataMgr {
         StringTokenizer st = new StringTokenizer(line, " ");
         int numnodes = Integer.parseInt(st.nextToken());
         int numarcs = Integer.parseInt(st.nextToken());
-        g = new Graph(numnodes, numarcs);
+        g = Graph.newGraph(numnodes, numarcs);
         int starta, enda;
         double weighta;
         while (true) {
@@ -799,12 +995,12 @@ public class DataMgr {
 
   /**
    * filename format is of the form:
-   * [
+   * <PRE>
    * numarcs numnodes
    * starta enda [weighta]
    * [...]
    * [weight_node1...]
-   * ]
+   * </PRE>
    * The starta, enda are in [1...num_nodes]
    * weighta is double (non-negative)
    * node weights after arcs listing, if they exist, are double (non-negative)
@@ -825,7 +1021,7 @@ public class DataMgr {
         StringTokenizer st = new StringTokenizer(line, " ");
         int numarcs = Integer.parseInt(st.nextToken());
         int numnodes = Integer.parseInt(st.nextToken());
-        g = new Graph(numnodes, numarcs);
+        g = Graph.newGraph(numnodes, numarcs);
         int starta, enda;
         double weighta;
         int arccnt=0;
@@ -875,11 +1071,11 @@ public class DataMgr {
 
   /**
    * filename format is of the form:
-   * [
+	 * <PRE>
    * numarcs numnodes 1
    * weighta starta enda
    * [...]
-   * ]
+	 * </PRE>
    * The starta, enda are in [1...num_nodes]
    * weighta is int (non-negative)
    * @param filename String
@@ -899,7 +1095,7 @@ public class DataMgr {
         StringTokenizer st = new StringTokenizer(line, " ");
         int numarcs = Integer.parseInt(st.nextToken());
         int numnodes = Integer.parseInt(st.nextToken());
-        g = new Graph(numnodes, numarcs);
+        g = Graph.newGraph(numnodes, numarcs);
         int starta, enda;
         double weighta;
         while (true) {
@@ -966,7 +1162,7 @@ public class DataMgr {
         }
         br2.close();
         br2 = null;
-        g = new Graph(numnodes, numarcs, labels);
+        g = Graph.newGraph(numnodes, numarcs, labels);
         int starta, enda;
         double weighta;
         while (true) {
@@ -1001,11 +1197,11 @@ public class DataMgr {
 
   /**
    * filename format is of the form:
-   * [
+   * <PRE>
    * numarcs numnodes [1]
    * [weighta] node1 node2 ... nodek
    * [...]
-   * ]
+   * </PRE>
    * The nodei are in [1...numnodes]
    * weighta is int (non-negative). If it does not exist (the third value in the
    * first line does not exist), then its value is 1.
@@ -1062,9 +1258,11 @@ public class DataMgr {
    * takes as input an already constructed graph, and prints it in MeTiS format
    * in the file specified in the second argument. The format of this output
    * file is as follows:
+	 * <PRE>
    * numnodes numarcs
-   * ...
    * starta enda weight
+	 * ...
+	 * </PRE>
    * starta, enda are in [0,...,numnodes-1]
    * @param g Graph
    * @param filename String
@@ -1089,14 +1287,14 @@ public class DataMgr {
    * takes as input an already constructed graph, and prints it in MeTiS format
    * in the file specified in the second argument. The format of this output
    * file is as follows:
-   *
+   * <PRE>
    * numarcs numnodes
    * ...
    * starta enda weight
    * ...
    * nodeweight
    * ...
-   *
+   * </PRE>
    * starta, enda are in [1,...,numnodes]
    * nodeweight are double values, the first corresponds to the 1st node etc.
    * @param g Graph
@@ -1237,9 +1435,11 @@ public class DataMgr {
    * takes as input an already constructed graph, and prints it in MeTiS format
    * in the file specified in the second argument. The format of this output
    * file is as follows:
+	 * <PRE>
    * numnodes numarcs 1
    * ...
    * nbor_id1 edgeweight_1 nbor_id2 edgeweight_2 ...
+	 * </PRE>
    * @param g Graph
    * @param filename String
    * @throws IOException
@@ -1279,7 +1479,7 @@ public class DataMgr {
   /**
    * writes the vectors in the 1st argument to file specified in 3rd arg.
    * according to the format specified in <CODE>readVectorsFromFile()</CODE>.
-   * @param docs Vector Vector<VectorIntf>
+   * @param docs Vector // Vector&ltVectorIntf&gt
    * @param tot_dims int
    * @param filename String
    * @throws IOException
@@ -1310,7 +1510,7 @@ public class DataMgr {
   /**
    * writes the sparse vectors in the 1st argument to file specified in 3rd arg.
    * according to the format specified in <CODE>readSparseVectorsFromFile()</CODE>.
-   * @param docs Vector Vector<SparseVectorIntf>
+   * @param docs Vector // Vector&ltSparseVectorIntf&gt
    * @param tot_dims int
    * @param filename String
    * @throws IOException

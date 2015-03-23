@@ -195,7 +195,7 @@ public class PolakRibiereConjugateGradientST implements LocalOptimizerIntf, Obse
                           (VectorIntf) p.get("prcg.x0");
     if (x0==null) throw new OptimizerException("no prcg.x0"+
                                                " initial point in _params passed");
-    VectorIntf x = x0.newCopy();  // don't modify the initial soln
+    VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
     final int n = x.getNumCoords();
     double gtol = 1e-8;
     try {
@@ -315,6 +315,9 @@ public class PolakRibiereConjugateGradientST implements LocalOptimizerIntf, Obse
       }
       b = VecUtil.innerProduct(gdiff,gnew)/(normg*normg);
       if (b<0) b = 0;  // automatic direction reset
+			if (gdiff instanceof PoolableObjectIntf) {
+				((PoolableObjectIntf) gdiff).release();
+			}
     }
     // end main loop
 

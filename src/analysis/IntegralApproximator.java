@@ -105,6 +105,11 @@ public class IntegralApproximator implements FunctionIntf {
       return Double.NaN;  // just to stop the compiler from complaining:
                           // can never get here
     }
+		finally {
+			if (t instanceof PoolableObjectIntf) {
+				((PoolableObjectIntf) t).release();
+			}
+		}
   }
 
 

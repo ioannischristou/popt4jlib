@@ -233,7 +233,7 @@ public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
       // add new solution back
       Vector sols = (Vector) _observers.get(obs);
       if (sols == null) {
-        System.err.println("DPSO.addIncumbent(): no observers found for DPSO...");  // itc: HERE rm asap
+        //System.err.println("DPSO.addIncumbent(): no observers found for DPSO...");
         return; // ObserverIntf was not registered or was removed
       }
       sols.addElement(soln);

@@ -16,30 +16,32 @@ import java.util.*;
  * point runs out of space in its thread-local pool. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2014</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-class DblArray1VectorPool {
+final class DblArray1VectorPool {
   /**
-   * the maximum number of objects this pool can handle.
+   * the maximum number of objects this pool can handle (default 10000).
    */
-  private static final int _NUMOBJS = 20000;
+  private static int _NUMOBJS = 10000;  // default value
   private ArrayList _pool;
   private int _maxUsedPos=-1;
+	private int _minUsedPos=_NUMOBJS;
+	private int _vecLen=-1;
+	
+	
 	/**
 	 * compile-time constant used to ensure no thread other than the one
 	 * used in "creating" an object may release it.
 	 */
-	private static final boolean _DO_RELEASE_SANITY_TEST=true;
+	private static final boolean _DO_RELEASE_SANITY_TEST=false;
 	/**
-	 * compile-time constant used to search the first _NUM_POS_2_TRY positions
-	 * in the pool when _maxUsedPos reaches its upper bound, for a freed object.
-	 * Must always be less than _NUMOBJS, preferably a very small number (around 
-	 * 10) for speed.
+	 * compile-time constant used to ensure that no object returned, was "used"
+	 * at the time of return.
 	 */
-	private static final int _NUM_POS_2_TRY=10;
+	private static final boolean _DO_GET_SANITY_TEST=false;
 	
 	
   /**
@@ -49,9 +51,12 @@ class DblArray1VectorPool {
    */
   public DblArray1VectorPool(int n) {
     _pool = new ArrayList(_NUMOBJS);
-    for (int i=0; i<_NUMOBJS; i++) {
+		_vecLen = n;
+		/* itc: 2015-01-15: moved code below to initialize() method
+		for (int i=0; i<_NUMOBJS; i++) {
       _pool.add(new DblArray1Vector(n, this, i));
     }
+		*/
   }
 
 
@@ -64,7 +69,8 @@ class DblArray1VectorPool {
 	 */
   static DblArray1Vector getObject(int n) {
     DblArray1VectorPool pool = DblArray1VectorThreadLocalPools.getThreadLocalPool(n);
-    DblArray1Vector p = pool.getObjectFromPool();
+    if (pool==null) return new DblArray1Vector(n);  // no pool for such size
+		DblArray1Vector p = pool.getObjectFromPool();
     try {
 			if (p!=null) {  // ok, return managed object
 			  return p;
@@ -79,6 +85,18 @@ class DblArray1VectorPool {
 
 	
 	/**
+	 * only called from DblArray1VectorThreadLocalPools after this object is 
+	 * constructed to finish construction/initialization without escaping "this"
+	 * in the constructor.
+	 */
+	void initialize() {
+		for (int i=0; i<_NUMOBJS; i++) {
+      _pool.add(new DblArray1Vector(_vecLen, this, i));
+    }		
+	}
+	
+	
+	/**
 	 * returns the argument to this pool, IFF it belongs to this pool.
 	 * @param ind DblArray1Vector
 	 */
@@ -90,14 +108,42 @@ class DblArray1VectorPool {
 				System.err.println("null ref yI="+yI.intValue());  // force NullPointerException
 			}
 		}
-    if (ind.getPoolPos()==_maxUsedPos) {
+		// corner case: the returned object was the only one "out-of-the-pool"
+		if (_maxUsedPos==_minUsedPos) {
+			if (_DO_RELEASE_SANITY_TEST) {
+				if (ind.getPoolPos()!=_minUsedPos) {
+					Integer yI = null;
+					System.err.println("null ref yI="+yI.intValue());  // force NullPointerException					
+				}
+			}
+			_maxUsedPos = -1;
+			_minUsedPos = _NUMOBJS;
+			return;
+		}
+		final int ind_poolpos = ind.getPoolPos();
+    if (ind_poolpos==_maxUsedPos) {
       --_maxUsedPos;
       while (_maxUsedPos>=0 &&
              ((DblArray1Vector)_pool.get(_maxUsedPos)).isUsed()==false)
         --_maxUsedPos;
     }
+		if (ind_poolpos==_minUsedPos) {
+			++_minUsedPos;
+			while (_minUsedPos<_NUMOBJS &&
+						 ((DblArray1Vector)_pool.get(_minUsedPos)).isUsed()==false)
+				++_minUsedPos;
+		}
     return;
   }
+	
+	
+	/**
+	 * return the length of the vectors in this pool.
+	 * @return int
+	 */
+	int getVectorsLength() {
+		return _vecLen;
+	}
 
 	
   /**
@@ -106,21 +152,40 @@ class DblArray1VectorPool {
    * @return DblArray1Vector
    */
   private DblArray1Vector getObjectFromPool() {
-    if (_maxUsedPos<_NUMOBJS-1) {
+    if (_maxUsedPos<_NUMOBJS-1) {  // try right end
       _maxUsedPos++;
       DblArray1Vector ind = (DblArray1Vector) _pool.get(_maxUsedPos);
       ind.setIsUsed();
+			if (_minUsedPos>_maxUsedPos) _minUsedPos = _maxUsedPos;
       return ind;
-    } else {
-			for (int i=0; i<_NUM_POS_2_TRY; i++) {
-				DblArray1Vector indi = (DblArray1Vector) _pool.get(i);
-				if (!indi.isUsed()) {
-					indi.setIsUsed();
-					return indi;				
+    } else {  // try the left end
+			if (_minUsedPos>0) {
+				_minUsedPos--;
+				DblArray1Vector ind = (DblArray1Vector) _pool.get(_minUsedPos);
+				if (_DO_GET_SANITY_TEST && ind.isUsed()) {
+					Integer yI = null;
+					System.err.println("getObjectFromPool(): left doesn't work: null ref yI="+yI.intValue());  // force NullPointerException
 				}
+				ind.setIsUsed();
+				if (_minUsedPos>_maxUsedPos) _maxUsedPos = _minUsedPos;
+				return ind;
 			}
 		}
 		return null;
   }
+
 	
+	/**
+	 * sets the number of objects in the thread-local pools to the size specified.
+	 * Must only be called once, before any pool is actually constructed (should
+	 * only be called from the DblArray1VectorThreadLocalPools class).
+	 * @param num int
+	 * @throws IllegalArgumentException if the argument is &lte 0
+	 */
+	static void setPoolSize(int num) throws IllegalArgumentException {
+		if (num <= 0) 
+			throw new IllegalArgumentException("setPoolSize(n): n<=0");
+		_NUMOBJS = num;
+	}
+
 }

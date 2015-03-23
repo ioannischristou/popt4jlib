@@ -97,9 +97,10 @@ public class DEA implements OptimizerIntf {
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object. Note that unless the 2-arg
    * constructor DEA(params, use_from_same_thread_only=true) is used to create
-   * this object, it is perfectly possible for one thread to call setParams(p),
-   * then another to setParams(p2) to some other param-set, and then the
-   * first thread to call minimize(f).
+   * this object, it is perfectly possible for one thread to call 
+	 * <CODE>setParams(p)</CODE>, then another to <CODE>setParams(p2)</CODE> to 
+	 * some other param-set, and then the first thread to call 
+	 * <CODE>minimize(f)</CODE>.
    */
   public synchronized void setParams(Hashtable p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
@@ -121,31 +122,31 @@ public class DEA implements OptimizerIntf {
   /**
    * The most important method of the class.
    * Prior to calling this method, some parameters must have been set, either
-   * during construction of the object, or via a call to setParams(p).
-   * The parameters are as follows:
-   *
-   * <"dea.randomchromosomemaker", RandomChromosomeMakerIntf r> mandatory, the
+   * during construction of the object, or via a call to 
+	 * <CODE>setParams(p)</CODE>. The parameters are as follows:
+   * <ul>
+   * <li> &lt"dea.randomchromosomemaker", RandomChromosomeMakerIntf r&gt mandatory, the
    * object responsible for implementing the interface that allows creating
    * random initial chromosome objects.
-   * <"dea.movemaker", NewChromosomeMakerIntf movemaker> mandatory, the object
+   * <li> &lt"dea.movemaker", NewChromosomeMakerIntf movemaker&gt mandatory, the object
    * responsible for implementing the interface that allows creating new
    * chromosome Objects from an existing one (makes a move).
-   * <"dea.numiters", Integer niters> optional, the number of iterations each
+   * <li> &lt"dea.numiters", Integer niters&gt optional, the number of iterations each
    * thread will go through in this evolutionary process run, default is 100.
-   * <"dea.sendrecvperiod",Integer period> optional, the number of generations
+   * <li> &lt"dea.sendrecvperiod",Integer period&gt optional, the number of generations
    * before the threads communicate their best solution to the master DEA
    * process and subsequent receipt of the same best solution by all threads.
    * Default is 1.
-   * <"dea.numthreads", Integer nt> optional, the number of threads representing
+   * <li> &lt"dea.numthreads", Integer nt&gt optional, the number of threads representing
    * islands for this evolutionary process run. Default is 1.
-   * <"dea.c2amaker", Chromosome2ArgMakerIntf c2amaker> optional, an object
+   * <li> &lt"dea.c2amaker", Chromosome2ArgMakerIntf c2amaker&gt optional, an object
    * implementing the Chromosome2ArgMakerIntf that transforms chromosome Objects
    * used in the evolutionary process -and manipulated by the Object implementing
    * the NewChromosomeMakerIntf interface- into argument Objects that can be
    * passed into the FunctionIntf object that the process minimizes. Default is
    * null, which results in the chromosome objects being passed "as-is" to the
    * FunctionIntf object being minimized.
-   *
+   * </ul>
    * The result is a PairObjDouble object that contains the best function arg.
    * along with the minimum function value obtained by this argument (or null
    * if the process fails to find any valid function argument).
@@ -509,7 +510,7 @@ class DEAThreadAux {
 class DEAIndividual {
   private Object _chromosome;
   private double _val=Double.MAX_VALUE;  // raw objective value
-  // private DEA _master;  // ref. back to master DGA object
+  // private DEA _master;  // ref. back to master DEA object
   private Chromosome2ArgMakerIntf _c2amaker;
   private FunctionIntf _f;
 

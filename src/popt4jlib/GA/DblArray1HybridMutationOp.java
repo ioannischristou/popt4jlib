@@ -32,6 +32,7 @@ public class DblArray1HybridMutationOp implements MutationOpIntf {
    * @param chromosome1 Object a double[]
    * @param chromosome2 Object a double[]
    * @param params Hashtable must contain the following:
+	 * <ul>
    * <li> &lt"dga.mutationrate", $double_value$&gt optional, default 0.1.
    * <li> &lt"dga.gdmutationrate", $double_value$&gt optional, default 0.5.
    * <li> &lt"dga.minallelevalue", $value$&gt optional, the minimum value for
@@ -55,8 +56,10 @@ public class DblArray1HybridMutationOp implements MutationOpIntf {
    * non-null, the value must point to a <CODE>LocalOptimizerIntf</CODE> that
    * can apply some of the methods in the <CODE>popt4jlib.GradientDescent</CODE>
    * package.
-   * @throws OptimizerException
-   * @return Pair
+	 * </ul>
+   * @throws OptimizerException if any of the params above are incorrectly set,
+	 * or if the process somehow fails
+   * @return Pair Pair&ltdouble[], double[]&gt
    */
   public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
     try {

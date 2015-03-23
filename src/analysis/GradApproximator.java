@@ -51,7 +51,7 @@ public class GradApproximator implements VecFunctionIntf {
     if (nmI!=null && nmI.intValue()>0)
       nmax = nmI.intValue();
     double[][] d = new double[nmax][nmax];
-    VectorIntf retval = x.newCopy();
+    VectorIntf retval = x.newInstance();  // used to be x.newCopy();
     try {
       for (int k = 0; k < n; k++) {
         h = 1.0; // reset h value for each partial derivative
@@ -72,6 +72,9 @@ public class GradApproximator implements VecFunctionIntf {
         }
         retval.setCoord(k, d[nmax - 1][nmax - 1]);
       }
+			if (xc instanceof PoolableObjectIntf) {
+				((PoolableObjectIntf) xc).release();
+			}
     }
     catch (parallel.ParallelException e) {  // can never get here
       e.printStackTrace();

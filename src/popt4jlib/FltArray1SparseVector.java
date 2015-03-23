@@ -135,6 +135,17 @@ public class FltArray1SparseVector implements SparseVectorIntf {
     if (_indices==null) return new FltArray1SparseVector(_n);
     return new FltArray1SparseVector(_indices, _values, _n, (float) multFactor);
   }
+	
+	
+	/**
+	 * return a new VectorIntf object containing a copy of the data of this object
+	 * guaranteeing that the returned object is un-managed (not part of a pool).
+	 * @return VectorIntf
+	 */
+	public VectorIntf newInstance() {
+    if (_indices==null) return new FltArray1SparseVector(_n);
+    return new FltArray1SparseVector(_indices, _values, _n, 1.0f);		
+	}
 
 
   /**

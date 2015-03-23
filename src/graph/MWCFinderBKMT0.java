@@ -31,7 +31,8 @@ public class MWCFinderBKMT0 extends AllMWCFinder {
    */
   public MWCFinderBKMT0(Graph g, int numthreads) throws GraphException, ParallelException {
     super(g);
-    _executor = new FasterParallelAsynchBatchTaskExecutor(numthreads, false);
+    _executor = FasterParallelAsynchBatchTaskExecutor.
+						newFasterParallelAsynchBatchTaskExecutor(numthreads, false);
     // don't run on current thread when thread-pool is full
   }
 
@@ -105,7 +106,7 @@ public class MWCFinderBKMT0 extends AllMWCFinder {
           int cs = c.size();
           int rs = R.size();
           if (rs>cs) {
-            System.err.println("found clique of size "+rs);  // itc: HERE rm asap
+            //System.err.println("found clique of size "+rs);
             cliques.clear();
             cliques.add(R);
           }

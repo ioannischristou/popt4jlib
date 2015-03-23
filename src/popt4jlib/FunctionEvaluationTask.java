@@ -18,13 +18,13 @@ import java.io.Serializable;
  * thread-safe).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
 public class FunctionEvaluationTask implements TaskObject {
-  private final static long serialVersionUID = -7654946164692599332L;
+  // private final static long serialVersionUID = -7654946164692599332L;
   private FunctionIntf _f;
   private Object _arg;
   private Hashtable _params;
@@ -58,8 +58,10 @@ public class FunctionEvaluationTask implements TaskObject {
    */
   public Serializable run() {
     double val = _f.eval(_arg, _params);
-    setObjValue(val);
-    setDone(true);
+    synchronized (this) {
+			setObjValue(val);
+			setDone(true);
+		}
     return this;
   }
 
@@ -93,20 +95,41 @@ public class FunctionEvaluationTask implements TaskObject {
     _f = t2._f;
     _val = t2._val;
   }
+	
+	
+	/**
+	 * return a String representation of this object. Used for debugging.
+	 * @return String
+	 */
+	public String toString() {
+		String res = "FET[";
+		res += _f.getClass().getName();
+		res += "("+_arg+",(";
+		// add params pairs
+		java.util.Iterator it = _params.keySet().iterator();
+		while (it.hasNext()) {
+			String k = (String) it.next();
+			Object v = _params.get(k);
+			res += "<"+k+","+v+">";
+			if (it.hasNext()) res += ",";
+		}
+		res += "))="+_val+(_isDone ? " (" : " (!")+"done)"+"]";
+		return res;
+	}
 
 
   /**
    * set the objective value.
    * @param v double
    */
-  synchronized void setObjValue(double v) { _val = v; }
+  void setObjValue(double v) { _val = v; }
 
 
   /**
    * indicate the evaluation is done (or the opposite).
    * @param v boolean
    */
-  synchronized void setDone(boolean v) { _isDone = v; }
+  void setDone(boolean v) { _isDone = v; }
 
 }
 

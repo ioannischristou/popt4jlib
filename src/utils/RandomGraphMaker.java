@@ -11,7 +11,11 @@ import parallel.*;
  * wireless network with nodes randomly placed in a normalized H x W rectangle,
  * and with radius of transmission either constant or uniformly distributed in
  * [r/2, 3r/2]. The maximum 2-packing problem solution on the dual graph is the
- * solution to the D2EMIS problem for the original ad-hoc wireless network.
+ * solution to the D2EMIS problem for the original ad-hoc wireless network. May
+ * also add edges between neighbors at distance 2, so that instead of 2-packing,
+ * one may have to solve the (more common) maximum weighted independent set 
+ * (MWIS) problem. In the latter case, node weights are drawn from the discrete
+ * uniform distribution in U[1,[num_mwis_nodes*r]].
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -26,8 +30,10 @@ public class RandomGraphMaker {
   private double _r;
   private long _seed;
   private boolean _uniformr=false;
+	private boolean _createMWIS=false;
 
-  private RandomGraphMaker(int numnodes, double xdim, double ydim, double radius, boolean uniformr, long seed) {
+  private RandomGraphMaker(int numnodes, double xdim, double ydim, double radius, 
+					                 boolean uniformr, long seed, boolean createMWIS) {
     _numnodes = numnodes;
     _xlen=xdim;
     _ylen=ydim;
@@ -37,12 +43,13 @@ public class RandomGraphMaker {
       RndUtil.getInstance().setSeed(_seed);
     }
     _uniformr = uniformr;
+		_createMWIS=createMWIS;
   }
 
 
   private Graph buildUniformRandomDualGraph(String jplotfilename) throws GraphException, ParallelException, FileNotFoundException {
     PrintWriter pw = null;
-    if (jplotfilename!=null) {
+    if (jplotfilename!=null && !jplotfilename.equals("null")) {
       pw = new PrintWriter(new FileOutputStream(jplotfilename));
       pw.println("double double");
       pw.println("invisible 0 0"); pw.println("invisible "+_xlen+" "+_ylen);
@@ -81,7 +88,7 @@ public class RandomGraphMaker {
         }
       }
     }
-    Graph g = new Graph(_numnodes, numarcs);
+    Graph g = Graph.newGraph(_numnodes, numarcs);
     double[] dgnxpos = new double[numarcs];
     double[] dgnypos = new double[numarcs];
     int aind = 0;
@@ -102,6 +109,33 @@ public class RandomGraphMaker {
     }
     // 3. return dual graph
     Graph dg = g.getDual();
+		if (_createMWIS) {  // add the 2-neighbors of a node to its immediate nbors
+			int tot_arcs = 0;
+			for (int i=0; i<dg.getNumNodes(); i++) {
+				Node ni = dg.getNode(i);
+				Set nnborsi = ni.getNNbors();
+				tot_arcs += nnborsi.size();
+			}
+			tot_arcs /= 2;
+			Graph dg2 = Graph.newGraph(dg.getNumNodes(), tot_arcs);
+			// add all the necessary arcs and node weights
+			for (int i=0; i<dg2.getNumNodes(); i++) {
+				Node ni = dg.getNode(i);  // get dg's node, not dg2
+				Set nnborsi = ni.getNNbors();
+				Iterator it = nnborsi.iterator();
+				while (it.hasNext()) {
+					Node nbor = (Node) it.next();
+					if (nbor.getId()>i) {  // ok add arc
+						dg2.addLink(i, nbor.getId(), 1);
+					}
+				}
+				// add node weight
+				int num = (int) (dg.getNumNodes()*_r*RndUtil.getInstance().getRandom().nextDouble());
+				if (num==0) num = 1;
+				dg2.getNode(i).setWeight("value", new Double(num));
+			}
+			dg = dg2;
+		}
     if (pw!=null) {
       int numdualarcs = dg.getNumArcs();
       for (int i=0; i<numdualarcs; i++) {
@@ -121,12 +155,12 @@ public class RandomGraphMaker {
   /**
    * invoke as:
    * <CODE>java -cp &ltclasspath&gt utils.RandomGraphMaker &ltnumnodes&gt
-   * &ltxdim&gt &ltydim&gt &ltradius&gt &ltfilename&gt [uniform] [rndseed] [jplotfilename]</CODE>
+   * &ltxdim&gt &ltydim&gt &ltradius&gt &ltfilename&gt [uniform] [rndseed] [jplotfilename(null)] [createMWIS(false)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
     if (args.length<5) {
-      System.err.println("usage: java -cp <classpath> utils.RandomGraphMaker <numnodes> <xdim> <ydim> <radius> <filename> [uniformr] [rndseed] [jplotfilename]");
+      System.err.println("usage: java -cp <classpath> utils.RandomGraphMaker <numnodes> <xdim> <ydim> <radius> <filename> [uniformr] [rndseed] [jplotfilename(null)] [createMWIS(false)]");
       System.exit(-1);
     }
     try {
@@ -137,14 +171,17 @@ public class RandomGraphMaker {
       if (args.length>6) seed = Long.parseLong(args[6]);
       String jplotfilename=null;
       if (args.length>7) jplotfilename=args[7];
+			boolean domwis = false;
+			if (args.length>8) domwis = Boolean.parseBoolean(args[8]);
       RandomGraphMaker maker = new RandomGraphMaker(Integer.parseInt(args[0]),
                                                     Double.parseDouble(args[1]),
                                                     Double.parseDouble(args[2]),
                                                     Double.parseDouble(args[3]),
                                                     uniformr,
-                                                    seed);
+                                                    seed,
+			                                              domwis);
       Graph g = maker.buildUniformRandomDualGraph(jplotfilename);
-      System.err.println("Dual graph has "+g.getNumComponents()+" components");  // itc: HERE rm asap
+      //System.err.println("Dual graph has "+g.getNumComponents()+" components");
       DataMgr.writeGraphToFile2(g, args[4]);
       long duration = System.currentTimeMillis()-start_time;
       System.out.println("total time (msecs): "+duration);
