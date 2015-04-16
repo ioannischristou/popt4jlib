@@ -26,7 +26,7 @@ public class DGAFPTest {
 
 
   /**
-   * invoke as <CODE>java -&ltclasspath&gt tests.DGAFPTest &ltparams_file&lt</CODE>
+   * invoke as <CODE>java -&lt;classpath&gt; tests.DGAFPTest &lt;params_file&gt;</CODE>
    * where the params_file must have the lines described in the documentation of
    * the class popt4jlib.GA.DGA.
    * @param args String[]

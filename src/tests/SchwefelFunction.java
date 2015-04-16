@@ -64,7 +64,7 @@ public class SchwefelFunction implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.SchwefelFunction &ltx_1&gt ... &ltx_n&gt</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.SchwefelFunction &lt;x_1&gt; ... &lt;x_n&gt;</CODE>
    * where the parameters are the values of the components of the vector point
    * at which the Schwefel function is to be evaluated.
    * @param args String[]

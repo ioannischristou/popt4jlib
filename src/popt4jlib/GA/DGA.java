@@ -346,41 +346,41 @@ public class DGA implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * to setParams(p) to do that).
    * These are:
    * <ul>
-   * <li>&lt"dga.randomchromosomemaker",RandomChromosomeMakerIntf maker&gt mandatory,
+   * <li>&lt;"dga.randomchromosomemaker",RandomChromosomeMakerIntf maker&gt; mandatory,
    * the RandomChromosomeMakerIntf Object responsible for creating valid random
    * chromosome Objects to populate the islands.
-   * <li>&lt"dga.xoverop", XoverOpIntf xoverOp&gt mandatory, the XoverOpIntf Object that
+   * <li>&lt;"dga.xoverop", XoverOpIntf xoverOp&gt; mandatory, the XoverOpIntf Object that
    * produces two new chromosome Objects from two old chromosome Objects. It is
    * the responsibility of the operator to always return NEW Objects.
-   * <li>&lt"dga.mutationop", MutationOpIntf mutationOp&gt optional, if present, the
+   * <li>&lt;"dga.mutationop", MutationOpIntf mutationOp&gt; optional, if present, the
    * operator will always be applied to the resulting Objects that the
    * XoverOpIntf will produce, default is null.
-   * <li>&lt"dga.numthreads",Integer nt&gt optional, how many threads will be used,
+   * <li>&lt;"dga.numthreads",Integer nt&gt; optional, how many threads will be used,
    * default is 1. Each thread corresponds to an island in the DGA model.
-   * <li>&lt"dga.c2amaker",Chromosome2ArgMakerIntf c2a&gt optional, the object that is
+   * <li>&lt;"dga.c2amaker",Chromosome2ArgMakerIntf c2a&gt; optional, the object that is
    * responsible for transforming a chromosome Object to a function argument
    * Object. If not present, the default identity transformation is assumed.
-   * <li>&lt"dga.a2cmaker",Arg2ChromosomeMakerIntf a2c&gt optional, the object that is
+   * <li>&lt;"dga.a2cmaker",Arg2ChromosomeMakerIntf a2c&gt; optional, the object that is
    * responsible for transforming a FunctionIntf argument Object to a chromosome
    * Object. If not present, the default identity transformation is assumed. The
    * a2c object is only useful when other ObserverIntf objects register for this
    * SubjectIntf object and also add back solutions to it (as FunctionIntf args)
-   * <li>&lt"dga.numgens",Integer ng&gt optional, the number of generations to run the
+   * <li>&lt;"dga.numgens",Integer ng&gt; optional, the number of generations to run the
    * GA, default is 1.
-   * <li>&lt"dga.numinitpop",Integer ip&gt optional, the initial population number for
+   * <li>&lt;"dga.numinitpop",Integer ip&gt; optional, the initial population number for
    * each island, default is 10.
-   * <li>&lt"dga.poplimit",Integer pl&gt optional, the maximum population for each
+   * <li>&lt;"dga.poplimit",Integer pl&gt; optional, the maximum population for each
    * island, default is 100.
-   * <li>&lt"dga.xoverprob",Double rate&gt optional, the square root of the expectation
+   * <li>&lt;"dga.xoverprob",Double rate&gt; optional, the square root of the expectation
    * of the number of times cross-over will occur divided by island population
    * size, default is 0.7.
-   * <li>&lt"dga.cutoffage",Integer maxage&gt optional, the number of generations an
+   * <li>&lt;"dga.cutoffage",Integer maxage&gt; optional, the number of generations an
    * individual is expected to live before being removed from the population,
    * default is 5.
-   * <li>&lt"dga.varage", Double varage&gt optional, the variance in the number of
+   * <li>&lt;"dga.varage", Double varage&gt; optional, the variance in the number of
    * generations an individual will remain in the population before being
    * removed, default is 0.9.
-   * <li>&lt"ensemblename", String name&gt optional, the name of the synchronized
+   * <li>&lt;"ensemblename", String name&gt; optional, the name of the synchronized
    * optimization ensemble in which this DGA object will participate. In case
    * this value is non-null, then a higher-level ensemble optimizer must have
    * appropriately called the method
@@ -411,7 +411,7 @@ public class DGA implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * @param FunctionIntf f
    * @throws OptimizerException if the optimization process fails; also see above
 	 * discussion
-   * @return PairObjDouble Pair&ltObject arg, Double val&gt
+   * @return PairObjDouble Pair&lt;Object arg, Double val&gt;
    */
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
 		if (f==null) throw new OptimizerException("DGA.minimize(f): null f");

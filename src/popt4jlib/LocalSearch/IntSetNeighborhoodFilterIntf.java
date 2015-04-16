@@ -4,7 +4,7 @@ import java.util.*;
 
 /**
  * extension of <CODE>NeighborhoodFilterIntf</CODE> class to work specifically
- * with Set&ltInteger&gt arg solutions and Integers as "guides".
+ * with Set&lt;Integer&gt; arg solutions and Integers as "guides".
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -14,12 +14,12 @@ import java.util.*;
  */
 public interface IntSetNeighborhoodFilterIntf extends NeighborhoodFilterIntf {
   /**
-   * returns a List&ltInteger&gt points to be "tried" to expand (or shrink) the
+   * returns a List&lt;Integer&gt; points to be "tried" to expand (or shrink) the
    * set arg.
    * @param x Integer
-   * @param arg Set // Set&ltInteger&gt
+   * @param arg Set // Set&lt;Integer&gt;
    * @param params Hashtable
-   * @return List // List&ltInteger&gt
+   * @return List // List&lt;Integer&gt;
    * @throws LocalSearchException
    */
   public List filter(Integer x, Set arg, Hashtable params) throws LocalSearchException;

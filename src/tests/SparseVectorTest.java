@@ -18,7 +18,7 @@ public class SparseVectorTest {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt tests.SparseVectorTest [num_dimensions(100)] [sparsity_factor(2)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; tests.SparseVectorTest [num_dimensions(100)] [sparsity_factor(2)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

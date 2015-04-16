@@ -51,7 +51,7 @@ public class LND9Function implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.LND9Function &ltx1&gt ... &ltxn&gt </CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.LND9Function &lt;x1&gt; ... &lt;xn&gt; </CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

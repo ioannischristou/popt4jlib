@@ -22,7 +22,7 @@ import utils.DataMgr;
  */
 public class ISN2RXPFIGAMMTest {
 	/**
-	 * invoke as <CODE>java -cp &ltclasspath&gt graph.packing.ISN2RXPFIGAMMTest &ltgraph_file&gt &ltint_file&gt [k(1)]</CODE>.
+	 * invoke as <CODE>java -cp &lt;classpath&gt; graph.packing.ISN2RXPFIGAMMTest &lt;graph_file&gt; &lt;int_file&gt; [k(1)]</CODE>.
 	 * @param args String[]
 	 */
 	public static void main(String[] args) throws Exception {

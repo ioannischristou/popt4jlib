@@ -68,8 +68,8 @@ public class WMaxSATFileMaker {
 
   /**
    * invoke as:
-   * <CODE>java -cp utils.WMaxSATFileMaker &ltinputgraphfilename&gt
-   * &ltoutputwmaxsatfilename&gt</CODE>.
+   * <CODE>java -cp utils.WMaxSATFileMaker &lt;inputgraphfilename&gt;
+   * &lt;outputwmaxsatfilename&gt;</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {

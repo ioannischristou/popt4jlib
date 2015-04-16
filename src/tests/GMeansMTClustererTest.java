@@ -19,7 +19,7 @@ public class GMeansMTClustererTest {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt tests.GMeansMTClustererTest &ltvectorsfilename&gt &ltk&gt [num_threads(1)] [rndseed(-1)] [doKMeans++(false)] [numiters(-1)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; tests.GMeansMTClustererTest &lt;vectorsfilename&gt; &lt;k&gt; [num_threads(1)] [rndseed(-1)] [doKMeans++(false)] [numiters(-1)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

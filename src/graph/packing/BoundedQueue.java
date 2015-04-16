@@ -10,7 +10,8 @@ import java.util.*;
  * the "oldest" BBNode (the one that was inserted the earliest with the same
  * size as n) is removed from the structure so as to make room for the BBNode n.
  * Two Hashtables are maintained for efficiency in maintaining order of insertion
- * as well as speeding up look-ups in the "contains()" method
+ * as well as speeding up look-ups in the "contains()" method. Not part of the
+ * public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: Optimizing Capacity in MANET graphs</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -74,6 +75,16 @@ class BoundedQueue {
 }
 
 
+/**
+ * auxiliary class for the <CODE>BoundedQueue</CODE> class. Not part of the 
+ * public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: Optimizing Capacity in MANET graphs</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Company: AIT</p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
 class DLCList {
   private DLCListNode _head;
   private int _maxLen;
@@ -104,6 +115,16 @@ class DLCList {
 }
 
 
+/**
+ * auxiliary class for the <CODE>DLCList</CODE> class represents nodes in the 
+ * list container class. Not part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: Optimizing Capacity in MANET graphs</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Company: AIT</p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
 class DLCListNode {
   DLCListNode _next;
   DLCListNode _prev;

@@ -27,22 +27,23 @@ public class DFATest {
 
 
   /**
-   * invoke as <CODE>java -&ltclasspath&gt tests.DFATest &ltparams_file&gt [random_seed] [maxfuncevals]</CODE>
+   * invoke as <CODE>java -&lt;classpath&gt; tests.DFATest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>
    * where the params_file must contain the following lines:
-   * <li> class,dfa.function, &lt fullclassname &gt mandatory, specifies full
+	 * <ul>
+   * <li> class,dfa.function, &lt; fullclassname &gt; mandatory, specifies full
    * java class name of the function to be optimized (implementing the
    * <CODE>popt4jlib.FunctionIntf</CODE> interface.)
-   * <li> class,dfa.randomfireflymaker, &ltfullclassname&gt, mandatory, the
+   * <li> class,dfa.randomfireflymaker, &lt;fullclassname&gt;, mandatory, the
    * full class name of the class implementing the
    * <CODE>popt4jlib.RandomChromosomeMakerIntf</CODE> interface, responsible
    * for creating valid random chromosome Objects to populate the islands.
    * <li> dfa.numthreads, $num$ optional, how many threads will be used,
    * default is 1.
-   * <li> class,dfa.cupdater, &ltfullclassname&gt, mandatory, the
+   * <li> class,dfa.cupdater, &lt;fullclassname&gt;, mandatory, the
    * ChromosomeUpdaterIntf updater object that implements the interface that
    * produces the next position of a firefly given its current position and that
    * of its better neighbors.
-   * <li> class,dfa.localoptimizer, &ltfullclassname&gt optional, if present,
+   * <li> class,dfa.localoptimizer, &lt;fullclassname&gt; optional, if present,
    * specifies the full java class name of the class implementing the
    * <CODE>popt4jlib.GradientDescent.LocalOptimizerIntf</CODE> interface that
    * will be used to post-optimize the DFA search, starting from the best
@@ -51,12 +52,12 @@ public class DFATest {
    * seed to use for each of the $num2$ threads to use (the value num2 must
    * equal the number given for the dfa.numthreads, or 1 if no such line is
    * present). The value of num should be a positive integer.
-   * <li> class,dfa.c2amaker,&ltfullclassname&gt, optional, if present the full
+   * <li> class,dfa.c2amaker,&lt;fullclassname&gt;, optional, if present the full
    * class name of the class implementing the
    * <CODE>popt4jlib.Chromosome2ArgMakerIntf</CODE> interface that is
    * responsible for tranforming a chromosome Object to a function argument
    * Object. If not present, the default identity transformation is assumed.
-   * <li> class,dfa.a2cmaker,&ltfullclassname&gt, optional, if present the full
+   * <li> class,dfa.a2cmaker,&lt;fullclassname&gt;, optional, if present the full
    * class name of the class implementing the
    * <CODE>popt4jlib.Arg2ChromosomeMakerIntf</CODE> interface that's responsible
    * for transforming a FunctionIntf argument Object to a chromosome
@@ -70,6 +71,7 @@ public class DFATest {
    * sub-population, default is 0.01
    * <li> dfa.numinitpop, $num$ optional, the initial population number for
    * each island, default is 10.
+	 * </ul>
    * <p> Additionally, the params_file must contain any parameters required for
    * the function optimized, as well as any parameters for any of the objects
    * used in the DFA process (such as the objects implementing the

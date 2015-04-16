@@ -30,7 +30,7 @@ public final class BBGASPPacker {
 
 
   /**
-   * run as <CODE>java -cp &ltclasspath&gt graph.packing.BBGASPPacker &ltgraphfilename&gt &ltparamsfilename&gt [maxnumBBnodes] [numthreads]</CODE>.
+   * run as <CODE>java -cp &lt;classpath&gt; graph.packing.BBGASPPacker &lt;graphfilename&gt; &lt;paramsfilename&gt; [maxnumBBnodes] [numthreads]</CODE>.
    * <br>args[0]: graph file name must adhere to the format specified in the
    * description of the method <CODE>utils.DataMgr.readGraphFromFile2(String file)</CODE>
    * <br>args[1]: params file name may define parameters in lines of the following
@@ -55,7 +55,7 @@ public final class BBGASPPacker {
 	 * other nodes it can add to the reduced solution. This local search can 
 	 * become quite expensive and for this reason it is only applied to final 
 	 * incumbent solutions in the B&B-tree construction process. Default is false.
-	 * <li> class,localsearchtype, &ltfullclassname&gt[,optionalarguments] optional
+	 * <li> class,localsearchtype, &lt;fullclassname&gt;[,optionalarguments] optional
 	 * if present, will utilize in the local-search procedure the 
 	 * <CODE>AllChromosomeMakerClonableIntf</CODE> specified in the classname, 
 	 * constructed using the arguments specified (if present). For example,
@@ -94,7 +94,7 @@ public final class BBGASPPacker {
    * "usemaxsubsets" parameter is false.
    * <li> maxnodechildren, $num$ optional, specify an upper bound on the number
    * of children any node is allowed to create. Default is Integer.MAX_VALUE.
-   * <li> class,bbnodecomparator, &ltfullclassname&gt optional, the full class
+   * <li> class,bbnodecomparator, &lt;fullclassname&gt; optional, the full class
    * name of a class implementing the <CODE>graph.packing.BBNodeComparatorIntf</CODE>
    * that is used to define the order in which B&ampB nodes in the tree are picked
    * for processing. Default is <CODE>graph.packing.DefBBNodeComparator</CODE>.

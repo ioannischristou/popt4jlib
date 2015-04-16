@@ -24,8 +24,8 @@ public interface SparseVectorIntf extends VectorIntf {
    * will return 2, and the call <CODE>getIthNonZeroPos(1)</CODE> will return
    * 3.
    * @param i int
-   * @throws IndexOutOfBoundsException if the argument i is &lt0 or
-   * &gt=getNumCoords(). Also, if this is the zero vector, the method will
+   * @throws IndexOutOfBoundsException if the argument i is &lt;;0 or
+   * &gte;;getNumCoords(). Also, if this is the zero vector, the method will
    * always throw regardless of the argument passed in.
    * @return int
    */

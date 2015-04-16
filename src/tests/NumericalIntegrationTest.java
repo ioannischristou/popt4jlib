@@ -23,7 +23,7 @@ public class NumericalIntegrationTest {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.NumericalIntegrationTest &ltb&gt [H]</CODE>.
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.NumericalIntegrationTest &lt;b&gt; [H]</CODE>.
    * Computes the integral of a test function with respect to the first variable
    * from 0 up to b (default is 1000). The second (optional) variable H represents
    * the width of the consecutive sub-intervals that will make up the entire

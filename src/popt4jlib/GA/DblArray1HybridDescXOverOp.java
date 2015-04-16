@@ -32,37 +32,37 @@ public class DblArray1HybridDescXOverOp implements XoverOpIntf {
    * @param c2 Object double[]
    * @param params Hashtable should contain the following key-value pairs:
 	 * <ul>
-   * <li> &lt"dga.minallelevalue", $value$&gt optional, the minimum value for
+   * <li> &lt;"dga.minallelevalue", $value$&gt; optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
-   * <li> &lt"dga.minallelevalue$i$", $value$&gt optional, the minimum value for
+   * <li> &lt;"dga.minallelevalue$i$", $value$&gt; optional, the minimum value for
    * the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is less than the global value
    * specified by the "dga.minallelevalue" key, it is ignored.
-   * <li> &lt"dga.maxallelevalue", $value$&gt optional, the maximum value for
+   * <li> &lt;"dga.maxallelevalue", $value$&gt; optional, the maximum value for
    * any allele in the chromosome. Default +Infinity.
-   * <li> &lt"dga.maxallelevalue$i$", $value$&gt optional, the maximum value for
+   * <li> &lt;"dga.maxallelevalue$i$", $value$&gt; optional, the maximum value for
    * the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is greater than the global value
    * specified by the "dga.maxallelevalue" key, it is ignored.
-   * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
-   * <li> &lt"dga.function", FunctionIntf f&gt mandatory, the function to be
+   * <li> &lt;"dga.function", FunctionIntf f&gt; mandatory, the function to be
    * optimized.
-   * <li> &lt"dga.hybriddescxoverop.normalizesearchdir",$boolean_value$&gt optional.
+   * <li> &lt;"dga.hybriddescxoverop.normalizesearchdir",$boolean_value$&gt; optional.
    * If true, then the search direction used to compute the offspring, is
    * normalized to 1. Default is true.
-   * <li> &lt"dga.hybriddescxoverop.t0",$value$&gt optional value used in
+   * <li> &lt;"dga.hybriddescxoverop.t0",$value$&gt; optional value used in
    * computing the step-size in the "line-search" part of the algorithm. Default
    * is 0.001 if normalizesearchdir is true, 0.5 else.
-   * <li> &lt"dga.hybriddescxoverop.t0min",$value$&gt optional value. Default is
+   * <li> &lt;"dga.hybriddescxoverop.t0min",$value$&gt; optional value. Default is
    * 1.e-6.
-   * <li> &lt"dga.hybriddescxoverop.maxitercount", $integer_value$&gt optional
+   * <li> &lt;"dga.hybriddescxoverop.maxitercount", $integer_value$&gt; optional
    * value used to cut-short the search. Default is
    * <CODE>Integer.MAX_VALUE</CODE>.
-   * <li> &lt"dga.hybriddescxoverop.minaccvaldiffperc", $double_value$&gt
+   * <li> &lt;"dga.hybriddescxoverop.minaccvaldiffperc", $double_value$&gt;
    * optional. Default 0.1.
-   * <li> &lt"dga.hybriddescxoverop.return2bounds", $boolean_value$&gt optional.
+   * <li> &lt;"dga.hybriddescxoverop.return2bounds", $boolean_value$&gt; optional.
    * Default is false.
 	 * </ul>
    * @throws OptimizerException if any of the params above are incorrectly set,

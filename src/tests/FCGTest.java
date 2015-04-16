@@ -9,7 +9,7 @@ import java.util.*;
 /**
  * Test driver class for the Conjugate-Gradient algorithm using the
  * Fletcher-Reeves formula for updating the b parameter, and the Al-Baali -
- * Fletcher bracketing&sectioning method for step-size determination. All the
+ * Fletcher bracketing &amp sectioning method for step-size determination. The
  * above are described in:
  * Fletcher R.(1987) Practical Methods of Optimization 2nd ed. Wiley, Chichester
  * <p>Title: popt4jlib</p>
@@ -29,9 +29,10 @@ public class FCGTest {
 
 
   /**
-   * run as <CODE> java -cp &ltclasspath&gt tests.FCGTest &ltparams_file&gt [random_seed] [maxfuncevalslimit]</CODE>
+   * run as <CODE> java -cp &lt;classpath&gt; tests.FCGTest &lt;params_file&gt; [random_seed] [maxfuncevalslimit]</CODE>
    * where the params_file must contain lines of the following form:
-   * <li> class,fcg.function, &ltfullclassname&gt mandatory, the full class name
+	 * <ul>
+   * <li> class,fcg.function, &lt;fullclassname&gt; mandatory, the full class name
    * of the function to be minimized. The function must accept <CODE>double[]</CODE>
    * or <CODE>popt4jlib.VectorIntf</CODE> objects as arguments.
    * <li> fcg.numdimensions, $num$ mandatory, the number of dimensions of the
@@ -47,12 +48,12 @@ public class FCGTest {
    * a more strict lower bound on the ($j$+1)-st variable (j ranges in
    * [0, fcg.numdimensions-1])
    * <li> fcg.numtries", $num$ optional, the number of initial starting points
-   * to use (must either exist then ntries <"x$i$",VectorIntf v> pairs in the
-   * parameters or a pair <"gradientdescent.x0",VectorIntf v> pair in params).
+   * to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; pairs in the
+   * parameters or a pair &lt;"gradientdescent.x0",VectorIntf v&gt; pair in params).
    * Default is 1.
    * <li> fcg.numthreads, $num$ optional, the number of threads to use.
    * Default is 1.
-   * <li> class,fcg.gradient, &ltfullclasspathname&gt optional, the class name
+   * <li> class,fcg.gradient, &lt;fullclasspathname&gt; optional, the class name
    * of the <CODE>popt4jlib.VecFunctionIntf</CODE> the implements the gradient
    * of f, the function to be minimized. If this param-value pair does not exist,
    * the gradient will be computed using Richardson finite differences extrapolation
@@ -83,7 +84,7 @@ public class FCGTest {
    * to stop the Al-Baali - Fletcher algorithm in the bracketing phase. Default
    * is null (with the effect of utilizing the "fcg.redrate" value for stopping
    * criterion of the bracketing phase).
-   *
+   * </ul>
    * <p> if the second optional argument is passed in, it overrides the random
    * seed specified in the params_file.
    * <p> The optional third argument, if present, overrides any max. limit set

@@ -26,9 +26,10 @@ public class DGATest {
 
 
   /**
-   * run as <CODE> java -cp &ltclasspath&gt tests.DGATest &ltparams_file&gt [random_seed] [maxfuncevalslimit]</CODE>
+   * run as <CODE> java -cp &lt;classpath&gt; tests.DGATest &lt;params_file&gt; [random_seed] [maxfuncevalslimit]</CODE>
    * where the params_file must contain lines of the following form:
-   * <li> class,dga.function, &ltfullclassnameoffunction&gt mandatory, the name
+	 * <ul>
+   * <li> class,dga.function, &lt;fullclassnameoffunction&gt; mandatory, the name
    * of the java class defining the function to be optimized
    * <li> function.maxevaluationtime, $num$ optional, the maximum wall-clock time
    * allowed for any function evaluation to complete (in milliseconds).
@@ -44,36 +45,36 @@ public class DGATest {
    * seed to use for each of the $num2$ threads to use (the value num2 must
    * equal the number given for the dde.numthreads, or 1 if no such line is
    * present). The value of num should be a positive integer.
-   * <li> class,dga.observerlocaloptimizer, &ltfullclassname&gt optional, the
+   * <li> class,dga.observerlocaloptimizer, &lt;fullclassname&gt; optional, the
    * full class name of the java class implementing the <CODE>ObserverIntf</CODE>
    * in the popt4jlib pacakge as well as the <CODE>LocalOptimizerIntf</CODE> in
    * popt4jlib.GradientDescent package. Used for constructing ensembles of
    * optimizers exchanging (sub-)optimal incumbent solutions as they are found.
    * Can only be used with functions accepting as arguments <CODE>double[]</CODE>
    * or <CODE>VectorIntf</CODE>.
-   * <li> class,dga.localoptimizer, &ltfullclassname&gt optional, the full class
+   * <li> class,dga.localoptimizer, &lt;fullclassname&gt; optional, the full class
    * name of the java class implementing the <CODE>LocalOptimizerIntf</CODE> in
    * popt4jlib.GradientDescent package. Used as a final post-optimization step.
    * Can only be used with functions accepting as arguments <CODE>double[]</CODE>
    * or <CODE>VectorIntf</CODE>.
-   * <li> class,dga.randomchromosomemaker,&ltfullclassname&gt mandatory, the
+   * <li> class,dga.randomchromosomemaker,&lt;fullclassname&gt; mandatory, the
    * full class name of the java class implementing the RandomChromosomeMakerIntf
    * interface in the popt4jlib package, responsible for creating valid random
    * chromosome Objects to populate the islands.
-   * <li> class,dga.xoverop, &ltfullclassname&gt mandatory, the full class name
+   * <li> class,dga.xoverop, &lt;fullclassname&gt; mandatory, the full class name
    * of the java class implementing the XoverOpIntf interface in the popt4jlib.GA
    * package that produces two new chromosome Objects from two old chromosome
    * Objects. It is the responsibility of the operator to always return NEW Objects.
-   * <li> class,dga.mutationop, &ltfullclassname&gt optional, the full class name
+   * <li> class,dga.mutationop, &lt;fullclassname&gt; optional, the full class name
    * of the class implementing the MutationOpIntf interface in the popt4jlib.GA
    * pavkage. If present, the operator will always be applied to the resulting
    * Objects that the XoverOpIntf will produce.
-   * <li> class,dga.c2amaker, &ltfullclassname&gt optional, the full class name
+   * <li> class,dga.c2amaker, &lt;fullclassname&gt; optional, the full class name
    * of the class implementing the Chromosome2ArgMakerIntf interface in package
    * popt4jlib that is responsible for tranforming a chromosome Object to a
    * function argument Object. If not present, the default identity
    * transformation is assumed.
-   * <li> class,dga.a2cmaker, &ltfullclassname&gt optional, the full class name
+   * <li> class,dga.a2cmaker, &lt;fullclassname&gt; optional, the full class name
    * of the class implementing the Arg2ChromosomeMakerIntf in the popt4jlib package
    * responsible for transforming a FunctionIntf argument Object to a chromosome
    * Object. If not present, the default identity transformation is assumed. The
@@ -100,7 +101,7 @@ public class DGATest {
    * <li> In addition, the various operators (xover, mutation, a2cmaker,
    * c2amaker, randomchromosomemaker etc.) may require additional parameters as
    * they are defined and documented in their respective class file definitions.
-   *
+   * </ul>
    * <p> The optional second argument, if present, overrides the initial random
    * seed specified in the params_file.
    *

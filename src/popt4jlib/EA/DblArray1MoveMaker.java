@@ -29,17 +29,17 @@ public class DblArray1MoveMaker implements NewChromosomeMakerIntf {
    * random "move" from the current chromosome argument passed in as first
    * argument. The parameters passed in the second argument are as follows:
 	 * <ul>
-   * <li> &lt"dea.movesigma", Double v&gt optional, the &delta value to use as &sigma when
+   * <li> &lt;"dea.movesigma", Double v&gt; optional, the &delta value to use as &sigma when
    * determining the distance to move in each dimension. Default is 1.0.
-   * <li> &lt"dea.movesigma$i$", Double v&gt optional, the &delta value to use as &sigma when
+   * <li> &lt;"dea.movesigma$i$", Double v&gt; optional, the &delta value to use as &sigma when
    * determining the distance to move in the i-th dimension. Default is null.
-   * <li> &lt"dea.minallelevalue", Double v&gt optional, the min. value that any
+   * <li> &lt;"dea.minallelevalue", Double v&gt; optional, the min. value that any
    * component of the returned vector may assume.
-   * <li> &lt"dea.maxallelevalue", Double v&gt optional, the max. value that any
+   * <li> &lt;"dea.maxallelevalue", Double v&gt; optional, the max. value that any
    * component of the returned vector may assume.
-   * <li> &lt"dea.minallelevalue"+$i$, Double v&gt optional, the min. value that the
+   * <li> &lt;"dea.minallelevalue"+$i$, Double v&gt; optional, the min. value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * <li> &lt"dea.maxallelevalue"+$i$, Double v&gt optional, the max. value that the
+   * <li> &lt;"dea.maxallelevalue"+$i$, Double v&gt; optional, the max. value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
    * </ul>
 	 * <br>The "local" constraints can only impose more strict constraints on the

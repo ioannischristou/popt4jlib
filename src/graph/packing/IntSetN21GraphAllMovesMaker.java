@@ -42,8 +42,8 @@ public class IntSetN21GraphAllMovesMaker extends IntSetN21AllMovesMaker {
    * Overrides this method to modify the behavior of the base move-maker.
    * @param tid Integer
    * @param x IntSet
-   * @param params Hashtable must contain the pair &lt"dls.graph", Graph g&gt,
-	 * and may optionally contain the pair &lt"dls.lock_graph", boolean_val&gt
+   * @param params Hashtable must contain the pair &lt;"dls.graph", Graph g&gt;,
+	 * and may optionally contain the pair &lt;"dls.lock_graph", boolean_val&gt;
 	 * which if present and false, will avoid locking graph elements.
    * @return boolean
    */
@@ -73,7 +73,7 @@ public class IntSetN21GraphAllMovesMaker extends IntSetN21AllMovesMaker {
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set  // Set&ltNode&gt
+   * @param active Set  // Set&lt;Node&gt;
 	 * @param do_lock boolean
    * @return boolean true iff nj can be added to active
 	 * @throws ParallelException

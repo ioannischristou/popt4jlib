@@ -19,7 +19,7 @@ public class SolverTester {
    * test driver program for the parallel DP-based exact clustering of a sequence
    * of numbers (sorted in asc order).
    * invoke program as follows:
-   * <CODE>java -cp &ltclasspath&gt popt4jlib.MSSC1D.SolverTester &ltsequence_length&gt &ltnum_clusters&gt &ltstep&gt &ltgapm&gt</CODE>
+   * <CODE>java -cp &lt;classpath&gt; popt4jlib.MSSC1D.SolverTester &lt;sequence_length&gt; &lt;num_clusters&gt; &lt;step&gt; &lt;gapm&gt;</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

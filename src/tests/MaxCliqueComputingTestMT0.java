@@ -24,7 +24,7 @@ public class MaxCliqueComputingTestMT0 {
 
   /**
    * the main method: invoke from command line as follows:
-   * <CODE>java -cp <classpath> tests.MaxCliqueComputingTestMT0 &ltgraph_file_name&gt &ltthres&gt &ltnumthreads&gt [depth2work]</CODE>
+   * <CODE>java -cp <classpath> tests.MaxCliqueComputingTestMT0 &lt;graph_file_name&gt; &lt;thres&gt; &lt;numthreads&gt; [depth2work]</CODE>
    * where the parameter graph_file_name contains the graph whose cliques we
    * seek, and the parameter thres defines the minimum weight that each edge
    * of the graph must have so that it "counts" as a "true edge" in the

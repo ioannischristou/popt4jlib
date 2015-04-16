@@ -427,7 +427,7 @@ public class FNPTask2 implements ComparableTaskObject {
 	
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt popt4jlib.NumberPartitioning.FNPTask2 &lt#numbers&gt &ltmaxnumbersize&gt [numthreads(1)] [maxdepthallowed(0)] [seed(7)] [useExecuteBatch(1)] [minarrlenallowed2fork(Integer.MAX_VALUE)] [FNPTask2poolsize(100000)] [ReleaseFNPTask2Objectpoolsize(100000)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; popt4jlib.NumberPartitioning.FNPTask2 &lt;#numbers&gt; &lt;maxnumbersize&gt; [numthreads(1)] [maxdepthallowed(0)] [seed(7)] [useExecuteBatch(1)] [minarrlenallowed2fork(Integer.MAX_VALUE)] [FNPTask2poolsize(100000)] [ReleaseFNPTask2Objectpoolsize(100000)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -448,7 +448,7 @@ public class FNPTask2 implements ComparableTaskObject {
     );
 		if (args.length<2) {
 			System.err.println("usage: "+
-							"java -cp &ltclasspath&gt popt4jlib.NumberPartitioning.FNPTask2"+
+							"java -cp &lt;classpath&gt; popt4jlib.NumberPartitioning.FNPTask2"+
 							" <#numbers> <maxnumbersize> "+
 							"[numthreads(1)] [maxdepthallowed(0)] [seed(7)] [useExecuteBatch(1)]"+
 							" [minarrlenallowed2fork(Integer.MAX_VALUE)] "+

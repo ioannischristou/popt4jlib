@@ -27,13 +27,13 @@ public class IntSetN21AllMovesMaker  implements AllChromosomeMakerIntf {
 
   /**
    * implements the N_2+1 neighborhood for sets of integers.
-   * @param chromosome Object // Set&ltInteger&gt
+   * @param chromosome Object // Set&lt;Integer&gt;
    * @param params Hashtable must contain a key-value pair
-   * &lt"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt
+   * &lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;
    * The filter specifies the ints to be tried for addition to
    * the set given an int to be removed from the set.
    * @throws OptimizerException
-   * @return Vector // Vector&ltIntSet&gt
+   * @return Vector // Vector&lt;IntSet&gt;
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN21AllMovesMaker.createAllChromosomes(): null chromosome");
@@ -73,12 +73,12 @@ public class IntSetN21AllMovesMaker  implements AllChromosomeMakerIntf {
    * hook method in the context of the Template Method Design Pattern.
    * Sub-classes with more domain knowledge may override this method to modify
    * the behavior of this move-maker.
-   * @param res Set // TreeSet&ltIntSet&gt
+   * @param res Set // TreeSet&lt;IntSet&gt;
    * @param id Integer
-   * @param tryids List // List&ltInteger&gt
+   * @param tryids List // List&lt;Integer&gt;
    * @param maxcard int
    * @param params Hashtable
-   * @return Set // TreeSet&ltIntSet&gt
+   * @return Set // TreeSet&lt;IntSet&gt;
    */
   protected Set createSets(Set res, Integer id, List tryids, int maxcard, Hashtable params) {
     if (maxcard==0) return res;

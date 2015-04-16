@@ -73,13 +73,13 @@ public class MCS implements OptimizerIntf {
    * The parameters that must have been passed in (via the constructor or via
    * a call to the <CODE>setParams(p)</CODE> method are as follows:
 	 * <ul>
-   * <li> &lt"mcs.numtries", Integer ntries&gt mandatory, the number of random attempts
+   * <li> &lt;"mcs.numtries", Integer ntries&gt; mandatory, the number of random attempts
    * to perform in total (these attempts will be distributed among the number
    * of threads that will be created.)
-   * <li> &lt"mcs.randomargmaker", RandomArgMakerIntf amaker&gt mandatory, an object that
+   * <li> &lt;"mcs.randomargmaker", RandomArgMakerIntf amaker&gt; mandatory, an object that
    * implements the RandomArgMakerIntf interface so that it can produce function
    * arguments for the function f to be minimized.
-   * <li> &lt"mcs.numthreads", Integer nt&gt optional, the number of threads to use,
+   * <li> &lt;"mcs.numthreads", Integer nt&gt; optional, the number of threads to use,
    * default is 1.
    * <li> any other parameters required for the evaluation of the function, or
    * by the objects passed in above (e.g. the RandomArgMakerIntf object etc.)

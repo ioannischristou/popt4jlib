@@ -13,7 +13,7 @@ package parallel.distributed;
 public class DLockTest {
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt parallel.DLockTest [num_threads] </CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; parallel.DLockTest [num_threads] </CODE>
    * The program will spawn 100 threads by default, and each thread will lock once.
    * @param args String[]
    */

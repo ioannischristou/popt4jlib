@@ -151,7 +151,7 @@ public final class GASPPacker {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt graph.packing.GASPPacker &ltgraph_file&gt </CODE>.
+   * invoke as <CODE>java -cp &lt;classpath&gt; graph.packing.GASPPacker &lt;graph_file&gt; </CODE>.
    * The graph_file contains the graph in the format specified in the
    * comments of method <CODE>utils.DataMgr.readGraphFromFile2(filename)</CODE>.
    * The solution found is also written in the file "sol.out" in the current

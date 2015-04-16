@@ -32,22 +32,22 @@ public class IntVarArray1MoveMaker implements NewChromosomeMakerIntf {
    * region (if any such box-constraints exist).
    * @param chromosome Object int[]
    * @param params Hashtable must contain the following pairs:
-   * <li> &lt"dsa.minallelevalue", $integer_value$&gt mandatory, the min. value
+   * <li> &lt;"dsa.minallelevalue", $integer_value$&gt; mandatory, the min. value
    * for any allele in the chromosome.
-   * <li> &lt"dsa.minallelevalue$i$", $integer_value$&gt optional, the min.
+   * <li> &lt;"dsa.minallelevalue$i$", $integer_value$&gt; optional, the min.
    * value for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}). If this value is less than the global value
    * specified by the "dsa.minallelevalue" key, it is ignored.
-   * <li> &lt"dsa.maxallelevalue", $integer_value$&gt mandatory, the max. value
+   * <li> &lt;"dsa.maxallelevalue", $integer_value$&gt; mandatory, the max. value
    * for any allele in the chromosome.
-   * <li> &lt"dsa.maxallelevalue$i$", $integer_value$&gt optional, the max.
+   * <li> &lt;"dsa.maxallelevalue$i$", $integer_value$&gt; optional, the max.
    * value for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}). If this value is greater than the global
    * value specified by the "dsa.maxallelevalue" key, it is ignored.
-   * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
-   * <li> &lt"dsa.movedelta",$value"&gt mandatory, the value of the ä parameter.
+   * <li> &lt;"dsa.movedelta",$value"&gt; mandatory, the value of the ä parameter.
    * @throws OptimizerException
    * @return Object int[]
    */

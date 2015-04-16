@@ -50,9 +50,9 @@ class BBNode1 extends BBNodeBase {
    * create such objects which are instead created dynamically through the
    * B&B process.
    * @param master BBTree the master BBTree object of which this is a node.
-   * @param r Set // Set&ltNode&gt the set of (graph) nodes to be added to the 
+   * @param r Set // Set&lt;Node&gt; the set of (graph) nodes to be added to the 
 	 * nodes of the parent to represent a new partial solution.
-   * @param parent BBNode1 the parent BB-node in the B\&B tree construction process.
+   * @param parent BBNode1 the parent BB-node in the B&ampB tree construction process.
    * @throws PackingException if the second argument is non-null but the third
    * argument is null.
    */
@@ -148,7 +148,8 @@ class BBNode1 extends BBNodeBase {
             BBNode1 child = new BBNode1(_master, ns, this);
             // check if child's bound is better than incumbent
             double childbound = child.getBound();
-            if (childbound <= _master.getBound())
+            if (childbound <= _master.getBound() || 
+								childbound < _master.getMinKnownBound())  // we know child cannot make it
               continue;
             // speed up processing:
             // record new child incumbent if it exists (may be a partial soln
@@ -364,7 +365,7 @@ class BBNode1 extends BBNodeBase {
 	/**
 	 * return all immediate nbors of this solution's nodes, plus the solution's 
 	 * nodes themselves.
-	 * @return Set // Set&ltNode&gt
+	 * @return Set // Set&lt;Node&gt;
 	 */
   private Set getForbiddenNodes() {
     Set forbidden = new HashSet(getNodes());
@@ -480,7 +481,7 @@ class BBNode1 extends BBNodeBase {
 	 * @return the depth of this <CODE>BBNode1</CODE> object in the 
 	 * <CODE>BBTree</CODE>.
 	 */
-  final private int getLevel() {
+  final int getLevel() {
     int lvl=0;
     for (BBNode1 p=this; p!=null; p=(BBNode1)p.getParent()) lvl++;
     return lvl;
@@ -488,14 +489,14 @@ class BBNode1 extends BBNodeBase {
 
 
   /**
-   * return Set&ltSet&ltNode&gt &gt of all maximal nodesets that can be added 
+   * return Set&lt;Set&lt;Node&gt; &gt; of all maximal nodesets that can be added 
 	 * together to the current active <CODE>_nodes</CODE> set.
 	 * Note: 
 	 * <br>2014-07-22 modified Vector store to ArrayList store to enhance
 	 * multi-threading speed.
 	 * <br>2015-02-09 root node returns immediately with collection of singleton
 	 * free nodes as sets to enhance multi-threading speed.
-   * @return Set // Set&ltSet&ltNode&gt &gt
+   * @return Set // Set&lt;Set&lt;Node&gt; &gt;
    */
   private Set getBestNodeSets2Add() throws ParallelException {
     final int kmax = getMaster().getMaxAllowedItersInGBNS2A();
@@ -618,7 +619,7 @@ class BBNode1 extends BBNodeBase {
 
 
   /**
-   * return the Set&ltNode&gt that are the best node(s) to add given the current
+   * return the Set&lt;Node&gt; that are the best node(s) to add given the current
    * active <CODE>_nodes</CODE> set. This is the set of nodes that are free to 
 	 * cover, have max. weight (within the fudge factor <CODE>_ff</CODE>), and 
 	 * have the least weight of "free" NBors() (again within the same fudge factor).
@@ -628,7 +629,7 @@ class BBNode1 extends BBNodeBase {
 	 * $w_n / \Sum_{v \in N^+_n}$ form the return set.
 	 * @param boolean isroot if true then _ff is set to zero, so that all 
 	 * non-forbidden nodes with min. sum of neighbors-weights are returned.
-   * @return Set // Set&ltNode&gt
+   * @return Set // Set&lt;Node&gt;
    */
   private Set getBestNodes2Add(boolean isroot) throws ParallelException {
     final int gsz=getMaster().getGraphSize();
@@ -763,7 +764,7 @@ class BBNode1 extends BBNodeBase {
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set // Set&ltNode&gt
+   * @param active Set // Set&lt;Node&gt;
    * @return boolean true iff nj can be added to active
    */
   private static boolean isFree2Cover(Node nj, Set active) {
@@ -788,7 +789,7 @@ class BBNode1 extends BBNodeBase {
 	/**
 	 * check if the nodes parameter can be added to the current active set of 
 	 * nodes represented by this BBNode1 object.
-	 * @param nodes Set // Set&ltNode&gt 
+	 * @param nodes Set // Set&lt;Node&gt; 
 	 * @return boolean true iff nodes can be added to the current solution
 	 */
   private boolean isFeas(Set nodes) {
@@ -809,8 +810,8 @@ class BBNode1 extends BBNodeBase {
 	 * neighbor of some n2 \in c2.
 	 * Notice that the method assumes that both c1 and c2 are currently feasible,
 	 * ie the calls isFeas(c1) and isFeas(c2) must return true.
-	 * @param c1 Set // Set&ltNode&gt
-	 * @param c2 Set // Set&ltNode&gt
+	 * @param c1 Set // Set&lt;Node&gt;
+	 * @param c2 Set // Set&lt;Node&gt;
 	 * @return boolean false iff c1 U nbors(c1) contain any of c2.
 	 */
 	private static boolean isFeas(Set c1, Set c2) {

@@ -9,7 +9,7 @@ import java.util.*;
  * atomically, must enclose the critical section in the calls
  *
  * <li> <CODE>atomic.start(i)</CODE>
- * <li> <CODE> &ltcritical section code&gt </CODE>
+ * <li> <CODE> &lt;critical section code&gt; </CODE>
  * <li> <CODE>atomic.end(i)</CODE>
  *
  * where <CODE>i >= 0</CODE>.

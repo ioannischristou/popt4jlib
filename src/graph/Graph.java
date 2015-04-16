@@ -855,7 +855,7 @@ public class Graph implements Serializable {
 	/**
 	 * get the complement of this (assumed undirected) Graph. The complement of a 
 	 * graph g is a graph with the same nodes as g, but its arc-set is the 
-	 * complement of g's arcs-set in other words, an arc (i,j) (with i &lt j) is 
+	 * complement of g's arcs-set in other words, an arc (i,j) (with i &lt; j) is 
 	 * in the complement of g if and only if i and j are not direct neighbors in g.
 	 * The arcs in the new graph will have unit weight. Any node labels will be 
 	 * shared in the new graph.
@@ -904,7 +904,7 @@ public class Graph implements Serializable {
    * get the support of a clique of this node in the other Graph g, in terms of
    * their labels. The method compares how many arcs in the clique also appear
    * in the Graph g, when the labels of the endpoints of the two nodes are used.
-   * @param nodes Set&ltInteger node_id&gt
+   * @param nodes Set&lt;Integer node_id&gt;
    * @param g Graph
    * @return double the percentage of arcs from the clique that are also present
    * in the Graph g
@@ -996,7 +996,7 @@ public class Graph implements Serializable {
    * each other. (For k=1 this should be fast enough method)
    * @param k int the max. number of hops away any two arcs are allowed to be.
    * @throws GraphException
-   * @return Set // Set&ltSet&ltInteger linkid&gt &gt
+   * @return Set // Set&lt;Set&lt;Integer linkid&gt; &gt;
    */
   public Set getAllConnectedLinks(int k) throws GraphException {
     try {
@@ -1041,12 +1041,12 @@ public class Graph implements Serializable {
 
 
   /**
-   * return a Set&ltSet&ltInteger nodeId&gt &gt that is the set of all sets of 
+   * return a Set&lt;Set&lt;Integer nodeId&gt; &gt; that is the set of all sets of 
 	 * nodeids in the result set that have the property that are maximal sets of 
 	 * nodes that are connected with each other with at most 1 hop.
    * @param k int
    * @throws GraphException
-   * @return Set // Set&ltSet&ltInteger nodeId&gt &gt
+   * @return Set // Set&lt;Set&lt;Integer nodeId&gt; &gt;
    */
   public Set getAllConnectedNodes(int k) throws GraphException {
     if (k!=2) throw new GraphException("currently, input k must be 2");
@@ -1122,12 +1122,12 @@ public class Graph implements Serializable {
 
 
   /**
-   * return the Set&ltIntSet nodeids&gt of all sets of nodeids with the property
+   * return the Set&lt;IntSet nodeids&gt; of all sets of nodeids with the property
    * that they are independent (maximal) and at distance at most 2 from each
    * other within the set they are in.
    * @param maxcount Integer if not null denotes the max number of 5-cycle based
    * sets of nodes to return
-   * @return Set // Set&ltIntSet nodeids&gt
+   * @return Set // Set&lt;IntSet nodeids&gt;
    * @throws GraphException
    */
   public Set getAllConnectedBy1Nodes(Integer maxcount) throws GraphException {
@@ -1207,10 +1207,10 @@ public class Graph implements Serializable {
 
 
   /**
-   * return a Set containing a Set&ltInteger nodeid&gt for each node i in this 
+   * return a Set containing a Set&lt;Integer nodeid&gt; for each node i in this 
 	 * Graph where each Set will comprise the immediate neighbors of node i, plus 
 	 * the node i itself (its id)
-   * @return Set // Set&ltSet&ltInteger nodeid&gt &gt
+   * @return Set // Set&lt;Set&lt;Integer nodeid&gt; &gt;
    */
   public Set getAllNborSets() {
     try {
@@ -1240,9 +1240,9 @@ public class Graph implements Serializable {
    * return all node ids of the nodes that are immediate neighbors of any of the
    * nodes whose ids are in the input set argument, excluding the nodes in the
    * input argument set.
-   * @param nodeids Set // Set&ltInteger nodeid&gt
+   * @param nodeids Set // Set&lt;Integer nodeid&gt;
    * @throws GraphException if nodeids is null or empty
-   * @return Set // Set&ltInteger nodeid&gt
+   * @return Set // Set&lt;Integer nodeid&gt;
    */
   public Set getNborIds(Set nodeids) throws GraphException {
     try {
@@ -1377,7 +1377,7 @@ public class Graph implements Serializable {
 	 * runs in expected constant time in the size of the forbidden set, and linear 
 	 * time in the size of the nodes of the graph.
 	 * @param name String
-	 * @param forbiddenNodes Set  // Set&ltNode&gt
+	 * @param forbiddenNodes Set  // Set&lt;Node&gt;
 	 * @return Double or null if there is no node not in forbiddenNodes
 	 */
 	public Double getMaxNodeWeight(String name, Set forbiddenNodes) {
@@ -1431,9 +1431,9 @@ public class Graph implements Serializable {
 
   /**
    *
-   * @param clique Set // Set&ltInteger nodeid&gt
+   * @param clique Set // Set&lt;Integer nodeid&gt;
    * @param minval double
-   * @return Vector // Vector&ltInteger nodeid&gt
+   * @return Vector // Vector&lt;Integer nodeid&gt;
    */
   Vector getFullNbors(Set clique, double minval) {
     try {
@@ -1561,7 +1561,7 @@ public class Graph implements Serializable {
   /**
    *
    * @param lid int
-   * @return Set // Set&ltInteger linkid&gt
+   * @return Set // Set&lt;Integer linkid&gt;
    */
   private Set getFullLinkNbors(int lid) {
     try {
@@ -1620,7 +1620,7 @@ public class Graph implements Serializable {
    * returns true iff each node w/ id in the arg. set, can reach any
    * other node whose id is in the arg set by using at most 1 hop that must also
    * be inside the arg. set.
-   * @param nodeids Set // Set&ltInteger nodeid&gt
+   * @param nodeids Set // Set&lt;Integer nodeid&gt;
    * @throws GraphException if arg set is empty or null
    * @return boolean
    */
@@ -1676,7 +1676,7 @@ public class Graph implements Serializable {
    * @param li Link
    * @param maxsetcount Integer
    * @throws GraphException
-   * @return Set // Set&ltSet&ltInteger nodeid&gt &gt
+   * @return Set // Set&lt;Set&lt;Integer nodeid&gt; &gt;
    */
   private Set get5CycleBasedConnectedNodes(Link li, Integer maxsetcount)
       throws GraphException {
@@ -1773,7 +1773,7 @@ public class Graph implements Serializable {
 
   /**
    * was used for debugging purposes
-   * @param clique Collection  // Collection&ltInteger nid&gt
+   * @param clique Collection  // Collection&lt;Integer nid&gt;
    */
   private void print(Collection clique) {
     System.out.print("[");

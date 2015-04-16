@@ -139,7 +139,7 @@ public final class SSNode {
   }
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt graph.packing.SSNode &ltgraphfilename&gt </CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; graph.packing.SSNode &lt;graphfilename&gt; </CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

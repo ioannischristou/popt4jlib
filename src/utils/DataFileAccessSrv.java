@@ -101,7 +101,7 @@ public class DataFileAccessSrv {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt utils.DataFileAccessSrv [port(7899)] [maxthreads(10000)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; utils.DataFileAccessSrv [port(7899)] [maxthreads(10000)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -297,7 +297,7 @@ public class DataFileAccessSrv {
 	
 	/**
 	 * invoke as:
-	 * java -cp &ltclasspath&gt [port(7894)] [maxthreads(10000)]
+	 * java -cp &lt;classpath&gt; [port(7894)] [maxthreads(10000)]
 	 * @deprecated 
 	 * @param args 
 	 */

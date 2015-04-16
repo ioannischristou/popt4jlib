@@ -80,7 +80,7 @@ public class PDBatchTaskExecutorCltTest2 {
 
   /**
    * invoke with single arg as:
-   * <CODE>java -cp &ltclasspath&gt parallel.distributed.PDBatchTaskExecutorCltTest &ltgraphfilename&gt </CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBatchTaskExecutorCltTest &lt;graphfilename&gt; </CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

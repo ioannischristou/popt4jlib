@@ -28,22 +28,23 @@ public class AVDTest {
 
   /**
    * invoke from the command-line as:
-   * <CODE> java -cp &ltclasspath&gt tests.AVDTest &ltparams_file&gt [random_seed] [maxfuncevals]</CODE>
-   * where the params_file must contain lines of the following form:
+   * <CODE>java -cp &lt;classpath&gt; tests.AVDTest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>.
+   * The params_file must contain lines of the following form:
+	 * <ul>
    * <li> avd.numdimensions, $num$ mandatory, number of dimensions
    * of the function to be optimized; the function to be optimized must accept
    * as arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
    * objects.
    * <li> avd.numtries, $num$ mandatory, the number of "tries" to
    * attempt from a single initial random point.
-   * <li> class,avd.function, &ltfullclassnameoffunction&gt mandatory, the
+   * <li> class,avd.function, &lt;fullclassnameoffunction&gt; mandatory, the
    * classname of the java class defining the function to be optimized.
    * <li> avd.minargval, $val$ mandatory, a double number that is a lower
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i >= val.
+   * must satisfy x_i &gte; val.
    * <li> avd.maxargval, $val$ mandatory, a double number that is an upper
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i <= val.
+   * must satisfy x_i &lte; val.
    * <li> avd.tryorder$i$, $n$ optional, an integer value specifying which
    * variable to be optimized in the i-th inner iteration. If no such line
    * exists, and also, the pair ("avd.tryallparallel",true) exists in params,
@@ -63,13 +64,13 @@ public class AVDTest {
    * step-size. Default is 5.
    * <li> avd.multfactor, $n$ optional, the multiplication factor when
    * changing the inner step-size length. Default is 2.
-   *
+   * </ul>
    * <p> if the second optional argument is passed in, it overrides the random
-   * seed specified in the params_file.
+   * seed specified in the params_file.</p>
    * <p> The optional third argument, if present, overrides any max. limit set
    * on the number of function evaluations allowed. After this limit, the
    * function will always return Double.MAX_VALUE instead, and won't increase
-   * the evaluation count.
+   * the evaluation count.</p>
    *
    * @param args String[]
    */

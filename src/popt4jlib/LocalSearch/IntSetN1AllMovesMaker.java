@@ -25,16 +25,16 @@ public class IntSetN1AllMovesMaker  implements AllChromosomeMakerIntf {
 
   /**
    * implements the N_1 neighborhood for sets of integers.
-   * @param chromosome Object // Set&ltInteger&gt
+   * @param chromosome Object // Set&lt;Integer&gt;
    * @param params Hashtable must contain:
 	 * <ul>
-   * <li> a key-value pair &lt"dls.maxvalue", int_num&gt mandatory
-   * <li> a key-value pair &lt"dls.minvalue", int_num&gt optional (default is 0)
-   * <li> a key-value pair &lt"dls.augmentonly", boolean&gt optional (default is false)
-   * <li> a key-value pair &lt"dls.shrinkonly", boolean&gt optional (default is false)
+   * <li> a key-value pair &lt;"dls.maxvalue", int_num&gt; mandatory
+   * <li> a key-value pair &lt;"dls.minvalue", int_num&gt; optional (default is 0)
+   * <li> a key-value pair &lt;"dls.augmentonly", boolean&gt; optional (default is false)
+   * <li> a key-value pair &lt;"dls.shrinkonly", boolean&gt; optional (default is false)
 	 * </ul>
    * @throws OptimizerException if any of the above params is incorrectly set
-   * @return Vector // Vector&ltSet points&gt
+   * @return Vector // Vector&lt;Set points&gt;
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN1AllMovesMaker.createAllChromosomes(): null chromosome");

@@ -1,0 +1,13 @@
+class,dde.function,tests.AckleyFunctionCEC20XXShifted
+dde.numdimensions,50
+dde.maxargval,32.0
+dde.minargval,-32.0
+dde.numtries,2500
+dde.popsize,400
+#dde.w,0.08
+dde.px,0.2
+dde.w,0.1
+rndgen,1,8
+dde.numthreads,8
+#dde.de/best/1/binstrategy,true
+dde.nondeterminismok,true

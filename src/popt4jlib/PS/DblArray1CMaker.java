@@ -28,24 +28,26 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
    * parameters, specified in the params argument. The value for each element
    * in the array, is drawn from the uniform distribution restricted within the
    * boundaries of the element's range specified in the params key-value pairs.
-   * @param params Hashtable must contain the following params:
-   * <li> &lt"[dpso.]chromosomelength", $integer_value$&gt mandatory, the length
+   * @param p Hashtable must contain the following params:
+	 * <ul>
+   * <li> &lt;"[dpso.]chromosomelength", $integer_value$&gt; mandatory, the length
    * of the chromosome.
-   * <li> &lt"[dpso.]minallelevalue", $value$&gt mandatory, the minimum value
+   * <li> &lt;"[dpso.]minallelevalue", $value$&gt; mandatory, the minimum value
    * for any allele in the chromosome.
-   * <li> &lt"[dpso.]minallelevalue$i$", $value$&gt optional, the minimum value
+   * <li> &lt;"[dpso.]minallelevalue$i$", $value$&gt; optional, the minimum value
    * for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}). If this value is less than the global value
    * specified by the "[dpso.]minallelevalue" key, it is ignored.
-   * <li> &lt"[dpso.]maxallelevalue", $value$&gt mandatory, the maximum value
+   * <li> &lt;"[dpso.]maxallelevalue", $value$&gt; mandatory, the maximum value
    * for any allele in the chromosome.
-   * <li> &lt"[dpso.]maxallelevalue$i$", $value$&gt optional, the maximum value
+   * <li> &lt;"[dpso.]maxallelevalue$i$", $value$&gt; optional, the maximum value
    * for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}). If this value is greater than the global
    * value specified by the "[dpso.]maxallelevalue" key, it is ignored.
-   * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
+	 * </ul>
    * @throws OptimizerException
    * @return Object double[] of length specified in the params.
    */

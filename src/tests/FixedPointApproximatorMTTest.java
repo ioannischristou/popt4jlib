@@ -23,7 +23,7 @@ public class FixedPointApproximatorMTTest {
 
   /**
    * invoke as
-   * <CODE> java -cp &ltclasspath&gt tests.FixedPointApproximatorMTTest <matrixdatafile> [numthreads(1)] [max_iters(10)] [tol(10^-6)] </CODE>
+   * <CODE> java -cp &lt;classpath&gt; tests.FixedPointApproximatorMTTest &lt;matrixdatafile&gt; [numthreads(1)] [max_iters(10)] [tol(10^-6)] </CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

@@ -91,29 +91,29 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
    * <p>Prior to this call, some parameters for the optimization process may be
    * set-up. These are:
 	 * <ul>
-   * <li>&lt"abfgs.numtries", ntries&gt optional, the number of initial starting 
-	 * points to use (must either exist then ntries &lt"x$i$",VectorIntf v&gt 
-	 * pairs in the parameters or a pair &lt"gradientdescent.x0",VectorIntf v&gt 
+   * <li>&lt;"abfgs.numtries", ntries&gt; optional, the number of initial starting 
+	 * points to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; 
+	 * pairs in the parameters or a pair &lt;"gradientdescent.x0",VectorIntf v&gt; 
 	 * pair in params). Default is 1.
-   * <li>&lt"abfgs.numthreads", Integer nt&gt optional, the number of threads to 
+   * <li>&lt;"abfgs.numthreads", Integer nt&gt; optional, the number of threads to 
 	 * use. Default is 1.
-   * <li>&lt"abfgs.gradient", VecFunctionIntf g&gt optional, the gradient of f, 
+   * <li>&lt;"abfgs.gradient", VecFunctionIntf g&gt; optional, the gradient of f, 
 	 * the function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * <li>&lt"abfgs.gtol", Double v&gt optional, the minimum abs. value for each 
+   * <li>&lt;"abfgs.gtol", Double v&gt; optional, the minimum abs. value for each 
 	 * of the gradient's coordinates, below which if all coordinates of the 
 	 * gradient happen to be, the search stops assuming it has reached a 
 	 * stationary point. Default is 1.e-6.
-   * <li>&lt"abfgs.maxiters", Integer miters&gt optional, the maximum number of 
+   * <li>&lt;"abfgs.maxiters", Integer miters&gt; optional, the maximum number of 
 	 * major iterations of the Newton-type search before the algorithm stops. 
 	 * Default is Integer.MAX_VALUE.
-   * <li> &lt"abfgs.rho", Double v&gt optional, the value for the parameter &rho 
+   * <li> &lt;"abfgs.rho", Double v&gt; optional, the value for the parameter &rho; 
 	 * in the Armijo rule implementation. Default is 0.1.
-   * <li>&lt"abfgs.beta", Double v&gt optional, the value for the parameter 
-	 * &beta in the Armijo rule implementation. Default is 0.2.
-   * <li>&lt"abfgs.gamma", Double v&gt optional, the value for the parameter 
-	 * &gamma in the Armijo rule implementation. Default is 1.
-   * <li>&lt"abfgs.maxarmijoiters", Integer v&gt optional, the maximum number of 
+   * <li>&lt;"abfgs.beta", Double v&gt; optional, the value for the parameter 
+	 * &beta; in the Armijo rule implementation. Default is 0.2.
+   * <li>&lt;"abfgs.gamma", Double v&gt; optional, the value for the parameter 
+	 * &gamma; in the Armijo rule implementation. Default is 1.
+   * <li>&lt;"abfgs.maxarmijoiters", Integer v&gt; optional, the maximum number of 
 	 * Armijo rule iterations allowed. Default is Integer.MAX_VALUE.
    *</ul>
    * @param f FunctionIntf

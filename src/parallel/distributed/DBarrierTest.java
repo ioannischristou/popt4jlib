@@ -41,7 +41,7 @@ public class DBarrierTest {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt parallel.distributed.DBarrierTest &ltstartid&gt &ltendid&gt &ltjvmid&gt &ltmaxjvmid&gt &ltnumiters&gt
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.DBarrierTest &lt;startid&gt; &lte;ndid&gt; &lt;jvmid&gt; &lt;maxjvmid&gt; &lt;numiters&gt;
    * [host(localhost)] [port(7896)] [barriername(DBarrierCoord_localhost_7896)]</CODE>
    * @param args String[]
    */

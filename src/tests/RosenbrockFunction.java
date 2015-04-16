@@ -61,7 +61,7 @@ public class RosenbrockFunction implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.RosenbrockFunction &ltx_1&gt ... &ltx_n&gt
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.RosenbrockFunction &lt;x_1&gt; ... &lt;x_n&gt;
    * where the parameters are the components of the vector point at which the
    * function must be evaluated.
    * @param args String[]

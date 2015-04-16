@@ -37,16 +37,16 @@ public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerClonableIntf
 
   /**
    * implements the N_{-2+P} neighborhood for sets of integers.
-   * @param chromosome Object // Set&ltInteger&gt
+   * @param chromosome Object // Set&lt;Integer&gt;
    * @param params Hashtable must contain a key-value pair
-   * &lt"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt
+   * &lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;.
    * The filter must both specify what two numbers to remove, as well as what
    * ints to be tried for addition to the set given a vector of 2 ints to be
    * removed from the set. In particular, the filter(Integer x, Set s, Hashtable params)
-   * method must return a Vector&ltIntSet&gt that comprise all the 2-int 
+   * method must return a Vector&lt;IntSet&gt; that comprise all the 2-int 
 	 * combinations that may be tried for removal.
    * @throws OptimizerException
-   * @return Vector // Vector&ltSet&ltInteger&gt &gt
+   * @return Vector // Vector&lt;IntSet&gt;
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN2RXPAllMovesMaker.createAllChromosomes(): null chromosome");
@@ -99,12 +99,12 @@ public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerClonableIntf
    * hook method in the context of the Template Method Design Pattern.
    * Sub-classes with more domain knowledge may override this method to modify
    * the behavior of this move-maker.
-   * @param res Set // TreeSet&ltIntSet&gt
+   * @param res Set // TreeSet&lt;IntSet&gt;
    * @param rmids Set // IntSet
-   * @param tryids List // List&ltInteger&gt
+   * @param tryids List // List&lt;Integer&gt;
    * @param maxcard int
    * @param params Hashtable unused
-   * @return Set // TreeSet&ltIntSet&gt
+   * @return Set // TreeSet&lt;IntSet&gt;
    */
   protected Set createSets(Set res, Set rmids, List tryids, int maxcard, Hashtable params) {
     if (maxcard==0) return res;

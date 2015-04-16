@@ -42,7 +42,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * public factory constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
 	 * @return FasterParallelAsynchBatchPriorityTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
    * asked to be created.
    */	
 	public static FasterParallelAsynchBatchPriorityTaskExecutor newFasterParallelAsynchBatchPriorityTaskExecutor(int numthreads) throws ParallelException {
@@ -58,7 +58,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full.
 	 * @return FasterParallelAsynchBatchPriorityTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
    * asked to be created.
    */		
 	public static FasterParallelAsynchBatchPriorityTaskExecutor newFasterParallelAsynchBatchPriorityTaskExecutor(int numthreads, boolean runoncurrent) throws ParallelException {
@@ -71,7 +71,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
   /**
    * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
-   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
    * asked to be created.
    */
   private FasterParallelAsynchBatchPriorityTaskExecutor(int numthreads) throws ParallelException {
@@ -97,7 +97,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * @param numthreads int the number of threads in the thread-pool
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full.
-   * @throws ParallelException if numthreads &lte 0.
+   * @throws ParallelException if numthreads &lte; 0.
    */
   private FasterParallelAsynchBatchPriorityTaskExecutor(int numthreads,
                                                        boolean runoncurrent)

@@ -52,7 +52,7 @@ public class PDBatchTaskExecutorSrv {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt parallel.distributed.PDBatchTaskExecutorSrv [workers_port(7890)] [clients_port(7891)] [<other_server_ip_address,otherserver_ip_port]* </CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBatchTaskExecutorSrv [workers_port(7890)] [clients_port(7891)] [<other_server_ip_address,otherserver_ip_port]* </CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

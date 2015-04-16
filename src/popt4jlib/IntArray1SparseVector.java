@@ -39,7 +39,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
   /**
    * constructs the zero sparse vector in n-dimensional space.
    * @param n int the number of dimensions
-   * @throws IllegalArgumentException if n &lte 0
+   * @throws IllegalArgumentException if n &lte;; 0
    */
   public IntArray1SparseVector(int n) throws IllegalArgumentException {
     if (n<=0) throw new IllegalArgumentException("dimensions must be >= 1");
@@ -370,6 +370,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
    * }
 	 * </CODE>
    * </pre>
+	 * </p>
    * @param i int
    * @throws IndexOutOfBoundsException if i is out-of-bounds. Always throws if
    * this is the zero vector
@@ -471,7 +472,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
   /**
    * return the k-th norm of this vector.
    * @param k int
-   * @throws IllegalArgumentException if k &lte 0
+   * @throws IllegalArgumentException if k &lte;; 0
    * @return double
    */
   public double norm(int k) throws IllegalArgumentException {

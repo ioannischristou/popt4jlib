@@ -30,21 +30,21 @@ public class DblVarArray1CMaker implements RandomChromosomeMakerIntf {
    * boundaries of the element's range specified in the params key-value pairs.
    * @param params Hashtable must contain the following params:
 	 * <ul>
-   * <li> &lt"dga.maxchromosomelength", $integer_value$&gt mandatory, the max.
+   * <li> &lt;"dga.maxchromosomelength", $integer_value$&gt; mandatory, the max.
    * length of the chromosome.
-   * <li> &lt"dga.minallelevalue", $value$&gt mandatory, the minimum value for
+   * <li> &lt;"dga.minallelevalue", $value$&gt; mandatory, the minimum value for
    * any allele in the chromosome.
-   * <li> &lt"dga.minallelevalue$i$", $value$&gt optional, the minimum value for
+   * <li> &lt;"dga.minallelevalue$i$", $value$&gt; optional, the minimum value for
    * the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is less than the global value
    * specified by the "dga.minallelevalue" key, it is ignored.
-   * <li> &lt"dga.maxallelevalue", $value$&gt mandatory, the maximum value for
+   * <li> &lt;"dga.maxallelevalue", $value$&gt; mandatory, the maximum value for
    * any allele in the chromosome.
-   * <li> &lt"dga.maxallelevalue$i$", $value$&gt optional, the maximum value for
+   * <li> &lt;"dga.maxallelevalue$i$", $value$&gt; optional, the maximum value for
    * the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is greater than the global value
    * specified by the "dga.maxallelevalue" key, it is ignored.
-   * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
 	 * </ul>

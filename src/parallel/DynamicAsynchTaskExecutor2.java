@@ -69,8 +69,8 @@ public final class DynamicAsynchTaskExecutor2 {
    * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of initial threads in the thread-pool
    * @param maxthreads int the max. number of threads in the thread-pool
-   * @throws ParallelException if numthreads &lte 0 or if too many threads are
-   * asked to be created or if maxthreads &lt numthreads.
+   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
+   * asked to be created or if maxthreads &lt; numthreads.
    */
   private DynamicAsynchTaskExecutor2(int numthreads, int maxthreads) throws ParallelException {
     if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
@@ -90,7 +90,7 @@ public final class DynamicAsynchTaskExecutor2 {
    * @param maxthreads int the max number of threads in the thread-pool.
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full and no new thread can be created.
-   * @throws ParallelException if numthreads &lte 0 or if numthreads>maxthreads.
+   * @throws ParallelException if numthreads &lte; 0 or if numthreads>maxthreads.
    */
   private DynamicAsynchTaskExecutor2(int numthreads, int maxthreads,
                                    boolean runoncurrent)

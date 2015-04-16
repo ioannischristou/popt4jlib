@@ -10,7 +10,7 @@ import java.util.Hashtable;
  * another, more "bright" one (see Wikipedia article: Firefly_Algorithm).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2014</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -32,27 +32,28 @@ public class DblArray1StdChromosomeUpdater implements ChromosomeUpdaterIntf {
   /**
    * the main method of the class, requires the following params be present in
    * the params object:
-   * <li> <"dfa.chromosomelength", Integer n> mandatory, the dimension of the
+	 * <ul>
+   * <li> &lt;"dfa.chromosomelength", Integer n&gt; mandatory, the dimension of the
    * double[] chromosomes.
-   * <li> <"thread.id", Integer id> mandatory, the id of the calling thread;
+   * <li> &lt;"thread.id", Integer id&gt; mandatory, the id of the calling thread;
    * automatically taken care of by the DFAThreadAux class objects.
-   * <li> <"dfa.maxallelevalue", Double v> optional, the max. value any element
+   * <li> &lt;"dfa.maxallelevalue", Double v&gt; optional, the max. value any element
    * in the double[] chromosomes position can take. Default is +Infinity.
-   * <li> <"dfa.minallelevalue", Double v> optional, the min. value any element
+   * <li> &lt;"dfa.minallelevalue", Double v&gt; optional, the min. value any element
    * in the double[] chromosomes position can take. Default is -Infinity.
-   * <li> <"dfa.maxalleleval$i$", Double v> optional, the max. value the i-th
+   * <li> &lt;"dfa.maxalleleval$i$", Double v&gt; optional, the max. value the i-th
    * element in the double[] chromosomes position can take. Default is +Infinity.
-   * <li> <"dfa.minallelevalue$i$", Double v> optional, the min. value the i-th
+   * <li> &lt;"dfa.minallelevalue$i$", Double v&gt; optional, the min. value the i-th
    * element in the double[] chromosomes position can take. Default is -Infinity.
-   * <li> <"dfa.beta", Double v> optional, the value of â. Default is 1.0.
-   * <li> <"dfa.a0", Double v> optional, the value of a_0. Default is 0.01*L.
-   * <li> <"dfa.delta", Double v> optional, the value of ä. Default is 0.97.
+   * <li> &lt;"dfa.beta", Double v&gt; optional, the value of &beta;;. Default is 1.0.
+   * <li> &lt;"dfa.a0", Double v&gt; optional, the value of a_0. Default is 0.01*L.
+   * <li> &lt;"dfa.delta", Double v&gt; optional, the value of &delta;. Default is 0.97.
    *
-   * @param ci Object
-   * @param cj Object
+   * @param ci Object // double[]
+   * @param cj Object // double[]
    * @param params Hashtable
-   * @throws OptimizerException
-   * @return Object
+   * @throws OptimizerException if ci or cj are not double[]
+   * @return Object // double[]
    */
   public Object update(Object ci, Object cj, Hashtable params) throws OptimizerException {
     double beta = 1.0;
@@ -134,6 +135,9 @@ public class DblArray1StdChromosomeUpdater implements ChromosomeUpdaterIntf {
   }
 
 
+	/**
+	 * increment the generation counter.
+	 */
   public void incrementGeneration() {
     ++_t;
   }
@@ -142,7 +146,7 @@ public class DblArray1StdChromosomeUpdater implements ChromosomeUpdaterIntf {
   /**
    * under normal circumstances, will only be called once.
    * @param p Hashtable
-   * @throws OptimizerException
+   * @throws OptimizerException if p==null
    * @return double
    */
   private double averageVariableScale(Hashtable p) throws OptimizerException {

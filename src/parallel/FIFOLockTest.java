@@ -13,7 +13,7 @@ package parallel;
 public class FIFOLockTest {
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt parallel.FIFOLockTest [num_threads] </CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; parallel.FIFOLockTest [num_threads] </CODE>
    * The program will spawn 1000 threads by default, and each thread will sleep for
    * 1000/(thread_id+1) msecs. After its sleep time every thread will exit.
    * @param args String[]

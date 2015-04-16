@@ -123,35 +123,35 @@ public class DDE implements OptimizerIntf {
    * either during object construction, or afterwards, by a call to setParams(p)
    * These parameters are:
 	 * <ul>
-   * <li> &lt"dde.numdimensions", Integer nd&gt mandatory, the dimension of the domain of
+   * <li> &lt;"dde.numdimensions", Integer nd&gt; mandatory, the dimension of the domain of
    * the function to be minimized.
-   * <li> &lt"dde.numtries", Integer ni&gt optional, the total number of "tries", default
+   * <li> &lt;"dde.numtries", Integer ni&gt; optional, the total number of "tries", default
    * is 100.
-   * <li> &lt"dde.numthreads", Integer nt&gt optional, the number of threads to use,
+   * <li> &lt;"dde.numthreads", Integer nt&gt; optional, the number of threads to use,
    * default is 1.
-   * <li> &lt"dde.popsize", Integer ps&gt optional, the total population size in each
+   * <li> &lt;"dde.popsize", Integer ps&gt; optional, the total population size in each
    * iteration, default is 10.
-   * <li> &lt"dde.w", Double w&gt optional, the "weight" of the DE process, a double
+   * <li> &lt;"dde.w", Double w&gt; optional, the "weight" of the DE process, a double
    * number in [0,2], default is 1.0
-   * <li> &lt"dde.px", Double px&gt optional, the "crossover rate" of the DE process, a
+   * <li> &lt;"dde.px", Double px&gt; optional, the "crossover rate" of the DE process, a
    * double number in [0,1], default is 0.9
-   * <li> &lt"dde.minargval", Double val&gt optional, a double number that is a lower
+   * <li> &lt;"dde.minargval", Double val&gt; optional, a double number that is a lower
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i &gte val.doubleValue(), default is -infinity
-   * <li> &lt"dde.maxargval", Double val&gt optional, a double number that is an upper
+   * must satisfy x_i &gte; val.doubleValue(), default is -infinity
+   * <li> &lt;"dde.maxargval", Double val&gt; optional, a double number that is an upper
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i &lte val.doubleValue(), default is +infinity
-   * <li> &lt"dde.minargval$i$", Double val&gt optional, a double number that is a lower
+   * must satisfy x_i &lte; val.doubleValue(), default is +infinity
+   * <li> &lt;"dde.minargval$i$", Double val&gt; optional, a double number that is a lower
    * bound for the i-th variable of the optimization process, i.e. variable
-   * must satisfy x_i &gte val.doubleValue(), default is -infinity
-   * <li> &lt"dde.maxargval$i$", Double val&gt optional, a double number that is an upper
+   * must satisfy x_i &gte; val.doubleValue(), default is -infinity
+   * <li> &lt;"dde.maxargval$i$", Double val&gt; optional, a double number that is an upper
    * bound for the i-th variable of the optimization process, i.e. variable
-   * must satisfy x_i &lte val.doubleValue(), default is +infinity
-	 * <li> &lt"dde.de/best/1/binstrategy", Boolean val&gt optional, a boolean value
+   * must satisfy x_i &lte; val.doubleValue(), default is +infinity
+	 * <li> &lt;"dde.de/best/1/binstrategy", Boolean val&gt; optional, a boolean value
 	 * that if present and true, indicates that the DE/best/1/bin strategy should
 	 * be used in evolving the population instead of the DE/rand/1/bin strategy,
 	 * default is false
-	 * <li> &lt"dde.nondeterminismok", Boolean val&gt optional, a boolean value 
+	 * <li> &lt;"dde.nondeterminismok", Boolean val&gt; optional, a boolean value 
 	 * indicating whether the method should return always the same value given 
 	 * the same parameters and same random seed(s). The method can be made to run
 	 * much faster in a multi-core setting if this flag is set to true (at the 
@@ -470,7 +470,11 @@ class DDEThread extends Thread {
 		Barrier b = Barrier.getInstance("dde."+_master.getId());
     for (int i=0; i<_numtries; i++) {
       try {
-        if (_numthreads>1) b.barrier();
+        if (i==0 || 
+						(_numthreads>1 && _nonDeterminismOK)) b.barrier();  
+        // if _nonDeterminismOK==false, then the barriers in min(f,p) make the
+				// above barrier redundant: when i==0 though, the barrier is needed for
+				// population initialization correctness.
         PairObjDouble pair = min(f, p);
         if (pair==null) {
           continue;
@@ -490,7 +494,7 @@ class DDEThread extends Thread {
   }
 
 
-  private PairObjDouble min(FunctionIntf f, Hashtable p) throws OptimizerException, IllegalArgumentException {
+  private PairObjDouble min(FunctionIntf f, Hashtable p) throws OptimizerException {
     final int popsize = _master._sols.length;  // no problem with unsynced access
                                                // as the _master._sols array
                                                // has been created before the
@@ -512,11 +516,12 @@ class DDEThread extends Thread {
 		double bestval = Double.MAX_VALUE;
 		VectorIntf best = null;
     int count=0;
+		List indices = new ArrayList(popsize);  // indices used to be Vector
     for (int i=_from; i<=_to; i++) {
       ++count;
       VectorIntf x = _master.getSol(i);  // // VectorIntf x = _master._sols[i];
       // select random vectors a,b,c from _sols
-      List indices = new ArrayList();  // indices used to be Vector
+      indices.clear();
       for (int j=0; j<popsize; j++) {
         if (j!=i) indices.add(new Integer(j));
       }
@@ -576,9 +581,15 @@ class DDEThread extends Thread {
           }
         }
       }
-      if (!_nonDeterminismOK && _numthreads>1) b.barrier();
+      if (!_nonDeterminismOK && _numthreads>1) b.barrier();  
       // next call may throw IllegalArgumentException
-      double ftry = f.eval(xtry, _fp);  // used to be p
+      double ftry = Double.MAX_VALUE;
+			try {
+				ftry = f.eval(xtry, _fp);  // used to be p
+			}
+			catch (IllegalArgumentException e) {
+				e.printStackTrace();  // ignore non-quietly
+			}  
       if (ftry < _master.getSolVal(i)) {  // _master._solVals[i]
 				_master.setSol(i, xtry.newCopy());  // itc 2015-02-20: used to be xtry.newInstance()
                                             // even before, used to be: _master._sols[i] = xtry;
@@ -592,10 +603,17 @@ class DDEThread extends Thread {
 			if (xtry instanceof PoolableObjectIntf) {
 				((PoolableObjectIntf) xtry).release();
 			}
+      if (!_nonDeterminismOK && _numthreads>1) b.barrier();  
+      // barrier had to come here too to ensure all changes are visible in next 
+			// iteration of the for-loop to all threads. Notice that even without the 
+			// barriers, threads still have memory visibility regarding the vectors in
+			// the solution pool, but the order in which the updates in the pool occur
+			// is undefined and therefore the results are non-deterministic.
     }
 		if (!_nonDeterminismOK && _numthreads>1) {
 			while (count<_master._maxthreadwork) {
 				b.barrier();
+				b.barrier();  // second barrier required 
 				++count;
 			}
 		}
@@ -634,7 +652,7 @@ class DDEThread extends Thread {
 		double minval = ((Double) _minargvali.get(j)).doubleValue();
 		double maxval = ((Double) _maxargvali.get(j)).doubleValue();
     if (val2 < minval) val2 = minval;
-    else if (val2>maxval) val2 = maxval;
+    else if (val2 > maxval) val2 = maxval;
     return val2;
   }
 }

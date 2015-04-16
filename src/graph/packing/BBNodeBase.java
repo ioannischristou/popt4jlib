@@ -40,11 +40,11 @@ abstract class BBNodeBase implements Comparable, Runnable {
   /**
    * Sole constructor of a BBNodeBase object. Clients are not expected to
    * create such objects which are instead created dynamically through the
-   * B&B process.
+   * B&ampB process.
    * @param master BBTree the master BBTree object of which this is a node.
-   * @param r Set Set<Node> the set of (graph) nodes to be added to the nodes
-   * of the parent to represent a new partial solution.
-   * @param parent BBNode2 the parent BB-node in the B&B tree construction process.
+   * @param r Set // Set&lt;Node&gt; the set of (graph) nodes to be added to the 
+	 * nodes of the parent to represent a new partial solution.
+   * @param parent BBNodeBase the parent BB-node in the B&ampB tree construction process.
    * @throws PackingException if the second argument is non-null but the third
    * argument is null.
    */
@@ -95,9 +95,9 @@ abstract class BBNodeBase implements Comparable, Runnable {
 
 
   /**
-   * returns the Set<Node> of graph nodes contained in the solution represented
+   * returns the Set of graph nodes contained in the solution represented
    * by this BB-node.
-   * @return Set Set<Node>
+   * @return Set // Set&lt;Node&gt;
    */
   final Set getNodes() { return _nodes; }
 
@@ -139,6 +139,12 @@ abstract class BBNodeBase implements Comparable, Runnable {
   }
 
 	
+	/**
+	 * recursive method, only invoked from the setDone*() methods of this class.
+	 * Its purpose is to eventually notify the <CODE>BBQueue</CODE> thread that
+	 * the B&ampB tree construction process has finished, so as to exit its run-
+	 * loop.
+	 */
   final protected void notifyDone() {
     boolean go_up = false;
     synchronized(this) {
@@ -156,6 +162,11 @@ abstract class BBNodeBase implements Comparable, Runnable {
   }
 
 	
+	/**
+	 * result depends on the type of problem.
+	 * @return double a valid upper bound on the current solution
+	 * @throws ParallelException 
+	 */
 	abstract protected double getBound() throws ParallelException;
 	
 	

@@ -38,7 +38,7 @@ public final class ParallelAsynchBatchTaskExecutor {
    * public factory constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
 	 * @return ParallelAsynchBatchTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
    * asked to be created.
    */	
 	public static ParallelAsynchBatchTaskExecutor 
@@ -56,7 +56,7 @@ public final class ParallelAsynchBatchTaskExecutor {
    * @param runoncurrent boolean if false no task will on current thread in case
    * the threads in the pool are full.
 	 * @return ParallelAsynchBatchTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
    * asked to be created.
    */	
 	public static ParallelAsynchBatchTaskExecutor 
@@ -71,7 +71,7 @@ public final class ParallelAsynchBatchTaskExecutor {
   /**
    * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
-   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
    * asked to be created.
    */
   private ParallelAsynchBatchTaskExecutor(int numthreads) throws ParallelException {
@@ -97,7 +97,7 @@ public final class ParallelAsynchBatchTaskExecutor {
    * @param numthreads int the number of threads in the thread-pool
    * @param runoncurrent boolean if false no task will on current thread in case
    * the threads in the pool are full.
-   * @throws ParallelException if numthreads &lte 0.
+   * @throws ParallelException if numthreads &lte; 0.
    */
   private ParallelAsynchBatchTaskExecutor(int numthreads, boolean runoncurrent) throws ParallelException {
     this(numthreads);

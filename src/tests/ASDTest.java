@@ -26,8 +26,9 @@ public class ASDTest {
 
   /**
    * invoke from the command-line as:
-   * <CODE> java -cp &ltclasspath&gt tests.ASDTest &ltparams_file&gt [random_seed] [maxfuncevals]</CODE>
-   * where the params_file must contain lines of the following form:
+   * <CODE> java -cp &lt;classpath&gt; tests.ASDTest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>.
+   * The params_file must contain lines of the following form:
+	 * <ul>
    * <li> asd.numdimensions, $num$ mandatory, number of dimensions
    * of the function to be optimized; the function to be optimized must accept
    * as arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
@@ -35,7 +36,7 @@ public class ASDTest {
    * <li> asd.numtries, $num$ mandatory, the number of "tries" to
    * attempt. Different random points will be used as initial points for each
    * "try".
-   * <li> class,asd.function, &ltfullclassnameoffunction&gt mandatory, the
+   * <li> class,asd.function, &lt;fullclassnameoffunction&gt; mandatory, the
    * classname of the java class defining the function to be optimized.
    * <li> asd.functionargmaxval, $num$ mandatory, the max. argument value for
    * any component of the initial vectors x0 to compute.
@@ -49,31 +50,31 @@ public class ASDTest {
    * the optimization process. Default is 1.
    * <li> asd.numtries, $num$ optional, the number of tries (starting
    * from different initial points). Default is 1.
-   * <li> class,asd.gradient, &ltfullclassnameofgradient&gt optional, grad. of
+   * <li> class,asd.gradient, &lt;fullclassnameofgradient&gt; optional, grad. of
    * f, the function to be minimized. If this param-value pair doesn't exist the
    * gradient will be computed using Richardson finite differences extrapolation
-   * <asd.gtol, <num> > optional, the minimum abs. value for each of the
+   * &lt;asd.gtol, $num$&gt; optional, the minimum absolute value for each of the
    * gradient's coordinates, below which if all coordinates of the gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-6.
    * <li> asd.maxiters, $num$ optional, the maximum number of major
    * iterations of the SD search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * <li> asd.rho, $num$ optional, the value for the parameter ñ in the
+   * <li> asd.rho, $num$ optional, the value for the parameter &rho; in the
    * Armijo rule implementation. Default is 0.1.
-   * <li> asd.beta, $num$ optional, the value for the parameter â in the
+   * <li> asd.beta, $num$ optional, the value for the parameter &beta; in the
    * Armijo rule implementation. Default is 0.8.
-   * <li> asd.gamma, $num$ optional, the value for the parameter ã in the
+   * <li> asd.gamma, $num$ optional, the value for the parameter &gamma; in the
    * Armijo rule implementation. Default is 1.
    * <li> asd.looptol, $num$ optional, the minimum step-size allowed. Default
    * is 1.e-21.
-   *
+   * </ul>
    * <p> if the second optional argument is passed in, it overrides the random
-   * seed specified in the params_file.
+   * seed specified in the params_file.</p>
    * <p> The optional third argument, if present, overrides any max. limit set
    * on the number of function evaluations allowed. After this limit, the
    * function will always return Double.MAX_VALUE instead, and won't increase
-   * the evaluation count.
+   * the evaluation count.</p>
    *
    * @param args String[]
    */

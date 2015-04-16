@@ -20,7 +20,7 @@ public interface AllChromosomeMakerIntf {
    * @param chromosome Object
    * @param params Hashtable
    * @throws OptimizerException
-   * @return Vector Vector<Object chromosome>
+   * @return Vector // Vector&lt;Object chromosome&gt;
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException;
 }

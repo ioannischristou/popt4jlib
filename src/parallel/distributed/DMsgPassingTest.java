@@ -19,7 +19,7 @@ public class DMsgPassingTest {
 
   /**
    * invoke as
-   * <CODE>java -cp &ltclasspath&gt parallel.distributed.DMsgPassingTest &ltstartid&gt &ltendid&gt [delay(-1)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.DMsgPassingTest &lt;startid&gt; &lte;ndid&gt; [delay(-1)]</CODE>
    * The test is set up so that the
    * <CODE>parallel.distributed.DMsgPassingCoordinatorSrv</CODE> must be up and
    * running at the default (host=localhost,port=7894) combination, and there

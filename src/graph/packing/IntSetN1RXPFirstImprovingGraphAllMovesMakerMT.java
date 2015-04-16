@@ -53,31 +53,31 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
 
   /**
    * implements the N_{-1+P} neighborhood for sets of integers.
-   * @param chromosome Object Set&ltInteger node-id&gt
+   * @param chromosome Object Set&lt;Integer node-id&gt;
    * @param params Hashtable must contain the following key-value pairs:
 	 * <ul>
-   * <li> &lt"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt
-	 * <li> &lt"dls.graph", Graph g&gt the original problem graph
+   * <li> &lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;
+	 * <li> &lt;"dls.graph", Graph g&gt; the original problem graph
 	 * </ul>
    * It may also optionally contain the following pairs:
 	 * <ul>
-   * <li> &lt"dls.intsetneighborhoodmaxnodestotry", Integer max_nodes&gt which 
+   * <li> &lt;"dls.intsetneighborhoodmaxnodestotry", Integer max_nodes&gt; which 
 	 * if present will indicate the maximum number of nodes to try to remove from 
 	 * the current solution in the "1RXP" local search.
-   * <li> &lt"dls.numthreads", Integer num_threads&gt which if present denotes 
+   * <li> &lt;"dls.numthreads", Integer num_threads&gt; which if present denotes 
 	 * the number of threads that an a-synchronous batch-task executor will create 
 	 * and use to execute the generated tasks, default is 1.
-	 * <li> &lt"dls.fpabte", FasterParallelAsynchronousBatchTaskExecutor extor&gt
+	 * <li> &lt;"dls.fpabte", FasterParallelAsynchronousBatchTaskExecutor extor&gt;
 	 * which if present is the parallel executor to use, default is null. If such
 	 * an executor is present, the "dls.numthreads" value is ignored.
-	 * <li> &lt"dls.lock_graph", Boolean val&gt which if present and false, 
+	 * <li> &lt;"dls.lock_graph", Boolean val&gt; which if present and false, 
 	 * indicates that the graph and its elements will be accessed without any
 	 * synchronization. Default is true.
 	 * </ul>
    * <br>The filter must specify what ints to be tried for addition to the set given
    * an int to be removed from the set.</br>
    * @throws OptimizerException if any of the parameters are incorrectly set
-   * @return Vector Vector&ltSet&ltInteger nodeid&gt &gt
+   * @return Vector Vector&lt;Set&lt;Integer nodeid&gt; &gt;
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): null chromosome");
@@ -220,10 +220,10 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
    * DF fashion). The implementation is recursive.
    * @param res Set // IntSet
    * @param rmid Integer
-   * @param tryids List // List&ltInteger&gt
+   * @param tryids List // List&lt;Integer&gt;
    * @param maxcard int
-   * @param params Hashtable must contain the pair &lt"dls.graph", Graph g&gt, 
-	 * and may optionally contain the pair &lt"dls.lock_graph", Boolean val&gt 
+   * @param params Hashtable must contain the pair &lt;"dls.graph", Graph g&gt;, 
+	 * and may optionally contain the pair &lt;"dls.lock_graph", Boolean val&gt; 
 	 * which if present and val is false, indicates no read-locking of the graph 
 	 * elements
    * @return Set // IntSet
@@ -253,8 +253,8 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
    * Overrides this method to modify the behavior of the base move-maker.
    * @param tid Integer
    * @param x IntSet
-   * @param params Hashtable must contain the pair &lt"dls.graph, Graph g&gt, 
-	 * and may optionally contain the pair &lt"dls.lock_graph, Boolean val&gt 
+   * @param params Hashtable must contain the pair &lt;"dls.graph, Graph g&gt;, 
+	 * and may optionally contain the pair &lt;"dls.lock_graph, Boolean val&gt; 
 	 * which if present and val is false, indicates no read-locking of the graph 
 	 * elements.
    * @return boolean
@@ -286,7 +286,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set  // Set&ltNode&gt
+   * @param active Set  // Set&lt;Node&gt;
 	 * @param k int
 	 * @param lock boolean // if false then accesses to graph elements will be 
 	 * unsynchronized

@@ -27,14 +27,14 @@ public class FastDblArray1VectorURndMaker {
    * constructor.
    * The parameters that must be passed in (the Hashtable arg) are as follows:
 	 * <ul>
-   * <li> &lt"dde.numdimensions", Integer nd&gt mandatory, the number of dimensions
-   * <li> &lt"dde.minargval", Double v&gt optional, the min. value that any
+   * <li> &lt;"dde.numdimensions", Integer nd&gt; mandatory, the number of dimensions
+   * <li> &lt;"dde.minargval", Double v&gt; optional, the min. value that any
    * component of the returned vector may assume
-   * <li> &lt"dde.maxargval", Double v&gt optional, the max. value that any
+   * <li> &lt;"dde.maxargval", Double v&gt; optional, the max. value that any
    * component of the returned vector may assume
-   * <li> &lt"dde.minargval"+$i$, Double v&gt optional, the min. value that the i-th
+   * <li> &lt;"dde.minargval"+$i$, Double v&gt; optional, the min. value that the i-th
    * component of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * <li> &lt"dde.maxargval"+$i$, Double v&gt optional, the max. value that the i-th
+   * <li> &lt;"dde.maxargval"+$i$, Double v&gt; optional, the max. value that the i-th
    * component of the returned vector may assume (i={0,1,...nd.intValue()-1})
    * </ul>
    * <br>The "local" constraints can only impose more strict constraints on the
@@ -85,6 +85,9 @@ public class FastDblArray1VectorURndMaker {
    * specified in the construction process by the key "dde.numdimensions". The
    * returned VectorIntf will obey the bounding-box constraints specified in the
    * construction process.
+	 * Note: it is not worth it to use pooling mechanisms in this class, as this
+	 * class and this method in particular is only used in the initialization 
+	 * phase of the DE algorithm (population initialization).
    * @throws OptimizerException
    * @return VectorIntf
    */

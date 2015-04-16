@@ -33,24 +33,24 @@ public class DblVarArray1AlleleMutationOp implements MutationOpIntf {
    * @param chromosome2 Object must be double[]
    * @param params Hashtable should contain the following key-value pairs:
 	 * <ul>
-   * <li> &lt"dga.minallelevalue", $value$&gt optional, the minimum value for
+   * <li> &lt;"dga.minallelevalue", $value$&gt; optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
-   * <li> &lt"dga.minallelevalue$i$", $value$&gt optional, the minimum value for
+   * <li> &lt;"dga.minallelevalue$i$", $value$&gt; optional, the minimum value for
    * the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is less than the global value
    * specified by the "dga.minallelevalue" key, it is ignored.
-   * <li> &lt"dga.maxallelevalue", $value$&gt optional, the maximum value for
+   * <li> &lt;"dga.maxallelevalue", $value$&gt; optional, the maximum value for
    * any allele in the chromosome. Default +Infinity.
-   * <li> &lt"dga.maxallelevalue$i$", $value$&gt optional, the maximum value for
+   * <li> &lt;"dga.maxallelevalue$i$", $value$&gt; optional, the maximum value for
    * the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is greater than the global value
    * specified by the "dga.maxallelevalue" key, it is ignored.
-   * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
 	 * </ul>
    * @throws OptimizerException if any of the above params is incorrectly set
-   * @return Pair Pair&ltdouble[], double[]&gt
+   * @return Pair Pair&lt;double[], double[]&gt;
    */
   public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
     try {

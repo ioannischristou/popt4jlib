@@ -62,16 +62,16 @@ public class IntSetN2RXPGraphAllMovesMaker extends IntSetN2RXPAllMovesMaker {
    * hook method in the context of the Template Method Design Pattern.
    * Sub-classes with more domain knowledge may override this method to modify
    * the behavior of this move-maker.
-   * @param res Set // TreeSet&ltIntSet&gt
+   * @param res Set // TreeSet&lt;IntSet&gt;
    * @param rmids Set // IntSet
-   * @param tryids List // List&ltInteger&gt
+   * @param tryids List // List&lt;Integer&gt;
    * @param maxcard int the maximum cardinality of any of the IntSet's to be returned
-   * @param params Hashtable must contain the pair &lt"dls.graph", Graph g&gt
+   * @param params Hashtable must contain the pair &lt;"dls.graph", Graph g&gt;
 	 * and may optionally contain a key-value pair
-   * &lt"dls.createsetsperlevellimit", Integer limit&gt to cut the search short,
-	 * and optionally a pair &lt"dls.lock_graph", Boolean val&gt which if present
+   * &lt;"dls.createsetsperlevellimit", Integer limit&gt; to cut the search short,
+	 * and optionally a pair &lt;"dls.lock_graph", Boolean val&gt; which if present
 	 * and val is false, indicates no locking of graph elements
-   * @return Set // TreeSet&ltIntSet&gt
+   * @return Set // TreeSet&lt;IntSet&gt;
    */
   protected Set createSets(Set res, Set rmids, List tryids, int maxcard, Hashtable params) {
     if (maxcard==0) return res;
@@ -123,8 +123,8 @@ public class IntSetN2RXPGraphAllMovesMaker extends IntSetN2RXPAllMovesMaker {
 	 * solution x (depending on the type of problem 1- or 2-packing).
    * @param tid Integer
    * @param x IntSet
-   * @param params Hashtable must contain the &lt"dls.graph", Graph g&gt pair
-	 * and optionally a pair &lt"dls.lock_graph", Boolean val&gt which if present
+   * @param params Hashtable must contain the &lt;"dls.graph", Graph g&gt; pair
+	 * and optionally a pair &lt;"dls.lock_graph", Boolean val&gt; which if present
 	 * and val is false, indicates no locking of graph elements
    * @return boolean
    */
@@ -175,7 +175,7 @@ public class IntSetN2RXPGraphAllMovesMaker extends IntSetN2RXPAllMovesMaker {
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set  // Set&ltNode&gt
+   * @param active Set  // Set&lt;Node&gt;
 	 * @param do_lock boolean if false nj neighbors are accessed w/o locking the
 	 * graph to which they belong
    * @return boolean true iff nj can be added to active

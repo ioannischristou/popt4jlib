@@ -151,9 +151,10 @@ final class BBQueue extends Thread {
 
 
   /**
-   * insert a List<BBNodeBase> objects in the queue to be later executed.
-   * @param children List
-   * @return boolean
+   * insert a List of BBNodeBase objects in the queue to be later executed.
+   * @param children List // List&lt;BBNodeBase&gt;
+   * @return boolean true iff the _nodes queue is not full at the time of the 
+	 * call.
    */
   synchronized boolean insertNodes(List children) {
     if (_nodes.size()>=_maxSz)
@@ -173,9 +174,10 @@ final class BBQueue extends Thread {
 
 
   /**
-   * insert a TreeSet<BBNodeBase> objects in the queue to be later executed.
-   * @param children TreeSet
-   * @return boolean
+   * insert a TreeSet of BBNodeBase objects in the queue to be later executed.
+   * @param children TreeSet // TreeSet&lt;BBNodeBase&gt;
+   * @return boolean true iff the _nodes queue is not full at the time of the 
+	 * call.
    */
   synchronized boolean insertNodes(TreeSet children) {
     if (_nodes.size()>=_maxSz)

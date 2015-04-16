@@ -128,7 +128,7 @@ public class Node implements Comparable, Serializable {
 
 
   /**
-   * set the weight of the node for the property named &ltname&gt to the value 
+   * set the weight of the node for the property named &lt;name&gt; to the value 
 	 * val passed in the 2nd argument, and updates the relevant property's max 
 	 * node weight value in the graph to which this node belongs.
    * @param name String
@@ -154,7 +154,7 @@ public class Node implements Comparable, Serializable {
 
 
   /**
-   * get the node value for the property named &ltname&gt in the passed argument
+   * get the node value for the property named &lt;name&gt; in the passed argument
    * @param name String
    * @return Double
    */
@@ -175,7 +175,7 @@ public class Node implements Comparable, Serializable {
 
 	
 	/**
-   * get the node value for the property named &ltname&gt in the passed argument.
+   * get the node value for the property named &lt;name&gt; in the passed argument.
 	 * This operation is unsynchronized, and therefore, if used in a multi-
 	 * threaded context, should be externally synchronized or otherwise provide
 	 * guarantees that prevent race-conditions from occurring.
@@ -189,7 +189,7 @@ public class Node implements Comparable, Serializable {
 
   /**
    * return the neighboring nodes of this Node.
-   * @return Set // Set&ltNode&gt
+   * @return Set // Set&lt;Node&gt;
    */
   public final Set getNbors() {
     try {
@@ -212,7 +212,7 @@ public class Node implements Comparable, Serializable {
 	 * This operation is unsynchronized, and therefore, if used in a multi-
 	 * threaded context, should be externally synchronized or otherwise provide
 	 * guarantees that prevent race-conditions from occurring.
-   * @return Set // Set&ltNode&gt
+   * @return Set // Set&lt;Node&gt;
    */
   public final Set getNborsUnsynchronized() {
 		return _nbors;
@@ -225,7 +225,7 @@ public class Node implements Comparable, Serializable {
    * @param force boolean if true it forces the re-computation of the neighbors
    * (unless a cache exists in which case the nbors are not re-computed as
    * there is no need)
-   * @return Set // Set&ltNode&gt
+   * @return Set // Set&lt;Node&gt;
    * @throws ParallelException if the current thread has read-lock on the graph
    * and there is another thread currently owning a read-lock as well.
    */
@@ -331,7 +331,7 @@ public class Node implements Comparable, Serializable {
 	 * threaded context, should be externally synchronized or otherwise provide
 	 * guarantees that prevent race-conditions from occurring.
    * @param val double
-   * @return Set // Set&ltInteger nodeid&gt
+   * @return Set // Set&lt;Integer nodeid&gt;
    */
   public Set getNborIndicesUnsynchronized(double val) {
     Set indices = new HashSet(); // Set<Integer nid>
@@ -353,7 +353,7 @@ public class Node implements Comparable, Serializable {
 
   /**
    * return this Node's neighbors' indices (excluding this Node's id)
-   * @return Set // Set&ltInteger nodeid&gt
+   * @return Set // Set&lt;Integer nodeid&gt;
    */
   public Set getNNborIndices() {
     try {
@@ -384,7 +384,7 @@ public class Node implements Comparable, Serializable {
 	 * This operation is unsynchronized, and therefore, if used in a multi-
 	 * threaded context, should be externally synchronized or otherwise provide
 	 * guarantees that prevent race-conditions from occurring.
-   * @return Set // Set&ltInteger nodeid&gt
+   * @return Set // Set&lt;Integer nodeid&gt;
    */
   public Set getNNborIndicesUnsynchronized() {
     Set indices = new HashSet();
@@ -401,7 +401,7 @@ public class Node implements Comparable, Serializable {
 
   /**
    * return all neighbors of this node at distance 1 or 2
-   * @return Set // Set&ltNode&gt
+   * @return Set // Set&lt;Node&gt;
    * @throws ParallelException
    */
   public final Set getNNbors() throws ParallelException {
@@ -414,7 +414,7 @@ public class Node implements Comparable, Serializable {
 	 * <CODE>makeNNbors()</CODE> must have been called in advance therefore (if by
 	 * another thread, memory visibility must be ensured somehow), otherwise the
 	 * result will be null or undetermined.
-	 * @return Set // Set&ltNode&gt
+	 * @return Set // Set&lt;Node&gt;
 	 */
 	public final Set getNNborsUnsynchronized() {
 		return _nnbors;
@@ -431,7 +431,7 @@ public class Node implements Comparable, Serializable {
    * @param force boolean if true it forces the re-computation of the neighbors
    * (unless a cache exists in which case the nnbors are not re-computed as
    * there is no need)
-   * @return Set // Set&ltNode&gt
+   * @return Set // Set&lt;Node&gt;
    * @throws ParallelException if the current thread has read-lock on the graph
    * and there is another thread currently owning a read-lock as well.
    */
@@ -490,7 +490,7 @@ public class Node implements Comparable, Serializable {
 
   /**
    * return the ids of the incoming links to this Node.
-   * @return Set // Set&ltInteger linkid&gt
+   * @return Set // Set&lt;Integer linkid&gt;
    */
   public Set getInLinks() {
     try {
@@ -510,7 +510,7 @@ public class Node implements Comparable, Serializable {
 
   /**
    * return the ids of the outgoing links from this Node.
-   * @return Set // Set&ltInteger linkid&gt
+   * @return Set // Set&lt;Integer linkid&gt;
    */
   public Set getOutLinks() {
     try {

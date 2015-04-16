@@ -71,7 +71,7 @@ public class DLockSrv {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt [portnumber(7892)]</CODE>.
+   * invoke as <CODE>java -cp &lt;classpath&gt; [portnumber(7892)]</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {

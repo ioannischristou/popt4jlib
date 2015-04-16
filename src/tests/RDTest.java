@@ -25,9 +25,9 @@ public class RDTest {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt  tests.RDTest &ltparams_file&gt</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt;  tests.RDTest &lt;params_file&gt;</CODE>
    * where the params_file is a text file that must contain the following lines:
-   * <li> class,rd.function, &ltfullclassname&gt mandatory, the full class name
+   * <li> class,rd.function, &lt;fullclassname&gt; mandatory, the full class name
    * of the function to be minimized. The function must accept <CODE>double[]</CODE>
    * or <CODE>popt4jlib.VectorIntf</CODE> objects as arguments.
    * <li> rd.numdimensions, $num$ mandatory, the number of dimensions of the
@@ -52,7 +52,7 @@ public class RDTest {
    * seed to use for each of the $num2$ threads to use (the value num2 must
    * equal the number given for the rd.numthreads, or 1 if no such line is
    * present). The value of num should be a positive integer.
-   * <li> class,rd.gradient, &ltfullclasspathname&gt optional, the class name
+   * <li> class,rd.gradient, &lt;fullclasspathname&gt; optional, the class name
    * of the <CODE>popt4jlib.VecFunctionIntf</CODE> the implements the gradient
    * of f, the function to be minimized. If this param-value pair does not exist,
    * the gradient will be computed using Richardson finite differences extrapolation

@@ -23,7 +23,7 @@ public class ParallelRNGTest {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.ParallelRNGTest &ltsize&gt </CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.ParallelRNGTest &lt;size&gt; </CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

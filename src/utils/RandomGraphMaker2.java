@@ -71,7 +71,7 @@ public class RandomGraphMaker2 {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt utils.RandomGraphMaker2 &ltnumnodes&gt &ltavgnodedegree&gt &ltfilename&gt [rndseed] [nodeweightsvariance]</CODE>.
+   * <CODE>java -cp &lt;classpath&gt; utils.RandomGraphMaker2 &lt;numnodes&gt; &lt;avgnodedegree&gt; &lt;filename&gt; [rndseed] [nodeweightsvariance]</CODE>.
 	 * If the randomnodeweightsvariance option is set to some positive number then
 	 * the graph will have weights assigned to its nodes that will be random 
 	 * numbers drawn from the gaussian distribution, with mean equal to the 

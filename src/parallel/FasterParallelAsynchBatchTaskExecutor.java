@@ -39,7 +39,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
    * public factory constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
 	 * @return FasterParallelAsynchBatchTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
    * asked to be created.
    */	
 	public static FasterParallelAsynchBatchTaskExecutor 
@@ -57,7 +57,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full.
 	 * @return FasterParallelAsynchBatchTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
    * asked to be created.
    */					
 	public static FasterParallelAsynchBatchTaskExecutor 
@@ -73,7 +73,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
   /**
    * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
-   * @throws ParallelException if numthreads &lte 0 or if too many threads are
+   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
    * asked to be created.
    */
   private FasterParallelAsynchBatchTaskExecutor(int numthreads) throws ParallelException {
@@ -99,7 +99,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
    * @param numthreads int the number of threads in the thread-pool
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full.
-   * @throws ParallelException if numthreads &lte 0.
+   * @throws ParallelException if numthreads &lte; 0.
    */
   private FasterParallelAsynchBatchTaskExecutor(int numthreads,
                                                boolean runoncurrent)

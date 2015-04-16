@@ -3,7 +3,7 @@ package popt4jlib;
 import java.util.Hashtable;
 
 /**
- * class implements the identity Arg->Chromosome transformation. The class is
+ * class implements the identity Arg-&gt;;Chromosome transformation. The class is
  * simply an auxiliary class.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>

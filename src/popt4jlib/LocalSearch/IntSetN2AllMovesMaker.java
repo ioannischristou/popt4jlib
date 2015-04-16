@@ -29,16 +29,16 @@ public class IntSetN2AllMovesMaker  implements AllChromosomeMakerIntf {
 
   /**
    * implements the N_2 neighborhood for sets of integers.
-   * @param chromosome Object // Set&ltInteger&gt
+   * @param chromosome Object // Set&lt;Integer&gt;
    * @param params Hashtable must contain either a key-value pair
-   * &lt"dls.maxvalue", int_num&gt or a pair
-   * &lt"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt
-   * and optionally a key-value pair &lt"dls.minvalue", int_num&gt (default=0). 
+   * &lt;"dls.maxvalue", int_num&gt; or a pair
+   * &lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;
+   * and optionally a key-value pair &lt;"dls.minvalue", int_num&gt; (default=0). 
 	 * If the filter is present, it specifies the ints to be tried for addition to
    * the set given an int to be removed from the set, and therefore the min and
    * max values are not used.
    * @throws OptimizerException
-   * @return Vector // Vector&ltSet&ltInteger&gt &gt
+   * @return Vector // Vector&lt;Set&lt;Integer&gt; &gt;
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN2AllMovesMaker.createAllChromosomes(): null chromosome");

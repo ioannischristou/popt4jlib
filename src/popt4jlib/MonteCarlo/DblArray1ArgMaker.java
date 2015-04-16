@@ -30,21 +30,21 @@ public class DblArray1ArgMaker implements RandomArgMakerIntf {
    * boundaries of the element's range specified in the params key-value pairs.
    * @param params Hashtable must contain the following params:
 	 * <ul>
-   * <li> &lt"mcs.arglength", $integer_value$&gt mandatory, the length
+   * <li> &lt;"mcs.arglength", $integer_value$&gt; mandatory, the length
    * of the argument.
-   * <li> &lt"mcs.minargvalue", $value$&gt mandatory, the minimum value for
+   * <li> &lt;"mcs.minargvalue", $value$&gt; mandatory, the minimum value for
    * any arg. element.
-   * <li> &lt"mcs.minargvalue$i$", $value$&gt optional, the minimum value for
+   * <li> &lt;"mcs.minargvalue$i$", $value$&gt; optional, the minimum value for
    * the i-th element in the argument ($i$ must be in the range
    * {0,...,arg_length-1}. If this value is less than the global value
    * specified by the "mcs.minargvalue" key, it is ignored.
-   * <li> &lt"mcs.maxargvalue", $value$&gt mandatory, the maximum value for
+   * <li> &lt;"mcs.maxargvalue", $value$&gt; mandatory, the maximum value for
    * any element in the argument.
-   * <li> &lt"mcs.maxargvalue$i$", $value$&gt optional, the maximum value for
+   * <li> &lt;"mcs.maxargvalue$i$", $value$&gt; optional, the maximum value for
    * the i-th element in the argument ($i$ must be in the range
    * {0,...,arg_length-1}. If this value is greater than the global value
    * specified by the "mcs.maxargvalue" key, it is ignored.
-   * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
 	 * </ul>

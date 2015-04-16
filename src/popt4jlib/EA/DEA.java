@@ -125,21 +125,21 @@ public class DEA implements OptimizerIntf {
    * during construction of the object, or via a call to 
 	 * <CODE>setParams(p)</CODE>. The parameters are as follows:
    * <ul>
-   * <li> &lt"dea.randomchromosomemaker", RandomChromosomeMakerIntf r&gt mandatory, the
+   * <li> &lt;"dea.randomchromosomemaker", RandomChromosomeMakerIntf r&gt; mandatory, the
    * object responsible for implementing the interface that allows creating
    * random initial chromosome objects.
-   * <li> &lt"dea.movemaker", NewChromosomeMakerIntf movemaker&gt mandatory, the object
+   * <li> &lt;"dea.movemaker", NewChromosomeMakerIntf movemaker&gt; mandatory, the object
    * responsible for implementing the interface that allows creating new
    * chromosome Objects from an existing one (makes a move).
-   * <li> &lt"dea.numiters", Integer niters&gt optional, the number of iterations each
+   * <li> &lt;"dea.numiters", Integer niters&gt; optional, the number of iterations each
    * thread will go through in this evolutionary process run, default is 100.
-   * <li> &lt"dea.sendrecvperiod",Integer period&gt optional, the number of generations
+   * <li> &lt;"dea.sendrecvperiod",Integer period&gt; optional, the number of generations
    * before the threads communicate their best solution to the master DEA
    * process and subsequent receipt of the same best solution by all threads.
    * Default is 1.
-   * <li> &lt"dea.numthreads", Integer nt&gt optional, the number of threads representing
+   * <li> &lt;"dea.numthreads", Integer nt&gt; optional, the number of threads representing
    * islands for this evolutionary process run. Default is 1.
-   * <li> &lt"dea.c2amaker", Chromosome2ArgMakerIntf c2amaker&gt optional, an object
+   * <li> &lt;"dea.c2amaker", Chromosome2ArgMakerIntf c2amaker&gt; optional, an object
    * implementing the Chromosome2ArgMakerIntf that transforms chromosome Objects
    * used in the evolutionary process -and manipulated by the Object implementing
    * the NewChromosomeMakerIntf interface- into argument Objects that can be

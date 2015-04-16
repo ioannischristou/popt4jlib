@@ -19,8 +19,8 @@ import utils.IntSet;
 public class NodeSetWeightComparator implements Comparator {
 	/**
 	 * access to <CODE>Node</CODE> weights is done without locking.
-	 * @param nodes1 Object // Set&ltNode&gt
-	 * @param nodes2 Object // Set&ltNode&gt
+	 * @param nodes1 Object // Set&lt;Node&gt;
+	 * @param nodes2 Object // Set&lt;Node&gt;
 	 * @return +1, -1 or 0 depending on who's heavier
 	 */
 	public int compare(Object nodes1, Object nodes2) {

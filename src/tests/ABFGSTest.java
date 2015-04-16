@@ -24,8 +24,9 @@ public class ABFGSTest {
 
 
   /**
-   * run as <CODE> java -cp &ltclasspath&gt tests.ABFGSTest &ltparams_file&gt </CODE>
-   * where the params_file must contain lines of the following form:
+   * run as <CODE> java -cp &lt;classpath&gt; tests.ABFGSTest &lt;params_file&gt; </CODE>.
+   * The params_file must contain lines of the following form:
+	 * <ul>
    * <li> abfgs.numdimensions, $num$  mandatory, number of dimensions
    * of the function to be optimized; the function to be optimized must accept
    * as arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
@@ -52,22 +53,22 @@ public class ABFGSTest {
    * <li> class,abfgs.gradient, $fullclassnameofgradient$ optional, the grad.
    * of f, the function to be minimized. If this param-value pair does not exist
    * gradient will be computed using Richardson finite differences extrapolation
-   * <li> abfgs.gtol, $num$ optional, the minimum abs. value for each of the
+   * <li> abfgs.gtol, $num$ optional, the minimum absolute value for each of the
    * gradient's coordinates, below which if all coordinates of the gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-6.
    * <li> abfgs.maxiters, $num$ optional, the maximum number of major
    * iterations of the Newton-type search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * <li> abfgs.rho, $num$ optional, the value for the parameter ñ in the
+   * <li> abfgs.rho, $num$ optional, the value for the parameter &rho; in the
    * Armijo rule implementation. Default is 0.1.
-   * <li> abfgs.beta, $num$ optional, the value for the parameter â in the
+   * <li> abfgs.beta, $num$ optional, the value for the parameter &beta; in the
    * Armijo rule implementation. Default is 0.2.
-   * <li> abfgs.gamma, $num$ optional, the value for the parameter ã in the
+   * <li> abfgs.gamma, $num$ optional, the value for the parameter &gamma; in the
    * Armijo rule implementation. Default is 1.
    * <li> abfgs.maxarmijoiters, $num$ optional, the maximum number of Armijo
    * rule iterations allowed. Default is Integer.MAX_VALUE.
-   *
+   * </ul>
    * @param args String[]
    */
   public static void main(String[] args) {

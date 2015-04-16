@@ -17,7 +17,7 @@ import java.util.*;
  * class' objects maintain.</p>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -31,7 +31,7 @@ public class ReentrantFunctionBaseMT implements FunctionIntf {
    * public constructor creates nt new f objects (using reflection) and stores
    * them in an array. Threads with a (global) id in the set {0,...nt-1} calling
    * the eval(x,params) method of this object (with the params map containing an
-   * entry <"thread.id", Integer n> so that <CODE>0 <= n.intValue() < nt </CODE>
+   * entry &lt;"thread.id", Integer n&gt; so that <CODE>0 &lte;; n.intValue() &lt;; nt </CODE>)
    * will run concurrently, but threads with different ids (specified in the
    * params map) will run sequentially.
    * @param f FunctionIntf
@@ -55,7 +55,7 @@ public class ReentrantFunctionBaseMT implements FunctionIntf {
 
   /**
    * force function to be reentrant, as long as no STATIC data members are
-   * modified during evaluations, as no two threads can enter the eval()
+   * modified during evaluations, as no two threads can enter the eval(x,p)
    * method on the same object simultaneously.
    * @param arg Object
    * @param params Hashtable

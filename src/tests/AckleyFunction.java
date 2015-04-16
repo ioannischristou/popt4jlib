@@ -28,9 +28,9 @@ public class AckleyFunction implements FunctionIntf {
   /**
    * return the value of the Ackley function.
    * The params map may contain following parameters:
-   * &lt"a", Double val&gt the value of the a parameter
-   * &lt"b", Double val&gt the value of the b parameter
-   * &lt"c", Double val&gt the value of the c parameter
+   * &lt;"a", Double val&gt; the value of the a parameter
+   * &lt;"b", Double val&gt; the value of the b parameter
+   * &lt;"c", Double val&gt; the value of the c parameter
    * @param arg Object may be either a <CODE>double[]</CODE> or a
    * <CODE>VectorIntf</CODE> object.
    * @param params Hashtable

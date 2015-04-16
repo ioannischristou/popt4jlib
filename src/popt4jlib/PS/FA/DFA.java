@@ -24,7 +24,7 @@ import popt4jlib.*;
  *
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2014</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -55,7 +55,7 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
 
   /**
    * public constructor accepting the optimization parameters (making a local
-   * copy of them)
+   * copy of them).
    * @param params Hashtable
    */
   public DFA(Hashtable params) {
@@ -96,10 +96,10 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
   // SubjectIntf methods implementation
   /**
    * allows an Object that implements the ObserverIntf interface to register
-   * with this DPSO object and thus be notified whenever new incumbent solutions
+   * with this DFA object and thus be notified whenever new incumbent solutions
    * are produced by the DFA process. The ObserverIntf objects may then
    * independently produce their own new solutions and add them back into the
-   * DFA process via a call to addIncumbent(observer, functionarg).
+   * DFA process via a call to <CODE>addIncumbent(observer, functionarg)</CODE>.
    * The order of events cannot be uniquely defined and the experiment may not
    * always produce the same results.
    * @param observer ObserverIntf.
@@ -295,31 +295,31 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * previously passed in the _params map (via the ctor arg or via a call to
    * setParams(p) to do that).
    * These parameters are:
-   *
-   * <li> <"dfa.randomfireflymaker",RandomChromosomeMakerIntf maker> mandatory,
+   * <ul>
+   * <li> &lt;"dfa.randomfireflymaker",RandomChromosomeMakerIntf maker&gt; mandatory,
    * the RandomChromosomeMakerIntf Object responsible for creating valid random
    * chromosome Objects to populate the firefly-islands.
-   * <li> <"dfa.cupdater",ChromosomeUpdaterIntf updater> mandatory, an Object
+   * <li> &lt;"dfa.cupdater",ChromosomeUpdaterIntf updater&gt; mandatory, an Object
    * that implements the ChromosomeUpdaterIntf that produces the next position
    * of a particle given its current position and that of its better neighbors.
-   * <li> <"dfa.numthreads",Integer nt> optional, how many threads will be used,
+   * <li> &lt;"dfa.numthreads",Integer nt&gt; optional, how many threads will be used,
    * default is 1. Each thread corresponds to an island in the DGA model.
-   * <li> <"dfa.c2amaker",Chromosome2ArgMakerIntf c2a> optional, the object that is
+   * <li> &lt;"dfa.c2amaker",Chromosome2ArgMakerIntf c2a&gt; optional, the object that is
    * responsible for tranforming a chromosome Object to a function argument
    * Object. If not present, the default identity transformation is assumed.
-   * <li> <"dfa.a2cmaker",Arg2ChromosomeMakerIntf a2c> optional, the object that is
+   * <li> &lt;"dfa.a2cmaker",Arg2ChromosomeMakerIntf a2c&gt; optional, the object that is
    * responsible for transforming a FunctionIntf argument Object to a chromosome
    * Object. If not present, the default identity transformation is assumed. The
    * a2c object is only useful when other ObserverIntf objects register for this
    * SubjectIntf object and also add back solutions to it (as FunctionIntf args)
-   * <li> <"dfa.numgens",Integer ng> optional, the number of generations to run the
+   * <li> &lt;"dfa.numgens",Integer ng&gt; optional, the number of generations to run the
    * DFA, default is 1.
-   * <li> <"dfa.immprob",Double prob> optional, the probability with which an sub-
+   * <li> &lt;"dfa.immprob",Double prob&gt; optional, the probability with which an sub-
    * population will send some of its members to migrate to another (island)
    * sub-population, default is 0.01
-   * <li> <"dfa.numinitpop",Integer ip> optional, the initial population number for
+   * <li> &lt;"dfa.numinitpop",Integer ip&gt; optional, the initial population number for
    * each island, default is 10.
-   * <li> <"ensemblename", String name> optional, the name of the synchronized
+   * <li> &lt;"ensemblename", String name&gt; optional, the name of the synchronized
    * optimization ensemble in which this DFA object will participate. In case
    * this value is non-null, then a higher-level ensemble optimizer must have
    * appropriately called the method
@@ -331,16 +331,18 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * If the optimizer ensemble is to call its <CODE>minimize(f)</CODE> method
    * again, then it must make sure to have reset the
    * <CODE>Barrier.getInstance(name+"_master")</CODE> object via a
-   * <CODE>
+   * <pre>
+	 * <CODE>
    * Barrier.removeInstance(name+"_master");
    * Barrier.setNumThreads(name+"_master", numOptimizers);
    * ComplexBarrier.removeInstance(name);
    * </CODE>
+	 * </pre>
    * series of calls.
-   *
+   * </ul>
    * @param FunctionIntf f
    * @throws OptimizerException if the process fails
-   * @return PairObjDouble // Pair<Object arg, Double val>
+   * @return PairObjDouble // Pair&lt;Object arg, Double val&gt;
    */
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
 		if (f==null) throw new OptimizerException("DFA.minimize(f): null f");
@@ -433,7 +435,7 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
 
 
   /**
-   * reset the barrier and other objects used in the process
+   * reset the barrier and other objects used in the process.
    */
   private synchronized void reset() {
     try {
@@ -491,7 +493,7 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
 
 
   /**
-   * get the DFAThread with the given id
+   * get the DFAThread with the given id.
    * @param id int
    * @return DFAThread
    */
@@ -501,7 +503,7 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
 
 
   /**
-   * get the current incumbent value
+   * get the current incumbent value.
    * @return double
    */
   synchronized double getIncValue() {
@@ -510,7 +512,7 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
 
 
   /**
-   * update if we have an incumbent
+   * update if we have an incumbent.
    * @param ind DFAIndividual
    * @throws OptimizerException in case of insanity (may only happen if the
    * function to be minimized is not reentrant and the debug bit
@@ -566,7 +568,7 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
 
   /**
    * moves all chromosomes that the observers and subjects have added so far to
-   * _individuals Vector<DFAIndividual> of the DFAThread with id 0, and clears
+   * _individuals Vector&lt;DFAIndividual&gt; of the DFAThread with id 0, and clears
    * the solutions from the _observers and _subjects map.
    * @param tinds Vector
    * @param params Hashtable the optimization params
@@ -630,7 +632,7 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
 
 
   /**
-   * get the id of this object
+   * get the id of this object.
    * @return int
    */
   synchronized int getId() { return _id; }
@@ -667,7 +669,7 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
  * auxiliary class not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2014</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -699,7 +701,7 @@ class DFAThread extends Thread {
  * auxiliary class not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2014</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -1000,10 +1002,10 @@ class DFAThreadAux {
 
 
 /**
- * auxiliary class not part of the public API
+ * auxiliary class not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2014</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0

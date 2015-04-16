@@ -502,7 +502,7 @@ public class FNPTask3 implements ThreadSpecificTaskObject {
 	
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt popt4jlib.NumberPartitioning.FNPTask3 &lt#numbers&gt &ltmaxnumbersize&gt [numthreads(1)] [maxdepthallowed(0)] [seed(7)] [minarrlenallowed2fork(Integer.MAX_VALUE)] [FNPTask3poolsize(100000)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; popt4jlib.NumberPartitioning.FNPTask3 &lt;#numbers&gt; &lt;maxnumbersize&gt; [numthreads(1)] [maxdepthallowed(0)] [seed(7)] [minarrlenallowed2fork(Integer.MAX_VALUE)] [FNPTask3poolsize(100000)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -523,7 +523,7 @@ public class FNPTask3 implements ThreadSpecificTaskObject {
     );
 		if (args.length<2) {
 			System.err.println("usage: "+
-							"java -cp &ltclasspath&gt popt4jlib.NumberPartitioning.FNPTask3"+
+							"java -cp &lt;classpath&gt; popt4jlib.NumberPartitioning.FNPTask3"+
 							" <#numbers> <maxnumbersize> "+
 							"[numthreads(1)] [maxdepthallowed(0)] [seed(7)]" +
 							" [minarrlenallowed2fork(Integer.MAX_VALUE)] "+

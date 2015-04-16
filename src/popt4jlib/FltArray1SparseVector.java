@@ -21,7 +21,7 @@ import java.util.Vector;
  * that the application is race-condition free when using this class.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -37,7 +37,7 @@ public class FltArray1SparseVector implements SparseVectorIntf {
   /**
    * constructs the zero sparse vector in n-dimensional space.
    * @param n int the number of dimensions
-   * @throws IllegalArgumentException if n<=0
+   * @throws IllegalArgumentException if n&lte;;0
    */
   public FltArray1SparseVector(int n) throws IllegalArgumentException {
     if (n<=0) throw new IllegalArgumentException("dimensions must be >= 1");
@@ -50,7 +50,8 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    * @param indices int[] must be in ascending order
    * @param values double[] corresponds to values for each index in the indices array
    * @param n int total length of the vector
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if indices or values are null, or if their
+	 * lengths differ, or if n&lte;;indices[indices.length-1]
    */
   public FltArray1SparseVector(int[] indices, double[] values, int n) throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
@@ -72,9 +73,10 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    * each element by the multFactor passed in.
    * @param indices int[] elements must be in ascending order
    * @param values double[]
-   * @param n int
+   * @param n int total length of vector
    * @param multFactor double
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if indices or values are null, or if their
+	 * lengths differ, or if n&lte;;indices[indices.length-1]
    */
   public FltArray1SparseVector(int[] indices, double[] values, int n, double multFactor) throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
@@ -96,9 +98,10 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    * each element by the multFactor passed in.
    * @param indices int[] elements must be in ascending order
    * @param values float[]
-   * @param n int
+   * @param n int total length of vector
    * @param multFactor float
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if indices or values are null, or if their
+	 * lengths differ, or if n&lte;;indices[indices.length-1]
    */
   public FltArray1SparseVector(int[] indices, float[] values, int n, float multFactor) throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
@@ -324,12 +327,15 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    * the purpose of this routine is to allow a traversal of the non-zeros of
    * this object as follows:
    * <p>
+	 * <pre>
    * <CODE>
    * for (int i=0; i<sparsevector.getNumNonZeros(); i++) {
    *   int    pos = sparsevector.getIthNonZeroPos(i);
    *   double val = sparsevector.getCoord(pos);
    * }
    * </CODE>
+	 * </pre>
+	 * </p>
    * @param i int.
    * @throws IndexOutOfBoundsException if i is out-of-bounds. Always throws if
    * this is the zero vector.
@@ -421,7 +427,8 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    * The operation should be fast when this vector is sparse enough, as it only
    * goes through the non-zero elements of the vector.
    * @param other VectorIntf
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if other is null of other's dimensions is
+	 * different from this vector's.
    * @return double
    */
   public double innerProduct(VectorIntf other) throws IllegalArgumentException {
@@ -438,7 +445,7 @@ public class FltArray1SparseVector implements SparseVectorIntf {
   /**
    * return the k-th norm of this vector.
    * @param k int
-   * @throws IllegalArgumentException if x==null or if k<=0
+   * @throws IllegalArgumentException if x==null or if k&lte;;0
    * @return double
    */
   public double norm(int k) throws IllegalArgumentException {

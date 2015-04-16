@@ -55,7 +55,7 @@ public final class PDBatchTaskExecutor {
    * public factory constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
 	 * @return PDBatchTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte 0.
+   * @throws ParallelException if numthreads &lte; 0.
    */	
 	public static PDBatchTaskExecutor 
 				newPDBatchTaskExecutor(int numthreads) throws ParallelException {
@@ -70,7 +70,7 @@ public final class PDBatchTaskExecutor {
    * @param numthreads int the number of threads in the thread-pool
    * @param bsize int the batch size to be submitted each time to the threadpool
 	 * @return PDBatchTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte 0.
+   * @throws ParallelException if numthreads &lte; 0.
    */	
 	public static PDBatchTaskExecutor 
 				newPDBatchTaskExecutor(int numthreads, int bsize) 
@@ -84,7 +84,7 @@ public final class PDBatchTaskExecutor {
   /**
    * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
-   * @throws ParallelException if numthreads &lte 0.
+   * @throws ParallelException if numthreads &lte; 0.
    */
   private PDBatchTaskExecutor(int numthreads) throws ParallelException {
     if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
@@ -115,7 +115,7 @@ public final class PDBatchTaskExecutor {
    * ignored.
    * @param numthreads int the number of threads in the thread-pool
    * @param bsize int the batch size to be submitted each time to the threadpool
-   * @throws ParallelException if numthreads &lte 0
+   * @throws ParallelException if numthreads &lte; 0
    */
   private PDBatchTaskExecutor(int numthreads, int bsize)
       throws ParallelException {

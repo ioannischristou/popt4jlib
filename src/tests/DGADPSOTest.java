@@ -36,7 +36,7 @@ public class DGADPSOTest {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.DGADPSOTest &ltparams_file&gt</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.DGADPSOTest &lt;params_file&gt;</CODE>
    * The params_file must contain lines that are the union of the lines expected
    * in the <CODE>tests.DGATest</CODE> and <CODE>tests.DPSOTest</CODE> classes
    * documentation.

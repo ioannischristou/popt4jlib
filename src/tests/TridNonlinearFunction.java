@@ -82,7 +82,7 @@ public class TridNonlinearFunction implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.TridNonlinearFunction &ltx_1&gt ... &ltx_n&gt</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.TridNonlinearFunction &lt;x_1&gt; ... &lt;x_n&gt;</CODE>
    * where the parameters are the values of the components of the vector point
    * at which the function will be evaluated.
    * @param args String[]

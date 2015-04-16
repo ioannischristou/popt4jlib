@@ -57,7 +57,7 @@ public class DActiveMsgPassingCoordinatorLongLivedConnSrv {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv [port(7895)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv [port(7895)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

@@ -134,7 +134,7 @@ public class PDBatchTaskExecutorWrk {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt parallel.distributed.PDBatchTaskExecutorWrk [numthreads(10)] [host(localhost)] [port(7890)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBatchTaskExecutorWrk [numthreads(10)] [host(localhost)] [port(7890)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

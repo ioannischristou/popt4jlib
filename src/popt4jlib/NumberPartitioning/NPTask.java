@@ -256,7 +256,7 @@ public class NPTask implements ComparableTaskObject {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt popt4jlib.NumberPartitioning.NPTask &lt#numbers&gt &ltmaxnumbersize&gt [numthreads(1)] [maxdepthallowed(0)] [seed(7)] [useExecuteBatch(1)] [minarrlenallowed2fork(Integer.MAX_VALUE)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; popt4jlib.NumberPartitioning.NPTask &lt;#numbers&gt; &lt;maxnumbersize&gt; [numthreads(1)] [maxdepthallowed(0)] [seed(7)] [useExecuteBatch(1)] [minarrlenallowed2fork(Integer.MAX_VALUE)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

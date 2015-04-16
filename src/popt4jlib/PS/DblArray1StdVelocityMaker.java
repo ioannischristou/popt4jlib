@@ -30,10 +30,10 @@ public class DblArray1StdVelocityMaker implements NewVelocityMakerIntf {
    * @param p Object of type double[]
    * @param g Object of type double[]
    * @param params Hashtable may contain the following entries:
-   * <li> &lt"dpso.fp", $value$&gt optional, the parameter ö_p, default is 2.0.
-   * <li> &lt"dpso.fg", $value$&gt optional, the parameter ö_g, default is 2.0.
-   * <li> &lt"dpso.w", $value$&gt optional, the parameter ù, default is 0.6.
-   * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
+   * <li> &lt;"dpso.fp", $value$&gt; optional, the parameter ö_p, default is 2.0.
+   * <li> &lt;"dpso.fg", $value$&gt; optional, the parameter ö_g, default is 2.0.
+   * <li> &lt;"dpso.w", $value$&gt; optional, the parameter ù, default is 0.6.
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
    * @throws OptimizerException if any of the parameters are null or not of type

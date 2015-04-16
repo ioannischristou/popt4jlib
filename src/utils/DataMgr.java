@@ -41,7 +41,7 @@ public class DataMgr {
 
 
   /**
-   * Reads properties from the given file and stores them as %ltkey,value&gt
+   * Reads properties from the given file and stores them as &lt;key,value&gt;
 	 * pairs in the returned <CODE>Hashtable</CODE>.
 	 * Unless the key string is a special keyword (see below), the value is 
 	 * assumed first to be an int value, and if value does not represent an int
@@ -352,11 +352,11 @@ public class DataMgr {
 	 * </PRE>
    * dim is in [1...totaldimensions]
    * the documents are represented as a vector representation of
-   * a vector in a vector space of dimension totaldimensions. If a &ltdim,val&gt
+   * a vector in a vector space of dimension totaldimensions. If a &lt;dim,val&gt;
    * pair does not appear for a vector, the value for this coordinate is assumed
    * zero.
    * @param filename String
-   * @return Vector // Vector&ltVectorIntf&gt
+   * @return Vector // Vector&lt;VectorIntf&gt;
    * @throws IOException, ClustererException
    */
   public static Vector readVectorsFromFile(String filename)
@@ -403,9 +403,9 @@ public class DataMgr {
 	 * @param filename String 
 	 * @param fromIndex int 
 	 * @param toIndex int
-	 * @return Vector // Vector&ltDblArray1Vector&gt
+	 * @return Vector // Vector&lt;DblArray1Vector&gt;
 	 * @throws IOException 
-	 * @throws IllegalArgumentException if fromIndex &gt toIndex or any of the two
+	 * @throws IllegalArgumentException if fromIndex &gt; toIndex or any of the two
 	 * is outside the valid range of indices.
 	 * @throws IndexOutOfBoundsException if fromIndex or toIndex are out of range.
 	 */
@@ -469,7 +469,7 @@ public class DataMgr {
    * the documents are represented as a sparse vector representation of
    * a vector in a vector space of dimension totaldimensions
    * @param filename String
-   * @return Vector // Vector&ltDblArray1SparseVector&gt
+   * @return Vector // Vector&lt;DblArray1SparseVector&gt;
    * @throws IOException, ClustererException
    */
   public static Vector readSparseVectorsFromFile(String filename)
@@ -533,7 +533,7 @@ public class DataMgr {
    * non-zero positions for very fast <CODE>getQuick(i)</CODE> and
    * <CODE>getIthNonnZeroPos(i)</CODE> operations.
    * @param filename String
-   * @return Vector // Vector&ltDblArray1SparseVectorFE&gt
+   * @return Vector // Vector&lt;DblArray1SparseVectorFE&gt;
    * @throws IOException, ClustererException
    */
   public static Vector readSparseVectorsFEFromFile(String filename)
@@ -595,7 +595,7 @@ public class DataMgr {
    * the documents are represented as a sparse vector representation of
    * a vector in a vector space of dimension totaldimensions
    * @param filename String
-   * @return Vector // Vector&ltDblArray1SparseVectorMT&gt
+   * @return Vector // Vector&lt;DblArray1SparseVectorMT&gt;
    * @throws IOException, ClustererException
    */
   public static Vector readSparseVectorsMTFromFile(String filename)
@@ -652,7 +652,7 @@ public class DataMgr {
    * to unity.
    * @param filename String
    * @throws IOException
-   * @return Vector // Vector&ltVectorIntf&gt
+   * @return Vector // Vector&lt;VectorIntf&gt;
    */
   public static Vector readVectorsFromFileAndNormalize(String filename)
       throws IOException {
@@ -703,7 +703,7 @@ public class DataMgr {
    * to unity.
    * @param filename String
    * @throws IOException
-   * @return Vector // Vector&ltVectorIntf&gt
+   * @return Vector // Vector&lt;VectorIntf&gt;
    */
   public static Vector readSparseVectorsMTFromFileAndNormalize(String filename)
       throws IOException {
@@ -865,7 +865,7 @@ public class DataMgr {
    * centers in space separated coordinates.
    * @param filename String
    * @throws IOException
-   * @return Vector // Vector&ltVectorIntf&gt
+   * @return Vector // Vector&lt;VectorIntf&gt;
    */
   public static Vector readCentersFromFile(String filename) throws IOException {
     BufferedReader br=null;
@@ -1479,7 +1479,7 @@ public class DataMgr {
   /**
    * writes the vectors in the 1st argument to file specified in 3rd arg.
    * according to the format specified in <CODE>readVectorsFromFile()</CODE>.
-   * @param docs Vector // Vector&ltVectorIntf&gt
+   * @param docs Vector // Vector&lt;VectorIntf&gt;
    * @param tot_dims int
    * @param filename String
    * @throws IOException
@@ -1510,7 +1510,7 @@ public class DataMgr {
   /**
    * writes the sparse vectors in the 1st argument to file specified in 3rd arg.
    * according to the format specified in <CODE>readSparseVectorsFromFile()</CODE>.
-   * @param docs Vector // Vector&ltSparseVectorIntf&gt
+   * @param docs Vector // Vector&lt;SparseVectorIntf&gt;
    * @param tot_dims int
    * @param filename String
    * @throws IOException

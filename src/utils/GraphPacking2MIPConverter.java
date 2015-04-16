@@ -97,7 +97,7 @@ public class GraphPacking2MIPConverter {
 	
 	/**
 	 * invoke as
-	 * java -cp &ltclasspath&gt utils.GraphPacking2MIPConverter &ltgraphfile&gt &ltk&gt &ltlpfile&gt
+	 * java -cp &lt;classpath&gt; utils.GraphPacking2MIPConverter &lt;graphfile&gt; &lt;k&gt; &lt;lpfile&gt;
 	 * @param args String[] 
 	 */
 	public static void main(String[] args) {

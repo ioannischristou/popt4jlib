@@ -73,7 +73,7 @@ public class Norm2Function implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.Norm2Function &ltx_1&gt ... &ltx_n&gt</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.Norm2Function &lt;x_1&gt; ... &lt;x_n&gt;</CODE>
    * where each argument is the corresponding component of the vector point at
    * which the function ||x||^2 is to be evaluated (A=1 in this case).
    * @param args String[]

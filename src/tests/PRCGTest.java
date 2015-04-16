@@ -26,9 +26,9 @@ public class PRCGTest {
 
 
   /**
-   * run as <CODE> java -cp &ltclasspath&gt tests.PRCGTest &ltparams_file&gt </CODE>
+   * run as <CODE> java -cp &lt;classpath&gt; tests.PRCGTest &lt;params_file&gt; </CODE>
    * where the params_file must contain lines of the following form:
-   * <li> class,prcg.function, &ltfullclassname&gt mandatory, the full class name
+   * <li> class,prcg.function, &lt;fullclassname&gt; mandatory, the full class name
    * of the function to be minimized. The function must accept <CODE>double[]</CODE>
    * or <CODE>popt4jlib.VectorIntf</CODE> objects as arguments.
    * <li> prcg.numdimensions, $num$ mandatory, the number of dimensions of the
@@ -49,7 +49,7 @@ public class PRCGTest {
    * Default is 1.
    * <li> prcg.numthreads, $num$ optional, the number of threads to use.
    * Default is 1.
-   * <li> class,prcg.gradient, &ltfullclasspathname&gt optional, the class name
+   * <li> class,prcg.gradient, &lt;fullclasspathname&gt; optional, the class name
    * of the <CODE>popt4jlib.VecFunctionIntf</CODE> the implements the gradient
    * of f, the function to be minimized. If this param-value pair does not exist,
    * the gradient will be computed using Richardson finite differences extrapolation

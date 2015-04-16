@@ -25,15 +25,15 @@ public class GradApproximatorTest {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.GradApproximatorTest &ltparams_file&gt &ltx_1&gt ... &ltx_n&gt
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.GradApproximatorTest &lt;params_file&gt; &lt;x_1&gt; ... &lt;x_n&gt;
    * where the params_file must contain the following:
-   * <li> class,test.function, &ltfullclassname&gt the name of the function whose
+   * <li> class,test.function, &lt;fullclassname&gt; the name of the function whose
    * gradient is to be approximated (implementing the <CODE>popt4jlib.FunctionIntf</CODE>)
    * interface.
-   * <li> class,test.gradient, &ltfullclassname&gt the name of the class
+   * <li> class,test.gradient, &lt;fullclassname&gt; the name of the class
    * implementing the <CODE>popt4jlib.VecFunctionIntf</CODE> that computes the
    * actual gradient of the test-function
-   * <li> gradapproximator.numthreads, &ltnumthreads&gt the number of threads
+   * <li> gradapproximator.numthreads, &lt;numthreads&gt; the number of threads
    * to use (optional). Default is 1. If this option is used, causes the
    * <CODE>GradApproximatorMT</CODE> class to be used instead of the single-
    * threaded version implemented in <CODE>GradApproximator</CODE>.

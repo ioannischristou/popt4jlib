@@ -68,7 +68,7 @@ public class GriewangkFunction implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.GriewangkFunction &ltx_1&gt ... &ltx_n&gt</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.GriewangkFunction &lt;x_1&gt; ... &lt;x_n&gt;</CODE>
    * to print out the value of the Griewangk function at the point given by
    * the arguments.
    * @param args String[]

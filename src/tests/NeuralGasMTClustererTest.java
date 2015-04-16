@@ -19,7 +19,7 @@ public class NeuralGasMTClustererTest {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt tests.NeuralGasMTClustererTest &ltvectorsfilename&gt &ltk&gt [num_threads(1)] [rndseed(-1)] [numiters(1000)] [useoldnslowmethod(false)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; tests.NeuralGasMTClustererTest &lt;vectorsfilename&gt; &lt;k&gt; [num_threads(1)] [rndseed(-1)] [numiters(1000)] [useoldnslowmethod(false)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

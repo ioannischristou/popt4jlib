@@ -22,7 +22,7 @@ public class DGAAFTest {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.DGAAFTest &ltparams_file&gt</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.DGAAFTest &lt;params_file&gt;</CODE>
    * where the format of the params_file is described in the documentation of the
    * <CODE>main(String[] args)</CODE> method of the tests.DGATest class.
    * @param args String[]

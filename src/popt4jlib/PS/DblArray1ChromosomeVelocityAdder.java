@@ -30,15 +30,15 @@ public class DblArray1ChromosomeVelocityAdder implements ChromosomeVelocityAdder
    * @param chromosome Object
    * @param velocity Object
    * @param params Hashtable may contain the following params:
-   * <li> &lt"dpso.minallelevalue", $value$&gt optional, the minimum value
+   * <li> &lt;"dpso.minallelevalue", $value$&gt; optional, the minimum value
    * for any allele in the chromosome.
-   * <li> &lt"dpso.minallelevalue$i$", $value$&gt optional, the minimum value
+   * <li> &lt;"dpso.minallelevalue$i$", $value$&gt; optional, the minimum value
    * for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}). If this value is less than the global value
    * specified by the "dpso.minallelevalue" key, it is ignored.
-   * <li> &lt"dpso.maxallelevalue", $value$&gt optional, the maximum value
+   * <li> &lt;"dpso.maxallelevalue", $value$&gt; optional, the maximum value
    * for any allele in the chromosome.
-   * <li> &lt"dpso.maxallelevalue$i$", $value$&gt optional, the maximum value
+   * <li> &lt;"dpso.maxallelevalue$i$", $value$&gt; optional, the maximum value
    * for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}). If this value is greater than the global
    * value specified by the "dpso.maxallelevalue" key, it is ignored.

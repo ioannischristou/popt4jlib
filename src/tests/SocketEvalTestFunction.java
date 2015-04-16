@@ -19,7 +19,7 @@ public class SocketEvalTestFunction {
 
   /**
    * invoke as:
-   * <CODE> java -cp &ltclasspath&gt tests.SocketEvalTestFunction [port(4444)]</CODE>
+   * <CODE> java -cp &lt;classpath&gt; tests.SocketEvalTestFunction [port(4444)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

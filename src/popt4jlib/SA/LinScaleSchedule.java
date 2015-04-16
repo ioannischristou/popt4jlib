@@ -29,8 +29,8 @@ public class LinScaleSchedule implements SAScheduleIntf {
    * floor of x.
    * @param t int
    * @param params Hashtable may contain the following key-value pairs:
-   * <li> &lt"dsa.T0", $value$&gt optional, default is 1000.0.
-   * <li> &lt"dsa.K", $value$&gt optional, default is 20.0.
+   * <li> &lt;"dsa.T0", $value$&gt; optional, default is 1000.0.
+   * <li> &lt;"dsa.K", $value$&gt; optional, default is 20.0.
    * @throws OptimizerException
    * @return double
    */

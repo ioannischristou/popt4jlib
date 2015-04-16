@@ -29,8 +29,8 @@ class GRASPPackerIntSetNbrhoodFilter implements IntSetNeighborhoodFilterIntf {
 	 * <CODE>filter((Integer) x, (Set) arg, params)</CODE>.
 	 * @param x Object must be Integer
 	 * @param arg Object must be Set
-	 * @param params must contain a pair &lt"dls.graph", Graph g&gt.
-	 * @return List // ArrayList&ltInteger&gt
+	 * @param params must contain a pair &lt;"dls.graph", Graph g&gt;.
+	 * @return List // ArrayList&lt;Integer&gt;
 	 * @throws LocalSearchException if the params are incorrectly set
 	 */
   public List filter(Object x, Object arg, Hashtable params) throws LocalSearchException {
@@ -48,9 +48,9 @@ class GRASPPackerIntSetNbrhoodFilter implements IntSetNeighborhoodFilterIntf {
 	/**
 	 * returns ids of all neighbors at distance 1 or 2 of the node with id x.
 	 * @param x Integer
-	 * @param arg Set // Set&ltInteger&gt unused
-	 * @param params Hashtable must contain a pair &lt"dls.graph", Graph g&gt
-	 * @return List // ArrayList&ltInteger nodeid&gt
+	 * @param arg Set // Set&lt;Integer&gt; unused
+	 * @param params Hashtable must contain a pair &lt;"dls.graph", Graph g&gt;
+	 * @return List // ArrayList&lt;Integer nodeid&gt;
 	 * @throws LocalSearchException if params are incorrectly set
 	 */
   public List filter(Integer x, Set arg, Hashtable params) throws LocalSearchException {

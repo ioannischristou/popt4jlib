@@ -135,25 +135,25 @@ public class DLS implements OptimizerIntf {
    * during construction of the object, or via a call to setParams(p).
    * The parameters are as follows:
    * <ul>
-   * <li> &lt"dls.x0", Object arg&gt mandatory, the initial point from which to start
+   * <li> &lt;"dls.x0", Object arg&gt; mandatory, the initial point from which to start
    * the local search.
-   * <li> &lt"dls.movesmaker", AllChromosomeMakerIntf movesmaker&gt mandatory, the object
+   * <li> &lt;"dls.movesmaker", AllChromosomeMakerIntf movesmaker&gt; mandatory, the object
    * responsible for implementing the interface that allows creating ALL
    * chromosome Objects from an existing one (produces -by definition- the
    * entire neighborhood of the object).
-   * <li> &lt"dls.maxiters", Integer niters&gt optional, the max number of iterations the
+   * <li> &lt;"dls.maxiters", Integer niters&gt; optional, the max number of iterations the
    * process will go through, default is <CODE>Integer.MAX_VALUE</CODE>.
-   * <li> &lt"dls.numthreads", Integer nt&gt optional, the number of threads in the
+   * <li> &lt;"dls.numthreads", Integer nt&gt; optional, the number of threads in the
    * threadpool to be used for exploring each possible move in the neighborhood.
    * Default is 1.
-   * <li> &lt"dls.a2cmaker", Arg2ChromosomeMakerIntf a2cmaker&gt optional, an object
+   * <li> &lt;"dls.a2cmaker", Arg2ChromosomeMakerIntf a2cmaker&gt; optional, an object
    * implementing the Arg2ChromosomeMakerIntf that transforms objects that can
    * be passed directly to the FunctionIntf being minimized to Chromomome objects
    * that can be used in the local-search process -and manipulated by the Object
    * implementing the AllChromosomeMakerIntf interface. Default is
    * null, which results in the arg objects being passed "as-is" to the
    * AllChromosomeMakerIntf object.
-   * <li> &lt"dls.c2amaker", Chromosome2ArgMakerIntf c2amaker&gt optional, an object
+   * <li> &lt;"dls.c2amaker", Chromosome2ArgMakerIntf c2amaker&gt; optional, an object
    * implementing the Chromosome2ArgMakerIntf that transforms chromosome Objects
    * used in the localsearch process -and manipulated by the Object implementing
    * the AllChromosomeMakerIntf interface- into argument Objects that can be

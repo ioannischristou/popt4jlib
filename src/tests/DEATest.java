@@ -24,9 +24,10 @@ public class DEATest {
   }
 
   /**
-   * run as <CODE> java -cp &ltclasspath&gt tests.DEATest &ltparams_file&gt [random_seed] [maxfuncevals]</CODE>
+   * run as <CODE> java -cp &lt;classpath&gt; tests.DEATest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>
    * where the params_file must contain lines of the following form:
-   * <li> class,dea.function, &ltfullclasspathname&gt  mandatory, the java class
+	 * <ul>
+   * <li> class,dea.function, &lt;fullclasspathname&gt;  mandatory, the java class
    * name defining the function to be optimized, which must accept
    * as arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
    * objects.
@@ -34,14 +35,14 @@ public class DEATest {
    * of wall-clock time that each function evaluation will be allowed to execute
    * (so that if the function takes more to execute, it will be considered that
    * the function at this point returns Double.MAX_VALUE)
-   * <li> class,dea.localoptimizer, &ltfullclasspathname&gt optional the java
+   * <li> class,dea.localoptimizer, &lt;fullclasspathname&gt; optional the java
    * class name of an object implementing the LocalOptimizerIntf defined in
    * the popt4jlib.GradientDescent package, to be used as further optimizer of
    * the best solution found by the DE process.
-   * <li> class,dea.randomchromosomemaker, &ltfullclassname&gt mandatory the class
+   * <li> class,dea.randomchromosomemaker, &lt;fullclassname&gt; mandatory the class
    * name of a RandomChromosomeMakerIntf object responsible for implementing the
    * interface that allows creating random initial chromosome objects.
-   * <li> class,dea.movemaker, &ltfullclassname&gt mandatory, the  object responsible
+   * <li> class,dea.movemaker, &lt;fullclassname&gt; mandatory, the  object responsible
    * for implementing the interface NewChromosomeMakerIntf that allows creating
    * new chromosome Objects from an existing one (makes a move).
    * <li> dea.numiters, $num$ optional, the number of iterations each
@@ -56,14 +57,14 @@ public class DEATest {
    * seed to use for each of the $num2$ threads to use (the value num2 must
    * equal the number given in the line for dde.numthreads). The value of num
    * should be a positive integer.
-   * <li> class,dea.c2amaker, &ltfullclassname&gt optional, the object that
+   * <li> class,dea.c2amaker, &lt;fullclassname&gt; optional, the object that
    * implements the Chromosome2ArgMakerIntf interface that transforms chromosome
    * Objects used in the evolutionary process -and manipulated by the Object
    * implementing the NewChromosomeMakerIntf interface- into argument Objects
    * that can be passed into the FunctionIntf object that the process minimizes.
    * Default is null, which results in the chromosome objects being passed "as-is"
    * to the FunctionIntf object being minimized.
-   *
+   * </ul>
    * <p> if the optional second argument is also passed in, it overrides the random
    * seed specified in the params_file.
    * <p> The optional third argument, if present, overrides any max. limit set

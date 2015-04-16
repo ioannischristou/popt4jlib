@@ -25,16 +25,17 @@ public class DSATest {
 
 
   /**
-   * run as <CODE> java -cp &ltclasspath&gt tests.DSATest &ltparams_file&gt [random_seed] [maxfuncevals]</CODE>
+   * run as <CODE> java -cp &lt;classpath&gt; tests.DSATest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>
    * where the params_file must contain lines of the following form:
-   * <li> class,dsa.function, &ltfullclasspathname&gt  mandatory, the java class
+	 * <ul>
+   * <li> class,dsa.function, &lt;fullclasspathname&gt;  mandatory, the java class
    * name defining the function to be optimized, which must accept
    * as arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
    * objects.
-   * <li> class,dsa.randomchromosomemaker, &ltfullclassname&gt mandatory the class
+   * <li> class,dsa.randomchromosomemaker, &lt;fullclassname&gt; mandatory the class
    * name of a RandomChromosomeMakerIntf object responsible for implementing the
    * interface that allows creating random initial chromosome objects.
-   * <li> class,dsa.movemaker, &ltfullclassname&gt mandatory, the  object responsible
+   * <li> class,dsa.movemaker, &lt;fullclassname&gt; mandatory, the  object responsible
    * for implementing the interface NewChromosomeMakerIntf that allows creating
    * new chromosome Objects from an existing one (makes a move).
    * <li> dsa.numouteriters, $num$ optional, the total number of "generations"
@@ -45,7 +46,7 @@ public class DSATest {
    * seed to use for each of the $num2$ threads to use (the value num2 must
    * equal the number given for the dsa.numthreads, or 1 if no such line is
    * present). The value of num should be a positive integer.
-   * <li> class,dsa.c2amaker, &ltfullclassname&gt optional, the object that
+   * <li> class,dsa.c2amaker, &lt;fullclassname&gt; optional, the object that
    * implements the Chromosome2ArgMakerIntf interface that transforms chromosome
    * Objects used in the evolutionary process -and manipulated by the Object
    * implementing the NewChromosomeMakerIntf interface- into argument Objects
@@ -56,13 +57,13 @@ public class DSATest {
    * iterations each thread will run before communicating its incumbent solution
    * to all others, and get the best overall incumbent -among running threads-
    * to continue with, default is 100.
-   * <li> class,dsa.schedule, &ltfullclasspathname&gt optional, class name of the
+   * <li> class,dsa.schedule, &lt;fullclasspathname&gt; optional, class name of the
    * object implementing the SAScheduleIntf that determines the temperature at
    * each "generation" i.e. outer iteration. Default is LinScaleSchedule, that
    * can be configured by the following two optional parameters:
    * <li> dsa.T0, $num$ optional, initial temperature, default is 1000.0
    * <li> dsa.K, $num$ optional, the "Boltzman constant", default is 20.0
-   *
+   * </ul>
    * <p> if the second optional argument is passed in, it overrides the random
    * seed specified in the params_file.
    * <p> The optional third argument, if present, overrides any max. limit set

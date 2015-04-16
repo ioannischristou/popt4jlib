@@ -36,9 +36,9 @@ public class MWISNLPFunction implements FunctionIntf {
 	
 
 	/**
-	 * evaluates the function f(x)=\Sum_{i=1}^n (1-x_i) \Pi_{(i,j) \in E(G)} x_j.
+	 * evaluates the function f(x)=-\Sum_{i=1}^n (1-x_i) \Pi_{(i,j) \in E(G)} x_j.
 	 * The domain of definition is [0,1]^n.
-	 * @param x Object // Set&ltNode&gt
+	 * @param x Object // double[] or VectorIntf
 	 * @param params Hashtable unused
 	 * @return double 
 	 * @throws IllegalArgumentException 
@@ -62,7 +62,7 @@ public class MWISNLPFunction implements FunctionIntf {
 				}
 				res += v;
 			}
-			return res;
+			return -res;
 		}
 		if (x instanceof VectorIntf) {
 			VectorIntf xa = (VectorIntf) x;
@@ -81,7 +81,7 @@ public class MWISNLPFunction implements FunctionIntf {
 				}
 				res += v;
 			}
-			return res;
+			return -res;
 		}
 		throw new IllegalArgumentException("x must be double[] or VectorIntf");
 	}

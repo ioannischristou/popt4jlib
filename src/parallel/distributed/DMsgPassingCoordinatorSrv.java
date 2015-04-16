@@ -65,7 +65,7 @@ public class DMsgPassingCoordinatorSrv {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt parallel.distributed.DMsgPassingCoordinatorSrv [port(7894)] [maxthreads(10000)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.DMsgPassingCoordinatorSrv [port(7894)] [maxthreads(10000)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

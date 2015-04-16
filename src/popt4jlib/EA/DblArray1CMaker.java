@@ -29,13 +29,13 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
    * <CODE>params</CODE> argument passed in. It will and also obey the following
    * bounding box constraints:
 	 * <ul>
-   * <li> &lt"dea.minallelevalue", Double v&gt optional, the min. value that any
+   * <li> &lt;"dea.minallelevalue", Double v&gt; optional, the min. value that any
    * component of the returned vector may assume
-   * <li> &lt"dea.maxallelevalue", Double v&gt optional, the max. value that any
+   * <li> &lt;"dea.maxallelevalue", Double v&gt; optional, the max. value that any
    * component of the returned vector may assume
-   * <li> &lt"dea.minallelevalue"+$i$, Double v&gt optional, the min. value that the
+   * <li> &lt;"dea.minallelevalue"+$i$, Double v&gt; optional, the min. value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * <li> &lt"dea.maxallelevalue"+$i$, Double v&gt optional, the max. value that the
+   * <li> &lt;"dea.maxallelevalue"+$i$, Double v&gt; optional, the max. value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
 	 * </ul>
    * <br>The "local" constraints can only impose more strict constraints on the

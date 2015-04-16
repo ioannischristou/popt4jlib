@@ -99,8 +99,8 @@ public class RandomBallGraphMaker {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt utils.RandomBallGraphMaker &ltnumnodes&gt
-   * &ltballradius&gt &ltradius&gt &ltfilename&gt [uniformr] [rndseed]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; utils.RandomBallGraphMaker &lt;numnodes&gt;
+   * &lt;ballradius&gt; &lt;radius&gt; &lt;filename&gt; [uniformr] [rndseed]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

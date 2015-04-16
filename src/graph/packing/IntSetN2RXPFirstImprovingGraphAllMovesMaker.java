@@ -66,16 +66,16 @@ public class IntSetN2RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
 	
   /**
    * implements the N_{-2+P} neighborhood for sets of integers.
-   * @param chromosome Object // Set&ltInteger&gt
+   * @param chromosome Object // Set&lt;Integer&gt;
    * @param params Hashtable must contain a key-value pair
-   * &lt"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt
+   * &lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;
    * The filter must both specify what two numbers to remove, as well as what
    * ints to be tried for addition to the set given a vector of 2 ints to be
    * removed from the set. In particular, the filter(Integer x, Set s, Hashtable params)
-   * method must return a List&ltIntSet&gt that comprise all the 2-int 
+   * method must return a List&lt;IntSet&gt; that comprise all the 2-int 
 	 * combinations that may be tried for removal.
    * @throws OptimizerException
-   * @return Vector // Vector&ltSet&ltInteger&gt &gt
+   * @return Vector // Vector&lt;Set&lt;Integer&gt; &gt;
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN2RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): null chromosome");
@@ -135,10 +135,10 @@ public class IntSetN2RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    * DF fashion)
    * @param res Set // IntSet
    * @param rmids Set // IntSet
-   * @param tryids List // List&ltInteger&gt
+   * @param tryids List // List&lt;Integer&gt;
    * @param maxcard int
-   * @param params Hashtable must contain the pair &lt"dls.graph", Graph g&gt
-	 * and optionally the pair &lt"dls.lock_graph", Boolean val&gt
+   * @param params Hashtable must contain the pair &lt;"dls.graph", Graph g&gt;
+	 * and optionally the pair &lt;"dls.lock_graph", Boolean val&gt;
    * @return Set // IntSet
    */
   protected Set createSet(Set res, Set rmids, List tryids, int maxcard, Hashtable params) {
@@ -166,8 +166,8 @@ public class IntSetN2RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    * Overrides this method to modify the behavior of the base move-maker.
    * @param tid Integer
    * @param x IntSet
-   * @param params Hashtable must contain the pair &lt"dls.graph", Graph g&gt,
-	 * and may optionally contain the pair &lt"dls.lock_graph", Boolean val&gt,
+   * @param params Hashtable must contain the pair &lt;"dls.graph", Graph g&gt;,
+	 * and may optionally contain the pair &lt;"dls.lock_graph", Boolean val&gt;,
 	 * which if present and false, indicates unsynchronized access to the graph's
 	 * nodes; however, if the 2-arg constructor was used to construct this object
 	 * and non-null graph was passed in, then params is ignored.
@@ -203,7 +203,7 @@ public class IntSetN2RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set  // Set&ltNode&gt
+   * @param active Set  // Set&lt;Node&gt;
 	 * @param do_lock boolean if false, nodes' neighbors will be accessed w/o 
 	 * locking the graph to which they belong
    * @return boolean true iff nj can be added to active

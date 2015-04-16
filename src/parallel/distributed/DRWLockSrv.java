@@ -16,7 +16,7 @@ public class DRWLockSrv {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt parallel.distributed.DRWLockSrv [port(7897)]</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; parallel.distributed.DRWLockSrv [port(7897)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

@@ -21,7 +21,7 @@ import java.util.*;
  */
 public class DIMACSASCIIFormatGraphFileMaker {
 	/**
-	 * invoke as <CODE>java -cp &ltclasspath&gt utils.DIMACSASCIIFormatGraphFileMaker &ltgraphfile&gt &ltDIMACSASCIIfile&gt [convert_the_complement?(false)] [weightsfile] [create_graphfile_from_dimacs?(false)]</CODE>
+	 * invoke as <CODE>java -cp &lt;classpath&gt; utils.DIMACSASCIIFormatGraphFileMaker &lt;graphfile&gt; &lt;DIMACSASCIIfile&gt; [convert_the_complement?(false)] [weightsfile] [create_graphfile_from_dimacs?(false)]</CODE>
 	 * @param args 
 	 */
 	public static void main(String[] args) throws Exception {

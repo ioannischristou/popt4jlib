@@ -69,7 +69,7 @@ public class RastriginFunction implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.RastriginFunction &ltA&gt &ltw&gt &ltx_1&gt ... &ltx_n&gt
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.RastriginFunction &lt;A&gt; &lt;w&gt; &lt;x_1&gt; ... &lt;x_n&gt;
    * where the arguments x_1 ... x_n are the values of the components of the
    * vector point at which the function is to be evaluated.
    * @param args String[]

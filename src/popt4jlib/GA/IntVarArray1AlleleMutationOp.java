@@ -33,19 +33,19 @@ public class IntVarArray1AlleleMutationOp implements MutationOpIntf {
    * @param chromosome2 Object int[]
    * @param params Hashtable must contain the following:
 	 * <ul>
-   * <li> &lt"dga.minallelevalue", $integer_value$&gt optional, the minimum
+   * <li> &lt;"dga.minallelevalue", $integer_value$&gt; optional, the minimum
    * value for any allele in the chromosome. Default -Infinity.
-   * <li> &lt"dga.minallelevalue$i$", $integer_value$&gt optional, the minimum
+   * <li> &lt;"dga.minallelevalue$i$", $integer_value$&gt; optional, the minimum
    * value for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is less than the global value
    * specified by the "dga.minallelevalue" key, it is ignored.
-   * <li> &lt"dga.maxallelevalue", $integer_value$&gt optional, the maximum
+   * <li> &lt;"dga.maxallelevalue", $integer_value$&gt; optional, the maximum
    * value for any allele in the chromosome. Default +Infinity.
-   * <li> &lt"dga.maxallelevalue$i$", $integer_value$&gt optional, the maximum
+   * <li> &lt;"dga.maxallelevalue$i$", $integer_value$&gt; optional, the maximum
    * value for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is greater than the global value
    * specified by the "dga.maxallelevalue" key, it is ignored.
-   * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
 	 * </ul>

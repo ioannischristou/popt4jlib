@@ -58,7 +58,7 @@ public class DropWaveFunction implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.DropWaveFunction &ltx1&gt ... &ltxn&gt </CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.DropWaveFunction &lt;x1&gt; ... &lt;xn&gt; </CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

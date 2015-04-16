@@ -25,7 +25,7 @@ public class FixedPointApproximatorMT {
   /**
    * single constructor.
    * @param numthreads int
-   * @throws ParallelException if numthreads &lte 0
+   * @throws ParallelException if numthreads &lte; 0
    */
   public FixedPointApproximatorMT(int numthreads) throws ParallelException {
     _numThreads = numthreads;

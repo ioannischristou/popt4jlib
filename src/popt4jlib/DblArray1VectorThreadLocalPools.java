@@ -22,6 +22,7 @@ package popt4jlib;
  * has an arg. value different than the initial call to the method, will return 
  * null. Therefore, this implementation is not well-suited to handling variable
  * length vectors.
+ * </p>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -62,7 +63,7 @@ final public class DblArray1VectorThreadLocalPools {
 	 * @param poolsize
 	 * @throws IllegalStateException if there has been a call to any of the other 
 	 * methods of the family of DblArray1Vector* classes.
-	 * @throws IllegalArgumentException if poolsize &lte 0.
+	 * @throws IllegalArgumentException if poolsize &lte;; 0.
 	 */
 	public static synchronized void setPoolSize(int poolsize) 
 	  throws IllegalArgumentException, IllegalStateException {

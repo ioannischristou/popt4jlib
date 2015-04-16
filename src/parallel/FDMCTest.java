@@ -13,7 +13,7 @@ package parallel;
 public class FDMCTest {
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt parallel.FDMCTest </CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; parallel.FDMCTest </CODE>
    * The program will spawn 1000 threads, 25% of whom will require write access
    * and the rest read access. A writer thread will sleep for less than 100 ms
    * whereas a reader thread will sleep for less than 50 ms. After its sleep

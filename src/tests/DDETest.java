@@ -25,13 +25,14 @@ public class DDETest {
 
 
   /**
-   * run as <CODE> java -cp &ltclasspath&gt tests.DDETest &ltparams_file&gt [random_seed] [maxfuncevals]</CODE>
+   * run as <CODE> java -cp &lt;classpath&gt; tests.DDETest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>
    * where the params_file must contain lines of the following form:
-   * <li> class,dde.function, &ltfullclasspathname&gt  mandatory, the java class
+	 * <ul>
+   * <li> class,dde.function, &lt;fullclasspathname&gt;  mandatory, the java class
    * name defining the function to be optimized, which must accept
    * as arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
    * objects.
-   * <li> class,dde.localoptimizer, &ltfullclasspathname&gt optional the java
+   * <li> class,dde.localoptimizer, &lt;fullclasspathname&gt; optional the java
    * class name of an object implementing the LocalOptimizerIntf defined in
    * the popt4jlib.GradientDescent package, to be used as further optimizer of
    * the best solution found by the DE process.
@@ -52,23 +53,33 @@ public class DDETest {
    * double number in [0,1], default is 0.9
    * <li> dde.minargval, $num$ optional, a double number that is a lower
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i >= $num$, default is -infinity
+   * must satisfy x_i &gte; $num$, default is -infinity
    * <li> dde.maxargval, $num$ optional, a double number that is an upper
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i <= $num$, default is +infinity
+   * must satisfy x_i &lte; $num$, default is +infinity
    * <li> dde.minargval$i$, $num$ optional, a double number that is a lower
    * bound for the i-th variable of the optimization process, i.e. variable
    * must satisfy x_i >= $num$, default is -infinity
    * <li> dde.maxargval$i$, $num$ optional, a double number that is an upper
    * bound for the i-th variable of the optimization process, i.e. variable
-   * must satisfy x_i <= $num$, default is +infinity
-   *
+   * must satisfy x_i &lte; $num$, default is +infinity
+	 * <li> dde.de/best/1/binstrategy, $val$ optional, a boolean value
+	 * that if present and true, indicates that the DE/best/1/bin strategy should
+	 * be used in evolving the population instead of the DE/rand/1/bin strategy,
+	 * default is false
+	 * <li> dde.nondeterminismok, $val$ optional, a boolean value 
+	 * indicating whether the method should return always the same value given 
+	 * the same parameters and same random seed(s). The method can be made to run
+	 * much faster in a multi-core setting if this flag is set to true (at the 
+	 * expense of deterministic results) getting the CPU utilization to reach 
+	 * almost 100% as opposed to around 60% otherwise, default is false
+   * </ul>
    * <p> if the second optional argument is passed in, it overrides the random
-   * seed specified in the params_file.
+   * seed specified in the params_file.</p>
    * <p> The optional third argument, if present, overrides any max. limit set
    * on the number of function evaluations allowed. After this limit, the
    * function will always return Double.MAX_VALUE instead, and won't increase
-   * the evaluation count.
+   * the evaluation count.</p>
    *
    * @param args String[]
    */

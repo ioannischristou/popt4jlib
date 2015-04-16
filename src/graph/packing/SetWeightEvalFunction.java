@@ -29,7 +29,7 @@ public class SetWeightEvalFunction implements FunctionIntf {
   /**
    * return minus the total weight of the nodes whose ids are in the set-valued 
 	 * argument.
-   * @param arg Object // Set&ltInteger node-id&gt
+   * @param arg Object // Set&lt;Integer node-id&gt;
    * @param params Hashtable may contain the name of the weight to compute, 
 	 * in a ("weightname",name) key-pair, else the default "value" string will be 
 	 * used.

@@ -24,14 +24,14 @@ public class MonteCarloTest {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt tests.MonteCarloTest &ltparams_file&gt [random_seed] [maxfuncevals]</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.MonteCarloTest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>
    * where params_file must contain the following lines:
-   * <li> class,mcs.function, &ltfullclassname&gt mandatory, the full class name
+   * <li> class,mcs.function, &lt;fullclassname&gt; mandatory, the full class name
    * of the function to be minimized.
    * <li> mcs.numtries, $num$ mandatory, the number of random attempts
    * to perform in total (these attempts will be distributed among the number
    * of threads that will be created.)
-   * <li> class,mcs.randomargmaker, &ltfullclassname&gt mandatory, the full class
+   * <li> class,mcs.randomargmaker, &lt;fullclassname&gt; mandatory, the full class
    * name of an object that implements the <CODE>popt4jlib.RandomArgMakerIntf</CODE>
    * interface so that it can produce function arguments for the function f to
    * be minimized.

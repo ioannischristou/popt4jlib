@@ -179,7 +179,7 @@ final class RegisteredParcelPool {
 	 * Must only be called once, before any pool is actually constructed (should
 	 * only be called from the RegisteredParcelThreadLocalPools class).
 	 * @param num int
-	 * @throws IllegalArgumentException if the argument is &lte 0
+	 * @throws IllegalArgumentException if the argument is &lte; 0
 	 */
 	static void setPoolSize(int num) throws IllegalArgumentException {
 		if (num <= 0) 

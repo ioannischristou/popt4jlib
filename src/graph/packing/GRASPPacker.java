@@ -48,11 +48,11 @@ public final class GRASPPacker {
 
   /**
    * create a dist-_k packing for Graph _g via a GRASP method and return it
-   * as a Set&ltNode&gt of the active nodes.
-   * @param Set addfirstfrom // Set&ltNode&gt to add from
+   * as a Set&lt;Node&gt; of the active nodes.
+   * @param Set addfirstfrom // Set&lt;Node&gt; to add from
    * @throws PackingException
    * @throws ParallelException
-   * @return Set  // Set&ltNode&gt
+   * @return Set  // Set&lt;Node&gt;
    */
   public Set pack(Set addfirstfrom) throws PackingException, ParallelException {
     Set res = new HashSet();  // Set<Node>
@@ -119,7 +119,7 @@ public final class GRASPPacker {
    * the method <CODE>g.makeNNbors()</CODE> must have been called prior to this 
 	 * call if k==2.
    * @param g Graph
-   * @param active Set // Set&ltInteger nodeid&gt
+   * @param active Set // Set&lt;Integer nodeid&gt;
 	 * @param k int // denotes 1- or 2-packing problem
    * @return boolean
    */
@@ -162,7 +162,7 @@ public final class GRASPPacker {
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set  // Set&ltNode&gt
+   * @param active Set  // Set&lt;Node&gt;
    * @return boolean // true iff nj can be added to active
    * @throws ParallelException
    */
@@ -268,7 +268,7 @@ public final class GRASPPacker {
   /**
    * return true iff all nodes in active set can be set to one without
    * violating feasibility.
-   * @param active Set  // Set&ltNode&gt
+   * @param active Set  // Set&lt;Node&gt;
    * @return boolean
    * @throws ParallelException
    */
@@ -343,7 +343,7 @@ public final class GRASPPacker {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt graph.packing.GRASPPacker &ltgraph_file&gt &ltk&gt [numinitnodes] [numiterations] [do_local_search] [dls_num_threads] [max_allowed_time(ms)]</CODE>.
+   * invoke as <CODE>java -cp &lt;classpath&gt; graph.packing.GRASPPacker &lt;graph_file&gt; &lt;k&gt; [numinitnodes] [numiterations] [do_local_search] [dls_num_threads] [max_allowed_time(ms)]</CODE>.
    * The graph_file contains the graph in the format specified in the
    * comments of method <CODE>utils.DataMgr.readGraphFromFile2(filename)</CODE>
    * and the numinitnodes is an optional number specifying how many (non-conflicting)

@@ -25,10 +25,10 @@ import java.util.Hashtable;
  */
 public class RegisteredParcelPoolFailTest {
 	/**
-	 * creates n &gte 1 SFMPCOld coordinators, and m &gte n threads. The
+	 * creates n &gte; 1 SFMPCOld coordinators, and m &gte; n threads. The
 	 * main thread then sends data to all the others through the "respective" 
 	 * coordinator. Each of the other m threads simply receive that data.
-	 * If n=1 then there should be no exception raised. If n &gt 1 there should
+	 * If n=1 then there should be no exception raised. If n &gt; 1 there should
 	 * be NullPointerExceptions thrown.
 	 * @param args [num_coords(3)] [num_threads(3)] [maxiters(1000)]
 	 */

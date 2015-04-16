@@ -36,37 +36,37 @@ public class DblArray1GradDescXOverOp implements XoverOpIntf {
    * @param c2 Object double[]
    * @param params Hashtable must contain the following key-value pairs:
 	 * <ul>
-   * <li> &lt"dga.minallelevalue", $value$&gt optional, the minimum value for
+   * <li> &lt;"dga.minallelevalue", $value$&gt; optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
-   * <li> &lt"dga.minallelevalue$i$", $value$&gt optional, the minimum value for
+   * <li> &lt;"dga.minallelevalue$i$", $value$&gt; optional, the minimum value for
    * the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is less than the global value
    * specified by the "dga.minallelevalue" key, it is ignored.
-   * <li> &lt"dga.maxallelevalue", $value$&gt optional, the maximum value for
+   * <li> &lt;"dga.maxallelevalue", $value$&gt; optional, the maximum value for
    * any allele in the chromosome. Default +Infinity.
-   * <li> &lt"dga.maxallelevalue$i$", $value$&gt optional, the maximum value for
+   * <li> &lt;"dga.maxallelevalue$i$", $value$&gt; optional, the maximum value for
    * the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is greater than the global value
    * specified by the "dga.maxallelevalue" key, it is ignored.
-   * <li> &lt"thread.id",$integer_value"&gt mandatory, the (internal) id of the
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
-   * <li> &lt"dga.function", FunctionIntf f&gt mandatory, the function to be
+   * <li> &lt;"dga.function", FunctionIntf f&gt; mandatory, the function to be
    * optimized.
-   * <li> &lt"dga.gradient", VecFunctionIntf g&gt optional, the gradient of the
+   * <li> &lt;"dga.gradient", VecFunctionIntf g&gt; optional, the gradient of the
    * function to be optimized (if null, then the
    * <CODE>analysis.GradApproximator</CODE> class will be used). Default is null.
-   * <li> &lt"dga.graddescxoverop.a", $double_value$&gt optional. Default 0.25.
-   * <li> &lt"dga.graddescxoverop.b", $double_value$&gt optional. Default 0.8.
-   * <li> &lt"dga.graddescxoverop.maxtries", $integer_value$&gt optional.
+   * <li> &lt;"dga.graddescxoverop.a", $double_value$&gt; optional. Default 0.25.
+   * <li> &lt;"dga.graddescxoverop.b", $double_value$&gt; optional. Default 0.8.
+   * <li> &lt;"dga.graddescxoverop.maxtries", $integer_value$&gt; optional.
    * Default 100.
-   * <li> &lt"dga.graddescxoverop.minaccvaldiffperc", $double_value$&gt optional. Default 0.01.
-   * <li> &lt"dga.graddescxoverop.maxinittries", $integer_value$&gt optional.
+   * <li> &lt;"dga.graddescxoverop.minaccvaldiffperc", $double_value$&gt; optional. Default 0.01.
+   * <li> &lt;"dga.graddescxoverop.maxinittries", $integer_value$&gt; optional.
    * Default 20.
 	 * </ul>
    * @throws OptimizerException if any of the params is not set correctly or if
 	 * the process otherwise fails
-   * @return Pair Pair&ltdouble[], double[]&gt
+   * @return Pair Pair&lt;double[], double[]&gt;
    */
   public Pair doXover(Object c1, Object c2, Hashtable params) throws OptimizerException {
     try {

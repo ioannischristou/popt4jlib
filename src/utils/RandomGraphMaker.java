@@ -154,8 +154,8 @@ public class RandomGraphMaker {
 
   /**
    * invoke as:
-   * <CODE>java -cp &ltclasspath&gt utils.RandomGraphMaker &ltnumnodes&gt
-   * &ltxdim&gt &ltydim&gt &ltradius&gt &ltfilename&gt [uniform] [rndseed] [jplotfilename(null)] [createMWIS(false)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; utils.RandomGraphMaker &lt;numnodes&gt;
+   * &lt;xdim&gt; &lt;ydim&gt; &lt;radius&gt; &lt;filename&gt; [uniform] [rndseed] [jplotfilename(null)] [createMWIS(false)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

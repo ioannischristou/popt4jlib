@@ -52,7 +52,7 @@ public class FunctionEvaluationTask implements TaskObject {
    * passed in the constructor. After the function <CODE>f</CODE> is evaluated
    * the method <CODE>setObjValue(val)</CODE> with value the result of the
    * evaluation is executed, so that it may be gotten from subsequent call to
-   * <CODE>getObjValue()</CODE>. Also, afterwards, <CODE>isDone()<CODE> returns
+   * <CODE>getObjValue()</CODE>. Also, afterwards, <CODE>isDone()</CODE> returns
    * true.
    * @return this
    */

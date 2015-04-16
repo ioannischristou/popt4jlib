@@ -21,7 +21,7 @@ import java.io.Serializable;
  * not thread-safe implementation is DblArray1SparseVector.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -36,7 +36,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
   /**
    * constructs the zero sparse vector in n-dimensional space.
    * @param n int the number of dimensions
-   * @throws IllegalArgumentException if n<=0
+   * @throws IllegalArgumentException if n&lte;;0
    */
   public DblArray1SparseVectorMT(int n) throws IllegalArgumentException {
     super(n);
@@ -49,7 +49,8 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * @param indices int[] must be in ascending order
    * @param values double[] corresponds to values for each index in the indices array
    * @param n int total length of the vector
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if any of indices or values is null or if
+	 * they have different lengths or if n&lte;;indices[indices.length-1].
    */
   public DblArray1SparseVectorMT(int[] indices, double[] values, int n) throws IllegalArgumentException {
     super(indices, values, n);
@@ -62,9 +63,9 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * each element by the multFactor passed in.
    * @param indices int[] elements must be in ascending order
    * @param values double[]
-   * @param n int
+   * @param n int total length of the vector
    * @param multFactor double
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException same as 3-argument constructor 
    */
   public DblArray1SparseVectorMT(int[] indices, double[] values, int n, double multFactor) throws IllegalArgumentException {
     super(indices, values, n, multFactor);
@@ -185,7 +186,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * in. The length of the argument specifies the number of dimensions of the
    * returned <CODE>DblArray1SparseVectorMT</CODE> object.
    * @param arg double[]
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if arg==null
    * @return VectorIntf a DblArray1SparseVectorMT object.
    */
   public VectorIntf newInstance(double[] arg) throws IllegalArgumentException {
@@ -514,6 +515,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * the purpose of this routine is to allow a traversal of the non-zeros of
    * this object as follows:
    * <p>
+	 * <pre>
    * <CODE>
    * sparsevector.getReadLock();
    * for (int i=0; i<sparsevector.getNumNonZeros(); i++) {
@@ -523,6 +525,8 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * }
    * sparsevector.releaseReadLock();
    * </CODE>
+	 * </pre>
+	 * </p>
    * It is possible that one or more of the positions returned contain zero
    * values (but in the past they must have had non-zero value). But no position
    * with a current non-zero value will be missed.
@@ -758,7 +762,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
   /**
    * return the k-th norm of this vector.
    * @param k int
-   * @throws IllegalArgumentException if k<=0
+   * @throws IllegalArgumentException if k&lte;;0
    * @return double
    */
   public double norm(int k) throws IllegalArgumentException {
@@ -880,9 +884,8 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
 
   /**
    * should be called once, before use of the class instances. Sets the executor
-   * to be used by methods to the parameter passed in only if no other
-   * (non-null) executor was passed in before.
-   * @param exec PDBatchTaskExecutor
+   * to be used only if no other executor already exists.
+   * @param numthreads int
    * @throws ParallelException
    */
   public synchronized static void setExecutor(int numthreads) throws ParallelException {

@@ -16,7 +16,7 @@ public class DBarrierSrv {
 
 
   /**
-   * invoke as <CODE>java -cp &ltclasspath&gt parallel.distributed.DBarrierSrv [port(7896)]</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; parallel.distributed.DBarrierSrv [port(7896)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {

@@ -32,20 +32,20 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
 
   /**
    * implements the N_{-1+P} neighborhood for sets of integers.
-   * @param chromosome Object Set&ltInteger node-id&gt
+   * @param chromosome Object Set&lt;Integer node-id&gt;
    * @param params Hashtable must contain the following key-value pairs:
 	 * <ul>
-	 * <li>&lt"dls.graph", Graph g&gt the graph of the problem
-   * <li>&lt"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt
+	 * <li>&lt;"dls.graph", Graph g&gt; the graph of the problem
+   * <li>&lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;
 	 * </ul>
    * It may also optionally contain a pair
-   * &lt"dls.intsetneighborhoodmaxnodestotry", Integer max_nodes&gt which if 
+   * &lt;"dls.intsetneighborhoodmaxnodestotry", Integer max_nodes&gt; which if 
 	 * present will indicate the maximum number of nodes to try to remove from the 
 	 * current solution in the "1RXP" local search.
    * The filter must specify what ints to be tried for addition to the set given
    * an int to be removed from the set.
    * @throws OptimizerException
-   * @return Vector // Vector&ltSet&ltInteger&gt &gt
+   * @return Vector // Vector&lt;Set&lt;Integer&gt; &gt;
    */
   public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): null chromosome");
@@ -128,7 +128,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    * DF fashion)
    * @param res Set IntSet
    * @param rmid Integer
-   * @param tryids List // List&ltInteger&gt
+   * @param tryids List // List&lt;Integer&gt;
    * @param maxcard int
    * @param params Hashtable
    * @return Set // IntSet
@@ -182,7 +182,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set  // Set&ltNode&gt
+   * @param active Set  // Set&lt;Node&gt;
    * @return boolean // true iff nj can be added to active
    * @throws ParallelException
    */
