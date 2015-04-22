@@ -28,7 +28,7 @@ public class DActiveMsgPassingCoordinatorLongLivedConnSrv {
   /**
    * constructor specifying the port the server will listen to, and
    * the max. number of threads in the thread-pool.
-   * @param port int if < 1024, the number 7895 is used.
+   * @param port int if &lt; 1024, the number 7895 is used.
    */
   DActiveMsgPassingCoordinatorLongLivedConnSrv(int port) {
     if (port >= 1024)
@@ -45,7 +45,7 @@ public class DActiveMsgPassingCoordinatorLongLivedConnSrv {
   void run() throws IOException, ParallelException {
     ServerSocket ss = new ServerSocket(_port);
     while (true) {
-      utils.Messenger.getInstance().msg("DActiveMsgPassingCoordinatorLongLivedConnSrv: waiting for socket connection on port"+_port,0);
+      utils.Messenger.getInstance().msg("DActiveMsgPassingCoordinatorLongLivedConnSrv: waiting for socket connection on port "+_port,0);
       Socket s = ss.accept();
       ++_countConns;
       utils.Messenger.getInstance().msg("DActiveMsgPassingCoordinatorLongLivedConnSrv: Total "+

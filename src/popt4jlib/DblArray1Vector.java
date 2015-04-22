@@ -20,7 +20,7 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
   private final static boolean _DO_RESET_ON_RELEASE=false;  // compile-time flag for resetting vector elems on reset
 	private double _x[]=null;
 	// pool-related data
-	private DblArray1VectorPool _pool=null;
+	private transient DblArray1VectorPool _pool=null;  // not to be "transferred"
   private int _poolPos=-1;
   private boolean _isUsed=false;  // redundant init.
   /*

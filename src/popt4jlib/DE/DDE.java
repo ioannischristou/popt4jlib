@@ -2,15 +2,18 @@ package popt4jlib.DE;
 
 import java.util.*;
 import parallel.*;
+import parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnClt;
 import utils.*;
 import popt4jlib.*;
 import popt4jlib.GradientDescent.VecUtil;
 
 /**
- * A parallel implementation of the Differential Evolution algorithm. The
- * distribution of effort among threads is such so that each thread updates
+ * A parallel/distributed! implementation of the Differential Evolution algorithm. 
+ * The distribution of effort among threads is such so that each thread updates
  * its own portion of the population. Implements both the DE/rand/1/bin and
- * DE/best/1/bin variants.
+ * DE/best/1/bin variants. Also implements the island model of distributed
+ * computing, via the <CODE>parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv[Clt]</CODE>
+ * mechanism.
  * It must be noted that DE applies only to functions with domain the space
  * R^n, and range the real axis R, and therefore cannot be applied to functions
  * with other domains.
@@ -35,7 +38,14 @@ public class DDE implements OptimizerIntf {
   VectorIntf[] _sols;  // the population of solutions
   double[] _solVals;
   int _maxthreadwork;
-
+	// data related to inter-process communication (individuals' migration)
+	String _dmpCoordinator=null;  // the coordinator location for distributed msg passing if any exists
+	int _dmpPort=-1;  // the coordinator port for distributed msg passing if any exists
+	int _thisProcessId=-1;  // the id of this process used in migration things if any exists
+	int _nextProcessId=-1;  // the id of the process to whom this process should be sending "migrants" if any exists
+	int _numGensBetweenMigrations = 10;
+	int _numMigrants = 10;
+	
 
   /**
    * default constructor. Assigns to the object a unique id.
@@ -157,6 +167,30 @@ public class DDE implements OptimizerIntf {
 	 * much faster in a multi-core setting if this flag is set to true (at the 
 	 * expense of deterministic results) getting the CPU utilization to reach 
 	 * almost 100% as opposed to around 60% otherwise, default is false
+	 * <li> &lt;"dde.dmpaddress", String location&gt; optional, if existing, 
+	 * specifies the location of a distributed Msg-Passing server that implements
+	 * the basic send/recv operations as specified in 
+	 * <CODE>parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv[Clt]</CODE>
+	 * default is null
+	 * <li> &lt;"dde.dmpport", Integer port&gt; optional, if existing, 
+	 * specifies the port number of a distributed Msg-Passing server implementing
+	 * the basic send/recv operations as specified in 
+	 * <CODE>parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv[Clt]</CODE>
+	 * default is null
+	 * <li> &lt;"dde.dmpthisprocessid", Integer myid&gt; optional, if existing, it 
+	 * indicates the id of this process (this is the number to use in a 
+	 * recvData(myid) call on the DActiveMsgPassingCoordinatorLongLivedConnClt
+	 * object) default is null
+	 * <li> &lt;"dde.dmpnextprocessid", Integer id&gt; optional, if existing, it
+	 * indicates the id of the process to which this process should be 
+	 * sending "migrants" to; (this is the number to use as the "send address" in 
+	 * a sendData(myid, id, data) DActiveblahblah call); default is null
+	 * <li> &lt;"dde.numgensbetweenmigrations", Integer num&gt; optional, if 
+	 * existing, it indicates the number of generations that must pass between two
+	 * successive "migrations" between DDE island-processes; default is 10
+	 * <li> &lt;"dde.nummigrants",Integer num&gt; optional, if it exists, indicates
+	 * how many migrants will be sent and received from each dde process; default
+	 * is 10
    * </ul>
    * @param f FunctionIntf the function to be minimized
    * @throws OptimizerException if another thread is concurrently running the
@@ -198,6 +232,9 @@ public class DDE implements OptimizerIntf {
                                        // obeyed (FindBugs complains unjustly)
                                        // same comment applies to the unsynched
                                        // use of _params, _threads field
+			_dmpCoordinator = (String) _params.get("dde.dmpaddress");
+			_dmpPort = _params.containsKey("dde.dmpport") ? 
+							     ((Integer) _params.get("dde.dmpport")).intValue() : -1;
       try {
         Barrier.setNumThreads("dde." + getId(), numthreads); // initialize barrier
       }
@@ -377,6 +414,8 @@ class DDEThread extends Thread {
 	private boolean _nonDeterminismOK=false;
 	private boolean _doDEBestStrategy=false;
 	private int _bestInd=-1;
+	// data related to inter-process communication (individuals' migration)
+	private DActiveMsgPassingCoordinatorLongLivedConnClt _dmsgpassClient=null;
 	// caches
 	private boolean _cacheOn=false;
 	private List _minargvali;
@@ -392,13 +431,24 @@ class DDEThread extends Thread {
     _to = to;
 		_numthreads = 1;
 		try {
-			_numthreads = ((Integer) _master.getParams().get("dde.numthreads")).intValue();
-			Boolean ndok = (Boolean) _master.getParams().get("dde.nondeterminismok");
+			Hashtable p = _master.getParams();
+			_numthreads = ((Integer) p.get("dde.numthreads")).intValue();
+			Boolean ndok = (Boolean) p.get("dde.nondeterminismok");
 			if (ndok!=null && ndok.booleanValue()==true) _nonDeterminismOK = true;
-			Boolean debeststr = (Boolean) _master.getParams().get("dde.de/best/1/binstrategy");
+			Boolean debeststr = (Boolean) p.get("dde.de/best/1/binstrategy");
 			if (debeststr!=null && debeststr.booleanValue()==true) {
 				_doDEBestStrategy = true;
 				// _nonDeterminismOK = false;  // invalidates the dde.nondeterminismok flag
+			}
+			if (_id==0) {
+				if (_master._dmpCoordinator!=null) {
+					String coordname = "DDE.DMsgPassingCoord_"+_master._dmpPort;
+					_dmsgpassClient = new DActiveMsgPassingCoordinatorLongLivedConnClt(_master._dmpCoordinator, _master._dmpPort, coordname);
+					Integer ngbmI = (Integer) p.get("dde.numgensbetweenmigrations");
+					if (ngbmI!=null) _master._numGensBetweenMigrations = ngbmI.intValue();
+					Integer nmI = (Integer) p.get("dde.nummigrants");
+					if (nmI!=null) _master._numMigrants = nmI.intValue();
+				}
 			}
 		}
 		catch (Exception e) {
@@ -432,13 +482,19 @@ class DDEThread extends Thread {
       }
     }
     // end creating _funcParams
-    try {
+		try {
       Double wD = (Double) p.get("dde.w");
       if (wD != null && wD.doubleValue() >= 0 && wD.doubleValue() <= 2)
         _w = wD.doubleValue();
       Double pxD = (Double) p.get("dde.px");
       if (pxD != null && pxD.doubleValue() >= 0 && wD.doubleValue() <= 1)
         _px = pxD.doubleValue();
+			if (_id==0) {
+				Integer tpId = (Integer) p.get("dde.dmpthisprocessid");
+				if (tpId!=null) _master._thisProcessId = tpId.intValue();
+				Integer npId = (Integer) p.get("dde.dmpnextprocessid");
+				if (npId!=null) _master._nextProcessId = npId.intValue();
+			}
     }
     catch (ClassCastException e) {
       e.printStackTrace();  // no-op
@@ -475,6 +531,19 @@ class DDEThread extends Thread {
         // if _nonDeterminismOK==false, then the barriers in min(f,p) make the
 				// above barrier redundant: when i==0 though, the barrier is needed for
 				// population initialization correctness.
+				// handle migration stuff now
+				boolean is_migration_gen = i % _master._numGensBetweenMigrations == 0;
+				if (_dmsgpassClient!=null && is_migration_gen) { 
+					b.barrier();
+					doMigration(i);
+					b.barrier();
+				}
+				else if (_master._dmpCoordinator!=null && is_migration_gen) {
+					b.barrier();
+					// no-op
+					b.barrier();
+				}
+				// done with migration handling
         PairObjDouble pair = min(f, p);
         if (pair==null) {
           continue;
@@ -655,5 +724,38 @@ class DDEThread extends Thread {
     else if (val2 > maxval) val2 = maxval;
     return val2;
   }
+	
+	
+	private void doMigration(int gen) {
+		// first send my data: choose randomly some vectors, put them in a vector
+		// and ship them wherever they have to go
+		final int ninds = _master._sols.length;
+		final int nmigs = _master._numMigrants;
+    final Random rnd = RndUtil.getInstance(_uid).getRandom();  // used to be _id
+		final Messenger mger = Messenger.getInstance();
+		ArrayList nums = new ArrayList(ninds);
+		for (int i=0; i<ninds; i++) nums.add(new Integer(i));
+		Collections.shuffle(nums, rnd);
+		ArrayList imms = new ArrayList(nmigs);
+		for (int i=0; i<nmigs; i++) 
+			imms.add(_master.getSol(((Integer)nums.get(i)).intValue()));
+		try {
+			// send to next process
+			mger.msg("gen "+gen+": sending data to "+_master._nextProcessId, 0);
+			_dmsgpassClient.sendData(_master._thisProcessId, _master._nextProcessId, imms);
+			// now receive new incomers and put them in the position of the ones that left
+			mger.msg("gen "+gen+": receiving data from my previous", 0);
+			ArrayList newcomers = (ArrayList) _dmsgpassClient.recvData(_master._thisProcessId);
+			if (newcomers!=null) {
+				for (int i=0; i<nmigs; i++) {
+					VectorIntf nci = (VectorIntf) newcomers.get(i);
+					_master.setSol(((Integer)nums.get(i)).intValue(), nci);
+				}
+			}
+		}
+		catch (Exception e) {  // in case of network failure, migration fails too.
+			e.printStackTrace();
+		}
+	}
 }
 
