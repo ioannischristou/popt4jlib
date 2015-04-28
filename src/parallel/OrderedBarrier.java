@@ -121,6 +121,7 @@ public class OrderedBarrier {
       }
     }
     while (passOrderedBarrier(task)==false) {
+			Thread.yield();
       /*
       try {
         Thread.currentThread().sleep(10);

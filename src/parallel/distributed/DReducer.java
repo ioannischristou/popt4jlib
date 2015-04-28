@@ -5,22 +5,24 @@ import java.net.*;
 import java.io.*;
 
 /**
- * class implements a distributed barrier object across many threads living
- * in many (remote) JVMs. The following constraint is imposed on DBarrier
- * objects use: the <CODE>barrier()</CODE> method can only be called from the
- * same thread that created this DBarrier object (otherwise an exception is
+ * class implements a distributed reducer object across many threads living
+ * in many (remote) JVMs. The following constraint is imposed on DReducer
+ * objects use: the <CODE>reduce(data,op)</CODE> method can only be called from the
+ * same thread that created this DReducer object (otherwise an exception is
  * thrown).
+ * Notice that this implementation is modeled after the DBarrier class in this
+ * package.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class DBarrier {
+public class DReducer {
   private String _host = "localhost";
-  private int _port = 7896;
-  private String _coordname = "DBarrierCoord_"+_host+"_"+_port;  // coordname and barrier name are the same
+  private int _port = 7901;
+  private String _coordname = "DBarrierCoord_"+_host+"_"+_port;  // coordname and reducer name are the same
   private DActiveMsgPassingCoordinatorLongLivedConnClt _coordclt=null;
   private Thread _originatingThread = null;
 
@@ -29,34 +31,34 @@ public class DBarrier {
    * no-arg constructor assumes the following defaults:
 	 * <ul>
    * <li> host="localhost"
-   * <li> port=7896
-   * <li> barrier/coord name = "DBarrierCoord_localhost_7896"
+   * <li> port=7901
+   * <li> reducer/coord name = "DReduceCoord_localhost_7896"
 	 * </ul>
-   * The constructor will actually register the current thread with the barrier
-   * object of the server, so that later invocations of the <CODE>barrier()</CODE>
+   * The constructor will actually register the current thread with the reducer
+   * object of the server, so that later invocations of the <CODE>reduce(.,.)</CODE>
    * method of this object will synchronize the current thread with all other
-   * threads in all JVMs having constructed DBarrier objects connected to the
-   * default server, default port, and default barrier name.
+   * threads in all JVMs having constructed DReducer objects connected to the
+   * default server, default port, and default reducer name.
    * @throws UnknownHostException
    * @throws IOException
    * @throws ClassNotFoundException
    * @throws ParallelException
    */
-  public DBarrier() throws UnknownHostException, IOException, ClassNotFoundException, ParallelException {
+  public DReducer() throws UnknownHostException, IOException, ClassNotFoundException, ParallelException {
     _coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, _coordname);
     _originatingThread = Thread.currentThread();
-    DBarrierAddRequest addreq = new DBarrierAddRequest(_coordname);
+    DReduceAddRequest addreq = new DReduceAddRequest(_coordname);
     _coordclt.sendData(-1, addreq);
   }
 
 
   /**
-   * constructor adds current thread to the barrier object of the server found
+   * constructor adds current thread to the reducer object of the server found
    * in IP address specified by first two argument parameters with the name
    * specified in the third parameter, so that later invocations of the
-   * <CODE>barrier()</CODE> method of this object will synchronize the current
-   * thread with all other threads in all JVMs having constructed DBarrier
-   * objects connected to the same server-port, and same barrier name.
+   * <CODE>reduce(.,.)</CODE> method of this object will synchronize the current
+   * thread with all other threads in all JVMs having constructed DReducer
+   * objects connected to the same server-port, and same reducer name.
    * @param host String
    * @param port int
    * @param coordname String
@@ -65,7 +67,7 @@ public class DBarrier {
    * @throws ClassNotFoundException
    * @throws ParallelException
    */
-  public DBarrier(String host, int port, String coordname)
+  public DReducer(String host, int port, String coordname)
       throws UnknownHostException, IOException, ClassNotFoundException,
              ParallelException {
     // 0. initialization
@@ -74,8 +76,8 @@ public class DBarrier {
     _coordname = coordname;
     _originatingThread = Thread.currentThread();
     _coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, _coordname);
-    // 1. send a Barrier Add Thread request: when the method terminates, done.
-    DBarrierAddRequest addreq = new DBarrierAddRequest(_coordname);
+    // 1. send a Reduce Add Thread request: when the method terminates, done.
+    DReduceAddRequest addreq = new DReduceAddRequest(_coordname);
     _coordclt.sendData(-1, addreq);
   }
 
@@ -84,27 +86,32 @@ public class DBarrier {
    * the main class method. Blocks until all other threads (from same and/or
    * remote JVMs) that have registered with the same coordname as this one
    * (in object construction time) at the same host/port address, have also
-   * called this method (on their respective DBarrier objects). The method can
+   * called this method (on their respective DReducer objects). The method can
    * be called multiple times, even after some other threads in same or remote
-   * JVM have called <CODE>removeCurrentThread()</CODE>.
+   * JVM have called <CODE>removeCurrentThread()</CODE>. The result of the 
+	 * reduce operation is returned.
+	 * @param data Serializable
+	 * @param op ReduceOperator
+	 * @return Object // Serializable
    * @throws IOException if a network error occurs
    * @throws ClassNotFoundException if the server JVM is not in synch with
    * this JVM's classes.
-   * @throws ParallelException if this DBarrier object was constructed by a
+   * @throws ParallelException if this DReducer object was constructed by a
    * different thread than the one calling this method.
    */
-  public void barrier() throws IOException, ClassNotFoundException, ParallelException {
+  public Object reduce(Serializable data, ReduceOperator op) throws IOException, ClassNotFoundException, ParallelException {
     // 0. check if thread is ok
     if (Thread.currentThread()!=_originatingThread) {
-      throw new ParallelException("barrier(): method called from thread different than the one originating the object");
+      throw new ParallelException("reduce(data,op): method called from thread different than the one originating the object");
     }
-    // 1. send a Barrier request: when the method terminates, we're done
-    _coordclt.sendData(-1, new DBarrierRequest(_coordname));  // barrier and coord names are the same
+    // 1. send a reduce request: when the method terminates, we're done
+    Object result = _coordclt.sendAndRecvData(-1, new DReduceRequest(_coordname, data, op));  // reducer and coord names are the same
+		return result;
   }
 
 
   /**
-   * removes the current thread from this DBarrier object, and closes the
+   * removes the current thread from this DReducer object, and closes the
    * connection.
    * @throws IOException
    * @throws ClassNotFoundException
@@ -116,8 +123,8 @@ public class DBarrier {
     if (Thread.currentThread()!=_originatingThread) {
       throw new ParallelException("removeCurrentThread(): method called from thread different than the one originating the object");
     }
-    // 1. send a DBarrierRmRequest request: when the method terminates, we're ok
-    _coordclt.sendData(-1, new DBarrierRmRequest(_coordname));  // barrier and coord names are the same
+    // 1. send a DReducerRmRequest request: when the method terminates, we're ok
+    _coordclt.sendData(-1, new DReduceRmRequest(_coordname));  // Reducer and coord names are the same
     // 2. finally, close the connection.
     _coordclt.closeConnection();
   }

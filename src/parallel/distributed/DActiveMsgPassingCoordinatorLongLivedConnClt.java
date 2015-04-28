@@ -147,7 +147,30 @@ public class DActiveMsgPassingCoordinatorLongLivedConnClt {
     }
   }
 
-
+	
+	/**
+	 * send data, and receive reply back. Useful when a msg must send back some
+	 * data as a result.
+	 * @param myid int
+	 * @param data DMsgIntf
+	 * @return Object  // Serializable
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws ParallelException 
+	 */
+	public synchronized Object sendAndRecvData(int myid, DMsgIntf data) throws IOException, ClassNotFoundException, ParallelException {
+    _oos.writeObject(data);
+    _oos.flush();
+    Object reply = _ois.readObject();
+    if (reply instanceof OKReplyData) {
+      return ((OKReplyData) reply).getData();
+    }
+    else {
+      throw new ParallelException("sendDataAndRecv(myid, data) failed");
+    }
+	}
+	
+	
   /**
    * works exactly as the corresponding method with same signature in
    * <CODE>parallel.MsgPassingCoordinator</CODE> class, except that the data
@@ -156,7 +179,7 @@ public class DActiveMsgPassingCoordinatorLongLivedConnClt {
    * @throws IOException
    * @throws ClassNotFoundException
    * @throws ParallelException
-   * @return Object
+   * @return Object // Serializable
    */
   public synchronized Object recvData(int myid) throws IOException, ClassNotFoundException, ParallelException {
     /*
@@ -190,7 +213,7 @@ public class DActiveMsgPassingCoordinatorLongLivedConnClt {
    * @throws IOException
    * @throws ClassNotFoundException
    * @throws ParallelException
-   * @return Object
+   * @return Object // Serializable
    */
   public synchronized Object recvData(int myid, int fromid) throws IOException, ClassNotFoundException, ParallelException {
     /*

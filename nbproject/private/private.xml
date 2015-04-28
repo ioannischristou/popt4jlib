@@ -3,9 +3,22 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DReduceRequest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DRecvMsg.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DMsgPassingCoordinatorSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DActiveMsgPassingCoordinatorLongLivedConnClt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DReducer.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/OrderedBarrier.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/ReduceOperatorMinDbl.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DReduceSrv.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DReduceAddRequest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DActiveMsgPassingCoordinatorLongLivedConnSrv.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/FIFOLock.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/ReduceOpBase.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/DDE.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DataMgr.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/ReduceOperator.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DReduceRmRequest.java</file>
         </group>
     </open-files>
 </project-private>

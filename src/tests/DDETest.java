@@ -25,8 +25,8 @@ public class DDETest {
 
 
   /**
-   * run as <CODE> java -cp &lt;classpath&gt; tests.DDETest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>
-   * where the params_file must contain lines of the following form:
+   * run as <CODE> java -cp &lt;classpath&gt; tests.DDETest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>.
+   * The params_file must contain lines of the following form:
 	 * <ul>
    * <li> class,dde.function, &lt;fullclasspathname&gt;  mandatory, the java class
    * name defining the function to be optimized, which must accept
@@ -96,10 +96,14 @@ public class DDETest {
         params.put("maxfuncevalslimit",new Long(num));
       }
       FunctionIntf func = (FunctionIntf) params.get("dde.function");
-      FunctionBase wrapper_func = new FunctionBase(func);
-      params.put("dde.function",wrapper_func);
+      if (params.containsKey("dde.countfuncevals") && 
+					((Boolean) params.get("dde.countfuncevals")).booleanValue()==true) {
+				FunctionBase wrapper_func = new FunctionBase(func);
+				params.put("dde.function",wrapper_func);
+				func = wrapper_func;
+			}
       DDE opter = new DDE(params);
-      utils.PairObjDouble p = opter.minimize(wrapper_func);
+      utils.PairObjDouble p = opter.minimize(func);
       VectorIntf arg = (VectorIntf) p.getArg();
       System.out.print("best soln found:[");
       for (int i=0;i<arg.getNumCoords();i++) System.out.print(arg.getCoord(i)+" ");
@@ -111,7 +115,7 @@ public class DDETest {
         VectorIntf x0 = arg.newInstance();  // arg.newCopy();
         params.put("gradientdescent.x0", x0);
         lasdst.setParams(params);
-        p2 = lasdst.minimize(wrapper_func);
+        p2 = lasdst.minimize(func);
         VectorIntf xf = (VectorIntf) p2.getArg();
         System.out.print(
             "Optimized (via a GradientDescent local method) best soln found:[");
@@ -119,11 +123,13 @@ public class DDETest {
             getCoord(i) + " ");
         System.out.println("] VAL=" + p2.getDouble());
       }
-      System.err.println("total function evaluations="+wrapper_func.getEvalCount());
+      if (func instanceof FunctionBase) 
+				System.err.println("total function evaluations="+((FunctionBase)func).getEvalCount());
       long dur = System.currentTimeMillis()-start_time;
       double val = (p2==null || p2.getDouble()>=Double.MAX_VALUE) ? p.getDouble() : p2.getDouble();
 			System.out.println("total time (msecs): "+dur);
-      System.out.println("VVV,"+val+",TTT,"+dur+",NNN,"+wrapper_func.getEvalCount()+",PPP,DDE,FFF,"+args[0]);  // for parser program to extract from output
+      if (func instanceof FunctionBase)
+			System.out.println("VVV,"+val+",TTT,"+dur+",NNN,"+((FunctionBase)func).getEvalCount()+",PPP,DDE,FFF,"+args[0]);  // for parser program to extract from output
     }
     catch (Exception e) {
       e.printStackTrace();

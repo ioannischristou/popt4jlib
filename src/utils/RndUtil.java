@@ -6,7 +6,7 @@ import java.util.*;
  * class controlling random number generation.
  * <p>Title: popt4jlib</p>
  * <p>Description: Parallel optimization library for Java</p>
- * <p>Copyright: Copyright (c) 2005</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: AIT</p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -111,7 +111,9 @@ public class RndUtil {
       while (it.hasNext()) {
         Integer id = (Integer) it.next();
         RndUtil ru = (RndUtil) _extras.get(id);
-        ru._random = new Random(_instance.getSeed()+id.intValue()+1);
+				final long ruseed = getInstance().getSeed()+id.intValue()+1;  // used to be _instance.getSeed()+id.intValue()+1
+        ru._seed = ruseed;
+				ru._random = new Random(ruseed);  
       }
     }
   }
@@ -150,7 +152,9 @@ public class RndUtil {
    */
   private static RndUtil addExtraInstance(int id) {
     RndUtil ru = new RndUtil();
-    ru._random = new Random(id+_instance.getSeed()+1);
+		long ruseed = id+getInstance().getSeed()+1;  // used to be id+_instance.getSeed()+1
+    ru._seed = ruseed;
+		ru._random = new Random(ruseed);  
     _extras.put(new Integer(id), ru);
     if (_curMaxId<id) _curMaxId = id;
     return ru;

@@ -1,6 +1,7 @@
 package parallel;
 
-import java.util.Vector;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * class that ensures First-In-First-Served lock acquisition among threads.
@@ -9,13 +10,13 @@ import java.util.Vector;
  * Uses the specific notification Design Pattern by Tom Cargill.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
 public class FIFOLock extends Lock {
-  private Vector _waitingOn;
+  private List _waitingOn;  // itc 20150427: used to be Vector
   private boolean _isFree;
 
   /**
@@ -23,7 +24,7 @@ public class FIFOLock extends Lock {
    */
   public FIFOLock() {
     super();
-    _waitingOn = new Vector();
+    _waitingOn = new ArrayList();
     _isFree=true;
   }
 
@@ -68,7 +69,7 @@ public class FIFOLock extends Lock {
     super.getLock();
     _isFree = true;
     if (_waitingOn.size()>0) {
-      WObject w = (WObject) _waitingOn.elementAt(0);  // notify the oldest waiting thread
+      WObject w = (WObject) _waitingOn.get(0);  // notify the oldest waiting thread
       synchronized (w) {
         w.setDone();
         w.notify();

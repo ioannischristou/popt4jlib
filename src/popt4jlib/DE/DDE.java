@@ -2,7 +2,7 @@ package popt4jlib.DE;
 
 import java.util.*;
 import parallel.*;
-import parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnClt;
+import parallel.distributed.*;
 import utils.*;
 import popt4jlib.*;
 import popt4jlib.GradientDescent.VecUtil;
@@ -45,6 +45,8 @@ public class DDE implements OptimizerIntf {
 	int _nextProcessId=-1;  // the id of the process to whom this process should be sending "migrants" if any exists
 	int _numGensBetweenMigrations = 10;
 	int _numMigrants = 10;
+	String _reducerHost=null;  // the location of the reduce-srv if any exists
+	int _reducerPort=-1;  // the port of the reduce-srv if any exists
 	
 
   /**
@@ -191,6 +193,11 @@ public class DDE implements OptimizerIntf {
 	 * <li> &lt;"dde.nummigrants",Integer num&gt; optional, if it exists, indicates
 	 * how many migrants will be sent and received from each dde process; default
 	 * is 10
+	 * <li> &lt;"dde.reducerhost", String host&gt; optional, if existing, it 
+	 * indicates the address in which the reducer server resides; default is null
+	 * <li> &lt;"dde.reducerport", Integer port&gt; optional, if existing, it
+	 * indicates the address in which the reducer server process listens at; 
+	 * default is -1
    * </ul>
    * @param f FunctionIntf the function to be minimized
    * @throws OptimizerException if another thread is concurrently running the
@@ -201,6 +208,7 @@ public class DDE implements OptimizerIntf {
    */
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
 		if (f==null) throw new OptimizerException("DDE.minimize(f): null f");
+		DReducer red = null;
     try {
       synchronized (this) {
         if (_f != null)throw new OptimizerException("DDE.minimize(): "+
@@ -235,6 +243,19 @@ public class DDE implements OptimizerIntf {
 			_dmpCoordinator = (String) _params.get("dde.dmpaddress");
 			_dmpPort = _params.containsKey("dde.dmpport") ? 
 							     ((Integer) _params.get("dde.dmpport")).intValue() : -1;
+			_reducerHost = (String) _params.get("dde.reducerhost");
+			_reducerPort = _params.containsKey("dde.reducerport") ? 
+							     ((Integer) _params.get("dde.reducerport")).intValue() : -1;
+			try {
+				red = new DReducer(_reducerHost, _reducerPort, "DDEReducer_"+_reducerHost+"_"+_reducerPort);
+				// if running distributed, all will have to complete the above call
+				// before being able to proceed with the migration of individuals
+				// in the main DDE process and therefore when reducing, the server will
+				// know exactly which ones participate in this reduction operation
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
       try {
         Barrier.setNumThreads("dde." + getId(), numthreads); // initialize barrier
       }
@@ -294,6 +315,15 @@ public class DDE implements OptimizerIntf {
 					for (int i=0; i<_threads.length; i++) {
 						_threads[i] = null;  // release thread resources
 					}
+					_threads = null;
+				}
+				// if running distributed, find the min of all DDE processes to report
+				if (red!=null) {
+					Double val = (Double) red.reduce(new Double(_incValue), ReduceOperatorMinDbl.getInstance());
+					Messenger.getInstance().msg("Best Value Found Overall Processes="+val.doubleValue(), 0);
+					// clean-up with reduce-server
+					red.removeCurrentThread();
+					// done.
 				}
       }
       catch (Exception e) {  // cannot get here
@@ -361,7 +391,7 @@ public class DDE implements OptimizerIntf {
 		if (si instanceof PoolableObjectIntf) {
 			((PoolableObjectIntf) si).release();  // avoid pool leaks
 		}
-		_sols[i] = v; 
+		_sols[i] = v;
 	}
   synchronized VectorIntf getSol(int i) { return _sols[i]; }
 
@@ -500,7 +530,6 @@ class DDEThread extends Thread {
       e.printStackTrace();  // no-op
     }
     VectorIntf best = null;
-    double bestval = Double.MAX_VALUE;
     FunctionIntf f = _master.getFunction();  // was _master._f
     // initialize the [from,to] part of the population
     //DblArray1VectorRndMaker rvmaker = new DblArray1VectorRndMaker(p);
@@ -522,6 +551,7 @@ class DDEThread extends Thread {
         e.printStackTrace();  // no-op
       }
     }
+    double bestval = cur_best;
     // main computation
 		Barrier b = Barrier.getInstance("dde."+_master.getId());
     for (int i=0; i<_numtries; i++) {
@@ -573,7 +603,6 @@ class DDEThread extends Thread {
 		Barrier b = Barrier.getInstance("dde."+_master.getId());
 		int cur_inc_ind = -1;
 		if (_doDEBestStrategy) {
-			cur_inc_ind = _master.getIncIndex();
 			if (_nonDeterminismOK==false && _numthreads > 1) 
 				b.barrier();  // ensure the previous generation's incumbent is used:
 			                // without this barrier, it is possible that after the 
@@ -581,6 +610,7 @@ class DDEThread extends Thread {
 			                // was quick enough to find a new incumbent and update
 			                // the master with it; this barrier protects against 
 			                // this possibility.
+			cur_inc_ind = _master.getIncIndex();
 		}
 		double bestval = Double.MAX_VALUE;
 		VectorIntf best = null;
@@ -658,8 +688,9 @@ class DDEThread extends Thread {
 			}
 			catch (IllegalArgumentException e) {
 				e.printStackTrace();  // ignore non-quietly
-			}  
-      if (ftry < _master.getSolVal(i)) {  // _master._solVals[i]
+			}
+			final double cur_val_i = _master.getSolVal(i);  // _master._solVals[i]
+      if (ftry < cur_val_i) {  // _master._solVals[i]
 				_master.setSol(i, xtry.newCopy());  // itc 2015-02-20: used to be xtry.newInstance()
                                             // even before, used to be: _master._sols[i] = xtry;
         _master.setSolVal(i, ftry);  // _master._solVals[i] = ftry;
@@ -667,7 +698,7 @@ class DDEThread extends Thread {
       if (ftry < bestval) {
         best = xtry.newInstance();
         bestval = ftry;
-				_bestInd = i;
+				if (ftry < cur_val_i) _bestInd = i;  // otherwise, no update happened
       }
 			if (xtry instanceof PoolableObjectIntf) {
 				((PoolableObjectIntf) xtry).release();
@@ -747,10 +778,27 @@ class DDEThread extends Thread {
 			mger.msg("gen "+gen+": receiving data from my previous", 0);
 			ArrayList newcomers = (ArrayList) _dmsgpassClient.recvData(_master._thisProcessId);
 			if (newcomers!=null) {
+				double bestval = Double.MAX_VALUE;
+				VectorIntf bestmigrant = null;
+				int bestpos=-1;
 				for (int i=0; i<nmigs; i++) {
 					VectorIntf nci = (VectorIntf) newcomers.get(i);
-					_master.setSol(((Integer)nums.get(i)).intValue(), nci);
+					final int pos = ((Integer)nums.get(i)).intValue();
+					try {
+						final double valpos = _master._f.eval(nci, _fp);  // signature says it may throw...
+						_master.setSol(pos, nci);
+						_master.setSolVal(pos, valpos);
+						if (valpos<bestval) {
+							bestval = valpos;
+							bestmigrant = nci;
+							bestpos = pos;
+						}
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
+				_master.setIncumbent(bestmigrant.newInstance(), bestval, bestpos);
 			}
 		}
 		catch (Exception e) {  // in case of network failure, migration fails too.

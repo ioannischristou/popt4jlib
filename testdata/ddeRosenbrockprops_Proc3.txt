@@ -17,3 +17,5 @@ dde.dmpthisprocessid,2
 dde.dmpnextprocessid,0
 dde.numgensbetweenmigrations,100
 dde.nummigrants,10
+dde.reducerhost,localhost
+dde.reducerport,7901
