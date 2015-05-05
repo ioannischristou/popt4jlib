@@ -11,7 +11,7 @@ import utils.RndUtil;
  * implemented in class popt4jlib.DE.DDE.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -73,13 +73,18 @@ public class DDETest {
 	 * much faster in a multi-core setting if this flag is set to true (at the 
 	 * expense of deterministic results) getting the CPU utilization to reach 
 	 * almost 100% as opposed to around 60% otherwise, default is false
+	 * <li> dde.countfuncevals, $val$ optional, a boolean value indicating whether
+	 * or not the process should be counting the number of function evaluations
+	 * it performs, default is false
    * </ul>
    * <p> if the second optional argument is passed in, it overrides the random
-   * seed specified in the params_file.</p>
+   * seed specified in the params_file (specified as the 1st arg in cmd-line).</p>
    * <p> The optional third argument, if present, overrides any max. limit set
    * on the number of function evaluations allowed. After this limit, the
    * function will always return Double.MAX_VALUE instead, and won't increase
-   * the evaluation count.</p>
+   * the evaluation count. Obviously, for this limit to be enforced, the 
+	 * "dde.countfuncevals" flag must be set to true in the params_file (1st arg
+	 * in the command line)</p>
    *
    * @param args String[]
    */

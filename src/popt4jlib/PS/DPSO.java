@@ -8,7 +8,7 @@ import popt4jlib.*;
 /**
  * A parallel implementation of the Particle Swarm Optimization algorithm for
  * function optimization, implementing also the SubjectIntf and ObserverIntf
- * objects. The class implements the Subject/ObserverIntf interfaces so that it
+ * objects by extending the GLockingObservableObserverBase class, so that it
  * may be combined with other optimization processes and produce better results.
  * By implementing the SubjectIntf of the well-known Observer Design Pattern,
  * the class allows any observer objects implementing the ObserverIntf to be
@@ -24,17 +24,15 @@ import popt4jlib.*;
  *
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
+public class DPSO extends GLockingObservableObserverBase implements OptimizerIntf {
   private static int _nextId=0;
   private int _id;
   private Hashtable _params;
-  private Hashtable _observers;  // map<ObserverIntf, Vector<Object soln> >
-  private Hashtable _subjects;  // map<SubjectIntf, Vector<Object soln> >
   double _incValue=Double.MAX_VALUE;
   Object _inc;  // incumbent chromosome
   FunctionIntf _f;
@@ -47,8 +45,7 @@ public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * public no-arg constructor
    */
   public DPSO() {
-    _observers = new Hashtable();
-    _subjects = new Hashtable();
+		super();
     _id = incrID();
   }
 
@@ -93,95 +90,6 @@ public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
   }
 
 
-  // SubjectIntf methods implementation
-  /**
-   * allows an Object that implements the ObserverIntf interface to register
-   * with this DPSO object and thus be notified whenever new incumbent solutions
-   * are produced by the DPSO process. The ObserverIntf objects may then
-   * independently produce their own new solutions and add them back into the
-   * DPSO process via a call to addIncumbent(observer, functionarg).
-   * The order of events cannot be uniquely defined and the experiment may not
-   * always produce the same results.
-   * @param observer ObserverIntf.
-   * @return boolean returns always true.
-   */
-  public boolean registerObserver(ObserverIntf observer) {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      _observers.put(observer, new Vector());
-      return true;
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-      return false;
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-  /**
-   * removes an Object that implements the ObserverIntf that has been registered
-   * to listen for new solutions. Returns true if the observer was registered,
-   * false otherwise.
-   * @param observer ObserverIntf
-   * @return boolean
-   */
-  public boolean removeObserver(ObserverIntf observer) {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      int size = _observers.size();
-      _observers.remove(observer);
-      return (size == _observers.size() + 1);
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-      return false;
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-  /**
-   * notifies every ObserverIntf object that was registered via a call to
-   * registerObserver(obs) -and has not been removed since- by calling the
-   * ObserverIntf object's method notifyChange(SubjectIntf this).
-   */
-  public void notifyObservers() {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      Iterator it = _observers.keySet().iterator();
-      while (it.hasNext()) {
-        ObserverIntf oi = (ObserverIntf) it.next();
-        try {
-          oi.notifyChange(this);
-        }
-        catch (OptimizerException e) {
-          e.printStackTrace(); // no-op
-        }
-      }
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-  }
   /**
    * returns the currently best known function argument that  minimizes the _f
    * function. The ObserverIntf objects would need this method to get the
@@ -190,9 +98,8 @@ public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * with its counterpart, setIncumbent().
    * @return Object
    */
-  public Object getIncumbent() {
+  protected Object getIncumbentProtected() {
     try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
       Chromosome2ArgMakerIntf c2amaker =
           (Chromosome2ArgMakerIntf) _params.get("dpso.c2amaker");
       Object arg = null;
@@ -209,46 +116,6 @@ public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
       e.printStackTrace();
       return null;
     }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-    // return _inc;  // return the best found chromosome.
-  }
-  /**
-   * allows an ObserverIntf object to add back into the DPSO process an
-   * improvement to the incumbent solution it was given. The method should only
-   * be called by the ObserverIntf object that has been registered to improve
-   * the current incumbent.
-   * @param obs ObserverIntf
-   * @param soln Object
-   */
-  public void addIncumbent(ObserverIntf obs, Object soln) {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      // add new solution back
-      Vector sols = (Vector) _observers.get(obs);
-      if (sols == null) {
-        //System.err.println("DPSO.addIncumbent(): no observers found for DPSO...");
-        return; // ObserverIntf was not registered or was removed
-      }
-      sols.addElement(soln);
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
   }
   /**
    * returns the current function that is being minimized (may be null)
@@ -259,78 +126,47 @@ public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
   }
 
 
-  // ObserverIntf methods implementation
-  /**
-   * when a subject's thread calls the method notifyChange, in response, this
-   * object will add the best solution found by the subject, in the _subjects'
-   * solutions map to be later picked up by the first DPSOThread spawned by this
-   * DPSO object.
-   * @param subject SubjectIntf
-   * @throws OptimizerException
-   */
-  public void notifyChange(SubjectIntf subject) throws OptimizerException {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      Object arg = subject.getIncumbent();
-      addSubjectIncumbent(subject, arg); // add the solution found by the
-      // subject to my solutions so that it will be picked up in the
-      // next generation from _threads[0].
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-
-
   /**
    * the most important method of the class. Some parameters must have been
    * previously passed in the _params map (via the ctor arg or via a call to
    * setParams(p) to do that).
    * These parameters are:
    *
-   * <"dpso.randomparticlemaker",RandomChromosomeMakerIntf maker> mandatory,
+   * &lt;"dpso.randomparticlemaker",RandomChromosomeMakerIntf maker&gt; mandatory,
    * the RandomChromosomeMakerIntf Object responsible for creating valid random
    * chromosome Objects to populate the islands.
-   * <"dpso.randomvelocitymaker",RandomVelocityMakerIntf maker> mandatory,
+   * &lt;"dpso.randomvelocitymaker",RandomVelocityMakerIntf maker&gt; mandatory,
    * the RandomVelocityMakerIntf Object responsible for creating valid random
    * velocity Objects to determine the next position of the particles.
-   * <"dpso.vmover",NewVelocityMakerIntf maker> mandatory, the
+   * &lt;"dpso.vmover",NewVelocityMakerIntf maker&gt; mandatory, the
    * NewVelocityMakerIntf object responsible for determining the new velocity
    * of a particle given its current position, velocity and its neighborhood.
-   * <"dpso.c2vadder",ChromosomeVelocityAdderIntf adder> mandatory, an Object
+   * &lt;"dpso.c2vadder",ChromosomeVelocityAdderIntf adder&gt; mandatory, an Object
    * that implements the ChromosomeVelocityAdderIntf that produces the next
    * position of a particle given its current position and velocity.
-   * <"dpso.numthreads",Integer nt> optional, how many threads will be used,
+   * &lt;"dpso.numthreads",Integer nt&gt; optional, how many threads will be used,
    * default is 1. Each thread corresponds to an island in the DGA model.
-   * <"dpso.c2amaker",Chromosome2ArgMakerIntf c2a> optional, the object that is
+   * &lt;"dpso.c2amaker",Chromosome2ArgMakerIntf c2a&gt; optional, the object that is
    * responsible for tranforming a chromosome Object to a function argument
    * Object. If not present, the default identity transformation is assumed.
-   * <"dpso.a2cmaker",Arg2ChromosomeMakerIntf a2c> optional, the object that is
+   * &lt;"dpso.a2cmaker",Arg2ChromosomeMakerIntf a2c&gt; optional, the object that is
    * responsible for transforming a FunctionIntf argument Object to a chromosome
    * Object. If not present, the default identity transformation is assumed. The
    * a2c object is only useful when other ObserverIntf objects register for this
    * SubjectIntf object and also add back solutions to it (as FunctionIntf args)
-   * <"dpso.numgens",Integer ng> optional, the number of generations to run the
+   * &lt;"dpso.numgens",Integer ng&gt; optional, the number of generations to run the
    * DPSO, default is 1.
-   * <"dpso.immprob",Double prob> optional, the probability with which an sub-
+   * &lt;"dpso.immprob",Double prob&gt; optional, the probability with which an sub-
    * population will send some of its members to migrate to another (island)
    * sub-population, default is 0.01
-   * <"dpso.numinitpop",Integer ip> optional, the initial population number for
+   * &lt;"dpso.numinitpop",Integer ip&gt; optional, the initial population number for
    * each island, default is 10.
-   * <"dpso.neighborhooddistance",Integer dist> optional, assuming the particles
+   * &lt;"dpso.neighborhooddistance",Integer dist&gt; optional, assuming the particles
    * in a sub-population are arranged in a ring topology, dist is the maximum
    * distance from the left or the right of a given particle within which the
    * best (guiding) particle position will be sought for the computation of the
    * next position of the given particle, default is 1.
-   * <"ensemblename", String name> optional, the name of the synchronized
+   * &lt;"ensemblename", String name&gt; optional, the name of the synchronized
    * optimization ensemble in which this DPSO object will participate. In case
    * this value is non-null, then a higher-level ensemble optimizer must have
    * appropriately called the method
@@ -342,16 +178,18 @@ public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * If the optimizer ensemble is to call its <CODE>minimize(f)</CODE> method
    * again, then it must make sure to have reset the
    * <CODE>Barrier.getInstance(name+"_master")</CODE> object via a
-   * <CODE>
+   * <PRE>
+	 * <CODE>
    * Barrier.removeInstance(name+"_master");
    * Barrier.setNumThreads(name+"_master", numOptimizers);
    * ComplexBarrier.removeInstance(name);
    * </CODE>
+	 * </PRE>
    * series of calls.
    *
    * @param FunctionIntf f
    * @throws OptimizerException if the process fails
-   * @return PairObjDouble // Pair<Object arg, Double val>
+   * @return PairObjDouble // Pair&lt;Object arg, Double val&gt;
    */
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
 		if (f==null) throw new OptimizerException("DPSO.minimize(f): null f");
@@ -521,7 +359,7 @@ public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
 
 
   /**
-   * update if we have an incumbent
+   * update if we have an incumbent.
    * @param ind DPSOIndividual
    * @throws OptimizerException in case of insanity (may only happen if the
    * function to be minimized is not reentrant and the debug bit
@@ -586,10 +424,10 @@ public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
   synchronized void transferSolutionsTo(Vector tinds, Hashtable params, Hashtable funcParams) {
     // 1. observers
     int ocnt = 0;
-    Iterator it = _observers.keySet().iterator();
+    Iterator it = getObservers().keySet().iterator();
     while (it.hasNext()) {
       ObserverIntf obs = (ObserverIntf) it.next();
-      Vector sols = (Vector) _observers.get(obs);
+      Vector sols = (Vector) getObservers().get(obs);
       int solssz = sols.size();
       for (int i=0; i<solssz; i++) {
         try {
@@ -614,10 +452,10 @@ public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
     }
     // 2. subjects
     int scnt = 0;
-    it = _subjects.keySet().iterator();
+    it = getSubjects().keySet().iterator();
     while (it.hasNext()) {
       SubjectIntf subject = (SubjectIntf) it.next();
-      Vector sols = (Vector) _subjects.get(subject);
+      Vector sols = (Vector) getSubjects().get(subject);
       int solssz = sols.size();
       for (int i=0; i<solssz; i++) {
         try {
@@ -651,22 +489,6 @@ public class DPSO implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * @return int
    */
   synchronized int getId() { return _id; }
-
-
-  /**
-   * add the soln into a hashmap maintaining (SubjectIntf, Object soln) pairs
-   * so that the soln is inserted in the first DPSOThread's population in the
-   * next iteration. Only called from the <CODE>notifyChange()</CODE> method.
-   * @param subject SubjectIntf
-   * @param soln Object
-   */
-  private void addSubjectIncumbent(SubjectIntf subject, Object soln) {
-    // add new solution back
-    Vector sols = (Vector) _subjects.get(subject);
-    if (sols == null) sols = new Vector();
-    sols.addElement(soln);
-    _subjects.put(subject, sols);
-  }
 
 
   /**

@@ -4,7 +4,8 @@ import java.util.Hashtable;
 
 /**
  * The SubjectIntf implements the Subject Object's methods in the well-known
- * Observer Design Pattern. See the comments in the ObserverIntf class.
+ * Observer Design Pattern. Also known as the Observable part of the pattern.
+ * See the comments in the ObserverIntf class.
  *
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>

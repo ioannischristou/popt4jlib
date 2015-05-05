@@ -10,7 +10,7 @@ import java.util.*;
  * that follows the island-model of GA computation, with an elitist selection
  * strategy that uses roulette-wheel selection of individuals based on their
  * fitness (that is computed every generation). The GA allows crossover and
- * mutation operators to act on the populations' indidivuals' chromosomes to
+ * mutation operators to act on the populations' individuals' chromosomes to
  * produce new individuals. It also features some less common properties, such
  * as:
  * <ul>
@@ -27,7 +27,7 @@ import java.util.*;
  * <p>
  * Both the above mechanisms are intended to reduce premature convergence effects
  * of the process that often plague genetic evolution optimization processes.
- * Finally, the class implements the Subject/ObserverIntf interfaces so that it
+ * Finally, the class extends <CODE>GLockingObservableObserverBase</CODE> so it
  * may be combined with other optimization processes and produce better results.
  * By implementing the SubjectIntf of the well-known Observer Design Pattern,
  * the class allows any observer objects implementing the ObserverIntf to be
@@ -43,15 +43,13 @@ import java.util.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class DGA implements OptimizerIntf, SubjectIntf, ObserverIntf {
+public class DGA extends GLockingObservableObserverBase implements OptimizerIntf {
   private static int _nextId=0;
   private int _id;
   private Hashtable _params;
   private boolean _setParamsFromSameThreadOnly=false;
   private Thread _originatingThread=null;
   private Chromosome2ArgMakerIntf _c2amaker;
-  private Hashtable _observers;  // map<ObserverIntf o, Vector<Object> newSols>
-  private Hashtable _subjects;  // map<ObserverIntf o, Vector<Object> newSols>
 	private int _numIncUpdates=0;  // how many times soln was improved in process
   double _incValue=Double.MAX_VALUE;
   Object _inc;  // incumbent chromosome
@@ -67,9 +65,8 @@ public class DGA implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * initializes the _observers and _subjects data member.
    */
   public DGA() {
+		super();
     _id = incrID();
-    _observers = new Hashtable();
-    _subjects = new Hashtable();
   }
 
 
@@ -142,95 +139,6 @@ public class DGA implements OptimizerIntf, SubjectIntf, ObserverIntf {
   }
 
 
-  // SubjectIntf methods implementation
-  /**
-   * allows an Object that implements the ObserverIntf interface to register
-   * with this DGA object and thus be notified whenever new incumbent solutions
-   * are produced by the DGA process. The ObserverIntf objects may then
-   * independently produce their own new solutions and add them back into the
-   * DGA process via a call to addIncumbent(observer, functionarg).
-   * The order of events cannot be uniquely defined and the experiment may not
-   * always produce the same results.
-   * @param observer ObserverIntf.
-   * @return boolean returns always true.
-   */
-  public boolean registerObserver(ObserverIntf observer) {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      _observers.put(observer, new Vector());
-      return true;
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-      return false;
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-  /**
-   * removes an Object that implements the ObserverIntf that has been registered
-   * to listen for new solutions. Returns true if the observer was registered,
-   * false otherwise.
-   * @param observer ObserverIntf
-   * @return boolean
-   */
-  public boolean removeObserver(ObserverIntf observer) {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      int size = _observers.size();
-      _observers.remove(observer);
-      return (size == _observers.size() + 1);
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-      return false;
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-  /**
-   * notifies every ObserverIntf object that was registered via a call to
-   * registerObserver(obs) -and has not been removed since- by calling the
-   * ObserverIntf object's method notifyChange(SubjectIntf this).
-   */
-  public void notifyObservers() {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      Iterator it = _observers.keySet().iterator();
-      while (it.hasNext()) {
-        ObserverIntf oi = (ObserverIntf) it.next();
-        try {
-          oi.notifyChange(this);
-        }
-        catch (OptimizerException e) {
-          e.printStackTrace(); // no-op
-        }
-      }
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-  }
   /**
    * returns the current function that is being minimized (may be null)
    * @return FunctionIntf
@@ -246,9 +154,8 @@ public class DGA implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * the DGAThreads executing setIncumbent().
    * @return Object
    */
-  public Object getIncumbent() {
+  protected Object getIncumbentProtected() {
     try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
       Chromosome2ArgMakerIntf c2amaker =
           (Chromosome2ArgMakerIntf) _params.get("dga.c2amaker");
       Object arg = null;
@@ -266,76 +173,6 @@ public class DGA implements OptimizerIntf, SubjectIntf, ObserverIntf {
     catch (Exception e) {
       e.printStackTrace();
       return null;
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-    // return _inc;  // return the best found chromosome.
-  }
-  /**
-   * allows an ObserverIntf object to add back into the DGA process an
-   * improvement to the incumbent solution it was given. The method should only
-   * be called by the ObserverIntf object that has been registered to improve
-   * the current incumbent.
-   * @param obs ObserverIntf
-   * @param soln Object
-   */
-  public void addIncumbent(ObserverIntf obs, Object soln) {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      // add new solution back
-      Vector sols = (Vector) _observers.get(obs);
-      if (sols == null) {
-        return; // ObserverIntf was not registered or was removed
-      }
-      sols.addElement(soln);
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-
-
-  // ObserverIntf methods implementation
-  /**
-   * when a subject's thread calls the method notifyChange, in response, this
-   * object will add the best solution found by the subject, in the _subjects'
-   * solutions map, to be later picked up by the first DGAThread spawned by this
-   * DGA object.
-   * @param subject SubjectIntf
-   * @throws OptimizerException
-   */
-  public void notifyChange(SubjectIntf subject) throws OptimizerException {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      Object arg = subject.getIncumbent();
-      addSubjectIncumbent(subject, arg);  // add the solution found by the
-      // subject to my solutions so that it will be picked up in the
-      // next generation from _threads[0].
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
     }
   }
 
@@ -664,9 +501,9 @@ public class DGA implements OptimizerIntf, SubjectIntf, ObserverIntf {
 
   /**
    * moves all chromosomes that the observers or subjects have added so far to the
-   * _individuals List<DGAIndividual> of the DGAThread with id 0, and clears
+   * _individuals List&lt;DGAIndividual&gt; of the DGAThread with id 0, and clears
    * the solutions from the _observers and _subjects maps.
-   * @param tinds List ArrayList<DGAIndividual>
+   * @param tinds List // ArrayList&lt;DGAIndividual&gt;
    * @param params Hashtable the optimization params
    */
   void transferSolutionsTo(List tinds, Hashtable params) {
@@ -674,10 +511,10 @@ public class DGA implements OptimizerIntf, SubjectIntf, ObserverIntf {
       DMCoordinator.getInstance("popt4jlib").getWriteAccess();
       // 1. observers
       int ocnt=0;
-      Iterator it = _observers.keySet().iterator();
+      Iterator it = getObservers().keySet().iterator();
       while (it.hasNext()) {
         ObserverIntf obs = (ObserverIntf) it.next();
-        Vector sols = (Vector) _observers.get(obs);
+        Vector sols = (Vector) getObservers().get(obs);
         int solssz = sols.size();
         for (int i = 0; i < solssz; i++) {
           try {
@@ -705,10 +542,10 @@ public class DGA implements OptimizerIntf, SubjectIntf, ObserverIntf {
       }
       // 2. subjects
       int scnt=0;
-      it = _subjects.keySet().iterator();
+      it = getSubjects().keySet().iterator();
       while (it.hasNext()) {
         SubjectIntf subj = (SubjectIntf) it.next();
-        Vector sols = (Vector) _subjects.get(subj);
+        Vector sols = (Vector) getSubjects().get(subj);
         int solssz = sols.size();
         for (int i = 0; i < solssz; i++) {
           try {
@@ -792,22 +629,6 @@ public class DGA implements OptimizerIntf, SubjectIntf, ObserverIntf {
     catch (ParallelException e) {
       e.printStackTrace();
     }
-  }
-
-
-  /**
-   * add the soln into a hashmap maintaining (SubjectIntf, Object soln) pairs
-   * so that the soln is inserted in the first DGAThread's population in the
-   * next iteration. Only called from the <CODE>notifyChange()</CODE> method.
-   * @param subject SubjectIntf
-   * @param soln Object
-   */
-  private void addSubjectIncumbent(SubjectIntf subject, Object soln) {
-    // add new solution back
-    Vector sols = (Vector) _subjects.get(subject);
-    if (sols == null) sols = new Vector();
-    sols.addElement(soln);
-    _subjects.put(subject, sols);
   }
 
 

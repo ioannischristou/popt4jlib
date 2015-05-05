@@ -8,7 +8,7 @@ import popt4jlib.*;
 /**
  * A parallel implementation of the Firefly Algorithm for
  * function optimization, implementing also the SubjectIntf and ObserverIntf
- * objects. The class implements the Subject/ObserverIntf interfaces so that it
+ * objects by extending GLockingObservableObserverBase so that it
  * may be combined with other optimization processes and produce better results.
  * By implementing the SubjectIntf of the well-known Observer Design Pattern,
  * the class allows any observer objects implementing the ObserverIntf to be
@@ -29,12 +29,10 @@ import popt4jlib.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
+final public class DFA extends GLockingObservableObserverBase implements OptimizerIntf {
   private static int _nextId=0;
   private int _id;
   private Hashtable _params;
-  private Hashtable _observers;  // map<ObserverIntf, Vector<Object soln> >
-  private Hashtable _subjects;  // map<SubjectIntf, Vector<Object soln> >
   double _incValue=Double.MAX_VALUE;
   Object _inc;  // incumbent chromosome
   FunctionIntf _f;
@@ -47,9 +45,8 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * public no-arg constructor
    */
   public DFA() {
-    _observers = new Hashtable();
-    _subjects = new Hashtable();
-    _id = incrID();
+		super();
+		_id = incrID();
   }
 
 
@@ -93,95 +90,6 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
   }
 
 
-  // SubjectIntf methods implementation
-  /**
-   * allows an Object that implements the ObserverIntf interface to register
-   * with this DFA object and thus be notified whenever new incumbent solutions
-   * are produced by the DFA process. The ObserverIntf objects may then
-   * independently produce their own new solutions and add them back into the
-   * DFA process via a call to <CODE>addIncumbent(observer, functionarg)</CODE>.
-   * The order of events cannot be uniquely defined and the experiment may not
-   * always produce the same results.
-   * @param observer ObserverIntf.
-   * @return boolean returns always true.
-   */
-  public boolean registerObserver(ObserverIntf observer) {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      _observers.put(observer, new Vector());
-      return true;
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-      return false;
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-  /**
-   * removes an Object that implements the ObserverIntf that has been registered
-   * to listen for new solutions. Returns true if the observer was registered,
-   * false otherwise.
-   * @param observer ObserverIntf
-   * @return boolean
-   */
-  public boolean removeObserver(ObserverIntf observer) {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      int size = _observers.size();
-      _observers.remove(observer);
-      return (size == _observers.size() + 1);
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-      return false;
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-  /**
-   * notifies every ObserverIntf object that was registered via a call to
-   * registerObserver(obs) -and has not been removed since- by calling the
-   * ObserverIntf object's method notifyChange(SubjectIntf this).
-   */
-  public void notifyObservers() {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      Iterator it = _observers.keySet().iterator();
-      while (it.hasNext()) {
-        ObserverIntf oi = (ObserverIntf) it.next();
-        try {
-          oi.notifyChange(this);
-        }
-        catch (OptimizerException e) {
-          e.printStackTrace(); // no-op
-        }
-      }
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-  }
   /**
    * returns the currently best known function argument that  minimizes the _f
    * function. The ObserverIntf objects would need this method to get the
@@ -190,9 +98,8 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * with its counterpart, setIncumbent().
    * @return Object
    */
-  public Object getIncumbent() {
+  protected Object getIncumbentProtected() {
     try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
       Chromosome2ArgMakerIntf c2amaker =
           (Chromosome2ArgMakerIntf) _params.get("dfa.c2amaker");
       Object arg = null;
@@ -209,46 +116,6 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
       e.printStackTrace();
       return null;
     }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
-    // return _inc;  // return the best found chromosome.
-  }
-  /**
-   * allows an ObserverIntf object to add back into the DFA process an
-   * improvement to the incumbent solution it was given. The method should only
-   * be called by the ObserverIntf object that has been registered to improve
-   * the current incumbent.
-   * @param obs ObserverIntf
-   * @param soln Object
-   */
-  public void addIncumbent(ObserverIntf obs, Object soln) {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      // add new solution back
-      Vector sols = (Vector) _observers.get(obs);
-      if (sols == null) {
-        //System.err.println("DFA.addIncumbent(): no observers found for DFA...");
-        return; // ObserverIntf was not registered or was removed
-      }
-      sols.addElement(soln);
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
   }
   /**
    * returns the current function that is being minimized (may be null)
@@ -256,37 +123,6 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
    */
   public synchronized FunctionIntf getFunction() {
     return _f;
-  }
-
-
-  // ObserverIntf methods implementation
-  /**
-   * when a subject's thread calls the method notifyChange, in response, this
-   * object will add the best solution found by the subject, in the _subjects'
-   * solutions map to be later picked up by the first DFAThread spawned by this
-   * DFA object.
-   * @param subject SubjectIntf
-   * @throws OptimizerException
-   */
-  public void notifyChange(SubjectIntf subject) throws OptimizerException {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      Object arg = subject.getIncumbent();
-      addSubjectIncumbent(subject, arg); // add the solution found by the
-      // subject to my solutions so that it will be picked up in the
-      // next generation from _threads[0].
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
-    }
   }
 
 
@@ -577,10 +413,10 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
   synchronized void transferSolutionsTo(Vector tinds, Hashtable params, Hashtable funcParams) {
     // 1. observers
     int ocnt = 0;
-    Iterator it = _observers.keySet().iterator();
+    Iterator it = getObservers().keySet().iterator();
     while (it.hasNext()) {
       ObserverIntf obs = (ObserverIntf) it.next();
-      Vector sols = (Vector) _observers.get(obs);
+      Vector sols = (Vector) getObservers().get(obs);
       int solssz = sols.size();
       for (int i=0; i<solssz; i++) {
         try {
@@ -602,10 +438,10 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
     }
     // 2. subjects
     int scnt = 0;
-    it = _subjects.keySet().iterator();
+    it = getSubjects().keySet().iterator();
     while (it.hasNext()) {
       SubjectIntf subject = (SubjectIntf) it.next();
-      Vector sols = (Vector) _subjects.get(subject);
+      Vector sols = (Vector) getSubjects().get(subject);
       int solssz = sols.size();
       for (int i=0; i<solssz; i++) {
         try {
@@ -636,22 +472,6 @@ final public class DFA implements OptimizerIntf, SubjectIntf, ObserverIntf {
    * @return int
    */
   synchronized int getId() { return _id; }
-
-
-  /**
-   * add the soln into a hashmap maintaining (SubjectIntf, Object soln) pairs
-   * so that the soln is inserted in the first DFAThread's population in the
-   * next iteration. Only called from the <CODE>notifyChange()</CODE> method.
-   * @param subject SubjectIntf
-   * @param soln Object
-   */
-  private void addSubjectIncumbent(SubjectIntf subject, Object soln) {
-    // add new solution back
-    Vector sols = (Vector) _subjects.get(subject);
-    if (sols == null) sols = new Vector();
-    sols.addElement(soln);
-    _subjects.put(subject, sols);
-  }
 
 
   /**
