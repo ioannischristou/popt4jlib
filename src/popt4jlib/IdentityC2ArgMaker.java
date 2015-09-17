@@ -23,10 +23,10 @@ public class IdentityC2ArgMaker implements Chromosome2ArgMakerIntf {
   /**
    * returns the argument passed in.
    * @param c Object
-   * @param params Hashtable
+   * @param params HashMap
    * @return Object
    */
-  public Object getArg(Object c, Hashtable params) {
+  public Object getArg(Object c, HashMap params) {
     return c;
   }
 }

@@ -37,10 +37,10 @@ public class ShiftedArgFunctionBase implements FunctionIntf {
 	 * will be rather slow as there will be conversions from one data type to the
 	 * other, and object creations.
    * @param arg Object must be double[] or VectorIntf
-   * @param params Hashtable
+   * @param params HashMap
    * @return double
    */
-  public double eval(Object arg, Hashtable params) {
+  public double eval(Object arg, HashMap params) {
     double[] newarg=null;
     if (arg instanceof double[]) {
       newarg = (double[]) ((double[]) arg).clone();

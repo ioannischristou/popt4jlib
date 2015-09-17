@@ -14,9 +14,9 @@ import java.util.*;
 public interface RandomArgMakerIntf {
   /**
    * the sole method every RandomArgMakerIntf implementation must provide.
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException
    * @return Object
    */
-  public Object createRandomArgument(Hashtable params) throws OptimizerException;
+  public Object createRandomArgument(HashMap params) throws OptimizerException;
 }

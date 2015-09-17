@@ -44,7 +44,7 @@ public class NeuralGasMTClustererTest {
         System.err.println("<k> cannot be larger or equal to the <n>, the number of vectors to cluster");
         System.exit(-1);
       }
-      Hashtable p = new Hashtable();
+      HashMap p = new HashMap();
       p.put("neuralgasmt.numthreads", new Integer(nt));
       if (num_iters<=0) {
         System.err.println("<numiters> cannot be less than zero");

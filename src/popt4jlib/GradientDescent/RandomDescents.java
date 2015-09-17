@@ -20,7 +20,7 @@ import parallel.*;
 public class RandomDescents implements LocalOptimizerIntf {
   private static int _nextId = 0;
   private int _id;
-  private Hashtable _params;
+  private HashMap _params;
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
   private RDThread[] _threads=null;
@@ -38,9 +38,9 @@ public class RandomDescents implements LocalOptimizerIntf {
   /**
    * public constructor, accepting the optimization process parameters (they can
    * be later changed by a call to <CODE>setParams(p)</CODE>
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public RandomDescents(Hashtable params) {
+  public RandomDescents(HashMap params) {
     this();
     try {
       setParams(params);
@@ -54,23 +54,23 @@ public class RandomDescents implements LocalOptimizerIntf {
   /**
    * return a copy of the parameters. Modifications to the returned object
    * do not affect the data member.
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  public synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
   /**
    * the optimization params are set to p
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object.
    */
-  public synchronized void setParams(Hashtable p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
   }
 
 
@@ -88,27 +88,27 @@ public class RandomDescents implements LocalOptimizerIntf {
    * the main method of the class. Before it is called, a number of parameters
    * must have been set (via the parameters passed in the constructor, or via
    * a later call to setParams(p). These are:
-   * <"rd.numthreads", Integer nt> optional, the number of threads to use in
+   * &lt;"rd.numthreads", Integer nt&gt; optional, the number of threads to use in
    * the optimization process. Default is 1.
-   * <"rd.numtries", Integer ntries> optional, the number of tries (starting
+   * &lt;"rd.numtries", Integer ntries&gt; optional, the number of tries (starting
    * from different initial points). Default is 100.
-   * <"rd.gradient", VecFunctionIntf g> optional, the gradient of f, the
+   * &lt;"rd.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
    * function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * <"rd.gtol", Double v> optional, the minimum abs. value for each of the
+   * &lt;"rd.gtol", Double v&gt; optional, the minimum abs. value for each of the
    * gradient's coordinates, below which if all coordinates of the gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-6.
-   * <"rd.maxiters", Integer miters> optional, the maximum number of major
+   * &lt;"rd.maxiters", Integer miters&gt; optional, the maximum number of major
    * iterations of the SD search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * <"rd.rho", Double v> optional, the value for the parameter ñ in the
+   * &lt;"rd.rho", Double v&gt; optional, the value for the parameter &rho; in the
    * Armijo rule implementation. Default is 0.1.
-   * <"rd.beta", Double v> optional, the value for the parameter â in the
+   * &lt;"rd.beta", Double v&gt; optional, the value for the parameter &beta; in the
    * Armijo rule implementation. Default is 0.8.
-   * <"rd.gamma", Double v> optional, the value for the parameter ã in the
+   * &lt;"rd.gamma", Double v&gt; optional, the value for the parameter &gamma; in the
    * Armijo rule implementation. Default is 1.
-   * <"rd.looptol", Double v> optional, the minimum step-size allowed. Default
+   * &lt;"rd.looptol", Double v&gt; optional, the minimum step-size allowed. Default
    * is 1.e-21.
    *
    * @param f FunctionIntf the function to minimize
@@ -273,7 +273,7 @@ public class RandomDescents implements LocalOptimizerIntf {
     }
 
     public void run() {
-      Hashtable p = _master.getParams();  // returns a copy
+      HashMap p = _master.getParams();  // returns a copy
       p.put("thread.localid", new Integer(_id));
       p.put("thread.id", new Integer(_uid));  // used to be _id
       VectorIntf best = null;
@@ -302,7 +302,7 @@ public class RandomDescents implements LocalOptimizerIntf {
     }
 
 
-    private PairObjDouble descent(FunctionIntf f, VectorIntf x0, Hashtable p) throws OptimizerException {
+    private PairObjDouble descent(FunctionIntf f, VectorIntf x0, HashMap p) throws OptimizerException {
       VecFunctionIntf grad = (VecFunctionIntf) p.get("rd.gradient");
       if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
       if (x0==null) {

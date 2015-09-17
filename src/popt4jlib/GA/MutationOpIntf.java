@@ -17,11 +17,11 @@ interface MutationOpIntf {
 	 * behavior in this case.
    * @param chromosome1 Object
    * @param chromosome2 Object
-   * @param Hashtable params
+   * @param HashMap params
    * @throws OptimizerException
    * @return Pair
    */
-  public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params)
+  public Pair doMutation(Object chromosome1, Object chromosome2, HashMap params)
       throws OptimizerException;
 
 }

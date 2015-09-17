@@ -32,7 +32,7 @@ public class IntVarArrayNPtXOverOp implements XoverOpIntf {
    * <CODE>int[]</CODE> chromosomes of varying length!.
    * @param c1 Object int[]
    * @param c2 Object int[]
-   * @param params Hashtable must contain the following key,value pair:
+   * @param params HashMap must contain the following key,value pair:
    * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread
@@ -41,7 +41,7 @@ public class IntVarArrayNPtXOverOp implements XoverOpIntf {
 	 * dimension equal to c1's dimension, and the second having dimension equal to
 	 * c2's dimension
    */
-  public Pair doXover(Object c1, Object c2, Hashtable params) throws OptimizerException {
+  public Pair doXover(Object c1, Object c2, HashMap params) throws OptimizerException {
     try {
       final int id = ( (Integer) params.get("thread.id")).intValue();
       int[] a1 = (int[]) c1;

@@ -1,6 +1,6 @@
 package parallel;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Vector;
 
 /**
@@ -20,14 +20,14 @@ public class FairDMCoordinator {
   private int _readers=0;
   private int _writerCalls=0;
   private Thread _writerThread=null;
-  private Hashtable _readerThreads=null;  // map<Thread t, Integer count>
+  private HashMap _readerThreads=null;  // map<Thread t, Integer count>
   // the next two variables are used for "fair granting" of locks to avoid
   // starvation (i.e. to "ensure progress")
   private Vector _waitingOn;
   private Lock _lock;
 
   static private FairDMCoordinator _DMCoord=null;
-  static private Hashtable _coords = new Hashtable();
+  static private HashMap _coords = new HashMap();
 
 
   /**
@@ -346,7 +346,7 @@ public class FairDMCoordinator {
 
 
   private FairDMCoordinator() {
-    _readerThreads = new Hashtable();
+    _readerThreads = new HashMap();
     _waitingOn = new Vector();
     _lock = new Lock();
   }

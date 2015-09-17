@@ -30,13 +30,13 @@ public class SetWeightEvalFunction implements FunctionIntf {
    * return minus the total weight of the nodes whose ids are in the set-valued 
 	 * argument.
    * @param arg Object // Set&lt;Integer node-id&gt;
-   * @param params Hashtable may contain the name of the weight to compute, 
+   * @param params HashMap may contain the name of the weight to compute, 
 	 * in a ("weightname",name) key-pair, else the default "value" string will be 
 	 * used.
    * @throws IllegalArgumentException if arg is not a Set.
    * @return double
    */
-  public double eval(Object arg, Hashtable params) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap params) throws IllegalArgumentException {
     try {
 			double w = 0.0;
       Set s = (Set) arg;

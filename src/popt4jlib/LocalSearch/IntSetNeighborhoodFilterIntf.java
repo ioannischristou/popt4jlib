@@ -18,11 +18,11 @@ public interface IntSetNeighborhoodFilterIntf extends NeighborhoodFilterIntf {
    * set arg.
    * @param x Integer
    * @param arg Set // Set&lt;Integer&gt;
-   * @param params Hashtable
+   * @param params HashMap
    * @return List // List&lt;Integer&gt;
    * @throws LocalSearchException
    */
-  public List filter(Integer x, Set arg, Hashtable params) throws LocalSearchException;
+  public List filter(Integer x, Set arg, HashMap params) throws LocalSearchException;
 
 
   /**

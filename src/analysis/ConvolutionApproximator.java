@@ -19,7 +19,7 @@ import java.util.*;
  * @version 1.0
  */
 public class ConvolutionApproximator implements FunctionIntf {
-  private Hashtable _convParams;
+  private HashMap _convParams;
   private IntegralApproximatorMT _integrator;
   private double _lowerLimit = -1.0;
   private double _upperLimit = 1.0;
@@ -34,27 +34,27 @@ public class ConvolutionApproximator implements FunctionIntf {
    * <CODE>VectorIntf</CODE> objects.
    * @param g FunctionIntf must accept as input <CODE>double[]</DOUBLE> or
    * <CODE>VectorIntf</CODE> objects.
-   * @param params Hashtable the params table may contain the following pairs:
-   * <li> <"convolutionapproximator.integrationlowerlimit", Double l> optional,
+   * @param params HashMap the params table may contain the following pairs:
+   * <li> &lt;"convolutionapproximator.integrationlowerlimit", Double l&gt; optional,
    * the initial lower limit of the infinite integral involved in the convolution,
    * default is -1.
-   * <li> <"convolutionapproximator.integrationupperlimit", Double u> optional,
+   * <li> &lt;"convolutionapproximator.integrationupperlimit", Double u&gt; optional,
    * the initial upper limit of the infinite integral involved in the convolution,
    * default is +1.
-   * <li> <"convolutionapproximator.varindex", Integer i> optional the index of
+   * <li> &lt;"convolutionapproximator.varindex", Integer i&gt; optional the index of
    * the variable to be convoluted for the two functions f and g, default is 0 (
    * i.e. the 1st variable)
    * <li> Also, the following integration-related params may be specified:
-   * <li> <"integralapproximator.eps", Double eps> if present specifies the
+   * <li> &lt;"integralapproximator.eps", Double eps&gt; if present specifies the
    * required precision, default is 1.e-6,
-   * <li> <"integralapproximator.levelmax", Integer level> if present specifies
+   * <li> &lt;"integralapproximator.levelmax", Integer level&gt; if present specifies
    * maximum level of recursion in the Simpson method, default is
    * <CODE>Integer.MAX_VALUE</CODE>.
    * @throws IllegalArgumentException
    */
   public ConvolutionApproximator(FunctionIntf f, FunctionIntf g,
-                                 Hashtable params) throws IllegalArgumentException {
-    if (params!=null) _convParams = new Hashtable(params);
+                                 HashMap params) throws IllegalArgumentException {
+    if (params!=null) _convParams = new HashMap(params);
     try {
       Double llD = (Double) _convParams.get(
           "convolutionapproximator.integrationlowerlimit");
@@ -62,7 +62,7 @@ public class ConvolutionApproximator implements FunctionIntf {
       Double ulD = (Double) _convParams.get(
           "convolutionapproximator.integrationupperlimit");
       if (ulD != null) _upperLimit = ulD.doubleValue();
-      Hashtable p = new Hashtable();
+      HashMap p = new HashMap();
       p.put("integralapproximatormt.maxnumthreads", new Integer(10));
       _integrator = new IntegralApproximatorMT(new InnerConvProdFunction(f, g),
                                                p);
@@ -81,18 +81,20 @@ public class ConvolutionApproximator implements FunctionIntf {
    * <CODE>params</CODE>.
    * @param x Object must be either a <CODE>double[]</CODE> or a
    * <CODE>VectorIntf</CODE> object (in package <CODE>popt4jlib</CODE>).
-   * @param params Hashtable may contain the following pairs:
-   * <li> <"convolutionapproximator.varindex", Integer i> optional, where i must
+   * @param params HashMap may contain the following pairs:
+	 * <ul>
+   * <li> &lt;"convolutionapproximator.varindex", Integer i&gt; optional, where i must
    * be in <CODE>[0, x.length-1]</CODE> if <CODE>x</CODE> is a <CODE>double[]</CODE>
    * else in <CODE>[0,x.getNumCoords()-1]</CODE>, specifies the variable of the
    * convolution. Default is the first variable.
-   * <li> <"convolutionapproximator.eps", Double e> optional, specifies the gap
+   * <li> &lt;"convolutionapproximator.eps", Double e&gt; optional, specifies the gap
    * percentage below which if two successive estimations of the double-infinite
    * convolution integral are found, the computation ends, default is 1.e-6.
+	 * </ul>
    * @throws IllegalArgumentException
    * @return double
    */
-  public double eval(Object x, Hashtable params) throws IllegalArgumentException {
+  public double eval(Object x, HashMap params) throws IllegalArgumentException {
     double[] t = null;
     if (x instanceof VectorIntf) t = ((VectorIntf) x).getDblArray1();
     else if (x instanceof double[]) t = (double[]) x;
@@ -155,7 +157,7 @@ class InnerConvProdFunction implements FunctionIntf {
   }
 
 
-  public double eval(Object x, Hashtable params) throws IllegalArgumentException {
+  public double eval(Object x, HashMap params) throws IllegalArgumentException {
     double[] t = null;
     if (x instanceof VectorIntf) t = ((VectorIntf) x).getDblArray1();
     else if (x instanceof double[]) t = (double[]) x;

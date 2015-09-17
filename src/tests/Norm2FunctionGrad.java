@@ -23,14 +23,14 @@ public class Norm2FunctionGrad implements VecFunctionIntf {
   /**
    * evaluates the gradient of the function (Ax)'x at the given point x.
    * @param x VectorIntf
-   * @param p Hashtable if not null, may contain pairs of the following form:
+   * @param p HashMap if not null, may contain pairs of the following form:
    * <li> <"a"$i$, Double a> indicating the value of the element A[$i$+1][$i$+1]
    * (if non-existent, it is assumed to be 1)
    * @return VectorIntf
    * @throws IllegalArgumentException if the above specification for the arguments
    * is not adhered to
    */
-  public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
+  public VectorIntf eval(VectorIntf x, HashMap p) throws IllegalArgumentException {
     try {
       int n = x.getNumCoords();
       VectorIntf g = x.newInstance();  // x.newCopy();
@@ -54,12 +54,12 @@ public class Norm2FunctionGrad implements VecFunctionIntf {
   /**
    * evaluate partial derivative at i.
    * @param x VectorIntf
-   * @param p Hashtable
+   * @param p HashMap
    * @param i int
    * @throws IllegalArgumentException
    * @return double
    */
-  public double evalCoord(VectorIntf x, Hashtable p, int i) throws IllegalArgumentException {
+  public double evalCoord(VectorIntf x, HashMap p, int i) throws IllegalArgumentException {
     try {
       double val = 2.0*x.getCoord(i);
       if (p!=null) {

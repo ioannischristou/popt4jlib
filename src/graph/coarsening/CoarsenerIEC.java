@@ -9,12 +9,12 @@ import java.util.*;
 
 public class CoarsenerIEC extends Coarsener {
 
-  public CoarsenerIEC(Graph g, int[] partition, Hashtable props) {
+  public CoarsenerIEC(Graph g, int[] partition, HashMap props) {
     super(g, partition, props);
   }
 
 
-  public Coarsener newInstance(Graph g, int[] partition, Hashtable properties) {
+  public Coarsener newInstance(Graph g, int[] partition, HashMap properties) {
     return new CoarsenerIEC(g, partition, properties);
   }
 
@@ -102,7 +102,7 @@ public class CoarsenerIEC extends Coarsener {
     // and finally create the arcs for the new graph
     // for each old arc, if it connects two new nodes, connect the new nodes.
     // if there's already an arc, add the weight of this one to the new one.
-    Hashtable new_arcs_table = new Hashtable();  // map<Integer new_startid, Set<LinkPair> >
+    HashMap new_arcs_table = new HashMap();  // map<Integer new_startid, Set<LinkPair> >
     int new_arcs=0;
     for (int i=0; i<_g.getNumArcs(); i++) {
       Link ll = _g.getLink(i);
@@ -135,9 +135,9 @@ public class CoarsenerIEC extends Coarsener {
     }
 
     _coarseG = Graph.newGraph(new_nodes, new_arcs);
-    Enumeration new_arcs_table_iter = new_arcs_table.keys();
-    while (new_arcs_table_iter.hasMoreElements()) {
-      Integer new_start = (Integer) new_arcs_table_iter.nextElement();
+    Iterator new_arcs_table_iter = new_arcs_table.keySet().iterator(); //.keys();
+    while (new_arcs_table_iter.hasNext()) {
+      Integer new_start = (Integer) new_arcs_table_iter.next();
       Set linkpairs = (Set) new_arcs_table.get(new_start);
       Iterator lpairs_iter = linkpairs.iterator();
       while (lpairs_iter.hasNext()) {
@@ -354,7 +354,7 @@ public class CoarsenerIEC extends Coarsener {
 
 
   public String toString() {
-    Hashtable props = getProperties();
+    HashMap props = getProperties();
     String ret = "props=";
     if (props==null) ret+="null";
     else ret += props.size();

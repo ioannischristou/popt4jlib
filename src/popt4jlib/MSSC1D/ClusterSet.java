@@ -6,7 +6,7 @@ public class ClusterSet {
   private Vector _clusters;  // Set<Cluster c>
   private double _val = Double.MAX_VALUE;
   private boolean _isDirty=true;
-  private Hashtable _startWith;  // map<Integer ind, Set<Cluster> > cache
+  private HashMap _startWith;  // map<Integer ind, Set<Cluster> > cache
 
 
   public ClusterSet() {
@@ -182,7 +182,7 @@ public class ClusterSet {
 
 
   private void initCache() {
-    _startWith = new Hashtable();
+    _startWith = new HashMap();
     Iterator it = _clusters.iterator();
     while (it.hasNext()) {
       Cluster c = (Cluster) it.next();

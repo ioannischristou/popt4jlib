@@ -42,12 +42,12 @@ public class IntSetN21GraphAllMovesMaker extends IntSetN21AllMovesMaker {
    * Overrides this method to modify the behavior of the base move-maker.
    * @param tid Integer
    * @param x IntSet
-   * @param params Hashtable must contain the pair &lt;"dls.graph", Graph g&gt;,
+   * @param params HashMap must contain the pair &lt;"dls.graph", Graph g&gt;,
 	 * and may optionally contain the pair &lt;"dls.lock_graph", boolean_val&gt;
 	 * which if present and false, will avoid locking graph elements.
    * @return boolean
    */
-  protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
+  protected boolean isOK2Add(Integer tid, IntSet x, HashMap params) {
     try {
       Graph g = (Graph) params.get("dls.graph");
 			boolean lock_graph = params.containsKey("dls.lock_graph") ?

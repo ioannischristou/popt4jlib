@@ -1,6 +1,6 @@
 package parallel;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -21,7 +21,7 @@ import java.util.Hashtable;
  */
 public class Barrier {
   private static Barrier _instance;
-  private static Hashtable _instances = new Hashtable();  // map<String name, Barrier b>
+  private static HashMap _instances = new HashMap();  // map<String name, Barrier b>
   private int _origNumThreads;
   private int _numThreads2Wait4;
 

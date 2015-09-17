@@ -54,7 +54,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
   /**
    * implements the N_{-1+P} neighborhood for sets of integers.
    * @param chromosome Object Set&lt;Integer node-id&gt;
-   * @param params Hashtable must contain the following key-value pairs:
+   * @param params HashMap must contain the following key-value pairs:
 	 * <ul>
    * <li> &lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;
 	 * <li> &lt;"dls.graph", Graph g&gt; the original problem graph
@@ -79,7 +79,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
    * @throws OptimizerException if any of the parameters are incorrectly set
    * @return Vector Vector&lt;Set&lt;Integer nodeid&gt; &gt;
    */
-  public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
+  public Vector createAllChromosomes(Object chromosome, HashMap params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): null chromosome");
     synchronized (this) {
       _soln=null;  // reset
@@ -222,13 +222,13 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
    * @param rmid Integer
    * @param tryids List // List&lt;Integer&gt;
    * @param maxcard int
-   * @param params Hashtable must contain the pair &lt;"dls.graph", Graph g&gt;, 
+   * @param params HashMap must contain the pair &lt;"dls.graph", Graph g&gt;, 
 	 * and may optionally contain the pair &lt;"dls.lock_graph", Boolean val&gt; 
 	 * which if present and val is false, indicates no read-locking of the graph 
 	 * elements
    * @return Set // IntSet
    */
-  protected Set createSet(Set res, int rmid, List tryids, int maxcard, Hashtable params) {
+  protected Set createSet(Set res, int rmid, List tryids, int maxcard, HashMap params) {
     IntSet x = (IntSet) res;
     for (int i=0; i<tryids.size(); i++) {
       Integer tid = (Integer) tryids.get(i);
@@ -253,13 +253,13 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
    * Overrides this method to modify the behavior of the base move-maker.
    * @param tid Integer
    * @param x IntSet
-   * @param params Hashtable must contain the pair &lt;"dls.graph, Graph g&gt;, 
+   * @param params HashMap must contain the pair &lt;"dls.graph, Graph g&gt;, 
 	 * and may optionally contain the pair &lt;"dls.lock_graph, Boolean val&gt; 
 	 * which if present and val is false, indicates no read-locking of the graph 
 	 * elements.
    * @return boolean
    */
-  protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
+  protected boolean isOK2Add(Integer tid, IntSet x, HashMap params) {
     try {
       Graph g = (Graph) params.get("dls.graph");
 			boolean do_rlock = true;
@@ -343,11 +343,11 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
     private int _id;
     private List _tryids;
     private int _maxCard;
-    private Hashtable _params;
+    private HashMap _params;
     private boolean _isDone=false;
     private ConditionCounter _cond = null;
 
-    SetCreatorTaskObject(IntSet x, int id, List tryids, int maxcard, Hashtable params) {
+    SetCreatorTaskObject(IntSet x, int id, List tryids, int maxcard, HashMap params) {
       _x0 = x;
       _id = id;
       _tryids = tryids;

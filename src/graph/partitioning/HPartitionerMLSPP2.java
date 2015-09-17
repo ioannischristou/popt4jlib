@@ -3,7 +3,7 @@ package graph.partitioning;
 import graph.*;
 import graph.coarsening.*;
 import utils.DataMgr;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.StringTokenizer;
 import java.io.*;
@@ -46,11 +46,11 @@ public class HPartitionerMLSPP2 implements HPartitionerIntf {
    * argument.
    * @param g HGraph
    * @param k int
-   * @param props Hashtable
+   * @param props HashMap
    * @throws PartitioningException
    * @return int[]
    */
-  public int[] partition(HGraph g, int k, Hashtable props) throws PartitioningException {
+  public int[] partition(HGraph g, int k, HashMap props) throws PartitioningException {
     int max_acc_graph_size = ((Integer) props.get("partitioning.HPartitioner.HPartitionerMLSPP.max_acc_graph_size")).intValue();
     if (_obj==null) {
       HObjFncIntf obj = (HObjFncIntf) props.get("partitioning.hpartrunner.objfnc");
@@ -70,7 +70,7 @@ public class HPartitionerMLSPP2 implements HPartitionerIntf {
         co.coarsen();
         HGraph coarse_g = co.getCoarseHGraph();
         System.err.println("coarse_g.size="+coarse_g.getNumNodes()+" #arcs="+coarse_g.getNumArcs());
-        // Hashtable props = co.getProperties();
+        // HashMap props = co.getProperties();
         coarseners.addElement(co);
 
         HCoarsener co1 = co.newInstance(coarse_g, null, props);

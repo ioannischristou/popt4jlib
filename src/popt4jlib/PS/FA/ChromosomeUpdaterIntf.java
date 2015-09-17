@@ -1,6 +1,6 @@
 package popt4jlib.PS.FA;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 import popt4jlib.OptimizerException;
 
 /**
@@ -19,11 +19,11 @@ public interface ChromosomeUpdaterIntf {
    * to chromosomej.
    * @param chromosomei Object
    * @param chromosomej Object
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException
    * @return Object
    */
-  public Object update(Object chromosomei, Object chromosomej, Hashtable params) throws OptimizerException;
+  public Object update(Object chromosomei, Object chromosomej, HashMap params) throws OptimizerException;
   /**
    * optional operation, needed only if some kind of "annealing" of the a_t
    * parameters is to take place. Otherwise, may be left as a no-op operation.

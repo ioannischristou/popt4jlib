@@ -1,6 +1,6 @@
 package parallel;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -17,7 +17,7 @@ public class DMCTest2 {
   private long _lastAccess2FetchedUpdateTime = 0;
   private long _lastFetchedUpdateTime = 0;
   long _lastLoadingTime = 0;
-  private Hashtable _items = null;
+  private HashMap _items = null;
   private DMCT2LThread _thread = null;
 
   public DMCTest2() {
@@ -48,7 +48,7 @@ public class DMCTest2 {
 
 
   void setLoaderThreadNull() { _thread = null; }
-  void setItems(Hashtable t) {
+  void setItems(HashMap t) {
     _items = t;
     _lastLoadingTime = System.currentTimeMillis();
   }
@@ -122,7 +122,7 @@ class DMCT2LThread extends Thread {
       System.out.print("DMCT2LThread.run(): creating items...");
       Thread.sleep(1000*utils.RndUtil.getInstance().getRandom().nextInt(10));  // sleep for at most 9 seconds
       System.out.println("Done!");
-      _testObj.setItems(new Hashtable());
+      _testObj.setItems(new HashMap());
     }
     catch (Exception e) {
       e.printStackTrace();

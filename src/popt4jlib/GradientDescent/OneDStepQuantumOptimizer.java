@@ -3,7 +3,7 @@ package popt4jlib.GradientDescent;
 
 import popt4jlib.*;
 import parallel.ParallelException;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * the class implements a minimization method for a function alone one of its
@@ -43,7 +43,7 @@ public final class OneDStepQuantumOptimizer {
    * integer quantity.
    * @param f FunctionIntf
    * @param x0 VectorIntf
-   * @param fparams Hashtable
+   * @param fparams HashMap
    * @param varindex int
    * @param stepquantum double
    * @param lowerbound double
@@ -58,7 +58,7 @@ public final class OneDStepQuantumOptimizer {
    * @throws ParallelException
    * @return double
    */
-  public double argmin(FunctionIntf f, VectorIntf x0, Hashtable fparams,
+  public double argmin(FunctionIntf f, VectorIntf x0, HashMap fparams,
                            int varindex, double stepquantum,
                            double lowerbound, double upperbound,
                            int niterbnd, int multfactor, double ftol) throws OptimizerException, ParallelException {
@@ -125,7 +125,7 @@ public final class OneDStepQuantumOptimizer {
    * determine in which direction (up or down) the function f decreases, along
    * the j-th variable, or return zero.
    * @param f FunctionIntf the function
-   * @param params Hashtable parameters of the function
+   * @param params HashMap parameters of the function
    * @param x VectorIntf the argument
    * @param j int the index of the variable in question (in {0,...n-1})
    * @param eps double
@@ -136,7 +136,7 @@ public final class OneDStepQuantumOptimizer {
    * @throws IllegalArgumentException
    * @return double
    */
-  private double detdir(FunctionIntf f, Hashtable params, VectorIntf x,
+  private double detdir(FunctionIntf f, HashMap params, VectorIntf x,
                         int j, double eps, double lb, double ub, double ftol) throws ParallelException, IllegalArgumentException {
     try {
       final double s = x.getCoord(j);

@@ -13,7 +13,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 import parallel.DMCoordinator;
@@ -47,7 +47,7 @@ public class DataFileAccessSrv {
   private DynamicAsynchTaskExecutor _pool;
   private long _countConns=0;
 	
-	private Hashtable _dataCache;  // map<String filename, 
+	private HashMap _dataCache;  // map<String filename, 
 	                               //     List<DataVectorChunk{
 	                               //            int start, 
 	                               //            int to, 
@@ -72,7 +72,7 @@ public class DataFileAccessSrv {
                             // may introduce starvation locks.
       _pool=DynamicAsynchTaskExecutor.newDynamicAsynchTaskExecutor(2,
 																																	 maxthreads);
-			_dataCache = new Hashtable();
+			_dataCache = new HashMap();
     }
     catch (ParallelException e) {
       e.printStackTrace();  // cannot get here

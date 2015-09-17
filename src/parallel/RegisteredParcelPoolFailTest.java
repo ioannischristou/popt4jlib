@@ -6,7 +6,7 @@
 
 package parallel;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -142,7 +142,7 @@ class SFMPCOld {
    */
   private BoundedBufferArrayUnsynchronized _data;
   private static SFMPCOld _instance=null;
-  private static Hashtable _instances=new Hashtable();  // map<String name, SFMPC instance>
+  private static HashMap _instances=new HashMap();  // map<String name, SFMPC instance>
 
 
   /**

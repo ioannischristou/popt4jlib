@@ -25,16 +25,16 @@ public class RastriginFunction implements FunctionIntf {
 
   /**
    * evaluate the Rastrigin function at x=arg, for the values A and w given
-   * in the p Hashtable.
+   * in the p HashMap.
    * @param arg Object must be <CODE>double[]</CODE> or <CODE>popt4jlib.VectorIntf</CODE>.
-   * @param p Hashtable must contain the following two parameters:
+   * @param p HashMap must contain the following two parameters:
    * <li> <"A", Double val> the value for the "A" parameter
    * <li> <"w", Double val> the value for the "w" parameter
    * @return double
    * @throws IllegalArgumentException if the arguments above do not adhere to
    * their specification (or if any is null)
    */
-  public double eval(Object arg, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap p) throws IllegalArgumentException {
     try {
 			double a = 10.0;
       Double aI = (Double) p.get("A");
@@ -79,7 +79,7 @@ public class RastriginFunction implements FunctionIntf {
     double[] x = new double[n-2];
     double a = Double.parseDouble(args[0]);
     double w = Double.parseDouble(args[1]);
-    Hashtable p = new Hashtable();
+    HashMap p = new HashMap();
     p.put("A",new Double(a));
     p.put("w",new Double(w));
     for (int i=2; i<n; i++) {

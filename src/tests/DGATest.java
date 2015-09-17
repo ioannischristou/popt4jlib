@@ -114,7 +114,7 @@ public class DGATest {
   public static void main(String[] args) {
     try {
       long start_time = System.currentTimeMillis();
-      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       FunctionIntf func = (FunctionIntf) params.get("dga.function");
       Integer maxfuncevalI = (Integer) params.get("function.maxevaluationtime");
       Boolean doreentrantMT = (Boolean) params.get("function.reentrantMT");

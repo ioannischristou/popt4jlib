@@ -25,7 +25,7 @@ public class Node implements Comparable, Serializable {
 	private Set _nborCache;  // Set<Node nbor>
   private Set _nnbors;  // Set<Node nnbor>
   private Set _nnborCache;  // Set<Node nnbor>
-  private Hashtable _weights;  // map<String wname, Double wvalue>
+  private HashMap _weights;  // map<String wname, Double wvalue>
 
   /**
    * package constructor.
@@ -38,7 +38,7 @@ public class Node implements Comparable, Serializable {
     _nbors = new HashSet();
     _outlinks = new HashSet();
     _inlinks = new HashSet();
-    _weights = new Hashtable();
+    _weights = new HashMap();
   }
 
 
@@ -54,7 +54,7 @@ public class Node implements Comparable, Serializable {
 		_nbors = new HashSet();
     _outlinks = new HashSet();
     _inlinks = new HashSet();
-		_weights = new Hashtable(n._weights);
+		_weights = new HashMap(n._weights);
 	}
 
 
@@ -602,7 +602,7 @@ public class Node implements Comparable, Serializable {
 	void copyWeightsFrom(Node n) {
 		try {
 			n.getReadAccess();
-			_weights = new Hashtable(n._weights);
+			_weights = new HashMap(n._weights);
 			// update max-weight values in the graph
 			Iterator key_it = _weights.keySet().iterator();
 			while (key_it.hasNext()) {

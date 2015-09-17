@@ -29,7 +29,7 @@ public class DGAAFTest {
    */
   public static void main(String[] args) {
     try {
-      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       DGA opter = new DGA(params);
       utils.PairObjDouble p = opter.minimize(new AlternateFunction());
       double[] arg = (double[]) p.getArg();

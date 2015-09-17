@@ -1,7 +1,7 @@
 package graph.partitioning;
 
 import graph.*;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.Collections;
 import java.util.Set;
@@ -31,10 +31,10 @@ public class HPartitionerGKW implements HPartitionerIntf {
    * move iff it leads to a gain>0, in terms of weight of cut-edges.)
    * @param g HGraph
    * @param k int
-   * @param props Hashtable
+   * @param props HashMap
    * @return int[]
    */
-  synchronized public int[] partition(HGraph g, int k, Hashtable props) {
+  synchronized public int[] partition(HGraph g, int k, HashMap props) {
     final int num_nodes = g.getNumNodes();
     // ensure a valid _obj to work with
     if (_obj==null) {
@@ -139,11 +139,11 @@ public class HPartitionerGKW implements HPartitionerIntf {
    * @param k int
    * @param partition int[]
    * @param ni HNode
-   * @param props Hashtable
+   * @param props HashMap
    * @return int the partition block to move ni, or -1 else
    */
   private int bestPartOld(HGraph g, int k, int[] partition, HNode ni,
-                                    Hashtable props) {
+                                    HashMap props) {
     _gain = Double.NEGATIVE_INFINITY;
     final int ni_part = partition[ni.getId()];  // 1...k
     // can we move node ni?
@@ -184,7 +184,7 @@ public class HPartitionerGKW implements HPartitionerIntf {
 
 
   private int bestPart(HGraph g, int k, int[] partition, HNode ni,
-                       Hashtable props) {
+                       HashMap props) {
     _gain = Double.NEGATIVE_INFINITY;
     final int ni_part = partition[ni.getId()];  // 1...k
     final double nweight = ni.getWeightValue("cardinality").doubleValue();

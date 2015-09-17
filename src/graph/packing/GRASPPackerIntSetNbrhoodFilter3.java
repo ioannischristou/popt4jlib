@@ -59,12 +59,12 @@ class GRASPPackerIntSetNbrhoodFilter3 implements IntSetNeighborhoodFilterIntf {
 	 * who represent node-ids, excluding the nodes in arg.
    * @param x Object // IntSet (with expected cardinality 1 or 2)
    * @param arg Object // Set&lt;Integer&gt;
-   * @param params Hashtable must contain a pair &lt;"dls.graph",Graph g&gt; unless
+   * @param params HashMap must contain a pair &lt;"dls.graph",Graph g&gt; unless
 	 * this object was constructed with the 2-arg constructor
    * @throws LocalSearchException if the params are incorrectly set
    * @return List // ArrayList&lt;Integer&gt; the integers that may be tried
    */
-  public List filter(Object x, Object arg, Hashtable params) throws LocalSearchException {
+  public List filter(Object x, Object arg, HashMap params) throws LocalSearchException {
     try {
       //System.err.print("running filter(IntSet rmids, Set sol, params) ");
       IntSet rmids = (IntSet) x;
@@ -126,12 +126,12 @@ class GRASPPackerIntSetNbrhoodFilter3 implements IntSetNeighborhoodFilterIntf {
 	 * 2*_k from x.
    * @param x // Integer
    * @param arg Set // IntSet values in arg &lte; to the value of x are ignored
-   * @param params Hashtable must contain a key-value pair &lt;"dls.graph", Graph g&gt;
+   * @param params HashMap must contain a key-value pair &lt;"dls.graph", Graph g&gt;
 	 * unless this object was constructed with the 2-arg constructor
    * @throws LocalSearchException if any params are incorrectly set
    * @return List // ArrayList&lt;IntSet&gt;
    */
-  public List filter(Integer x, Set arg, Hashtable params) throws LocalSearchException {
+  public List filter(Integer x, Set arg, HashMap params) throws LocalSearchException {
     try {
       //System.err.print("running filter(Integer x, IntSet sol, params). Adding ");
       if (_g==null) _g = (Graph) params.get("dls.graph");

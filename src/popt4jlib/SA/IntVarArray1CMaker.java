@@ -26,7 +26,7 @@ public class IntVarArray1CMaker implements RandomChromosomeMakerIntf {
   /**
    * specifies how to create variable-length random chromosomes that are int[]
    * arrays.
-   * @param params Hashtable must contain the following pairs:
+   * @param params HashMap must contain the following pairs:
    * <li> &lt;"dsa.maxchromosomelength", $integer_value$&gt; mandatory, the max.
    * length the chromosome int[] may take.
    * <li> &lt;"dsa.minallelevalue", $integer_value$&gt; mandatory, the minimum
@@ -48,7 +48,7 @@ public class IntVarArray1CMaker implements RandomChromosomeMakerIntf {
    * @return Object int[] of length up to dsa.maxchromosomelength, chosen
    * randomly from the uniform distribution in {1,n}.
    */
-  public Object createRandomChromosome(Hashtable params) throws OptimizerException {
+  public Object createRandomChromosome(HashMap params) throws OptimizerException {
     try {
       final int nmax = ( (Integer) params.get("dsa.maxchromosomelength")).intValue();
       final int maxalleleval=((Integer) params.get("dsa.maxallelevalue")).intValue();

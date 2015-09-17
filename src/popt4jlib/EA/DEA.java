@@ -20,7 +20,7 @@ import java.util.*;
 public class DEA implements OptimizerIntf {
   private static int _nextId=0;
   private int _id;
-  private Hashtable _params=null;
+  private HashMap _params=null;
   private boolean _setParamsFromSameThreadOnly=false;
   private Thread _originatingThread=null;
   private Chromosome2ArgMakerIntf _c2amaker=null;
@@ -48,9 +48,9 @@ public class DEA implements OptimizerIntf {
    * all DEA objects, and sets the appropriate parameters for the optimization
    * process via the setParams(params) process. The parameters are discussed in
    * the javadoc for the minimize(f) method.
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public DEA(Hashtable params) {
+  public DEA(HashMap params) {
     this();
     try {
       setParams(params);
@@ -65,10 +65,10 @@ public class DEA implements OptimizerIntf {
    * Constructor of a DEA object, that assigns a unique id plus the parameters
    * passed into the argument. Also, it prevents other threads from modifying
    * the parameters passed into this object if the second argument is true.
-   * @param params Hashtable
+   * @param params HashMap
    * @param setParamsOnlyFromSameThread boolean
    */
-  public DEA(Hashtable params, boolean setParamsOnlyFromSameThread) {
+  public DEA(HashMap params, boolean setParamsOnlyFromSameThread) {
     this();
     try {
       setParams(params);
@@ -84,16 +84,16 @@ public class DEA implements OptimizerIntf {
   /**
    * return a copy of the parameters. Modifications to the returned object
    * do not affect the original data member
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  public synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
   /**
    * the optimization params are set to p
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object. Note that unless the 2-arg
    * constructor DEA(params, use_from_same_thread_only=true) is used to create
@@ -102,14 +102,14 @@ public class DEA implements OptimizerIntf {
 	 * some other param-set, and then the first thread to call 
 	 * <CODE>minimize(f)</CODE>.
    */
-  public synchronized void setParams(Hashtable p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     if (_setParamsFromSameThreadOnly) {
       if (Thread.currentThread()!=_originatingThread)
         throw new OptimizerException("Current Thread is not allowed to call setParams() on this DEA.");
     }
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
     try {
       _c2amaker = (Chromosome2ArgMakerIntf) _params.get("dea.c2amaker");
     }
@@ -349,8 +349,8 @@ class DEAThreadAux {
   private boolean _finish = false;
   private DEAIndividual _individual=null;
   private Chromosome2ArgMakerIntf _c2arg=null;
-  private Hashtable _p=null;
-  private Hashtable _fp=null;
+  private HashMap _p=null;
+  private HashMap _fp=null;
 
   public DEAThreadAux(DEA master, int id) throws OptimizerException {
     _master = master;
@@ -360,7 +360,7 @@ class DEAThreadAux {
     _p.put("thread.localid", new Integer(_id));
     _p.put("thread.id",new Integer(_uid));  // used to be _id, not _uid
     // create the _funcParams
-    _fp = new Hashtable();
+    _fp = new HashMap();
     Iterator it = _p.keySet().iterator();
     while (it.hasNext()) {
       String key = (String) it.next();
@@ -514,7 +514,7 @@ class DEAIndividual {
   private Chromosome2ArgMakerIntf _c2amaker;
   private FunctionIntf _f;
 
-  public DEAIndividual(Object chromosome, DEA master, Hashtable p) throws OptimizerException {
+  public DEAIndividual(Object chromosome, DEA master, HashMap p) throws OptimizerException {
     _chromosome = chromosome;
     //_master = master;
     _c2amaker = (Chromosome2ArgMakerIntf) master.getC2AMaker();
@@ -540,7 +540,7 @@ class DEAIndividual {
   }
   public Object getChromosome() { return _chromosome; }
   public double getValue() { return _val; }  // enhance the density value differences
-  public void computeValue(Hashtable p) throws OptimizerException {
+  public void computeValue(HashMap p) throws OptimizerException {
     if (_val==Double.MAX_VALUE) {  // don't do the computation if already done
       Object arg = null;
       if (_c2amaker == null) arg = _chromosome;

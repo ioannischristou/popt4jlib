@@ -25,22 +25,22 @@ public abstract class Coarsener {
   // as a Document[0..._coarseG.numnodes-1] (you get this after having called
   // coarsen() of course.
 
-  protected Hashtable _map;  // map<Integer oldId, Integer newId>
-  protected Hashtable _rmap;  // map<Integer newId, Set<Integer oldId> >
+  protected HashMap _map;  // map<Integer oldId, Integer newId>
+  protected HashMap _rmap;  // map<Integer newId, Set<Integer oldId> >
   protected Graph _g;
   protected Graph _coarseG;
   protected int[] _graphPartition;  // _graphPartition[i] in {1,...,k}
                                     // i in {0,..._g.numnodes-1}
-  private Hashtable _properties;
+  private HashMap _properties;
 
 
-  public Coarsener(Graph g, int[] partition, Hashtable properties) {
-    _map = new Hashtable();
-    _rmap = new Hashtable();
+  public Coarsener(Graph g, int[] partition, HashMap properties) {
+    _map = new HashMap();
+    _rmap = new HashMap();
     _g = g;
     _coarseG = null;
     if (properties!=null) {
-      _properties = new Hashtable(properties);
+      _properties = new HashMap(properties);
       // make sure coarseNodeDocumentArray and coarsePartition don't exist
       _properties.remove("coarseNodeDocumentArray");
       _properties.remove("coarsePartition");
@@ -80,7 +80,7 @@ public abstract class Coarsener {
   }
 
 
-  public Hashtable getProperties() {
+  public HashMap getProperties() {
     return _properties;
   }
 
@@ -88,12 +88,12 @@ public abstract class Coarsener {
   abstract public void coarsen() throws GraphException, CoarsenerException, ParallelException;
 
 
-  abstract public Coarsener newInstance(Graph g, int[] partition, Hashtable properties);
+  abstract public Coarsener newInstance(Graph g, int[] partition, HashMap properties);
 
 
   protected void reset() {
-    _map = new Hashtable();
-    _rmap = new Hashtable();
+    _map = new HashMap();
+    _rmap = new HashMap();
     _coarseG = null;
     if (_properties!=null) {
       // make sure coarseNodeDocumentArray and coarsePartition don't exist

@@ -46,7 +46,7 @@ import java.util.*;
 public class DGA extends GLockingObservableObserverBase implements OptimizerIntf {
   private static int _nextId=0;
   private int _id;
-  private Hashtable _params;
+  private HashMap _params;
   private boolean _setParamsFromSameThreadOnly=false;
   private Thread _originatingThread=null;
   private Chromosome2ArgMakerIntf _c2amaker;
@@ -74,9 +74,9 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
    * public constructor. The parameters to be used by the minimize(f) method are
    * passed in as the single argument to the method. The parameters are uniquely
    * owned by the DGA object.
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public DGA(Hashtable params) {
+  public DGA(HashMap params) {
     this();
     try {
       setParams(params);
@@ -91,10 +91,10 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
    * Constructor of a DGA object, that assigns a unique id plus the parameters
    * passed into the argument. Also, it prevents other threads from modifying
    * the parameters passed into this object if the second argument is true.
-   * @param params Hashtable
+   * @param params HashMap
    * @param setParamsOnlyFromSameThread boolean
    */
-  public DGA(Hashtable params, boolean setParamsOnlyFromSameThread) {
+  public DGA(HashMap params, boolean setParamsOnlyFromSameThread) {
     this();
     try {
       setParams(params);
@@ -110,16 +110,16 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
   /**
    * return a copy of the parameters that were either passed in during
    * construction or via a call to setParams(p).
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  public synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
   /**
    * the optimization params are set to p
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object. Note that unless the 2-arg
    * constructor DGA(params, use_from_same_thread_only=true) is used to create
@@ -127,14 +127,14 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
    * then another to setParams(p2) to some other param-set, and then the
    * first thread to call minimize(f).
    */
-  public synchronized void setParams(Hashtable p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     if (_setParamsFromSameThreadOnly) {
       if (Thread.currentThread()!=_originatingThread)
         throw new OptimizerException("Current Thread is not allowed to call setParams() on this DGA.");
     }
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
     _c2amaker = (Chromosome2ArgMakerIntf) _params.get("dga.c2amaker");
   }
 
@@ -504,9 +504,9 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
    * _individuals List&lt;DGAIndividual&gt; of the DGAThread with id 0, and clears
    * the solutions from the _observers and _subjects maps.
    * @param tinds List // ArrayList&lt;DGAIndividual&gt;
-   * @param params Hashtable the optimization params
+   * @param params HashMap the optimization params
    */
-  void transferSolutionsTo(List tinds, Hashtable params) {
+  void transferSolutionsTo(List tinds, HashMap params) {
     try {
       DMCoordinator.getInstance("popt4jlib").getWriteAccess();
       // 1. observers
@@ -685,8 +685,8 @@ class DGAThreadAux {
   private int _id;
   private int _uid;
   private DGA _master;
-  private Hashtable _p;
-  private Hashtable _fp;  // params outside the popt4jlib packages
+  private HashMap _p;
+  private HashMap _fp;  // params outside the popt4jlib packages
   private boolean _finish = false;
   private ArrayList _individuals;  // List<Individual>
   private ArrayList _immigrantsPool;  // List<Individual>
@@ -704,7 +704,7 @@ class DGAThreadAux {
     _p.put("thread.localid", new Integer(_id));
     _p.put("thread.id",new Integer(_uid));  // used to be _id
     // create the _funcParams
-    _fp = new Hashtable();
+    _fp = new HashMap();
     Iterator it = _p.keySet().iterator();
     while (it.hasNext()) {
       String key = (String) it.next();
@@ -1215,7 +1215,7 @@ class DGAIndividual {
 	*/
 
 
-  public static DGAIndividual newInstance(Object chromosome, DGA master, Hashtable funcparams) {
+  public static DGAIndividual newInstance(Object chromosome, DGA master, HashMap funcparams) {
     if (_USE_POOLS)
 			return DGAIndividualPool.getObject(chromosome, master, funcparams);
 		else {  // no pools used
@@ -1256,7 +1256,7 @@ class DGAIndividual {
   }
 
 
-  DGAIndividual(Object chromosome, DGA master, Hashtable funcparams)
+  DGAIndividual(Object chromosome, DGA master, HashMap funcparams)
       throws OptimizerException {
     _age = 0;
     _chromosome = chromosome;
@@ -1287,7 +1287,7 @@ class DGAIndividual {
   }
 
 
-	void setData(Object chromosome, DGA master, Hashtable funcparams) throws OptimizerException {
+	void setData(Object chromosome, DGA master, HashMap funcparams) throws OptimizerException {
 		if (!_isUsed) {
       Integer null_y=null;
       System.err.println(null_y.intValue());  // force a NullPointerException to debug error
@@ -1426,7 +1426,7 @@ class DGAIndividual {
   double getValue() { return _val; }  // enhance the density value differences
   double getFitness() { return _fitness; }
   void setFitness(double f) { _fitness = f; }
-  private void computeValue(Hashtable params) throws OptimizerException {
+  private void computeValue(HashMap params) throws OptimizerException {
     if (_val==Double.MAX_VALUE) {  // don't do the computation if already done
       Object arg = null;
       if (_c2amaker == null) arg = _chromosome;
@@ -1519,7 +1519,7 @@ class DGAIndividualPool {
 	 * @param funcparams
 	 * @return DGAIndividual
 	 */
-  static DGAIndividual getObject(Object chromosome, DGA master, Hashtable funcparams) {
+  static DGAIndividual getObject(Object chromosome, DGA master, HashMap funcparams) {
     DGAIndividualPool pool = DGAIndividualThreadLocalPools.getThreadLocalPool();
     DGAIndividual p = pool.getObjectFromPool();
     try {

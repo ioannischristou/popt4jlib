@@ -31,7 +31,7 @@ public class DblArray1HybridMutationOp implements MutationOpIntf {
    * objects in the Pair return argument are also new double[] objects.
    * @param chromosome1 Object a double[]
    * @param chromosome2 Object a double[]
-   * @param params Hashtable must contain the following:
+   * @param params HashMap must contain the following:
 	 * <ul>
    * <li> &lt;"dga.mutationrate", $double_value$&gt; optional, default 0.1.
    * <li> &lt;"dga.gdmutationrate", $double_value$&gt; optional, default 0.5.
@@ -61,7 +61,7 @@ public class DblArray1HybridMutationOp implements MutationOpIntf {
 	 * or if the process somehow fails
    * @return Pair Pair&lt;double[], double[]&gt;
    */
-  public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
+  public Pair doMutation(Object chromosome1, Object chromosome2, HashMap params) throws OptimizerException {
     try {
       final int id = ( (Integer) params.get("thread.id")).intValue();
       double[] a1 = (double[]) chromosome1;
@@ -100,7 +100,7 @@ public class DblArray1HybridMutationOp implements MutationOpIntf {
       if (maxargvalD != null && maxargvalD.doubleValue() < maxargval)
         maxargval = maxargvalD.doubleValue();
       final LocalOptimizerIntf localopter0 = (LocalOptimizerIntf) params.get("dga.localoptimizer");
-      Hashtable params2 = new Hashtable(params);
+      HashMap params2 = new HashMap(params);
       // mutate first chromosome
       VectorIntf x0 = new DblArray1Vector(a1);
       params2.put("gradientdescent.x0", x0);
@@ -164,7 +164,7 @@ public class DblArray1HybridMutationOp implements MutationOpIntf {
   }
 
 
-  private void do1AlleleMutation(double[] a1, double[] a2, int id, Hashtable params) {
+  private void do1AlleleMutation(double[] a1, double[] a2, int id, HashMap params) {
     double min = Double.MAX_VALUE;
     double max = Double.NEGATIVE_INFINITY;
     int n1 = a1.length;

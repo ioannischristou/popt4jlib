@@ -42,7 +42,7 @@ public class ReentrantSocketEvalFunctionBase implements FunctionIntf {
 
   /**
    * same as two-arg constructor, but also specifies whether to send function
-   * params (in the Hashtable, not the argument of the function) or not via the
+   * params (in the HashMap, not the argument of the function) or not via the
    * socket.
    * @param host String
    * @param port int
@@ -61,10 +61,10 @@ public class ReentrantSocketEvalFunctionBase implements FunctionIntf {
    * force function to be reentrant as no two threads can enter the eval()
    * method simultaneously
    * @param arg Object
-   * @param params Hashtable
+   * @param params HashMap
    * @return double
    */
-  public synchronized double eval(Object arg, Hashtable params) throws IllegalArgumentException {
+  public synchronized double eval(Object arg, HashMap params) throws IllegalArgumentException {
     ++_evalCount;
     // send params
     if (arg!=null) {

@@ -28,10 +28,10 @@ public final class ReduceOperatorMinDbl extends ReduceOperator {
 	
 	/**
 	 * return the minimum among all values in the argument. 
-	 * @param threadsData Hashtable // map&lt;Thread,Object val&gt;
+	 * @param threadsData HashMap // map&lt;Thread,Object val&gt;
 	 * @return Object // Double
 	 */
-	public Object reduce(Hashtable threadsData) {
+	public Object reduce(HashMap threadsData) {
 		if (threadsData==null) return null;
 		double val = Double.MAX_VALUE;
 		Iterator it = threadsData.values().iterator();

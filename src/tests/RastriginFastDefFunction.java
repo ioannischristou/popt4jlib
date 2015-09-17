@@ -24,12 +24,12 @@ public class RastriginFastDefFunction implements FunctionIntf {
   /**
    * evaluate the Rastrigin function at x=arg (with default parameters A and w).
    * @param arg Object must be <CODE>double[]</CODE> or <CODE>popt4jlib.VectorIntf</CODE>.
-   * @param p Hashtable unused.
+   * @param p HashMap unused.
    * @return double
    * @throws IllegalArgumentException if the first argument does not adhere to
    * their specification or is null.
    */
-  public double eval(Object arg, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap p) throws IllegalArgumentException {
     try {
 			double a = 10.0;
       double w = 2*Math.PI;

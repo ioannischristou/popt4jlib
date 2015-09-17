@@ -15,11 +15,11 @@ import java.util.*;
  * @version 1.0
  */
 public class DblArray1VectorRndMaker {
-  private Hashtable _params;
+  private HashMap _params;
 
   /**
    * constructor.
-   * The parameters that must be passed in (the Hashtable arg) are as follows:
+   * The parameters that must be passed in (the HashMap arg) are as follows:
 	 * <ul>
    * <li> &lt;"dde.numdimensions", Integer nd&gt; mandatory, the number of dimensions
    * <li> &lt;"dde.minargval", Double v&gt; optional, the min. value that any
@@ -34,10 +34,10 @@ public class DblArray1VectorRndMaker {
    * <br>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
    * the domain of the variable wider.</br>
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public DblArray1VectorRndMaker(Hashtable params) {
-    _params = new Hashtable(params);  // maintain a privately owned version of
+  public DblArray1VectorRndMaker(HashMap params) {
+    _params = new HashMap(params);  // maintain a privately owned version of
                                       // passed params
   }
 

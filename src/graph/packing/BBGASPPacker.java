@@ -7,7 +7,7 @@ import graph.*;
 import popt4jlib.AllChromosomeMakerClonableIntf;
 
 /**
- * implements a hybrid parallel GASP-Branch&Bound heuristic scheme for the
+ * implements a hybrid parallel GASP-Branch &amp; Bound heuristic scheme for the
  * 1- or 2-packing problem in graphs.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -50,25 +50,25 @@ public final class BBGASPPacker {
    * <li> localsearch, $boolean$ optional, if true, then when an incumbent
    * solution is found that cannot be further improved, a local search kicks in
    * to try to improve it using (unless there is another explicit specification)
-	 * the (default) N1RXP(FirstImproving) neighborhood concept that basically 
-	 * attempts to remove a single node from the solution and then see how many 
-	 * other nodes it can add to the reduced solution. This local search can 
-	 * become quite expensive and for this reason it is only applied to final 
-	 * incumbent solutions in the B&B-tree construction process. Default is false.
+	 * the (default) N1RXP(FirstImproving) neighborhood concept that basically
+	 * attempts to remove a single node from the solution and then see how many
+	 * other nodes it can add to the reduced solution. This local search can
+	 * become quite expensive and for this reason it is only applied to final
+	 * incumbent solutions in the B &amp; B-tree construction process. Default is false.
 	 * <li> class,localsearchtype, &lt;fullclassname&gt;[,optionalarguments] optional
-	 * if present, will utilize in the local-search procedure the 
-	 * <CODE>AllChromosomeMakerClonableIntf</CODE> specified in the classname, 
+	 * if present, will utilize in the local-search procedure the
+	 * <CODE>AllChromosomeMakerClonableIntf</CODE> specified in the classname,
 	 * constructed using the arguments specified (if present). For example,
 	 * the line could be:
 	 * <PRE>
 	 * class,localsearchtype,graph.packing.IntSetN2RXPGraphAllMovesMaker,1
 	 * </PRE>
 	 * which would be of use with MWIS problems, for random graphs in the class
-	 * C(n,p), producing G_{|V|,p} type random graphs. On the other hand, by 
+	 * C(n,p), producing G_{|V|,p} type random graphs. On the other hand, by
 	 * default, the <CODE>IntSetN1RXPFirstImprovingGraphAllMovesMakerMT</CODE>
-	 * moves maker applies both for 1- and 2-packing problems local-search, which 
+	 * moves maker applies both for 1- and 2-packing problems local-search, which
 	 * is also better suited when solving MWIS problems arising from duals of disk
-	 * graphs (arising from wireless ad-hoc networks etc.) Currently works only 
+	 * graphs (arising from wireless ad-hoc networks etc.) Currently works only
 	 * with MWIS (k=1) type problems and is ignored for 2-packing problems.
    * <li> usemaxsubsets, $boolean$ optional, if false, then each GASP process
    * augmenting candidate packings will augment these sets one node at a time,
@@ -76,9 +76,9 @@ public final class BBGASPPacker {
    * represent the same packing. In such a case, a "recent-nodes" queue will
    * be used to safe-guard against the possibility of having the same nodes
    * created and processed within a "short" interval. Default is true.
-	 * <li> sortmaxsubsets, $boolean$ optional, if true, then the max subsets 
+	 * <li> sortmaxsubsets, $boolean$ optional, if true, then the max subsets
 	 * generated in method <CODE>getBestNodeSets2Add()</CODE> will be sorted in
-	 * descending weight order so that if children <CODE>BBNode*</CODE> objects 
+	 * descending weight order so that if children <CODE>BBNode*</CODE> objects
 	 * are "cut", they will be the "least" heavy-weight. Default is false.
 	 * <li> maxitersinGBNS2A, $num$ optional, if present and also the
 	 * "usemaxsubsets" key is true, then the number represents the max number of
@@ -86,9 +86,9 @@ public final class BBGASPPacker {
 	 * <CODE>BBNode[1-2]</CODE> class will be allowed to go through. Default is
 	 * 100000 (specified in <CODE>BBTree</CODE> class.)
 	 * <li> useGWMIN2criterion, $boolean$ optional, if true, then when computing
-	 * the best nodes to consider as a partial solution is being expanded, the 
-	 * "GWMIN2-heuristic" criterion (described in Sakai et. al. 2003: "A note on 
-	 * greedy algorithms for the MWIS problem", Discr. Appl. Math., 126:313-322) 
+	 * the best nodes to consider as a partial solution is being expanded, the
+	 * "GWMIN2-heuristic" criterion (described in Sakai et. al. 2003: "A note on
+	 * greedy algorithms for the MWIS problem", Discr. Appl. Math., 126:313-322)
 	 * will be used for nodes selection in 1-packing problems. Default is false.
    * <li> recentqueuesize, $num$ the length of the queue to be used when the
    * "usemaxsubsets" parameter is false.
@@ -99,26 +99,26 @@ public final class BBGASPPacker {
    * that is used to define the order in which B&ampB nodes in the tree are picked
    * for processing. Default is <CODE>graph.packing.DefBBNodeComparator</CODE>.
 	 * <li>ff, $num$ optional, specify the "fudge factor" used in determining what
-	 * constitutes the list of "best nodes" in the 1-packing problem (a.k.a. the 
+	 * constitutes the list of "best nodes" in the 1-packing problem (a.k.a. the
 	 * MWIS problem) where it makes much more sense to have a "fudge factor" by
 	 * which to multiply the best cost in order to determine if a node is "close
 	 * enough" to the best cost to be included in the best-candidate-nodes list.
-	 * Default value is <CODE>BBNode1._ff</CODE>  (currently set to 0.85). The 
-	 * smaller this value, the longer it will take for the search to complete, 
+	 * Default value is <CODE>BBNode1._ff</CODE>  (currently set to 0.85). The
+	 * smaller this value, the longer it will take for the search to complete,
 	 * with potentially better solutions found.
-	 * <li> minknownbound, $num$ optional, a known bound to the problem at hand, 
+	 * <li> minknownbound, $num$ optional, a known bound to the problem at hand,
 	 * which will be used to fathom B&ampB nodes having smaller bounds than this
 	 * number. Currently only applies to 1-packing problems. Default is -infinity.
-	 * <li> expandlocalsearchfactor, $num$ optional, if present, then when a 
+	 * <li> expandlocalsearchfactor, $num$ optional, if present, then when a
 	 * solution is found within the specified factor of the best known solution,
 	 * a local search kicks in. Default is 1.0 (only when a best solution is found
 	 * does local search kicks in). Currently only applies to 1-packing problems.
    * </ul>
-   * <br>args[2]: [optional] override max num nodes in params_file to create in 
+   * <br>args[2]: [optional] override max num nodes in params_file to create in
 	 * B&ampB procedure
    * <br>args[3]: [optional] override numthreads in params_file to use
 	 * <p> This implementation writes the solution in a text file called "sol.out"
-	 * in the current directory, whose lines contain one number each, the id of 
+	 * in the current directory, whose lines contain one number each, the id of
 	 * each "active" node in the solution (id in the set {1,...graph_num_nodes}).
    * @param args String[]
    */
@@ -137,7 +137,7 @@ public final class BBGASPPacker {
 							Iterator it = BBTree._curIncumbent.iterator();
 							while (it.hasNext()) {
 								Node n = (Node) it.next();
-								BBGASPPacker._totActiveNodeWeights += n.getWeightValue("value");
+								BBGASPPacker._totActiveNodeWeights += n.getWeightValue("value").doubleValue();
 							}
 							BBGASPPacker._totActiveNodes += BBTree._curIncumbent.size();
 						}
@@ -159,7 +159,7 @@ public final class BBGASPPacker {
         }
         System.err.println("Graph total nodes' weight="+totw);
       }
-      Hashtable params = DataMgr.readPropsFromFile(args[1]);
+      HashMap params = DataMgr.readPropsFromFile(args[1]);
       int maxnodes = -1;
       if (args.length>2)
         maxnodes = Integer.parseInt(args[2]);  // override max num nodes
@@ -270,7 +270,7 @@ public final class BBGASPPacker {
         if (kmaxI!=null && kmaxI.intValue()>0)
           t.setMaxAllowedItersInGBNS2A(kmaxI.intValue());
 				Boolean sortmaxsubsetsB = (Boolean) params.get("sortmaxsubsets");
-				if (sortmaxsubsetsB!=null) 
+				if (sortmaxsubsetsB!=null)
 					t.setSortBestCandsInGBNS2A(sortmaxsubsetsB.booleanValue());
         Double avgpercextranodes2addD = (Double) params.get("avgpercextranodes2add");
         if (avgpercextranodes2addD!=null)
@@ -279,7 +279,7 @@ public final class BBGASPPacker {
 				if (useGWMIN24BN2AB!=null)
 					t.setUseGWMIN24BestNodes2Add(useGWMIN24BN2AB.booleanValue());
 				Double expandlocalsearchfactorD = (Double) params.get("expandlocalsearchfactor");
-				if (expandlocalsearchfactorD!=null) 
+				if (expandlocalsearchfactorD!=null)
 					t.setLocalSearchExpandFactor(expandlocalsearchfactorD.doubleValue());
 				Double minknownboundD = (Double) params.get("minknownbound");
 				if (minknownboundD!=null) t.setMinKnownBound(minknownboundD.doubleValue());

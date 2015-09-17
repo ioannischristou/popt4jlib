@@ -36,11 +36,11 @@ public class GradApproximator implements VecFunctionIntf {
    * <li> <"gradapproximator.nmax", Integer n> optional, the dimension of the
    * Richardson extrapolation. Default is 10.
    * @param x VectorIntf the point at which the gradient must be evaluated.
-   * @param params Hashtable any parameters to be passed to the function f
+   * @param params HashMap any parameters to be passed to the function f
    * @throws IllegalArgumentException if x is null
    * @return VectorIntf
    */
-  public VectorIntf eval(VectorIntf x, Hashtable params) throws IllegalArgumentException {
+  public VectorIntf eval(VectorIntf x, HashMap params) throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null arg passed");
     final int n = x.getNumCoords();
     VectorIntf xc = x.newCopy();  // work with copy so as to avoid memory
@@ -86,12 +86,12 @@ public class GradApproximator implements VecFunctionIntf {
   /**
    * evaluate the "coordindex"-th partial derivative of the function.
    * @param x VectorIntf
-   * @param params Hashtable
+   * @param params HashMap
    * @param coordindex int
    * @throws IllegalArgumentException
    * @return double
    */
-  public double evalCoord(VectorIntf x, Hashtable params, int coordindex) throws IllegalArgumentException {
+  public double evalCoord(VectorIntf x, HashMap params, int coordindex) throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null arg passed");
     // final int n = x.getNumCoords();
     VectorIntf xc = x.newCopy();  // work with copy so as to avoid memory

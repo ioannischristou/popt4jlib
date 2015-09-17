@@ -28,14 +28,14 @@ public class IntSetN21AllMovesMaker  implements AllChromosomeMakerIntf {
   /**
    * implements the N_2+1 neighborhood for sets of integers.
    * @param chromosome Object // Set&lt;Integer&gt;
-   * @param params Hashtable must contain a key-value pair
+   * @param params HashMap must contain a key-value pair
    * &lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;
    * The filter specifies the ints to be tried for addition to
    * the set given an int to be removed from the set.
    * @throws OptimizerException
    * @return Vector // Vector&lt;IntSet&gt;
    */
-  public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
+  public Vector createAllChromosomes(Object chromosome, HashMap params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN21AllMovesMaker.createAllChromosomes(): null chromosome");
     try {
       TreeSet result = new TreeSet();
@@ -77,10 +77,10 @@ public class IntSetN21AllMovesMaker  implements AllChromosomeMakerIntf {
    * @param id Integer
    * @param tryids List // List&lt;Integer&gt;
    * @param maxcard int
-   * @param params Hashtable
+   * @param params HashMap
    * @return Set // TreeSet&lt;IntSet&gt;
    */
-  protected Set createSets(Set res, Integer id, List tryids, int maxcard, Hashtable params) {
+  protected Set createSets(Set res, Integer id, List tryids, int maxcard, HashMap params) {
     if (maxcard==0) return res;
     Set res2 = new TreeSet(res);  // was new TreeSet();
     for (int i=0; i<tryids.size(); i++) {
@@ -107,10 +107,10 @@ public class IntSetN21AllMovesMaker  implements AllChromosomeMakerIntf {
 	 * method to modify the behavior of this move-maker.
    * @param tid Integer unused
    * @param x IntSet unused
-   * @param params Hashtable unused
+   * @param params HashMap unused
    * @return boolean true
    */
-  protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
+  protected boolean isOK2Add(Integer tid, IntSet x, HashMap params) {
     return true;
   }
 }

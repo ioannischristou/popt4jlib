@@ -41,11 +41,11 @@ public class NumericalIntegrationTest {
       int ivi = 0;
       DblArray1Vector x = new DblArray1Vector(new double[2]);
       x.setCoord(ivi, b);
-      Hashtable params = new Hashtable();
+      HashMap params = new HashMap();
       params.put("integralapproximator.a", new Double(a));
       params.put("integralapproximator.integrandvarindex", new Integer(ivi));
       if (H!=null) params.put("integralapproximator.H", H);
-      Hashtable p = new Hashtable();
+      HashMap p = new HashMap();
       p.put("integralapproximatormt.maxnumthreads", new Integer(10));
       IntegralApproximatorMT integrator = new IntegralApproximatorMT(new MyFunction2(), p);
       double val = integrator.eval(x, params);
@@ -61,7 +61,7 @@ public class NumericalIntegrationTest {
 class MyFunction2 implements FunctionIntf {
   public MyFunction2() {
   }
-  public double eval(Object x, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object x, HashMap p) throws IllegalArgumentException {
     double[] t;
     if (x==null) throw new IllegalArgumentException("null arg");
     else if (x instanceof VectorIntf) t = ((VectorIntf) x).getDblArray1();

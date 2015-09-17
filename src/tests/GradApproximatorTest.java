@@ -44,7 +44,7 @@ public class GradApproximatorTest {
    */
   public static void main(String[] args) {
     try {
-      Hashtable p = DataMgr.readPropsFromFile(args[0]);
+      HashMap p = DataMgr.readPropsFromFile(args[0]);
       FunctionIntf f = (FunctionIntf) p.get("test.function");
       VecFunctionIntf grad = (VecFunctionIntf) p.get("test.gradient");
       int n = args.length-1;

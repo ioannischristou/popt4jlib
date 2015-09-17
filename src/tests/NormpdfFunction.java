@@ -27,11 +27,11 @@ public class NormpdfFunction implements FunctionIntf {
    * (usually symbolized as ö(x)).
    * @param arg Object may be either a <CODE>double[]</CODE> or a
    * <CODE>VectorIntf</CODE> object.
-   * @param params Hashtable unused
+   * @param params HashMap unused
    * @throws IllegalArgumentException if the arg is not of the expected type.
    * @return double
    */
-  public double eval(Object arg, Hashtable params) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap params) throws IllegalArgumentException {
     double[] x = null;
     if (arg instanceof VectorIntf) x= ((VectorIntf) arg).getDblArray1();
     else if (arg instanceof double[]) x = (double[]) arg;

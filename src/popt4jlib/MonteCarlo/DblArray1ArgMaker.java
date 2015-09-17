@@ -6,7 +6,7 @@ import java.util.*;
 
 /**
  * creates random double[] objects of fixed length, according to parameters
- * passed in a <CODE>Hashtable</CODE> object.
+ * passed in a <CODE>HashMap</CODE> object.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -28,7 +28,7 @@ public class DblArray1ArgMaker implements RandomArgMakerIntf {
    * parameters, specified in the params argument. The value for each element
    * in the array, is drawn from the uniform distribution restricted within the
    * boundaries of the element's range specified in the params key-value pairs.
-   * @param params Hashtable must contain the following params:
+   * @param params HashMap must contain the following params:
 	 * <ul>
    * <li> &lt;"mcs.arglength", $integer_value$&gt; mandatory, the length
    * of the argument.
@@ -51,7 +51,7 @@ public class DblArray1ArgMaker implements RandomArgMakerIntf {
    * @throws OptimizerException if any of the params above are incorrectly set
    * @return Object double[] of length specified in the params
    */
-  public Object createRandomArgument(Hashtable params) throws OptimizerException {
+  public Object createRandomArgument(HashMap params) throws OptimizerException {
     try {
       final int nmax = ( (Integer) params.get("mcs.arglength")).intValue();
       final double maxalleleval=((Double) params.get("mcs.maxargvalue")).doubleValue();

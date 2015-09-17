@@ -30,7 +30,7 @@ public class DblVarArray1MAlleleMutationOp implements MutationOpIntf {
 	 * a result of this call (NO new double[]'s are created).
    * @param chromosome1 Object double[]
    * @param chromosome2 Object double[]
-   * @param params Hashtable may contain the following key-value pairs:
+   * @param params HashMap may contain the following key-value pairs:
 	 * <ul>
    * <li> &lt;"dga.mutoprate", $value$&gt; optional, the probability with which
    * any given allele in a chromosome will get mutated. Default is 0.1.
@@ -53,7 +53,7 @@ public class DblVarArray1MAlleleMutationOp implements MutationOpIntf {
    * @throws OptimizerException if any of the above params is incorrectly set
    * @return Pair containing the two double[] chromosome arguments
    */
-  public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
+  public Pair doMutation(Object chromosome1, Object chromosome2, HashMap params) throws OptimizerException {
     try {
       final int id = ( (Integer) params.get("thread.id")).intValue();
       double[] a1 = (double[]) chromosome1;

@@ -15,10 +15,10 @@ import java.util.*;
 public class LightweightParams extends Params {
 
   /**
-   * public constructor. Does NOT make a copy of the Hashtable
-   * @param p Hashtable
+   * public constructor. Does NOT make a copy of the HashMap
+   * @param p HashMap
    */
-  public LightweightParams(Hashtable p) {
+  public LightweightParams(HashMap p) {
     super(p,true);
   }
 

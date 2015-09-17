@@ -8,7 +8,7 @@ import popt4jlib.*;
 /**
  * Implementation of the Conjugate-Gradient method for nonlinear optimization,
  * using the Fletcher-Reeves formula for updating the b parameter, and
- * the Al-Baali - Fletcher bracketing&sectioning method for step-size
+ * the Al-Baali - Fletcher bracketing &amp; sectioning method for step-size
  * determination. All the above are described in:
  * Fletcher R.(1987) Practical Methods of Optimization 2nd ed. Wiley, Chichester
  * The class allows multiple optimization runs from different starting points to
@@ -21,7 +21,7 @@ import popt4jlib.*;
  * @version 1.0
  */
 public class FletcherConjugateGradient implements LocalOptimizerIntf {
-  Hashtable _params;
+  HashMap _params;
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
   FunctionIntf _f;
@@ -40,9 +40,9 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
    * public constructor, accepting the parameters to the optimization. The
    * params are copied to a local member, so later modification of the input
    * argument does not modify the optimization parameters.
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public FletcherConjugateGradient(Hashtable params) {
+  public FletcherConjugateGradient(HashMap params) {
     try {
       setParams(params);
     }
@@ -55,10 +55,10 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
   /**
    * return a copy of the parameters. Modifications to the returned object
    * do not affect the data member.
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  public synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
@@ -73,14 +73,14 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
 
   /**
    * the optimization params are set to p
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if another thread is currently executing the
    * <CODE>minimize(f)</CODE> method of this object.
    */
-  public synchronized void setParams(Hashtable p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
   }
 
 
@@ -88,39 +88,39 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
    * the main method of the class. Before it is called, a number of parameters
    * must have been set (via the parameters passed in the constructor, or via
    * a later call to <CODE>setParams(p)</CODE>). These are:
-   * <"fcg.numtries", ntries> optional, the number of initial starting points
-   * to use (must either exist then ntries <"x$i$",VectorIntf v> pairs in the
-   * parameters or a pair <"gradientdescent.x0",VectorIntf v> pair in params).
+   * &lt;"fcg.numtries", ntries&gt; optional, the number of initial starting points
+   * to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; pairs in the
+   * parameters or a pair &lt;"gradientdescent.x0",VectorIntf v&gt; pair in params).
    * Default is 1.
-   * <fcg.numthreads", Integer nt> optional, the number of threads to use.
+   * &lt;fcg.numthreads", Integer nt&gt; optional, the number of threads to use.
    * Default is 1.
-   * <"fcg.gradient", VecFunctionIntf g> optional, the gradient of f, the
+   * &lt;"fcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
    * function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * <"fcg.gtol", Double v> optional, the minimum abs. value for each of the
+   * &lt;"fcg.gtol", Double v&gt; optional, the minimum abs. value for each of the
    * gradient's coordinates, below which if all coordinates of the gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-8.
-   * <"fcg.maxiters", Integer miters> optional, the maximum number of major
+   * &lt;"fcg.maxiters", Integer miters&gt; optional, the maximum number of major
    * iterations of the CG search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * <"fcg.rho", Double v> optional, the value of the parameter ñ in approximate
+   * &lt;"fcg.rho", Double v&gt; optional, the value of the parameter &rho; in approximate
    * line search step-size determination obeying the two Wolfe-Powell conditions
    * Default is 0.1.
-   * <"fcg.sigma", Double v> optional, the value of the parameter ó in the
+   * &lt;"fcg.sigma", Double v&gt; optional, the value of the parameter &sigma; in the
    * approximate line search step-size determination obeying the Wolfe-Powell
    * conditions. Default is 0.9
-   * <"fcg.t1", Double v> optional, the value of the parameter t_1 in the
+   * &lt;"fcg.t1", Double v&gt; optional, the value of the parameter t_1 in the
    * Al-Baali - Fletcher bracketing-sectioning algorithm for step-size
    * determination. Default is 9.0.
-   * <"fcg.t2", Double v> optional, the value of the parameter t_2 in the
+   * &lt;"fcg.t2", Double v&gt; optional, the value of the parameter t_2 in the
    * Al-Baali - Fletcher algorithm. Default is 0.1.
-   * <"fcg.t3", Double v> optional, the value of the parameter t_3 in the
+   * &lt;"fcg.t3", Double v&gt; optional, the value of the parameter t_3 in the
    * Al-Baali - Fletcher algorithm. Default is 0.5
-   * <"fcg.redrate", Double v> optional, a user acceptable reduction rate on the
+   * &lt;"fcg.redrate", Double v&gt; optional, a user acceptable reduction rate on the
    * function f for stopping the Al-Baali - Fletcher algorithm in the bracketing
    * phase. Default is 2.0.
-   * <"fcg.fbar", Double v> optional, a user-specified acceptable function value
+   * &lt;"fcg.fbar", Double v&gt; optional, a user-specified acceptable function value
    * to stop the Al-Baali - Fletcher algorithm in the bracketing phase. Default
    * is null (with the effect of utilizing the "fcg.redrate" value for stopping
    * criterion of the bracketing phase).
@@ -221,7 +221,7 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
    * agree with the evaluation of the function currently minimized at arg; this
    * can only happen if the function f is not reentrant (i.e. it's not thread-
    * safe). The program must be running in debug mode (the method
-   * <CODE> Debug.setDebugBit(bits) </CODE> with bits equal to
+   * <CODE> Debug.setDebugBit(bits)</CODE> with bits equal to
    * <CODE>Constants.FCG</CODE> or some other value containing the given bit
    * must have been called before for this method to possibly throw)
    */
@@ -291,7 +291,7 @@ class FCGThread extends Thread {
   }
 
   public void run() {
-    Hashtable p = _master.getParams();
+    HashMap p = _master.getParams();
     p.put("thread.localid", new Integer(_id));
     p.put("thread.id", new Integer(_uid));  // used to be _id
     VectorIntf best = null;
@@ -327,11 +327,11 @@ class FCGThread extends Thread {
    * the implementation method of the class
    * @param f FunctionIntf
    * @param solindex int
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException
    * @return PairObjDouble
    */
-  private PairObjDouble min(FunctionIntf f, int solindex, Hashtable p) throws OptimizerException {
+  private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("fcg.gradient");
     if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
     final VectorIntf x0 = p.get("fcg.x"+solindex) == null ?
@@ -478,15 +478,15 @@ class FCGThread extends Thread {
    * @param x VectorIntf the current iterate point
    * @param fx double the value of f at the current iterate point
    * @param s VectorIntf the chosen search direction (must be descent direction)
-   * @param sTg double (the inner product <s,grad(x)>
+   * @param sTg double (the inner product &lt;s,grad(x)&gt;)
    * @param fbar double a user-defined threshold for accepting a value in the
    * bracketing phase of the algorithm
-   * @param rho double the parameter ñ in the Wolfe-Powell conditions
-   * @param sigma double the parameter ó in the Wolfe-Powell conditions
+   * @param rho double the parameter &rho; in the Wolfe-Powell conditions
+   * @param sigma double the parameter &sigma; in the Wolfe-Powell conditions
    * @param t1 double the parameter t1 in the Al-Baali - Fletcher algorithm
    * @param t2 double the parameter t2 in the Al-Baali - Fletcher algorithm
    * @param t3 double the parameter t3 in the Al-Baali - Fletcher algorithm
-   * @param p Hashtable the parameters for function evaluation as well as
+   * @param p HashMap the parameters for function evaluation as well as
    * any constraint values for the computation of the algorithm
    * @return double the step-size to use in the determination of the next
    * iterate point, or -1 if the computation fails within the given parameter
@@ -496,7 +496,7 @@ class FCGThread extends Thread {
                               double fx, VectorIntf s, double sTg,
                               double fbar, double rho, double sigma,
                               double t1, double t2, double t3,
-                              Hashtable p) {
+                              HashMap p) {
     final double miu = (fbar - fx)/(rho*sTg);
     final int n = x.getNumCoords();
     double alpha = 0.99*miu;

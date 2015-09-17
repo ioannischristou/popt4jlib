@@ -15,7 +15,7 @@ import utils.RndUtil;
 
 /**
  * creates random <CODE>DblArray1Vector</CODE> objects of fixed length, 
- * according to parameters passed in a <CODE>Hashtable</CODE> object.
+ * according to parameters passed in a <CODE>HashMap</CODE> object.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -44,7 +44,7 @@ public class FastDblArray1VectorArgMaker implements RandomArgMakerClonableIntf {
 	/**
 	 * creates a new instance that can be used without the need for any
 	 * synchronization when invoked, as different threads own different objects.
-	 * @param p Hashtable must contain the following params:
+	 * @param p HashMap must contain the following params:
 	 * <ul>
    * <li> &lt;"mcs.arglength", $integer_value$&gt; mandatory, the length
    * of the argument.
@@ -67,7 +67,7 @@ public class FastDblArray1VectorArgMaker implements RandomArgMakerClonableIntf {
    * @throws OptimizerException if any of the params above is incorrectly set
    * @return FastDblArray1VectorArgMaker new instance according to the params passed in
    */
-  public RandomArgMakerClonableIntf newInstance(Hashtable params) throws OptimizerException {
+  public RandomArgMakerClonableIntf newInstance(HashMap params) throws OptimizerException {
     try {
       FastDblArray1VectorArgMaker clone = new FastDblArray1VectorArgMaker();
       clone._arglen = ( (Integer) params.get("mcs.arglength")).intValue();
@@ -97,10 +97,10 @@ public class FastDblArray1VectorArgMaker implements RandomArgMakerClonableIntf {
   /**
    * creates fixed-length <CODE>DblArray1Vector</CODE> objects, according to its
    * data member params.
-   * @param params Hashtable unused
+   * @param params HashMap unused
 	 * @return Object DblArray1Vector
    */
-  public Object createRandomArgument(Hashtable params) throws OptimizerException {
+  public Object createRandomArgument(HashMap params) throws OptimizerException {
     try {
       DblArray1Vector arr = DblArray1Vector.newInstance(_arglen);
 			if (_x==null) _x = new DblArray1Vector(_arglen);

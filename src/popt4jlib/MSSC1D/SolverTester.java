@@ -65,7 +65,7 @@ public class SolverTester {
       popt4jlib.MSSC.ClustererTerminationIntf ct = new popt4jlib.MSSC.ClustererTerminationNoMove();
       double h = 1.0;
       st = System.currentTimeMillis();
-      Hashtable cl_params = new Hashtable();
+      HashMap cl_params = new HashMap();
       cl_params.put("h", new Double(h));
       cl_params.put("TerminationCriteria", ct);
       popt4jlib.MSSC.ClustererIntf cl = new popt4jlib.MSSC.GMeansMTClusterer();

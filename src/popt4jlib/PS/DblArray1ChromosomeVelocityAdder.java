@@ -1,7 +1,7 @@
 package popt4jlib.PS;
 
 import popt4jlib.OptimizerException;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * implements the ChromosomeVelocityAdderIntf for the case of fixed and same
@@ -29,7 +29,7 @@ public class DblArray1ChromosomeVelocityAdder implements ChromosomeVelocityAdder
    * feasible region.
    * @param chromosome Object
    * @param velocity Object
-   * @param params Hashtable may contain the following params:
+   * @param params HashMap may contain the following params:
    * <li> &lt;"dpso.minallelevalue", $value$&gt; optional, the minimum value
    * for any allele in the chromosome.
    * <li> &lt;"dpso.minallelevalue$i$", $value$&gt; optional, the minimum value
@@ -46,7 +46,7 @@ public class DblArray1ChromosomeVelocityAdder implements ChromosomeVelocityAdder
    * <CODE>double[]</CODE> or not of same length.
    * @return Object
    */
-  public Object addVelocity2Chromosome(Object chromosome, Object velocity, Hashtable params) throws OptimizerException {
+  public Object addVelocity2Chromosome(Object chromosome, Object velocity, HashMap params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("null chromosome arg");
     if (chromosome instanceof double[] == false)
       throw new OptimizerException("chromosome is not double[]");

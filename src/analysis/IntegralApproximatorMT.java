@@ -37,7 +37,7 @@ public class IntegralApproximatorMT implements FunctionIntf {
   /**
    * public constructor.
    * @param f FunctionIntf
-   * @param params Hashtable may contain the following pairs:
+   * @param params HashMap may contain the following pairs:
    * <"integralapproximator.eps", Double eps> if present specifies the required
    * precision, default is 1.e-6,
    * <"integralapproximator.levelmax", Integer level> if present specifies the
@@ -47,7 +47,7 @@ public class IntegralApproximatorMT implements FunctionIntf {
    * the maximum number of threads to be used, default is
    * <CODE>Integer.MAX_VALUE</CODE>.
    */
-  public IntegralApproximatorMT(FunctionIntf f, Hashtable params) {
+  public IntegralApproximatorMT(FunctionIntf f, HashMap params) {
     _f = f;
     if (params!=null) {
       try {
@@ -78,9 +78,9 @@ public class IntegralApproximatorMT implements FunctionIntf {
   /**
    * computes the integral with respect to the i-th variable of the function
    * provided in the constructor, from a lower limit a defined in the params
-   * Hashtable, to the specified value x_i in the vector <CODE>x</CODE>.
+   * HashMap, to the specified value x_i in the vector <CODE>x</CODE>.
    * @param x Object a <CODE>VectorIntf</CODE> or <CODE>double[]</CODE> object.
-   * @param params Hashtable must contain at least a pair of the form
+   * @param params HashMap must contain at least a pair of the form
    * <li> <"integralapproximator.a", Double a> indicating the lower limit of
    * integration and a pair of the form
    * <li> <"integralapproximator.integrandvarindex", Integer i> indicating the
@@ -94,11 +94,11 @@ public class IntegralApproximatorMT implements FunctionIntf {
    * each sub-interval of the integration interval on which the adaptive
    * Simpson procedure will be used, default is (b-a)/100.0.
    * @throws IllegalArgumentException if any of the two pairs required in params
-   * Hashtable are not present, or if the integration could not be carried out
+   * HashMap are not present, or if the integration could not be carried out
    * with the required precision.
    * @return double
    */
-  public double eval(Object x, Hashtable params) throws IllegalArgumentException {
+  public double eval(Object x, HashMap params) throws IllegalArgumentException {
     VectorIntf t = null;
     try {
       if (x instanceof VectorIntf)
@@ -165,7 +165,7 @@ public class IntegralApproximatorMT implements FunctionIntf {
 
   private double simpson(VectorIntf x, int intvarind, double a, double b,
                          int level, double eps,
-                         Hashtable p) throws IntegrationException, ParallelException {
+                         HashMap p) throws IntegrationException, ParallelException {
     incrCalls();
     ++level;
     double h = b-a;
@@ -230,12 +230,12 @@ public class IntegralApproximatorMT implements FunctionIntf {
     private int _level;
     private double _a;
     private double _b;
-    private Hashtable _params;
+    private HashMap _params;
     private double _res=Double.NaN;
     private boolean _isDone=false;
 
     public SimpsonTask(VectorIntf x, int ivi, double a, double b, int level,
-                       double eps, Hashtable p) {
+                       double eps, HashMap p) {
       _x = x.newInstance();  // used to be x.newCopy();
       _ivi = ivi;
       _a = a;

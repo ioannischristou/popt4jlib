@@ -22,7 +22,7 @@ import java.util.*;
 public class DIMACSASCIIFormatGraphFileMaker {
 	/**
 	 * invoke as <CODE>java -cp &lt;classpath&gt; utils.DIMACSASCIIFormatGraphFileMaker &lt;graphfile&gt; &lt;DIMACSASCIIfile&gt; [convert_the_complement?(false)] [weightsfile] [create_graphfile_from_dimacs?(false)]</CODE>
-	 * @param args 
+	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
 		if (args.length<2) {
@@ -34,11 +34,11 @@ public class DIMACSASCIIFormatGraphFileMaker {
 		String input_file = args[0];
 		String output_file = args[1];
 		boolean do_complement = false;
-		if (args.length>2) do_complement = Boolean.parseBoolean(args[2]);
+		if (args.length>2) do_complement = Boolean.valueOf(args[2]).booleanValue();
 		String weights_file = null;
 		if (args.length>3 && "null".equals(args[3])==false) weights_file = args[3];
 		boolean graph_from_dimacs = false;
-		if (args.length>4) graph_from_dimacs = Boolean.parseBoolean(args[4]);
+		if (args.length>4) graph_from_dimacs = Boolean.valueOf(args[4]).booleanValue();
 		if (graph_from_dimacs) {  // conversion goes opposite direction
 			if (do_complement || weights_file!=null) {
 				System.err.println("complement operation or existence of weights_file not allowed in converse DIMACS->graph_file transformation");
@@ -89,8 +89,8 @@ public class DIMACSASCIIFormatGraphFileMaker {
 		pw.flush();
 		pw.close();
 	}
-	
-	
+
+
 	private static void convertASCIIDIMACS2Graph2(String dimacs_graph_file, String graph_file) throws IOException {
 		BufferedReader bw = new BufferedReader(new FileReader(dimacs_graph_file));
 		PrintWriter pw = new PrintWriter(new FileWriter(graph_file));

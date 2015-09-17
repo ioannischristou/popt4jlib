@@ -32,10 +32,10 @@ public class ReentrantFunctionBase implements FunctionIntf {
    * force function to be reentrant as no two threads can enter the eval()
    * method simultaneously
    * @param arg Object
-   * @param params Hashtable
+   * @param params HashMap
    * @return double
    */
-  public synchronized double eval(Object arg, Hashtable params) {
+  public synchronized double eval(Object arg, HashMap params) {
     ++_evalCount;
     return _f.eval(arg, params);
   }

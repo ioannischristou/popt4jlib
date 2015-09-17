@@ -19,7 +19,7 @@ public class HPartRunner {
     final String pfile = args[2];
     try {
       HGraph g = DataMgr.readHGraphFromhMeTiSFile(gfile);
-      Hashtable props = DataMgr.readPropsFromFile(pfile);
+      HashMap props = DataMgr.readPropsFromFile(pfile);
       props.put("k", new Integer(k));  // add k = num_parts required into props
       HPartitionerIntf hp = (HPartitionerIntf) props.get("partitioning.hpartrunner.partitioner");
       HObjFncIntf objfnc = (HObjFncIntf) props.get("partitioning.hpartrunner.objfnc");

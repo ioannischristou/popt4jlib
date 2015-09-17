@@ -6,26 +6,32 @@
 
 package parallel;
 import java.util.ArrayList;
-import java.util.ArrayDeque;
+//import java.util.ArrayDeque;
 
 
 /**
- * tests the <CODE>UnboundedBufferArrayUnsynchronized</CODE> against 
+ * tests the <CODE>UnboundedBufferArrayUnsynchronized</CODE> against
  * <CODE>java.util.{ArrayList,ArrayDeque}</CODE> performance.
+ * Notice: the test against <CODE>java.util.ArrayDeque</CODE> is commented out
+ * as this class is part of JDK1.5 and later editions of Java. If you are 
+ * running Java 5 or later and want to compare performance against this class 
+ * then uncomment the relevant part of the code in the <CODE>main(args)</CODE>
+ * method. As it turns out, <CODE>UnboundedBufferArrayUnsynchronized</CODE> is a
+ * very fast implementation!
  * @author itc
  */
 public class UBAUTest {
 	/**
-	 * Inserts, removes, and then inserts again a number of objects into 
+	 * Inserts, removes, and then inserts again a number of objects into
 	 * an UnboundedBufferArrayUnsynchronized, then into an ArrayList/ArrayDeque.
 	 * invoke as:
 	 * java -cp <classpath> parallel.UBAUTest [num_objs(1000000)]
-	 * @param args 
+	 * @param args
 	 */
 	public static void main(String[] args) {
 		int numobjs = 1000000;
 		if (args.length>0) numobjs = Integer.parseInt(args[0]);
-		
+
 		long start = System.currentTimeMillis();
 		ArrayList list = new ArrayList(1000);
 		// 1. insert
@@ -42,6 +48,8 @@ public class UBAUTest {
 		}
 		long dur = System.currentTimeMillis()-start;
 		System.out.println("ArrayList takes "+dur+" msecs.");
+    /* 
+		// ArrayDeque comparison stats gathering starts here.
 		start = System.currentTimeMillis();
 		ArrayDeque deque = new ArrayDeque(1000);
 		// 1. insert
@@ -58,7 +66,9 @@ public class UBAUTest {
 		}
 		dur = System.currentTimeMillis()-start;
 		System.out.println("ArrayDeque takes "+dur+" msecs.");
-		start = System.currentTimeMillis();
+		// ArrayDeque comparison stats gathering ends here.
+    */
+    start = System.currentTimeMillis();
 		UnboundedBufferArrayUnsynchronized buf = new UnboundedBufferArrayUnsynchronized(1000);
 		// 1. insert
 		for (int i=0; i<numobjs; i++) {

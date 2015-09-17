@@ -25,11 +25,11 @@ public class GriewangkFunctionGrad implements VecFunctionIntf {
   /**
    * evaluates the Griewangk gradient at the given point x.
    * @param x VectorIntf
-   * @param p Hashtable unused
+   * @param p HashMap unused
    * @return VectorIntf
    * @throws IllegalArgumentException if x is null
    */
-  public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
+  public VectorIntf eval(VectorIntf x, HashMap p) throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null argument");
     int n = x.getNumCoords();
     VectorIntf g = x.newInstance();  // x.newCopy();
@@ -57,12 +57,12 @@ public class GriewangkFunctionGrad implements VecFunctionIntf {
   /**
    * evaluate partial derivative at i.
    * @param x VectorIntf
-   * @param p Hashtable
+   * @param p HashMap
    * @param i int
    * @throws IllegalArgumentException
    * @return double
    */
-  public double evalCoord(VectorIntf x, Hashtable p, int i) throws IllegalArgumentException {
+  public double evalCoord(VectorIntf x, HashMap p, int i) throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null argument");
     int n = x.getNumCoords();
     if (i<0 || i>=n) throw new IllegalArgumentException("coord out of range");

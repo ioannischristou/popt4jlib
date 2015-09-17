@@ -13,7 +13,7 @@ import parallel.*;
  * [r/2, 3r/2]. The maximum 2-packing problem solution on the dual graph is the
  * solution to the D2EMIS problem for the original ad-hoc wireless network. May
  * also add edges between neighbors at distance 2, so that instead of 2-packing,
- * one may have to solve the (more common) maximum weighted independent set 
+ * one may have to solve the (more common) maximum weighted independent set
  * (MWIS) problem. In the latter case, node weights are drawn from the discrete
  * uniform distribution in U[1,[num_mwis_nodes*r]].
  * <p>Title: popt4jlib</p>
@@ -32,7 +32,7 @@ public class RandomGraphMaker {
   private boolean _uniformr=false;
 	private boolean _createMWIS=false;
 
-  private RandomGraphMaker(int numnodes, double xdim, double ydim, double radius, 
+  private RandomGraphMaker(int numnodes, double xdim, double ydim, double radius,
 					                 boolean uniformr, long seed, boolean createMWIS) {
     _numnodes = numnodes;
     _xlen=xdim;
@@ -172,7 +172,7 @@ public class RandomGraphMaker {
       String jplotfilename=null;
       if (args.length>7) jplotfilename=args[7];
 			boolean domwis = false;
-			if (args.length>8) domwis = Boolean.parseBoolean(args[8]);
+			if (args.length>8) domwis = Boolean.valueOf(args[8]).booleanValue();
       RandomGraphMaker maker = new RandomGraphMaker(Integer.parseInt(args[0]),
                                                     Double.parseDouble(args[1]),
                                                     Double.parseDouble(args[2]),

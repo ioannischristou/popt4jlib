@@ -7,14 +7,14 @@ public class HNode {
   private boolean _dirtyflag = false;
   private Set _links;  // Set<Integer linkid>
   private Set _nbors;  // Set<Node nbor>
-  private Hashtable _weights;  // map<String wname, Double wvalue>
+  private HashMap _weights;  // map<String wname, Double wvalue>
 
 
   HNode(int id) {
     _id=id;
     _nbors = null;
     _links = new HashSet();
-    _weights = new Hashtable();
+    _weights = new HashMap();
   }
 
 

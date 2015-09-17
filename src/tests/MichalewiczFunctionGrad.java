@@ -23,14 +23,14 @@ public class MichalewiczFunctionGrad implements VecFunctionIntf {
   /**
    * evaluates the gradient of the Michalewicz function at the point x.
    * @param x VectorIntf
-   * @param p Hashtable must contain the following pair:
+   * @param p HashMap must contain the following pair:
    * <li> <"m", Double val> the value of the "m" parameter in the definition
    * or the Michalewicz function.
    * @return VectorIntf
    * @throws IllegalArgumentException if the hashtable does not contain the
    * parameter "m", or if x is null.
    */
-  public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
+  public VectorIntf eval(VectorIntf x, HashMap p) throws IllegalArgumentException {
     try {
       double m = ( (Double) p.get("m")).doubleValue();
       int n = x.getNumCoords();
@@ -58,12 +58,12 @@ public class MichalewiczFunctionGrad implements VecFunctionIntf {
   /**
    * evaluate partial derivative at i.
    * @param x VectorIntf
-   * @param p Hashtable
+   * @param p HashMap
    * @param i int
    * @throws IllegalArgumentException
    * @return double
    */
-  public double evalCoord(VectorIntf x, Hashtable p, int i) throws IllegalArgumentException {
+  public double evalCoord(VectorIntf x, HashMap p, int i) throws IllegalArgumentException {
     try {
       double m = ( (Double) p.get("m")).doubleValue();
       double xi = x.getCoord(i);

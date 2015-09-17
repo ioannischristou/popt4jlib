@@ -27,7 +27,7 @@ import popt4jlib.GradientDescent.VecUtil;
 public class DDE implements OptimizerIntf {
   private static int _nextId = 0;
   private int _id;
-  private Hashtable _params;
+  private HashMap _params;
   private boolean _setParamsFromSameThreadOnly=false;
   private Thread _originatingThread=null;
   private double _incValue=Double.MAX_VALUE;
@@ -60,9 +60,9 @@ public class DDE implements OptimizerIntf {
   /**
    * Constructor of a DDE object, that assigns a unique id plus the parameters
    * passed into the argument.
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public DDE(Hashtable params) {
+  public DDE(HashMap params) {
     this();
     try {
       setParams(params);
@@ -77,10 +77,10 @@ public class DDE implements OptimizerIntf {
    * Constructor of a DDE object, that assigns a unique id plus the parameters
    * passed into the argument. Also, it prevents other threads from modifying
    * the parameters passed into this object if the second argument is true.
-   * @param params Hashtable
+   * @param params HashMap
    * @param setParamsOnlyFromSameThread boolean
    */
-  public DDE(Hashtable params, boolean setParamsOnlyFromSameThread) {
+  public DDE(HashMap params, boolean setParamsOnlyFromSameThread) {
     this();
     try {
       setParams(params);
@@ -96,16 +96,16 @@ public class DDE implements OptimizerIntf {
   /**
    * return a copy of the parameters. Modifications to the returned object
    * do not affect the data member.
-   * @return Hashtable
+   * @return HashMap
    */
-  synchronized Hashtable getParams() {  // modifications of the returned object do not matter
-    return new Hashtable(_params);
+  synchronized HashMap getParams() {  // modifications of the returned object do not matter
+    return new HashMap(_params);
   }
 
 
   /**
    * the optimization params are set to a copy of p.
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> of this object. Notice that unless the 2-arg
    * constructor DDE(params, use_from_same_thread_only=true) is used to create
@@ -113,14 +113,14 @@ public class DDE implements OptimizerIntf {
    * then another to setParams(p2) to some other param-set, and then the
    * first thread to call minimize(f).
    */
-  synchronized void setParams(Hashtable p) throws OptimizerException {
+  synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     if (_setParamsFromSameThreadOnly) {
       if (Thread.currentThread()!=_originatingThread)
         throw new OptimizerException("Current Thread is not allowed to call setParams() on this DDE.");
     }
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
   }
 
 
@@ -440,7 +440,7 @@ class DDEThread extends Thread {
   private int _to;
   private double _px=0.9;
   private double _w=1.0;
-  private Hashtable _fp;
+  private HashMap _fp;
 	private boolean _nonDeterminismOK=false;
 	private boolean _doDEBestStrategy=false;
 	private int _bestInd=-1;
@@ -461,7 +461,7 @@ class DDEThread extends Thread {
     _to = to;
 		_numthreads = 1;
 		try {
-			Hashtable p = _master.getParams();
+			HashMap p = _master.getParams();
 			_numthreads = ((Integer) p.get("dde.numthreads")).intValue();
 			Boolean ndok = (Boolean) p.get("dde.nondeterminismok");
 			if (ndok!=null && ndok.booleanValue()==true) _nonDeterminismOK = true;
@@ -488,11 +488,11 @@ class DDEThread extends Thread {
 
 	
   public void run() {
-    Hashtable p = _master.getParams();  // returns a copy
+    HashMap p = _master.getParams();  // returns a copy
     p.put("thread.localid", new Integer(_id));
     p.put("thread.id", new Integer(_uid));  // used to be _id
     // create the _funcParams
-    _fp = new Hashtable();
+    _fp = new HashMap();
     Iterator it = p.keySet().iterator();
     while (it.hasNext()) {
       String key = (String) it.next();
@@ -593,7 +593,7 @@ class DDEThread extends Thread {
   }
 
 
-  private PairObjDouble min(FunctionIntf f, Hashtable p) throws OptimizerException {
+  private PairObjDouble min(FunctionIntf f, HashMap p) throws OptimizerException {
     final int popsize = _master._sols.length;  // no problem with unsynced access
                                                // as the _master._sols array
                                                // has been created before the
@@ -721,7 +721,7 @@ class DDEThread extends Thread {
   }
 
 
-  private double bound(double val, int j, Hashtable params) throws OptimizerException {
+  private double bound(double val, int j, HashMap params) throws OptimizerException {
     if (!_cacheOn) {
 			_minargvali = new ArrayList();
 			_maxargvali = new ArrayList();

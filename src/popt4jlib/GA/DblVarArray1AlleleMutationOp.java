@@ -31,7 +31,7 @@ public class DblVarArray1AlleleMutationOp implements MutationOpIntf {
 	 * created).
    * @param chromosome1 Object must be double[]
    * @param chromosome2 Object must be double[]
-   * @param params Hashtable should contain the following key-value pairs:
+   * @param params HashMap should contain the following key-value pairs:
 	 * <ul>
    * <li> &lt;"dga.minallelevalue", $value$&gt; optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
@@ -52,7 +52,7 @@ public class DblVarArray1AlleleMutationOp implements MutationOpIntf {
    * @throws OptimizerException if any of the above params is incorrectly set
    * @return Pair Pair&lt;double[], double[]&gt;
    */
-  public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
+  public Pair doMutation(Object chromosome1, Object chromosome2, HashMap params) throws OptimizerException {
     try {
       final int id = ( (Integer) params.get("thread.id")).intValue();
       double[] a1 = (double[]) chromosome1;

@@ -33,11 +33,11 @@ public class TridNonlinearFunction implements FunctionIntf {
    * evaluates the TridNonlinear function at x=arg.
    * @param arg Object must be <CODE>double[]</CODE> or
    * <CODE>popt4jlib.VectorIntf</CODE>
-   * @param p Hashtable unused
+   * @param p HashMap unused
    * @return double
    * @throws IllegalArgumentException if arg does not adhere to the specification
    */
-  public double eval(Object arg, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap p) throws IllegalArgumentException {
     try {
       if (arg instanceof VectorIntf) {
         VectorIntf x = (VectorIntf) arg;

@@ -25,11 +25,11 @@ public class SetSizeEvalFunction implements FunctionIntf {
   /**
    * return minus the size of the set-valued argument
    * @param arg Object must be a Set
-   * @param params Hashtable
+   * @param params HashMap
    * @throws IllegalArgumentException if arg is not a Set.
    * @return double
    */
-  public double eval(Object arg, Hashtable params) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap params) throws IllegalArgumentException {
     try {
       Set s = (Set) arg;
       return -s.size();

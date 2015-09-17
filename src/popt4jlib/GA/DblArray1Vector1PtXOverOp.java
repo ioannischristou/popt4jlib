@@ -29,11 +29,11 @@ public class DblArray1Vector1PtXOverOp implements XoverOpIntf {
    * arrays of doubles represented as DblArray1Vector objects
    * @param c1 Object (a DblArray1Vector)
    * @param c2 Object (a DblArray1Vector)
-   * @param params Hashtable must contain a pair <"thread.id", $integer_value$>
+   * @param params HashMap must contain a pair <"thread.id", $integer_value$>
    * @throws OptimizerException
    * @return Pair containing two new <CODE>DblArray1Vector</CODE> objects.
    */
-  public Pair doXover(Object c1, Object c2, Hashtable params) throws OptimizerException {
+  public Pair doXover(Object c1, Object c2, HashMap params) throws OptimizerException {
     try {
       final int id = ( (Integer) params.get("thread.id")).intValue();
       DblArray1Vector a1 = (DblArray1Vector) c1;

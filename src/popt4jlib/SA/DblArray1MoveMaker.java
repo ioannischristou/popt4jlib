@@ -30,7 +30,7 @@ public class DblArray1MoveMaker implements NewChromosomeMakerIntf {
    * Double values in the alleles of the new position, are projected to the
    * box-constrained integer feasible region (whenever box-constraints exist).
    * @param chromosome Object double[]
-   * @param params Hashtable must contain the following pairs:
+   * @param params HashMap must contain the following pairs:
    * <li> &lt;"dsa.minallelevalue", $value$&gt; mandatory, the minimum value
    * for any allele in the chromosome.
    * <li> &lt;"dsa.minallelevalue$i$", $value$&gt; optional, the minimum value
@@ -50,7 +50,7 @@ public class DblArray1MoveMaker implements NewChromosomeMakerIntf {
    * @throws OptimizerException
    * @return Object double[]
    */
-  public Object createNewChromosome(Object chromosome, Hashtable params) throws OptimizerException {
+  public Object createNewChromosome(Object chromosome, HashMap params) throws OptimizerException {
     double[] arg = (double[]) chromosome;  // chromosome is a double[] array
     double[] res = new double[arg.length];
     double delta = ((Double) params.get("dsa.movedelta")).doubleValue();

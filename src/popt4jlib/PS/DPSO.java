@@ -32,7 +32,7 @@ import popt4jlib.*;
 public class DPSO extends GLockingObservableObserverBase implements OptimizerIntf {
   private static int _nextId=0;
   private int _id;
-  private Hashtable _params;
+  private HashMap _params;
   double _incValue=Double.MAX_VALUE;
   Object _inc;  // incumbent chromosome
   FunctionIntf _f;
@@ -53,9 +53,9 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
   /**
    * public constructor accepting the optimization parameters (making a local
    * copy of them)
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public DPSO(Hashtable params) {
+  public DPSO(HashMap params) {
     this();
     try {
       setParams(params);
@@ -68,10 +68,10 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
 
   /**
    * returns a copy of the parameters of this DPSO object.
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  public synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
@@ -79,14 +79,14 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
    * the optimization params are set to p. The method will throw if it is
    * invoked while another thread is running the minimize(f) method on the
    * same DPSO object.
-   * @param p Hashtable the parameters to pass-in
+   * @param p HashMap the parameters to pass-in
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object.
    */
-  public synchronized void setParams(Hashtable p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
   }
 
 
@@ -418,10 +418,10 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
    * _individuals Vector<DPSOIndividual> of the DPSOThread with id 0, and clears
    * the solutions from the _observers and _subjects map.
    * @param tinds Vector
-   * @param params Hashtable the optimization params
+   * @param params HashMap the optimization params
    * @param funcParams the function parameters
    */
-  synchronized void transferSolutionsTo(Vector tinds, Hashtable params, Hashtable funcParams) {
+  synchronized void transferSolutionsTo(Vector tinds, HashMap params, HashMap funcParams) {
     // 1. observers
     int ocnt = 0;
     Iterator it = getObservers().keySet().iterator();
@@ -547,8 +547,8 @@ class DPSOThreadAux {
   private int _id;
   private int _uid;
   private DPSO _master;
-  private Hashtable _p;
-  private Hashtable _fp;
+  private HashMap _p;
+  private HashMap _fp;
   private boolean _finish = false;
   private Vector _individuals;  // Vector<Individual>
   private Vector _immigrantsPool;  // Vector<Individual>
@@ -564,7 +564,7 @@ class DPSOThreadAux {
     _p.put("thread.localid", new Integer(_id));
     _p.put("thread.id",new Integer(_uid));  // used to be _id
     // create the _funcParams
-    _fp = new Hashtable();
+    _fp = new HashMap();
     Iterator it = _p.keySet().iterator();
     while (it.hasNext()) {
       String key = (String) it.next();
@@ -873,7 +873,7 @@ class DPSOIndividual {
 
 
   public DPSOIndividual(Object chromosome, Object velocity, DPSO master,
-                        Hashtable params, Hashtable funcparams)
+                        HashMap params, HashMap funcparams)
       throws OptimizerException {
     _x = chromosome;
     _v = velocity;
@@ -898,7 +898,7 @@ class DPSOIndividual {
   public double getValue() { return _val; }
 
 
-  void setValues(Object chromosome, Object velocity, Hashtable params, Hashtable funcParams)
+  void setValues(Object chromosome, Object velocity, HashMap params, HashMap funcParams)
     throws OptimizerException {
     _x = chromosome;
     _v = velocity;
@@ -914,7 +914,7 @@ class DPSOIndividual {
       _pbval = _val;
     }
   }
-  private void computeValue(Hashtable params, Hashtable funcParams)
+  private void computeValue(HashMap params, HashMap funcParams)
       throws OptimizerException {
     if (_val==Double.MAX_VALUE) {  // don't do the computation if already done
       Chromosome2ArgMakerIntf c2amaker =

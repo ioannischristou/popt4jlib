@@ -48,7 +48,7 @@ public class FixedPointApproximatorMT {
    * the function is a contraction mapping.
    * @param f VecFunctionIntf the contraction mapping whose fixed point must be
    * computed.
-   * @param params Hashtable any parameters used by the contraction mapping.
+   * @param params HashMap any parameters used by the contraction mapping.
    * @param x0 VectorIntf the initial point to kick-start the computations.
    * @param max_iters long the maximum number of iterations allowed.
    * @param tol double the maximum tolerance allowed in terms of || x - f(x) ||.
@@ -56,7 +56,7 @@ public class FixedPointApproximatorMT {
    * arguments
    * @return VectorIntf the required fixed-point.
    */
-  public VectorIntf findFixedPoint(VecFunctionIntf f, Hashtable params, VectorIntf x0, long max_iters, double tol) throws ParallelException {
+  public VectorIntf findFixedPoint(VecFunctionIntf f, HashMap params, VectorIntf x0, long max_iters, double tol) throws ParallelException {
     VectorIntf x = x0.newCopy();
     VectorIntf xstar = x0.newCopy();
     final int n = x0.getNumCoords();
@@ -115,7 +115,7 @@ public class FixedPointApproximatorMT {
    */
   class FixedPointTask implements TaskObject {
     private final static long serialVersionUID= -2511150165483541083L;
-    private Hashtable _params;
+    private HashMap _params;
     private VectorIntf _x;
     private VectorIntf _xnew;
     private transient VecFunctionIntf _f;
@@ -124,7 +124,7 @@ public class FixedPointApproximatorMT {
     private boolean _isDone;
 
 
-    public FixedPointTask(VecFunctionIntf f, int startindex, int endindex, VectorIntf x, Hashtable params, VectorIntf xnew) {
+    public FixedPointTask(VecFunctionIntf f, int startindex, int endindex, VectorIntf x, HashMap params, VectorIntf xnew) {
       _f = f;
       _params = params;
       _x = x;

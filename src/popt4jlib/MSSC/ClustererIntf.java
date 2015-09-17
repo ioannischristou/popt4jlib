@@ -36,16 +36,16 @@ public interface ClustererIntf {
   /**
    * sets parameters for the clusterer to use when clustering (eg the
    * termination criteria to be used).
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public void setParams(Hashtable params);
+  public void setParams(HashMap params);
 
 
   /**
    * returns the set of parameters to be used in the clustering process.
-   * @return Hashtable Map<String key , Object value>
+   * @return HashMap Map<String key , Object value>
    */
-  public Hashtable getParams();
+  public HashMap getParams();
 
 
   /**

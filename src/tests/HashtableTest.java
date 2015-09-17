@@ -20,10 +20,10 @@ public class HashtableTest {
   }
 
   public static void main(String[] args) {
-    Hashtable params = new Hashtable();
+    HashMap params = new HashMap();
     params.put("smth",new Integer(1));
     ArmijoSteepestDescent opter = new ArmijoSteepestDescent(params);
-    Hashtable paramscopy = opter.getParams();
+    HashMap paramscopy = opter.getParams();
     paramscopy.put("smth", new Integer(2));
     Integer origval = (Integer) opter.getParams().get("smth");
     System.out.println("params.get(smth)="+origval.intValue());

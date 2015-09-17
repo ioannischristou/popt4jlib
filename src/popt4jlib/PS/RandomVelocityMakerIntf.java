@@ -5,7 +5,7 @@ import java.util.*;
 
 /**
  * specifies how to create random velocity objects, given some parameters
- * included in a <CODE>Hashtable</CODE> object.
+ * included in a <CODE>HashMap</CODE> object.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -17,10 +17,10 @@ interface RandomVelocityMakerIntf {
   /**
    * returns a velocity object, created using the parameters passed in as
    * argument.
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException
    * @return Object
    */
-  public Object createRandomVelocity(Hashtable params) throws OptimizerException;
+  public Object createRandomVelocity(HashMap params) throws OptimizerException;
 }
 

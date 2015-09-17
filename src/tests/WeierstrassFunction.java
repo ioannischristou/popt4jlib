@@ -31,14 +31,14 @@ public class WeierstrassFunction implements FunctionIntf {
    * evaluates the function at x=arg.
    * @param arg Object must be a <CODE>double[]</CODE> or
    * <CODE>popt4jlib.VectorIntf</CODE> object.
-   * @param params Hashtable if not-null may contain the following pairs:
+   * @param params HashMap if not-null may contain the following pairs:
    * <li> <"a", Double val> the value for the a parameter, default is 0.5
    * <li> <"b", Double val> the value of the b parameter, default is 3
    * <li> <"kmax", Integer val> the value of the k_{max} parameter, default is 20
    * @throws IllegalArgumentException if arg does not conform to the specification
    * @return double
    */
-  public double eval(Object arg, Hashtable params) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap params) throws IllegalArgumentException {
     double[] x = null;
     if (arg instanceof VectorIntf) x= ((VectorIntf) arg).getDblArray1();
     else if (arg instanceof double[]) x = (double[]) arg;

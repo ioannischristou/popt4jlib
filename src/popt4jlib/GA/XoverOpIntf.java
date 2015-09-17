@@ -13,10 +13,10 @@ interface XoverOpIntf {
    * has enough knowledge of that fact.
    * @param chromosome1 Object
    * @param chromosome2 Object
-   * @param Hashtable params
+   * @param HashMap params
    * @throws OptimizerException
    * @return Pair
    */
-  public Pair doXover(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException;
+  public Pair doXover(Object chromosome1, Object chromosome2, HashMap params) throws OptimizerException;
 }
 

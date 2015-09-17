@@ -42,8 +42,8 @@ public class PDBatchTaskExecutorClt {
 
 
   /**
-   * the (internet) IP address of the server this client will be connecting to when
-   * submitting work.
+   * the (internet) IP address of the server this client will be connecting to 
+   * when submitting work.
    * @return String
    */
   public String getHostIPAddress() {
@@ -112,10 +112,15 @@ public class PDBatchTaskExecutorClt {
       }
       else if (response instanceof NoWorkerAvailableResponse)
         throw new PDBatchTaskExecutorException("no worker was available...");
+			else if (response instanceof FailedReply) 
+				throw new PDBatchTaskExecutorException("worker failed...");
       else throw new PDBatchTaskExecutorException("cannot parse response...");
     }
     finally {
-      if (s!=null) s.close();
+      if (s!=null) {
+				s.shutdownOutput();
+				s.close();
+			}
     }
   }
 
@@ -125,7 +130,7 @@ public class PDBatchTaskExecutorClt {
    * to the PDBatchTaskExecutorSrv server, who then distributes them to one
    * of the available workers in the network. Method blocks until results are
    * retrieved.
-   * @param originating_client String <host>_<port> frmt
+   * @param originating_client String &lt;host&gt;_&lt;port&gt; frmt
    * @param tasks TaskObject[]
    * @throws IOException
    * @throws ClassNotFoundException
@@ -155,10 +160,15 @@ public class PDBatchTaskExecutorClt {
       }
       else if (response instanceof NoWorkerAvailableResponse)
         throw new PDBatchTaskExecutorException("no worker was available...");
+			else if (response instanceof FailedReply) 
+				throw new PDBatchTaskExecutorException("worker failed...");
       else throw new PDBatchTaskExecutorException("cannot parse response...");
     }
     finally {
-      if (s!=null) s.close();
+      if (s!=null) {
+				s.shutdownOutput();
+				s.close();
+			}
     }
   }
 
@@ -168,7 +178,7 @@ public class PDBatchTaskExecutorClt {
    * the names of the hosts that have submitted the tasks to various servers
    * (only applies when there exists more than one server in the system of
    * servers, clients and workers). Method blocks until results are retrieved.
-   * @param originating_clients Vector<String>
+   * @param originating_clients Vector // Vector&lt;String&gt;
    * @param tasks TaskObject[]
    * @throws IOException
    * @throws ClassNotFoundException
@@ -198,10 +208,15 @@ public class PDBatchTaskExecutorClt {
       }
       else if (response instanceof NoWorkerAvailableResponse)
         throw new PDBatchTaskExecutorException("no worker was available...");
+			else if (response instanceof FailedReply) 
+				throw new PDBatchTaskExecutorException("worker failed...");
       else throw new PDBatchTaskExecutorException("cannot parse response...");
     }
     finally {
-      if (s!=null) s.close();
+      if (s!=null) {
+				s.shutdownOutput();
+				s.close();
+			}
     }
   }
 

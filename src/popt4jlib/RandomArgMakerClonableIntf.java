@@ -6,7 +6,7 @@
 
 package popt4jlib;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -25,11 +25,11 @@ import java.util.Hashtable;
 public interface RandomArgMakerClonableIntf extends RandomArgMakerIntf {
 	/**
 	 * returns a cloned object of this object.
-	 * @param p Hashtable 
+	 * @param p HashMap 
 	 * @return RandomArgMakerClonableIntf the cloned object
 	 * @throws OptimizerException 
 	 */
-	public RandomArgMakerClonableIntf newInstance(Hashtable p) throws OptimizerException;
+	public RandomArgMakerClonableIntf newInstance(HashMap p) throws OptimizerException;
 	/**
 	 * return the current argument.
 	 * @return Object

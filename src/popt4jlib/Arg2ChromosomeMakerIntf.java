@@ -1,6 +1,6 @@
 package popt4jlib;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * interface defining the methods that an object must support so as to be
@@ -20,11 +20,11 @@ public interface Arg2ChromosomeMakerIntf {
    * converts an object belonging to the domain of the function being minimized
    * into a chromosome object that the meta-heuristics (GA etc.) manipulate.
    * @param chromosome Object
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException
    * @return Object a chromosome object.
    */
-  public Object getChromosome(Object chromosome, Hashtable params)
+  public Object getChromosome(Object chromosome, HashMap params)
       throws OptimizerException;  // FunctionArgument->Chromosome Map
 }
 

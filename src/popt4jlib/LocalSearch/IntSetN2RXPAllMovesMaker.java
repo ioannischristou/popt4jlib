@@ -38,17 +38,17 @@ public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerClonableIntf
   /**
    * implements the N_{-2+P} neighborhood for sets of integers.
    * @param chromosome Object // Set&lt;Integer&gt;
-   * @param params Hashtable must contain a key-value pair
+   * @param params HashMap must contain a key-value pair
    * &lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;.
    * The filter must both specify what two numbers to remove, as well as what
    * ints to be tried for addition to the set given a vector of 2 ints to be
-   * removed from the set. In particular, the filter(Integer x, Set s, Hashtable params)
+   * removed from the set. In particular, the filter(Integer x, Set s, HashMap params)
    * method must return a Vector&lt;IntSet&gt; that comprise all the 2-int 
 	 * combinations that may be tried for removal.
    * @throws OptimizerException
    * @return Vector // Vector&lt;IntSet&gt;
    */
-  public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
+  public Vector createAllChromosomes(Object chromosome, HashMap params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN2RXPAllMovesMaker.createAllChromosomes(): null chromosome");
     try {
       TreeSet result = new TreeSet();  // Set<IntSet>
@@ -103,10 +103,10 @@ public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerClonableIntf
    * @param rmids Set // IntSet
    * @param tryids List // List&lt;Integer&gt;
    * @param maxcard int
-   * @param params Hashtable unused
+   * @param params HashMap unused
    * @return Set // TreeSet&lt;IntSet&gt;
    */
-  protected Set createSets(Set res, Set rmids, List tryids, int maxcard, Hashtable params) {
+  protected Set createSets(Set res, Set rmids, List tryids, int maxcard, HashMap params) {
     if (maxcard==0) return res;
     Set res2 = new TreeSet(res);  // was new TreeSet();
     for (int i=0; i<tryids.size(); i++) {
@@ -133,10 +133,10 @@ public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerClonableIntf
 	 * method to modify the behavior of this move-maker.
    * @param tid Integer unused
    * @param x IntSet unused
-   * @param params Hashtable unused
+   * @param params HashMap unused
    * @return boolean true
    */
-  protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
+  protected boolean isOK2Add(Integer tid, IntSet x, HashMap params) {
     return true;
   }
 }

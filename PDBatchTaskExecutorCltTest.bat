@@ -1,1 +1,1 @@
-java -Xmx1500m -cp ./popt4jlib.jar;./lib/colt.jar; parallel.distributed.PDBatchTaskExecutorCltTest
+java -Xmx1500m -cp ./dist/popt4jlib.jar;./dist/lib/colt.jar; parallel.distributed.PDBatchTaskExecutorCltTest

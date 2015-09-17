@@ -32,14 +32,14 @@ public class FletcherPowellFunction implements FunctionIntf {
    * evaluates the Fletcher-Powell test-function at the point x=arg
    * @param arg Object must be a <CODE>double[]></CODE> or
    * <CODE>popt4jlib.VectorIntf</CODE> object.
-   * @param p Hashtable MUST contain the following pairs:
+   * @param p HashMap MUST contain the following pairs:
    * <li> <"A", Vector[]> where each element of the Vector[] is a Vector<Double>
    * <li> <"B", Vector[]> where each element of the Vector[] is a Vector<Double>
    * @return double
    * @throws IllegalArgumentException if arg or p do not comply with the above
    * specifications.
    */
-  public double eval(Object arg, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap p) throws IllegalArgumentException {
     try {
       Vector[] A = (Vector[]) p.get("A"); // A[i] is Vector<Double> and represents the i-th row of A
       Vector[] B = (Vector[]) p.get("B"); // B[i] same as A[i].

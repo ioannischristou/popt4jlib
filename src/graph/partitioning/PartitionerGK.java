@@ -1,7 +1,7 @@
 package graph.partitioning;
 
 import graph.*;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.Collections;
 import java.util.Set;
@@ -30,10 +30,10 @@ public class PartitionerGK implements PartitionerIntf {
    * move iff it leads to a gain>0, in terms of cut-edges.)
    * @param g Graph
    * @param k int
-   * @param props Hashtable
+   * @param props HashMap
    * @return int[]
    */
-  synchronized public int[] partition(Graph g, int k, Hashtable props) {
+  synchronized public int[] partition(Graph g, int k, HashMap props) {
     // try to find an initial partition to work with
     int[] partition = (int[]) props.get("initialpartition");
     final int num_nodes = g.getNumNodes();
@@ -122,11 +122,11 @@ public class PartitionerGK implements PartitionerIntf {
    * @param k int
    * @param partition int[]
    * @param ni Node
-   * @param props Hashtable
+   * @param props HashMap
    * @return int the partition block to move ni, or -1 else
    */
   private int bestPart(Graph g, int k, int[] partition, Node ni,
-                                    Hashtable props) {
+                                    HashMap props) {
     _gain = Double.NEGATIVE_INFINITY;
     final int ni_part = partition[ni.getId()];  // 1...k
     // can we move node ni?

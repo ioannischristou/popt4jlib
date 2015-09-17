@@ -1,6 +1,6 @@
 package parallel;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -24,8 +24,8 @@ import java.util.Hashtable;
  */
 public class OrderedBarrier {
   private static OrderedBarrier _instance;
-  private static Hashtable _instances = new Hashtable();  // map<String name, Barrier b>
-  private Hashtable _threads;  // map<Thread id, Integer priority>
+  private static HashMap _instances = new HashMap();  // map<String name, Barrier b>
+  private HashMap _threads;  // map<Thread id, Integer priority>
   private int _numThreads2Wait4=0;
   private boolean _onHold[];
 
@@ -148,7 +148,7 @@ public class OrderedBarrier {
     if (_numThreads2Wait4!=_threads.size()) {
       throw new ParallelException("OrderedBarrier cannot be reset at this point");
     }
-    _threads = new Hashtable();
+    _threads = new HashMap();
     _numThreads2Wait4 = 0;
     _onHold = null;
   }
@@ -219,7 +219,7 @@ public class OrderedBarrier {
    * private constructor, in accordance with the Singleton Design Pattern
    */
   private OrderedBarrier() {
-    _threads = new Hashtable();
+    _threads = new HashMap();
   }
 
 

@@ -1,6 +1,6 @@
 package parallel;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -21,7 +21,7 @@ public class UnboundedSimpleFasterMsgPassingCoordinator {
    */
   private UnboundedBufferArrayUnsynchronized _data;
   private static UnboundedSimpleFasterMsgPassingCoordinator _instance=null;
-  private static Hashtable _instances=new Hashtable();  // map<String name, USFMPC instance>
+  private static HashMap _instances=new HashMap();  // map<String name, USFMPC instance>
 
 
   /**

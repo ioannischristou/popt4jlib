@@ -169,7 +169,7 @@ class BBNode2 extends BBNodeBase {
               IntSetNeighborhoodFilterIntf filter = new
                   GRASPPackerIntSetNbrhoodFilter2(2);
               FunctionIntf f = new SetSizeEvalFunction();
-              Hashtable dlsparams = new Hashtable();
+              HashMap dlsparams = new HashMap();
               dlsparams.put("dls.movesmaker", movesmaker);
               dlsparams.put("dls.x0", nodeids);
               dlsparams.put("dls.numthreads", new Integer(10));  // itc: HERE parameterize asap

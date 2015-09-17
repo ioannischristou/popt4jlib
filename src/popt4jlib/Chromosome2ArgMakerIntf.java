@@ -19,9 +19,9 @@ public interface Chromosome2ArgMakerIntf {
    * converts a chromosome object (used in the computations of GA etc. meta-
    * heuristics) into an object belonging to the functions' domain.
    * @param chromosome Object
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException
    * @return Object
    */
-  public Object getArg(Object chromosome, Hashtable params) throws OptimizerException;  // Chromosome->FunctionArgument Map
+  public Object getArg(Object chromosome, HashMap params) throws OptimizerException;  // Chromosome->FunctionArgument Map
 }

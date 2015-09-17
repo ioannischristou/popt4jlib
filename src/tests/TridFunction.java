@@ -27,11 +27,11 @@ public class TridFunction implements FunctionIntf {
    * evaluates the Trid function at x=arg.
    * @param arg Object must be a <CODE>double[]</CODE> or <CODE>popt4jlib.VectorIntf</CODE>
    * object.
-   * @param p Hashtable unused
+   * @param p HashMap unused
    * @return double
    * @throws IllegalArgumentException if arg does not adhere to specification
    */
-  public double eval(Object arg, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap p) throws IllegalArgumentException {
     try {
       if (arg instanceof VectorIntf) {
         VectorIntf x = (VectorIntf) arg;

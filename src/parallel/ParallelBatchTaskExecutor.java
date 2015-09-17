@@ -237,7 +237,7 @@ public final class ParallelBatchTaskExecutor {
 
 
 class PBTEThread extends Thread {
-  private static Hashtable _ids = new Hashtable();  // map<PBTE e, Integer curId>
+  private static HashMap _ids = new HashMap();  // map<PBTE e, Integer curId>
   private ParallelBatchTaskExecutor _e;
   private boolean _doRun=true;
 

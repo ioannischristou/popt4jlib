@@ -6,7 +6,7 @@ import java.util.*;
 
 /**
  * creates random int[] objects of varying length, according to parameters
- * passed in a <CODE>Hashtable</CODE> object.
+ * passed in a <CODE>HashMap</CODE> object.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -29,7 +29,7 @@ public class IntVarArray1CMaker implements RandomChromosomeMakerIntf {
    * boundaries of the element's range specified in the params key-value pairs.
 	 * The array's element values are computed using the uniform distribution in 
 	 * the specified range of acceptable values.
-   * @param params Hashtable must contain the following params:
+   * @param params HashMap must contain the following params:
 	 * <ul>
    * <li> &lt;"dga.maxchromosomelength", $integer_value$&gt; mandatory, the max.
    * length of the chromosome.
@@ -52,7 +52,7 @@ public class IntVarArray1CMaker implements RandomChromosomeMakerIntf {
    * @throws OptimizerException if any of the above params is incorrectly set
    * @return Object int[] of length specified in the params.
    */
-  public Object createRandomChromosome(Hashtable params) throws OptimizerException {
+  public Object createRandomChromosome(HashMap params) throws OptimizerException {
     try {
       final int nmax = ( (Integer) params.get("dga.maxchromosomelength")).intValue();
       final int maxalleleval=((Integer) params.get("dga.maxallelevalue")).intValue();

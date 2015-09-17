@@ -3,7 +3,7 @@ package analysis;
 import popt4jlib.VecFunctionIntf;
 import popt4jlib.VectorIntf;
 import popt4jlib.DblArray1Vector;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * implements the linear operator T(x)=Ax+b.
@@ -26,14 +26,14 @@ public class LinearOpFunction implements VecFunctionIntf {
   /**
    * evaluate Ax+b.
    * @param x VectorIntf
-   * @param p Hashtable must contain the following pairs:
+   * @param p HashMap must contain the following pairs:
    * <li> <"A", double[][]> the matrix A, optional.
    * <li> <"b", double[]> the vector b, optional.
    * @throws IllegalArgumentException if A=b=null, or if A, b, and x dimensions
    * don't match.
    * @return VectorIntf the vector y=Ax+b
    */
-  public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
+  public VectorIntf eval(VectorIntf x, HashMap p) throws IllegalArgumentException {
     try {
       double[][] A = (double[][]) p.get("A");
       double[] b = (double[]) p.get("b");
@@ -59,7 +59,7 @@ public class LinearOpFunction implements VecFunctionIntf {
   }
 
 
-  public double evalCoord(VectorIntf x, Hashtable p, int coord) throws IllegalArgumentException {
+  public double evalCoord(VectorIntf x, HashMap p, int coord) throws IllegalArgumentException {
     try {
       double[][] A = (double[][]) p.get("A");
       double[] b = (double[]) p.get("b");

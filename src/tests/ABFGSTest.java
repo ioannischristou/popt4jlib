@@ -73,7 +73,7 @@ public class ABFGSTest {
    */
   public static void main(String[] args) {
     try {
-      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       int n = ((Integer) params.get("abfgs.numdimensions")).intValue();
       // add the initial points
       int numtries = ((Integer) params.get("abfgs.numtries")).intValue();

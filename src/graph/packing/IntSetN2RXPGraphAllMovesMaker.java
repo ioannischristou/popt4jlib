@@ -66,14 +66,14 @@ public class IntSetN2RXPGraphAllMovesMaker extends IntSetN2RXPAllMovesMaker {
    * @param rmids Set // IntSet
    * @param tryids List // List&lt;Integer&gt;
    * @param maxcard int the maximum cardinality of any of the IntSet's to be returned
-   * @param params Hashtable must contain the pair &lt;"dls.graph", Graph g&gt;
+   * @param params HashMap must contain the pair &lt;"dls.graph", Graph g&gt;
 	 * and may optionally contain a key-value pair
    * &lt;"dls.createsetsperlevellimit", Integer limit&gt; to cut the search short,
 	 * and optionally a pair &lt;"dls.lock_graph", Boolean val&gt; which if present
 	 * and val is false, indicates no locking of graph elements
    * @return Set // TreeSet&lt;IntSet&gt;
    */
-  protected Set createSets(Set res, Set rmids, List tryids, int maxcard, Hashtable params) {
+  protected Set createSets(Set res, Set rmids, List tryids, int maxcard, HashMap params) {
     if (maxcard==0) return res;
     // check if we need to cut-short the search for candidates
 		if (_cspll==-1) {
@@ -123,12 +123,12 @@ public class IntSetN2RXPGraphAllMovesMaker extends IntSetN2RXPAllMovesMaker {
 	 * solution x (depending on the type of problem 1- or 2-packing).
    * @param tid Integer
    * @param x IntSet
-   * @param params Hashtable must contain the &lt;"dls.graph", Graph g&gt; pair
+   * @param params HashMap must contain the &lt;"dls.graph", Graph g&gt; pair
 	 * and optionally a pair &lt;"dls.lock_graph", Boolean val&gt; which if present
 	 * and val is false, indicates no locking of graph elements
    * @return boolean
    */
-  protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
+  protected boolean isOK2Add(Integer tid, IntSet x, HashMap params) {
     try {
       if (_g==null) {  // corrected-Double-Check-Locking applied only 
 				// to protect the protected API contract as method is protected

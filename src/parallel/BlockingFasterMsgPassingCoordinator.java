@@ -1,6 +1,6 @@
 package parallel;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -51,7 +51,7 @@ public class BlockingFasterMsgPassingCoordinator {
                                             // queue
   private BoundedBufferArrayUnsynchronized _data;  // used to be Vector<RegisteredParcel>
   private static BlockingFasterMsgPassingCoordinator _instance=null;
-  private static Hashtable _instances=new Hashtable();  // map<String name, BFMPC instance>
+  private static HashMap _instances=new HashMap();  // map<String name, BFMPC instance>
 
   /**
    * private constructor in agreement with the Singleton(s) Design Pattern

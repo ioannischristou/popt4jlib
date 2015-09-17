@@ -2,7 +2,7 @@ package parallel;
 
 import utils.PairObjDouble;
 import java.util.List;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -43,7 +43,7 @@ public class MsgPassingCoordinator {
 	                                      // reading data when a selective receive
 	                                      // operation is under way
   private static MsgPassingCoordinator _instance=null;
-  private static Hashtable _instances=new Hashtable();  // map<String name, MPC instance>
+  private static HashMap _instances=new HashMap();  // map<String name, MPC instance>
 
 
   /**

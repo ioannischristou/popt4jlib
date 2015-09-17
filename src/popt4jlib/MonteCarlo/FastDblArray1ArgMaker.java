@@ -14,7 +14,7 @@ import utils.RndUtil;
 
 /**
  * creates random <CODE>double[]</CODE> objects of fixed length, according to 
- * parameters passed in a <CODE>Hashtable</CODE> object.
+ * parameters passed in a <CODE>HashMap</CODE> object.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -45,7 +45,7 @@ public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
 	 * synchronization when invoked, as different threads own different objects.
 	 * Notice that the <CODE>_lastArg</CODE> data member, if not null, is also 
 	 * deep-copied into the new instance that is returned.
-	 * @param p Hashtable must contain the following params:
+	 * @param p HashMap must contain the following params:
 	 * <ul>
    * <li> &lt;"mcs.arglength", $integer_value$&gt; mandatory, the length
    * of the argument.
@@ -68,7 +68,7 @@ public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
    * @throws OptimizerException if any of the params above are incorrectly set
    * @return FastDblArray1ArgMaker new instance according to the params passed in
    */
-  public RandomArgMakerClonableIntf newInstance(Hashtable params) throws OptimizerException {
+  public RandomArgMakerClonableIntf newInstance(HashMap params) throws OptimizerException {
     try {
       FastDblArray1ArgMaker clone = new FastDblArray1ArgMaker();
       clone._arglen = ( (Integer) params.get("mcs.arglength")).intValue();
@@ -103,10 +103,10 @@ public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
 	 * this object. As a side-effect, the created double[] random vector is also
 	 * stored in the <CODE>_lastArg</CODE> data member, so it can be retrieved by
 	 * a call to <CODE>getCurrentArgument()</CODE>. 
-   * @param params Hashtable unused
+   * @param params HashMap unused
 	 * @return Object double[].
    */
-  public Object createRandomArgument(Hashtable params) throws OptimizerException {
+  public Object createRandomArgument(HashMap params) throws OptimizerException {
     try {
       double[] arr = new double[_arglen];
       for (int i=0; i<_arglen; i++) {

@@ -19,7 +19,7 @@ import java.util.*;
  */
 public class MCS implements OptimizerIntf {
 	
-  Hashtable _params;
+  HashMap _params;
   FunctionIntf _f;
   private MCSThread[] _threads=null;
   private double _min=Double.MAX_VALUE;
@@ -35,40 +35,40 @@ public class MCS implements OptimizerIntf {
 
   /**
    * Construct an MCS (Monte Carlo Search) Object.
-   * @param p Hashtable
+   * @param p HashMap
    */
-  public MCS(Hashtable p) {
-    _params = new Hashtable(p);
+  public MCS(HashMap p) {
+    _params = new HashMap(p);
   }
 
 
   /**
    * return a copy of the params
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  public synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
   /**
    * set the optimization parameters to the arg passed in.
-   * @param params Hashtable see the documentation of the method
+   * @param params HashMap see the documentation of the method
 	 * <CODE>minimize(f)</CODE> (@see MCS#minimize(FunctionIntf) minimize) for a 
 	 * discussion of the pairs that must be contained in it
    * @throws OptimizerException if another thread is concurrently running
    * <CODE>minimize(f)</CODE> of this object
    */
-  synchronized void setParams(Hashtable params) throws OptimizerException {
+  synchronized void setParams(HashMap params) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
-    _params = new Hashtable(params);
+    _params = new HashMap(params);
   }
 
 
   /**
    * run a Monte-Carlo simulation-style attempt to minimize the function f:
    * Produce as many random solutions as are described in the value of the key
-   * "mcs.numtries" in the _params Hashtable, and return the best one (the arg
+   * "mcs.numtries" in the _params HashMap, and return the best one (the arg
    * that produces the minimum function value).
    * The parameters that must have been passed in (via the constructor or via
    * a call to the <CODE>setParams(p)</CODE> method are as follows:
@@ -196,7 +196,7 @@ public class MCS implements OptimizerIntf {
     private int _numtries;
     private int _id;
     private int _uid;
-    private Hashtable _fp;
+    private HashMap _fp;
 
 		/**
 		 * compile-time constant used in benchmarking against no-pooling mechanism
@@ -224,11 +224,11 @@ public class MCS implements OptimizerIntf {
 		 * threads.
 		 */
     public void run() {
-      Hashtable p = getParams();
+      HashMap p = getParams();
       p.put("thread.localid", new Integer(_id));
       p.put("thread.id", new Integer(_uid));  // used to be _id
       // create the _funcParams
-      _fp = new Hashtable();
+      _fp = new HashMap();
       Iterator it = p.keySet().iterator();
       while (it.hasNext()) {
         String key = (String) it.next();

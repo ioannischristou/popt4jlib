@@ -2,7 +2,7 @@ package graph.partitioning;
 
 import graph.*;
 import utils.DataMgr;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.Collections;
 import java.util.Set;
@@ -43,7 +43,7 @@ public class HPartitioner2LSPP implements HPartitionerIntf {
   }
 
 
-  public int[] partition(HGraph g, int k, Hashtable props) throws PartitioningException {
+  public int[] partition(HGraph g, int k, HashMap props) throws PartitioningException {
     int k1 = ((Integer) props.get("partitioning.HPartitioner.HPartitioner2LSPP.k1")).intValue();
     // 1. partition at high-level, among k1 components the graph g
     HPartitionerIntf parter1 = (HPartitionerIntf) props.get("partitioning.HPartitioner.HPartitioner2LSPP.Parter1");

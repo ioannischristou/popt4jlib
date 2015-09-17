@@ -2,11 +2,11 @@ package popt4jlib.PS;
 
 import popt4jlib.OptimizerException;
 import utils.RndUtil;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * creates random double[] objects of fixed length, according to parameters
- * passed in a <CODE>Hashtable</CODE> object.
+ * passed in a <CODE>HashMap</CODE> object.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -29,7 +29,7 @@ public class DblArray1RandomVelocityMaker implements RandomVelocityMakerIntf {
    * parameters, specified in the params argument. The value for each element
    * in the array, is drawn from the uniform distribution restricted within the
    * boundaries of the element's range specified in the params key-value pairs.
-   * @param params Hashtable must contain the following params:
+   * @param params HashMap must contain the following params:
    * <li> &lt;"dpso.chromosomelength", $integer_value$&gt; mandatory, the length
    * of the chromosome.
    * <li> &lt;"dpso.minallelevalue", $value$&gt; mandatory, the minimum value
@@ -51,7 +51,7 @@ public class DblArray1RandomVelocityMaker implements RandomVelocityMakerIntf {
    * @return Object double[] of length specified in the params.
    */
 
-  public Object createRandomVelocity(Hashtable params) throws OptimizerException {
+  public Object createRandomVelocity(HashMap params) throws OptimizerException {
     if (params==null) throw new OptimizerException("null params arg");
     try {
       final int nmax = ( (Integer) params.get("dpso.chromosomelength")).

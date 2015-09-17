@@ -21,14 +21,14 @@ public class IntegralApproximator implements FunctionIntf {
   /**
    * public constructor.
    * @param f FunctionIntf
-   * @param params Hashtable may contain the following pairs:
+   * @param params HashMap may contain the following pairs:
    * <"integralapproximator.eps", Double eps> if present specifies the required
    * precision, default is 1.e-6,
    * <"integralapproximator.levelmax", Integer level> if present specifies the
    * maximum level of recursion in the Simpson method, default is
    * <CODE>Integer.MAX_VALUE</CODE>
    */
-  public IntegralApproximator(FunctionIntf f, Hashtable params) {
+  public IntegralApproximator(FunctionIntf f, HashMap params) {
     _f = f;
     if (params!=null) {
       try {
@@ -52,9 +52,9 @@ public class IntegralApproximator implements FunctionIntf {
   /**
    * computes the integral with respect to the i-th variable of the function
    * provided in the constructor, from a lower limit a defined in the params
-   * Hashtable, to the specified value x_i in the vector <CODE>x</CODE>.
+   * HashMap, to the specified value x_i in the vector <CODE>x</CODE>.
    * @param x Object a VectorIntf or double[] object.
-   * @param params Hashtable must contain at least a pair of the form
+   * @param params HashMap must contain at least a pair of the form
    * <"integralapproximator.a", Double a> indicating the lower limit of
    * integration and a pair of the form
    * <"integralapproximator.integrandvarindex", Integer i> indicating the
@@ -65,11 +65,11 @@ public class IntegralApproximator implements FunctionIntf {
    * parameters are needed so that the function <CODE>f</CODE> passed in the
    * constructor needs in order to be evaluated.
    * @throws IllegalArgumentException if any of the two pairs required in params
-   * Hashtable are not present, or if the integration could not be carried out
+   * HashMap are not present, or if the integration could not be carried out
    * with the required precision.
    * @return double
    */
-  public double eval(Object x, Hashtable params) throws IllegalArgumentException {
+  public double eval(Object x, HashMap params) throws IllegalArgumentException {
     VectorIntf t = null;
     try {
       if (x instanceof VectorIntf)
@@ -115,7 +115,7 @@ public class IntegralApproximator implements FunctionIntf {
 
   private double simpson(VectorIntf x, int intvarind, double a, double b,
                          int level, double eps,
-                         Hashtable p) throws IntegrationException, parallel.ParallelException {
+                         HashMap p) throws IntegrationException, parallel.ParallelException {
     // never throws ParallelException since x is constructed locally in the
     // current thread and no other thread has access to it.
     ++level;

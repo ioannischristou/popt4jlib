@@ -17,8 +17,8 @@ import popt4jlib.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class ArmijoSteepestDescentST implements LocalOptimizerIntf, ObserverIntf {
-  Hashtable _params;
+public class ArmijoSteepestDescentST extends GLockingObserverBase implements LocalOptimizerIntf {
+  HashMap _params;
   FunctionIntf _f;
 
 
@@ -26,7 +26,8 @@ public class ArmijoSteepestDescentST implements LocalOptimizerIntf, ObserverIntf
    * public no-arg constructor
    */
   public ArmijoSteepestDescentST() {
-    // no-op
+    super();
+		// no-op
   }
 
 
@@ -34,9 +35,9 @@ public class ArmijoSteepestDescentST implements LocalOptimizerIntf, ObserverIntf
    * public constructor accepting the optimization parameters to the process.
    * The parameters are copied so that later modifications to the input argument
    * do not affect the parameters passed in.
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public ArmijoSteepestDescentST(Hashtable params) {
+  public ArmijoSteepestDescentST(HashMap params) {
     try {
       setParams(params);
     }
@@ -49,10 +50,10 @@ public class ArmijoSteepestDescentST implements LocalOptimizerIntf, ObserverIntf
   /**
    * return a copy of the parameters. Modifications to the returned object
    * do not affect the data member.
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  public synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
@@ -67,14 +68,14 @@ public class ArmijoSteepestDescentST implements LocalOptimizerIntf, ObserverIntf
 
   /**
    * the optimization params are set to p
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object.
    */
-  public synchronized void setParams(Hashtable p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
   }
 
 
@@ -82,27 +83,27 @@ public class ArmijoSteepestDescentST implements LocalOptimizerIntf, ObserverIntf
    * the main method of the class. Before it is called, a number of parameters
    * must have been set (via the parameters passed in the constructor, or via
    * a later call to setParams(p). These are:
-   * <"asd.x0", VectorIntf x> optional, the initial starting point. If this
+   * &lt;"asd.x0", VectorIntf x&gt; optional, the initial starting point. If this
    * pair does not exist, or if x is null, then it becomes mandatory that
-   * a pair <"gradientdescent.x0", VectorIntf x> pair with a non-null x is
+   * a pair &lt;"gradientdescent.x0", VectorIntf x&gt; pair with a non-null x is
    * in the parameters that have been set.
-   * <"asd.gradient", VecFunctionIntf g> optional, the gradient of f, the
+   * &lt;"asd.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
    * function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * <"asd.gtol", Double v> optional, the minimum abs. value for each of the
+   * &lt;"asd.gtol", Double v&gt; optional, the minimum abs. value for each of the
    * gradient's coordinates, below which if all coordinates of the gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-6.
-   * <"asd.maxiters", Integer miters> optional, the maximum number of major
+   * &lt;"asd.maxiters", Integer miters&gt; optional, the maximum number of major
    * iterations of the SD search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * <"asd.rho", Double v> optional, the value for the parameter ñ in the
+   * &lt;"asd.rho", Double v&gt; optional, the value for the parameter ñ in the
    * Armijo rule implementation. Default is 0.1.
-   * <"asd.beta", Double v> optional, the value for the parameter â in the
+   * &lt;"asd.beta", Double v&gt; optional, the value for the parameter â in the
    * Armijo rule implementation. Default is 0.8.
-   * <"asd.gamma", Double v> optional, the value for the parameter ã in the
+   * &lt;"asd.gamma", Double v&gt; optional, the value for the parameter ã in the
    * Armijo rule implementation. Default is 1.
-   * <"asd.looptol", Double v> optional, the minimum step-size allowed. Default
+   * &lt;"asd.looptol", Double v&gt; optional, the minimum step-size allowed. Default
    * is 1.e-21.
    *
    * @param f FunctionIntf the function to minimize
@@ -139,36 +140,22 @@ public class ArmijoSteepestDescentST implements LocalOptimizerIntf, ObserverIntf
    * @param subject SubjectIntf
    * @throws OptimizerException
    */
-  public void notifyChange(SubjectIntf subject) throws OptimizerException {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      Object arg = subject.getIncumbent();
-      FunctionIntf f = subject.getFunction();
-      VectorIntf x=null;
-      if (arg instanceof double[]) {
-        x = new DblArray1Vector((double[]) arg);
-      } else if (arg instanceof VectorIntf) x = (DblArray1Vector) arg;
-      else throw new OptimizerException("ASDST.notifyChange(): don't know how to convert argument into VectorIntf object");
-      Hashtable params = subject.getParams();
-      params.put("gradientdescent.x0",x);  // add the initial point
-      setParams(params);  // set the params of this object
-      PairObjDouble p = minimize(f);
-      if (p!=null) {
-        VectorIntf argmin = (VectorIntf) p.getArg();
-        if (arg instanceof DblArray1Vector) subject.addIncumbent(this, argmin);
-        else subject.addIncumbent(this, argmin.getDblArray1());
-      }
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
+  protected void notifyChangeProtected(SubjectIntf subject) throws OptimizerException {
+    Object arg = subject.getIncumbent();
+    FunctionIntf f = subject.getFunction();
+    VectorIntf x=null;
+    if (arg instanceof double[]) {
+      x = new DblArray1Vector((double[]) arg);
+    } else if (arg instanceof VectorIntf) x = (DblArray1Vector) arg;
+    else throw new OptimizerException("ASDST.notifyChange(): don't know how to convert argument into VectorIntf object");
+    HashMap params = subject.getParams();
+    params.put("gradientdescent.x0",x);  // add the initial point
+    setParams(params);  // set the params of this object
+    PairObjDouble p = minimize(f);
+    if (p!=null) {
+      VectorIntf argmin = (VectorIntf) p.getArg();
+      if (arg instanceof DblArray1Vector) subject.addIncumbent(this, argmin);
+      else subject.addIncumbent(this, argmin.getDblArray1());
     }
   }
 
@@ -177,12 +164,12 @@ public class ArmijoSteepestDescentST implements LocalOptimizerIntf, ObserverIntf
    * the implementation of the Steepest-Descent method with Armijo rule for
    * step-size determination
    * @param f FunctionIntf the function to optimize
-   * @param p Hashtable the optimization and function parameters
+   * @param p HashMap the optimization and function parameters
    * @throws OptimizerException if the optimization process fails to find a
    * (near-)stationary point
    * @return PairObjDouble the argmin and min value found
    */
-  private PairObjDouble min(FunctionIntf f, Hashtable p) throws OptimizerException {
+  private PairObjDouble min(FunctionIntf f, HashMap p) throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("asd.gradient");
     if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
     final VectorIntf x0 = p.get("asd.x0") == null ?

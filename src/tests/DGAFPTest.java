@@ -34,7 +34,7 @@ public class DGAFPTest {
   public static void main(String[] args) {
     try {
       long start_time = System.currentTimeMillis();
-      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       // simply add the parameters A, B and alpha
       int n = ((Integer) params.get("dga.chromosomelength")).intValue();
       Vector[] A = new Vector[n];

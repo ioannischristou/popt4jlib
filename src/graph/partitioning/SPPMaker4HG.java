@@ -22,18 +22,18 @@ import java.util.*;
  */
 public class SPPMaker4HG implements SPPMakerIntf {
   protected int _k;
-  protected Hashtable _params;
+  protected HashMap _params;
   protected DoubleMatrix2D _A;
   protected DoubleMatrix1D _c;
   protected HObjFncIntf _objfnc;
 
   public SPPMaker4HG() {
-    _params = new Hashtable();
+    _params = new HashMap();
   }
 
 
-  public SPPMaker4HG(Hashtable p) {
-    _params = new Hashtable(p);
+  public SPPMaker4HG(HashMap p) {
+    _params = new HashMap(p);
   }
 
   /**
@@ -107,7 +107,7 @@ public class SPPMaker4HG implements SPPMakerIntf {
   }
 
 
-  public void addParams(Hashtable params) {
+  public void addParams(HashMap params) {
     _params.putAll(params);
   }
 

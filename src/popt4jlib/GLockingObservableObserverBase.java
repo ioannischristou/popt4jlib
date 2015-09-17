@@ -5,7 +5,8 @@
  */
 
 package popt4jlib;
-import java.util.Hashtable;
+
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import parallel.DMCoordinator;
@@ -28,13 +29,13 @@ import parallel.ParallelException;
  */
 public abstract class GLockingObservableObserverBase implements SubjectIntf, ObserverIntf {
 
-  private Hashtable _observers;  // map<ObserverIntf o, Vector<Object> newSols>
-  private Hashtable _subjects;  // map<SubjectIntf o, Vector<Object> newSols>
+  private HashMap _observers;  // map<ObserverIntf o, Vector<Object> newSols>
+  private HashMap _subjects;  // map<SubjectIntf o, Vector<Object> newSols>
 	
 	
 	public GLockingObservableObserverBase() {
-		_subjects = new Hashtable();
-		_observers = new Hashtable();
+		_subjects = new HashMap();
+		_observers = new HashMap();
 	}
 	
 
@@ -134,7 +135,9 @@ public abstract class GLockingObservableObserverBase implements SubjectIntf, Obs
 	
 	
   /**
-   * returns the current function that is being minimized (may be null)
+   * returns the current function that is being minimized (may be null). The 
+	 * implementation of this function in subclasses should be normally 
+	 * synchronized to ensure memory visibility etc.
    * @return FunctionIntf
    */
   public abstract FunctionIntf getFunction();
@@ -145,7 +148,10 @@ public abstract class GLockingObservableObserverBase implements SubjectIntf, Obs
    * function. The ObserverIntf objects would need this method to get the
    * current incumbent (and use it as they please). Note: the method is not
    * synchronized, but it still executes atomically, and is in synch with
-   * the DGAThreads executing setIncumbent().
+   * the DGAThreads executing setIncumbent(), by locking, as all other 
+	 * implemented methods in this class, on the "popt4jlib" global w-lock, and
+	 * then invoking the -abstract- method getIncumbentProtected() which is to be
+	 * implemented by sub-classes, in an instance of the template method pattern.
    * @return Object
    */
   public final Object getIncumbent() {
@@ -204,8 +210,8 @@ public abstract class GLockingObservableObserverBase implements SubjectIntf, Obs
   /**
    * when a subject's thread calls the method notifyChange, in response, this
    * object will add the best solution found by the subject, in the _subjects'
-   * solutions map, to be later picked up by the first DGAThread spawned by this
-   * DGA object.
+   * solutions map, to be later picked up by the first optimizer Thread spawned 
+	 * by this object.
    * @param subject SubjectIntf
    * @throws OptimizerException
    */
@@ -240,26 +246,27 @@ public abstract class GLockingObservableObserverBase implements SubjectIntf, Obs
 	
 	/**
 	 * return the observers reference.
-	 * @return Hashtable
+	 * @return HashMap
 	 */
-	protected Hashtable getObservers() {
+	protected final HashMap getObservers() {
 		return _observers;
 	}
 	
 	
 	/**
 	 * return the subjects reference.
-	 * @return Hashtable
+	 * @return HashMap
 	 */
-	protected Hashtable getSubjects() {
+	protected final HashMap getSubjects() {
 		return _subjects;
 	}
 	
 	
   /**
-   * add the soln into a hashmap maintaining (SubjectIntf, Object soln) pairs
-   * so that the soln is inserted in the first DGAThread's population in the
-   * next iteration. Only called from the <CODE>notifyChange()</CODE> method.
+   * add the soln into a hash-map maintaining (SubjectIntf, Object soln) pairs.
+   * Then, the soln can be normally inserted in the first optimizer's thread's 
+	 * population in the next iteration. Only called from the 
+	 * <CODE>notifyChange(subject)</CODE> method.
    * @param subject SubjectIntf
    * @param soln Object
    */

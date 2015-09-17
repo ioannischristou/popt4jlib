@@ -34,7 +34,7 @@ public class ISN2RXPFIGAMMTest {
 		  new IntSetN2RXPGraphAllMovesMaker(k);
     IntSetNeighborhoodFilterIntf filter = new
       GRASPPackerIntSetNbrhoodFilter3(1,g);
-		java.util.Hashtable params = new java.util.Hashtable();
+		java.util.HashMap params = new java.util.HashMap();
 		params.put("dls.graph", g);
 		params.put("dls.lock_graph", Boolean.FALSE);
 		{ // test the filter

@@ -9,7 +9,7 @@ import java.util.*;
  * When a BBNode n must be inserted and there is not enough space in the queue,
  * the "oldest" BBNode (the one that was inserted the earliest with the same
  * size as n) is removed from the structure so as to make room for the BBNode n.
- * Two Hashtables are maintained for efficiency in maintaining order of insertion
+ * Two HashMaps are maintained for efficiency in maintaining order of insertion
  * as well as speeding up look-ups in the "contains()" method. Not part of the
  * public API.
  * <p>Title: popt4jlib</p>
@@ -20,7 +20,7 @@ import java.util.*;
  * @version 1.0
  */
 class BoundedQueue {
-  private Hashtable _pqueues;  // map<int BBNodeSize, DLCList<BBNodeBase> >
+  private HashMap _pqueues;  // map<int BBNodeSize, DLCList<BBNodeBase> >
   private TreeSet _cnodes;  // TreeSet<BBNodeBase>
   private int _maxLen=0;
 
@@ -31,7 +31,7 @@ class BoundedQueue {
    */
   BoundedQueue(int maxqueuelength) {
     if (maxqueuelength>0) _maxLen = maxqueuelength;
-    _pqueues = new Hashtable();
+    _pqueues = new HashMap();
     _cnodes = new TreeSet();
   }
 

@@ -28,9 +28,11 @@ public class DRWLock {
 
   /**
    * no-arg constructor assumes the following defaults:
+	 * <ul>
    * <li> host="localhost"
    * <li> port=7897
    * <li> rwlock/coord name = "DRWLock_localhost_7897"
+	 * </ul>
    * @throws UnknownHostException
    * @throws IOException
    * @throws ClassNotFoundException

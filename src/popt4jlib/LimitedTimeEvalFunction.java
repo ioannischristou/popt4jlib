@@ -43,11 +43,11 @@ public class LimitedTimeEvalFunction implements FunctionIntf {
    * the evaluation of the underlying function takes more time than the maximum
    * allowed time, then this method will return <CODE>Double.MAX_VALUE</CODE>
    * @param arg Object the argument of the function to be evaluated.
-   * @param params Hashtable the parameters of the function to be evaluated.
+   * @param params HashMap the parameters of the function to be evaluated.
    * @return double the function value or <CODE>Double.MAX_VALUE</CODE> if the
    * evaluation takes too long.
    */
-  public double eval(Object arg, Hashtable params) {
+  public double eval(Object arg, HashMap params) {
     incrCount();
     FunctionEvaluationTask t = new FunctionEvaluationTask(_f, arg, params);
     if (_executor.execute(t)) incrSucEvalCount();

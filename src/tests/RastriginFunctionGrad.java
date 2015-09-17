@@ -24,7 +24,7 @@ public class RastriginFunctionGrad implements VecFunctionIntf {
   /**
    * evaluates the Rastrigin function gradient at the specified point x.
    * @param x VectorIntf
-   * @param p Hashtable must contain the following parameters:
+   * @param p HashMap must contain the following parameters:
    * <li> <"A", Double val> the value of the parameter A in the defn of the
    * Rastrigin Function (<CODE>tests.RastriginFunction</CODE>
    * <li> <"w", Double val> the value of the parameter w in the defn of the
@@ -33,7 +33,7 @@ public class RastriginFunctionGrad implements VecFunctionIntf {
    * @throws IllegalArgumentException if any of the arguments does not adhere
    * to the specifications.
    */
-  public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
+  public VectorIntf eval(VectorIntf x, HashMap p) throws IllegalArgumentException {
     try {
       int n = x.getNumCoords();
       VectorIntf g = x.newInstance();  // x.newCopy();
@@ -56,12 +56,12 @@ public class RastriginFunctionGrad implements VecFunctionIntf {
   /**
    * evaluate partial derivative at i.
    * @param x VectorIntf
-   * @param p Hashtable
+   * @param p HashMap
    * @param i int
    * @throws IllegalArgumentException
    * @return double
    */
-  public double evalCoord(VectorIntf x, Hashtable p, int i) throws IllegalArgumentException {
+  public double evalCoord(VectorIntf x, HashMap p, int i) throws IllegalArgumentException {
     try {
       double a = ( (Double) p.get("A")).doubleValue();
       double w = ( (Double) p.get("w")).doubleValue();

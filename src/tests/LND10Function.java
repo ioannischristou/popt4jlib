@@ -29,12 +29,12 @@ public class LND10Function implements FunctionIntf {
    * evaluate the LND10 function at the given point <CODE>x</CODE>.
    * @param arg Object must be a <CODE>double[]</CODE> or a
    * <CODE>popt4jlib.VectorIntf</CODE> object.
-   * @param p Hashtable unused.
+   * @param p HashMap unused.
    * @throws IllegalArgumentException if <CODE>arg</CODE> is not of the mentioned
    * types.
    * @return double
    */
-  public double eval(Object arg, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap p) throws IllegalArgumentException {
     if (arg instanceof VectorIntf) {
       VectorIntf x = (VectorIntf) arg;
       return evalArray(x.getDblArray1());

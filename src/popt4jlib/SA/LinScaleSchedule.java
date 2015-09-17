@@ -28,13 +28,13 @@ public class LinScaleSchedule implements SAScheduleIntf {
    * returns the number y = t0 / L^2 where L = 1 + [K*t/t0] where [x] is the
    * floor of x.
    * @param t int
-   * @param params Hashtable may contain the following key-value pairs:
+   * @param params HashMap may contain the following key-value pairs:
    * <li> &lt;"dsa.T0", $value$&gt; optional, default is 1000.0.
    * <li> &lt;"dsa.K", $value$&gt; optional, default is 20.0.
    * @throws OptimizerException
    * @return double
    */
-  public double getTemp(int t, Hashtable params) throws OptimizerException {
+  public double getTemp(int t, HashMap params) throws OptimizerException {
     double t0 = 1000.0;
     Double tD = (Double) params.get("dsa.T0");
     double k = 20.0;

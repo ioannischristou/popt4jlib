@@ -155,14 +155,14 @@ public final class PDBatchTaskExecutor {
    * (successfully or not). Asynchronous versions are implemented in the
    * ParallelAsynchBatchTaskExecutor and FasterParallelAsynchBatchTaskExecutor
    * classes.
-   * @param tasks Collection Collection<TaskObject>. If the collection contains
+   * @param tasks Collection // Collection&lt;TaskObject&gt;. If the collection contains
    * an object that does not implement the TaskObject interface, the object
    * will be added in the results vector in the corresponding order without any
    * processing done (even if it implements the Runnable interface or defines a
    * run() method).
    * @throws ParallelException if the shutDown() method has been called prior
    * to this call
-   * @return Vector Vector<Serializable> the successfully executed task results.
+   * @return Vector // Vector&lt;Serializable&gt; the successfully executed task results.
    * If a task threw an exception then the TaskObject itself is returned instead
    * of the expected result.
    * If tasks were null, then it also returns null.
@@ -317,7 +317,7 @@ public final class PDBatchTaskExecutor {
  * @version 1.0
  */
 class PDBTEThread extends Thread {
-  private static Hashtable _ids = new Hashtable();  // map<PDBTE e, Integer curId>
+  private static HashMap _ids = new HashMap();  // map<PDBTE e, Integer curId>
   private PDBatchTaskExecutor _e;
   private boolean _doRun=true;
 

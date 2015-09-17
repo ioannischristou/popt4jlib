@@ -13,26 +13,26 @@ import java.util.*;
  * @version 1.0
  */
 public class Params {
-  private Hashtable _p;
+  private HashMap _p;
 
 
   /**
    * mainly used from sub-classes.
-   * @param params Hashtable
+   * @param params HashMap
    * @param lightweight boolean if true, no copy of the params arg. will be made
    */
-  protected Params(Hashtable params, boolean lightweight) {
+  protected Params(HashMap params, boolean lightweight) {
     if (lightweight) _p = params;
-    else _p = new Hashtable(params);
+    else _p = new HashMap(params);
   }
 
 
   /**
-   * public constructor. Makes a copy of the Hashtable
-   * @param p Hashtable
+   * public constructor. Makes a copy of the HashMap
+   * @param p HashMap
    */
-  public Params(Hashtable p) {
-    _p = new Hashtable(p);
+  public Params(HashMap p) {
+    _p = new HashMap(p);
   }
 
 

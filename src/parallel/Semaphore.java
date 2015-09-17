@@ -25,9 +25,9 @@ import java.util.*;
  * @version 1.0
  */
 public class Semaphore {
-  private Hashtable _permitThreads = new Hashtable();  // map<Thread t, Integer numpermits>
+  private HashMap _permitThreads = new HashMap();  // map<Thread t, Integer numpermits>
   private Set _freePermits = new TreeSet();  // Set<Integer permitId>
-  private Hashtable _takenPermits = new Hashtable();  // map<Thread t, Integer permitId>
+  private HashMap _takenPermits = new HashMap();  // map<Thread t, Integer permitId>
   private int _maxPermits = 1;
   private int _numWaiting = 0;  // used to prevent new threads "stealing"
                                 // the semaphore from already waiting ones

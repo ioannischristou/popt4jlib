@@ -90,7 +90,7 @@ public class SimpleDGASocketEvalTest {
     FunctionIntf wrapper_func=null;
     try {
       long start_time = System.currentTimeMillis();
-      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       String hostname = (String) params.get("dga.function.hostname");
       int port = ((Integer) params.get("dga.function.port")).intValue();
       ReentrantSocketEvalFunctionBase func = null;

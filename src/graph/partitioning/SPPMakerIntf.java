@@ -3,7 +3,7 @@ package graph.partitioning;
 import graph.HGraph;
 import graph.*;
 import java.util.Vector;
-import java.util.Hashtable;
+import java.util.HashMap;
 import cern.colt.matrix.DoubleMatrix1D;
 import cern.colt.matrix.DoubleMatrix2D;
 
@@ -24,7 +24,7 @@ public interface SPPMakerIntf {
   public DoubleMatrix1D getCostVector() throws PartitioningException;
   // auxiliary methods
   public void setParam(String param, Object val) throws PartitioningException;
-  public void addParams(Hashtable params) throws PartitioningException;
+  public void addParams(HashMap params) throws PartitioningException;
   public Object getParam(String param) throws PartitioningException;
 }
 

@@ -29,10 +29,10 @@ public class AlternateFunction implements FunctionIntf {
    * evaluates the AlternateFunction at the argument given in the first argument
    * @param arg Object Object may be either a <CODE>double[]</CODE> or a
    * <CODE>VectorIntf</CODE> object.
-   * @param p Hashtable unused.
+   * @param p HashMap unused.
    * @return double
    */
-  public double eval(Object arg, Hashtable p) {
+  public double eval(Object arg, HashMap p) {
     double[] x = (double[]) arg;
     double res = 1;
     int n = x.length;

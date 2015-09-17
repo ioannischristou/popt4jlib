@@ -1,6 +1,6 @@
 package popt4jlib;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * interface defining a function mapping objects of some domain (not necessarily
@@ -15,11 +15,11 @@ import java.util.Hashtable;
 public interface FunctionIntf {
   /**
    * the method mapping the arg passed in to a number in R. Any parameters are
-   * passed in the params Hashtable.
+   * passed in the params HashMap.
    * @param arg Object
-   * @param params Hashtable
+   * @param params HashMap
    * @throws IllegalArgumentException if the arg is illegal for the function
    * @return double
    */
-  public double eval(Object arg, Hashtable params) throws IllegalArgumentException;
+  public double eval(Object arg, HashMap params) throws IllegalArgumentException;
 }

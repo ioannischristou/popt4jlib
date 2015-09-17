@@ -1,6 +1,6 @@
 package parallel;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -31,7 +31,7 @@ public class SimpleFasterMsgPassingCoordinator {
    */
   private BoundedBufferArrayUnsynchronized _data;  // Vector<RegisteredParcel>
   private static SimpleFasterMsgPassingCoordinator _instance=null;
-  private static Hashtable _instances=new Hashtable();  // map<String name, SFMPC instance>
+  private static HashMap _instances=new HashMap();  // map<String name, SFMPC instance>
 
 
   /**

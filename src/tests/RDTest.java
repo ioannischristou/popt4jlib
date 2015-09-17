@@ -82,7 +82,7 @@ public class RDTest {
   public static void main(String[] args) {
     try {
       long start_time = System.currentTimeMillis();
-      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       int n = ((Integer) params.get("rd.numdimensions")).intValue();
       double maxargval = ((Double) params.get("rd.functionargmaxval")).doubleValue();
       double minargval = ((Double) params.get("rd.functionargminval")).doubleValue();

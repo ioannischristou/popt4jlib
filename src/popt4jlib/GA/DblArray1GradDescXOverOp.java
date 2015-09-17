@@ -34,7 +34,7 @@ public class DblArray1GradDescXOverOp implements XoverOpIntf {
    * new double[] objects.
    * @param c1 Object double[]
    * @param c2 Object double[]
-   * @param params Hashtable must contain the following key-value pairs:
+   * @param params HashMap must contain the following key-value pairs:
 	 * <ul>
    * <li> &lt;"dga.minallelevalue", $value$&gt; optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
@@ -68,7 +68,7 @@ public class DblArray1GradDescXOverOp implements XoverOpIntf {
 	 * the process otherwise fails
    * @return Pair Pair&lt;double[], double[]&gt;
    */
-  public Pair doXover(Object c1, Object c2, Hashtable params) throws OptimizerException {
+  public Pair doXover(Object c1, Object c2, HashMap params) throws OptimizerException {
     try {
       final double[] a1 = (double[]) c1;
       final double[] a2 = (double[]) c2;
@@ -203,7 +203,7 @@ public class DblArray1GradDescXOverOp implements XoverOpIntf {
   private synchronized static int getNumSuccessful() { return _numSuccessful; }
 
 
-  private boolean diffIsOK(double v1, double v2, Hashtable params) {
+  private boolean diffIsOK(double v1, double v2, HashMap params) {
     double minaccperc = 0.01;
     Double mapD = (Double) params.get("dga.graddescxoverop.minaccvaldiffperc");
     if (mapD!=null && mapD.doubleValue()>0)
@@ -213,7 +213,7 @@ public class DblArray1GradDescXOverOp implements XoverOpIntf {
   }
 
 
-  private double findFeasiblePoint(double[] a, double[] s, double b, Hashtable params) {
+  private double findFeasiblePoint(double[] a, double[] s, double b, HashMap params) {
     double t = 1;
     double minargval = Double.NEGATIVE_INFINITY;
     Double mavD = (Double) params.get("dga.minallelevalue");

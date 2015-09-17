@@ -2,7 +2,7 @@ package popt4jlib.PS.FA;
 
 import popt4jlib.OptimizerException;
 import utils.LightweightParams;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -17,7 +17,7 @@ import java.util.Hashtable;
  */
 public class DblArray1StdChromosomeUpdater implements ChromosomeUpdaterIntf {
   private int _t=0;
-  private Hashtable _p=null;  // cache
+  private HashMap _p=null;  // cache
   private double _L = Double.NaN;  // cache
 
 
@@ -51,11 +51,11 @@ public class DblArray1StdChromosomeUpdater implements ChromosomeUpdaterIntf {
    *
    * @param ci Object // double[]
    * @param cj Object // double[]
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException if ci or cj are not double[]
    * @return Object // double[]
    */
-  public Object update(Object ci, Object cj, Hashtable params) throws OptimizerException {
+  public Object update(Object ci, Object cj, HashMap params) throws OptimizerException {
     double beta = 1.0;
     try {
       Double bD = (Double) params.get("dfa.beta");
@@ -145,11 +145,11 @@ public class DblArray1StdChromosomeUpdater implements ChromosomeUpdaterIntf {
 
   /**
    * under normal circumstances, will only be called once.
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if p==null
    * @return double
    */
-  private double averageVariableScale(Hashtable p) throws OptimizerException {
+  private double averageVariableScale(HashMap p) throws OptimizerException {
     if (p==null) throw new OptimizerException("null params");
     try {
       LightweightParams params = new LightweightParams(p);
@@ -173,7 +173,7 @@ public class DblArray1StdChromosomeUpdater implements ChromosomeUpdaterIntf {
         avgdiffs = (avgdiffs*i + maxalleleval - minalleleval)/((double) i+1);
       }
       synchronized (this) {
-        _p = new Hashtable(p); // cache the params ref.
+        _p = new HashMap(p); // cache the params ref.
         _L = avgdiffs;  // cache the scale value
       }
       return _L;

@@ -15,7 +15,7 @@ import popt4jlib.*;
  * @version 1.0
  */
 public class ArmijoSteepestDescent implements LocalOptimizerIntf {
-  Hashtable _params;
+  HashMap _params;
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
   FunctionIntf _f;
@@ -35,9 +35,9 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
    * public constructor. The parameters passed in the argument are copied
    * in the data member _params so that later modifications to the argument
    * do not affect this object or its methods.
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public ArmijoSteepestDescent(Hashtable params) {
+  public ArmijoSteepestDescent(HashMap params) {
     try {
       setParams(params);
     }
@@ -50,10 +50,10 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
   /**
    * return a copy of the parameters. Modifications to the returned object
    * do not affect the data member.
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  public synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
@@ -69,14 +69,14 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
 
   /**
    * the optimization params are set to a copy of p
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if another thread is currently executing the
    * <CODE>minimize(f)</CODE> method of this object.
    */
-  public synchronized void setParams(Hashtable p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
   }
 
 
@@ -254,7 +254,7 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
     }
 
     public void run() {
-      Hashtable p = _master.getParams();  // was new Hashtable(_master._params);
+      HashMap p = _master.getParams();  // was new HashMap(_master._params);
       p.put("thread.localid", new Integer(_id));
       p.put("thread.id", new Integer(_uid));  // used to be _id
       VectorIntf best = null;
@@ -286,7 +286,7 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
     }
 
 
-    private PairObjDouble min(FunctionIntf f, int solindex, Hashtable p) throws OptimizerException {
+    private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) throws OptimizerException {
       VecFunctionIntf grad = (VecFunctionIntf) p.get("asd.gradient");
       if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
       final VectorIntf x0 = p.get("asd.x"+solindex) == null ?

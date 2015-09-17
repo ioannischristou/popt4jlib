@@ -14,7 +14,7 @@ import utils.RndUtil;
 
 /**
  * creates random <CODE>double[]</CODE> objects of fixed length, according to 
- * parameters passed in a <CODE>Hashtable</CODE> object. It should be faster 
+ * parameters passed in a <CODE>HashMap</CODE> object. It should be faster 
  * than the <CODE>FastDblArray1ArgMaker</CODE> class, because it doesn't create 
  * new double[] each time the <CODE>createRandomArgument(p)</CODE> method is 
  * invoked, but instead re-uses a private (cache) data member.
@@ -48,7 +48,7 @@ public class FasterDblArray1ArgMaker implements RandomArgMakerClonableIntf {
 	 * synchronization when invoked, as different threads own different objects.
 	 * Notice that the <CODE>_x</CODE> (current-arg) data member, if not null, 
 	 * is also deep-copied into the new instance that is returned.
-	 * @param p Hashtable must contain the following params:
+	 * @param p HashMap must contain the following params:
 	 * <ul>
    * <li> &lt;"mcs.arglength", $integer_value$&gt; mandatory, the length
    * of the argument.
@@ -72,7 +72,7 @@ public class FasterDblArray1ArgMaker implements RandomArgMakerClonableIntf {
 	 * params argument
    * @return FasterDblArray1ArgMaker new instance according to the params passed in
    */
-  public RandomArgMakerClonableIntf newInstance(Hashtable params) throws OptimizerException {
+  public RandomArgMakerClonableIntf newInstance(HashMap params) throws OptimizerException {
     try {
       FasterDblArray1ArgMaker clone = new FasterDblArray1ArgMaker();
       clone._arglen = ( (Integer) params.get("mcs.arglength")).intValue();
@@ -106,12 +106,12 @@ public class FasterDblArray1ArgMaker implements RandomArgMakerClonableIntf {
   /**
    * creates fixed-length <CODE>double[]</CODE> objects, according to its
    * data member params (not the ones passed in as argument in the call).
-   * @param params Hashtable unused
+   * @param params HashMap unused
 	 * @return Object double[]
 	 * @throws OptimizerException if an error occurs computing the next random
 	 * argument
    */
-  public Object createRandomArgument(Hashtable params) throws OptimizerException {
+  public Object createRandomArgument(HashMap params) throws OptimizerException {
     try {
       for (int i=0; i<_arglen; i++) {
         // restore within bounds, if any

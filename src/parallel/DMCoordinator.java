@@ -1,6 +1,6 @@
 package parallel;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.io.Serializable;
 
 
@@ -48,14 +48,14 @@ public class DMCoordinator implements Serializable {
   private int _readers=0;
   private int _writerCalls=0;
   private Thread _writerThread=null;
-  private Hashtable _readerThreads=null;  // map<Thread t, Integer count>
+  private HashMap _readerThreads=null;  // map<Thread t, Integer count>
   // the next two variables are used for "fair granting" of locks to avoid
   // starvation (i.e. to "ensure progress")
   private int _writersWaiting=0;
   private int _readersWaiting=0;
 
   static private DMCoordinator _DMCoord=null;
-  static private Hashtable _coords = new Hashtable();
+  static private HashMap _coords = new HashMap();
 
   /**
    * the following constant should likely not be set at zero value
@@ -336,7 +336,7 @@ public class DMCoordinator implements Serializable {
 
 
   private DMCoordinator() {
-    _readerThreads = new Hashtable();
+    _readerThreads = new HashMap();
   }
 }
 

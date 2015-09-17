@@ -27,7 +27,7 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
    * parameters, specified in the params argument. The value for each element
    * in the array, is drawn from the uniform distribution restricted within the
    * boundaries of the element's range specified in the params key-value pairs.
-   * @param params Hashtable must contain the following params:
+   * @param params HashMap must contain the following params:
    * <li> &lt;"dsa.chromosomelength", $integer_value$&gt; mandatory, the length
    * of the chromosome.
    * <li> &lt;"dsa.minallelevalue", $value$&gt; mandatory, the minimum value
@@ -48,7 +48,7 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
    * @throws OptimizerException
    * @return Object double[] of length specified in the params.
    */
-  public Object createRandomChromosome(Hashtable params) throws OptimizerException {
+  public Object createRandomChromosome(HashMap params) throws OptimizerException {
     try {
       final int nmax = ( (Integer) params.get("dsa.chromosomelength")).intValue();
       final double maxalleleval=((Double) params.get("dsa.maxallelevalue")).doubleValue();

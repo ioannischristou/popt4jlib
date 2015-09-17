@@ -58,10 +58,10 @@ public class ReentrantFunctionBaseMT implements FunctionIntf {
    * modified during evaluations, as no two threads can enter the eval(x,p)
    * method on the same object simultaneously.
    * @param arg Object
-   * @param params Hashtable
+   * @param params HashMap
    * @return double
    */
-  public double eval(Object arg, Hashtable params) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap params) throws IllegalArgumentException {
     incrEvalCount();
     Integer id = (Integer) params.get("thread.id");
     if (id==null || id.intValue()==-1 || id.intValue()>=_f.length-1) {

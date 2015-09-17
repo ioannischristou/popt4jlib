@@ -28,7 +28,7 @@ import java.util.*;
  */
 public class atomic {
 
-  private static Hashtable _h = new Hashtable();  // map<Long i, Lock a>
+  private static HashMap _h = new HashMap();  // map<Long i, Lock a>
 
   /**
    * get the lock for critical section i.

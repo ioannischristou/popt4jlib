@@ -34,9 +34,9 @@ import java.util.*;
  */
 public class ReduceOpBase {
   private static ReduceOpBase _instance;
-  private static Hashtable _instances = new Hashtable();  // map<String name, ReduceOpBase b>
+  private static HashMap _instances = new HashMap();  // map<String name, ReduceOpBase b>
   private int _numThreads2Wait4=0;
-  private Hashtable _threadsData = new Hashtable();  // map<Thread t, Object data>
+  private HashMap _threadsData = new HashMap();  // map<Thread t, Object data>
 
 	
   /**

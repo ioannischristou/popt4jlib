@@ -49,7 +49,7 @@ public class GMeansMTClustererTest {
         System.err.println("<k> cannot be larger or equal to the <n>, the number of vectors to cluster");
         System.exit(-1);
       }
-      Hashtable p = new Hashtable();
+      HashMap p = new HashMap();
       p.put("gmeansmt.numthreads", new Integer(nt));
       if (num_iters<=0) p.put("gmeansmt.TerminationCriteria", new popt4jlib.MSSC.ClustererTerminationNoMove());
       else p.put("gmeansmt.TerminationCriteria", new popt4jlib.MSSC.ClustererTerminationNumIters(num_iters));

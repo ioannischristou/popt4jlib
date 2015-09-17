@@ -23,12 +23,12 @@ public class RosenbrockFunction implements FunctionIntf {
   /**
    * evaluates the Rosenbrock function at x=arg
    * @param arg Object must be a <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
-   * @param p Hashtable unused
+   * @param p HashMap unused
    * @return double
    * @throws IllegalArgumentException if arg does not adhere to the specification
    * above.
    */
-  public double eval(Object arg, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap p) throws IllegalArgumentException {
     try {
       if (arg instanceof VectorIntf) {
         VectorIntf x = (VectorIntf) arg;

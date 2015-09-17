@@ -8,8 +8,8 @@ import popt4jlib.LocalSearch.*;
 import java.util.*;
 
 /**
- * represents a node in the B&B tree of the hybrid B&B - GASP scheme for the
- * 1-packing problem (max weighted independent set problem). It extends
+ * represents a node in the B &amp; B tree of the hybrid B &amp; B - GASP scheme 
+ * for the 1-packing problem (max weighted independent set problem). It extends
  * <CODE>BBNodeBase</CODE>, as <CODE>BBNode1</CODE> objects enter a priority
  * queue (<CODE>BBQueue</CODE>) from which nodes are selected for processing
  * (passing them to the <CODE>BBThreadPool</CODE> that is a proxy for a
@@ -23,36 +23,37 @@ import java.util.*;
  */
 class BBNode1 extends BBNodeBase {
 	/**
-	 * defines a multiplicative fudge factor by which the "best cost" of 
+	 * defines a multiplicative fudge factor by which the "best cost" of
 	 * graph-nodes is allowed to be "over" so as to still be considered "best" for
 	 * inclusion in the <CODE>getBestNodes2Add(BBNode1)</CODE> method and further
-	 * consideration. This value is allowed to change until a call to 
+	 * consideration. This value is allowed to change until a call to
 	 * <CODE>disallowFFChanges()</CODE> is made by any thread.
 	 */
 	private static double _ff = 0.85;
 	/**
-	 * guard member to ensure the value of _ff doesn't change after BBNode1 
+	 * guard member to ensure the value of _ff doesn't change after BBNode1
 	 * objects are created.
 	 */
 	private static boolean _ffAllowed2Change = true;
 	/**
-	 * comparator between node-sets used in sorting node-sets in the 
+	 * comparator between node-sets used in sorting node-sets in the
 	 * <CODE>getBestNodeSets2Add()</CODE> method if the appropriate option in the
-	 * parameters of the calling program is set. This sorting only makes sense 
+	 * parameters of the calling program is set. This sorting only makes sense
 	 * when children BBNode1 objects will be "cut" short due to flags set to guide
 	 * the search process.
 	 */
 	private static NodeSetWeightComparator _nscomtor = new NodeSetWeightComparator();
 
-	
+
   /**
    * Sole constructor of a BBNode1 object. Clients are not expected to
    * create such objects which are instead created dynamically through the
    * B&B process.
    * @param master BBTree the master BBTree object of which this is a node.
-   * @param r Set // Set&lt;Node&gt; the set of (graph) nodes to be added to the 
+   * @param r Set // Set&lt;Node&gt; the set of (graph) nodes to be added to the
 	 * nodes of the parent to represent a new partial solution.
-   * @param parent BBNode1 the parent BB-node in the B&ampB tree construction process.
+   * @param parent BBNode1 the parent BB-node in the B&amp;B tree construction 
+	 * process.
    * @throws PackingException if the second argument is non-null but the third
    * argument is null.
    */
@@ -62,19 +63,19 @@ class BBNode1 extends BBNodeBase {
 		// System.err.println("BBNode1() with set r.size()="+(r==null ? "null" : r.size())+" constructed.");
   }
 
-	
+
   /**
    * the main method of the class, that processes the partial solution
    * represented by this object, and spawning and pushing into the
    * <CODE>BBQueue</CODE> queue new BB-node children if needed.
 	 * Note:
-	 * <br>2015-02-09 modified children nodes cutting-off behavior to be turned 
-	 * off if this BBNode is the root node, in accordance with the change to 
-	 * let the root node return immediately all possible best graph-nodes as 
-	 * independent starting singleton sets (equivalent to having kmax=0 for the 
+	 * <br>2015-02-09 modified children nodes cutting-off behavior to be turned
+	 * off if this BBNode is the root node, in accordance with the change to
+	 * let the root node return immediately all possible best graph-nodes as
+	 * independent starting singleton sets (equivalent to having kmax=0 for the
 	 * root node) which should result in better parallel processing throughput.
-	 * <br>2015-02-10 improved performance of the isFeas() and isFree2Cover() 
-	 * methods - now also avoid unnecessary Hashtable objects creation.
+	 * <br>2015-02-10 improved performance of the isFeas() and isFree2Cover()
+	 * methods - now also avoid unnecessary HashMap objects creation.
    */
   public void run() {
     try {
@@ -121,13 +122,13 @@ class BBNode1 extends BBNodeBase {
 			}
       // step 4.
       // check for incumbent
-      if (getCost() >= _master.getBound()*_master.getLocalSearchExpandFactor()) {  
+      if (getCost() >= _master.getBound()*_master.getLocalSearchExpandFactor()) {
         // itc 2015-26-02: inequality used to be strict (>)
 				// itc 2015-20-03: added local-search expansion factor multiplication to
 				// broaden cases where local-search kicks in.
         if (getCost()>_master.getBound()) _master.setIncumbent(this);
         foundincumbent = true;
-      } 
+      }
       // step 5.
       // now that _nodes won't be further altered check if node exists in _recent
       if (_master.getQueue().addInRecent(this) == false) {
@@ -148,7 +149,7 @@ class BBNode1 extends BBNodeBase {
             BBNode1 child = new BBNode1(_master, ns, this);
             // check if child's bound is better than incumbent
             double childbound = child.getBound();
-            if (childbound <= _master.getBound() || 
+            if (childbound <= _master.getBound() ||
 								childbound < _master.getMinKnownBound())  // we know child cannot make it
               continue;
             // speed up processing:
@@ -206,7 +207,7 @@ class BBNode1 extends BBNodeBase {
               // now do the local search
               DLS dls = new DLS();
               AllChromosomeMakerIntf movesmaker = _master.getNewLocalSearchMovesMaker();
-							if (movesmaker==null)  // use default 
+							if (movesmaker==null)  // use default
 								movesmaker = new IntSetN1RXPFirstImprovingGraphAllMovesMakerMT(1);
               // AllChromosomeMakerIntf movesmaker = new
               //    IntSetN2RXPGraphAllMovesMaker(1);
@@ -214,7 +215,7 @@ class BBNode1 extends BBNodeBase {
               IntSetNeighborhoodFilterIntf filter = new
                   GRASPPackerIntSetNbrhoodFilter3(1,_master.getGraph());
               FunctionIntf f = new SetWeightEvalFunction(_master.getGraph());
-              Hashtable dlsparams = new Hashtable();
+              HashMap dlsparams = new HashMap();
               dlsparams.put("dls.movesmaker", movesmaker);
               dlsparams.put("dls.x0", nodeids);
               dlsparams.put("dls.numthreads", new Integer(10));  // itc: HERE parameterize asap
@@ -361,9 +362,9 @@ class BBNode1 extends BBNodeBase {
 		return res;
 	}
 
-	
+
 	/**
-	 * return all immediate nbors of this solution's nodes, plus the solution's 
+	 * return all immediate nbors of this solution's nodes, plus the solution's
 	 * nodes themselves.
 	 * @return Set // Set&lt;Node&gt;
 	 */
@@ -443,7 +444,7 @@ class BBNode1 extends BBNodeBase {
 		}
     Set forbidden = getForbiddenNodes();
 		// due to the lazy-evaluation scheme used for the Graph._sortedNodeArrays
-		// data member, it is not safe to call an unsynchronized version of the 
+		// data member, it is not safe to call an unsynchronized version of the
 		// Graph.getMaxNodeWeight(String, Set) method, unless the thread-safe version
 		// of the Double-Check Locking idiom ("Single-Time Locking per thread" idiom)
 		// was implemented; for this reason Graph implements no such unsynch. version
@@ -453,8 +454,8 @@ class BBNode1 extends BBNodeBase {
     _bound = res;
     return res;
   }
-	
-	
+
+
 	/**
 	 * disallow changes to <CODE>_ff</CODE>. Called only from the
 	 * <CODE>BBGASPAcker</CODE> class.
@@ -463,22 +464,22 @@ class BBNode1 extends BBNodeBase {
 		_ffAllowed2Change = false;
 	}
 
-	
+
 	/**
 	 * set the value of <CODE>_ff</CODE> field. Called only from the
-	 * <CODE>BBGASPPacker</CODE> class, before any BBNode1 objects are constructed 
+	 * <CODE>BBGASPPacker</CODE> class, before any BBNode1 objects are constructed
 	 * or executed on threads.
-	 * @param val double 
+	 * @param val double
 	 */
 	static synchronized void setFF(double val) {
 		if (_ffAllowed2Change) _ff = val;
 	}
-	
-	
+
+
 	/**
-	 * it is interesting to reason as to why this method is correct in terms of 
+	 * it is interesting to reason as to why this method is correct in terms of
 	 * memory visibility even without any locks/synchronization.
-	 * @return the depth of this <CODE>BBNode1</CODE> object in the 
+	 * @return the depth of this <CODE>BBNode1</CODE> object in the
 	 * <CODE>BBTree</CODE>.
 	 */
   final int getLevel() {
@@ -489,9 +490,9 @@ class BBNode1 extends BBNodeBase {
 
 
   /**
-   * return Set&lt;Set&lt;Node&gt; &gt; of all maximal nodesets that can be added 
+   * return Set&lt;Set&lt;Node&gt; &gt; of all maximal nodesets that can be added
 	 * together to the current active <CODE>_nodes</CODE> set.
-	 * Note: 
+	 * Note:
 	 * <br>2014-07-22 modified Vector store to ArrayList store to enhance
 	 * multi-threading speed.
 	 * <br>2015-02-09 root node returns immediately with collection of singleton
@@ -501,9 +502,15 @@ class BBNode1 extends BBNodeBase {
   private Set getBestNodeSets2Add() throws ParallelException {
     final int kmax = getMaster().getMaxAllowedItersInGBNS2A();
     final Set ccands = getBestNodes2Add(getParent()==null);
-    Set result = getMaster().getSortBestCandsInGBNS2A() ? 
-						new TreeSet(_nscomtor) : 
+    /* following code compiles under JDK5 but not under JDK 1.4
+    Set result = getMaster().getSortBestCandsInGBNS2A() ?
+						new TreeSet(_nscomtor) :
 						new HashSet();  // Set<Set<Node> >
+    */
+    Set result;
+    if (getMaster().getSortBestCandsInGBNS2A()) result = new TreeSet(_nscomtor);
+    else result = new HashSet();  // Set<Set<Node> >
+
     List store = new ArrayList();
     Stack temp = new Stack();
     Iterator cands_it = ccands.iterator();
@@ -571,7 +578,7 @@ class BBNode1 extends BBNodeBase {
         cons = true;
         Iterator it = result.iterator();
         /* slow loop involving creating new HashSet's unnecessarily
-				// plus it rechecks feasibility of c1 U c2 though both 
+				// plus it rechecks feasibility of c1 U c2 though both
 				// c1 and c2 are known to be feasible
 				while (it.hasNext()) {
           Set c12 = new HashSet(c1);
@@ -601,7 +608,7 @@ class BBNode1 extends BBNodeBase {
             break;
           }
         }
-				// */				
+				// */
         if (cons) {
           // make sure you don't insert smth that already exists
           boolean iscovered=false;
@@ -620,14 +627,14 @@ class BBNode1 extends BBNodeBase {
 
   /**
    * return the Set&lt;Node&gt; that are the best node(s) to add given the current
-   * active <CODE>_nodes</CODE> set. This is the set of nodes that are free to 
-	 * cover, have max. weight (within the fudge factor <CODE>_ff</CODE>), and 
+   * active <CODE>_nodes</CODE> set. This is the set of nodes that are free to
+	 * cover, have max. weight (within the fudge factor <CODE>_ff</CODE>), and
 	 * have the least weight of "free" NBors() (again within the same fudge factor).
-	 * Alternatively, if the "useGWMIN2criterion" flag is true, the "GWMIN2" 
-	 * heuristic criterion is utilized, so that the free nodes that are within 
-	 * <CODE>_ff</CODE> times from the maximum value of the quantity 
+	 * Alternatively, if the "useGWMIN2criterion" flag is true, the "GWMIN2"
+	 * heuristic criterion is utilized, so that the free nodes that are within
+	 * <CODE>_ff</CODE> times from the maximum value of the quantity
 	 * $w_n / \Sum_{v \in N^+_n}$ form the return set.
-	 * @param boolean isroot if true then _ff is set to zero, so that all 
+	 * @param boolean isroot if true then _ff is set to zero, so that all
 	 * non-forbidden nodes with min. sum of neighbors-weights are returned.
    * @return Set // Set&lt;Node&gt;
    */
@@ -651,7 +658,7 @@ class BBNode1 extends BBNodeBase {
 					Iterator it = nibors.iterator();
 					while (it.hasNext()) {
 						Node nb = (Node) it.next();
-						Double bD = nb.getWeightValueUnsynchronized("value"); 
+						Double bD = nb.getWeightValueUnsynchronized("value");
 						if (!forbidden.contains(nb))
 							denom += (bD==null ? 1.0 : bD.doubleValue());
 					}
@@ -671,8 +678,8 @@ class BBNode1 extends BBNodeBase {
 								Iterator it = nbors.iterator();
 								while (it.hasNext()) {
 									Node nb = (Node) it.next();
-									Double bD = nb.getWeightValueUnsynchronized("value"); 
-									if (!forbidden.contains(nb)) 
+									Double bD = nb.getWeightValueUnsynchronized("value");
+									if (!forbidden.contains(nb))
 										denom += (bD==null ? 1.0 : bD.doubleValue());
 								}
 								nw /= denom;
@@ -787,9 +794,9 @@ class BBNode1 extends BBNodeBase {
 
 
 	/**
-	 * check if the nodes parameter can be added to the current active set of 
+	 * check if the nodes parameter can be added to the current active set of
 	 * nodes represented by this BBNode1 object.
-	 * @param nodes Set // Set&lt;Node&gt; 
+	 * @param nodes Set // Set&lt;Node&gt;
 	 * @return boolean true iff nodes can be added to the current solution
 	 */
   private boolean isFeas(Set nodes) {
@@ -803,10 +810,10 @@ class BBNode1 extends BBNodeBase {
     }
     return true;
   }
-	
-	
+
+
 	/**
-	 * check if c1 conflicts with c2, in that there exist n1 \in c1 that is a 
+	 * check if c1 conflicts with c2, in that there exist n1 \in c1 that is a
 	 * neighbor of some n2 \in c2.
 	 * Notice that the method assumes that both c1 and c2 are currently feasible,
 	 * ie the calls isFeas(c1) and isFeas(c2) must return true.

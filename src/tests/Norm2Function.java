@@ -26,14 +26,14 @@ public class Norm2Function implements FunctionIntf {
    * giving the weights for each component.
    * @param arg Object must be a <CODE>double[]</CODE> or a <CODE>VectorIntf</CODE>
    * object.
-   * @param p Hashtable if not null, may contain pairs of the form
+   * @param p HashMap if not null, may contain pairs of the form
    * <li> <"a"$i$, Double v> where v is the weight associates with the (i+1)-st
    * variable.
    * @return double
    * @throws IllegalArgumentException if the arguments don't adhere to the above
    * specifications.
    */
-  public double eval(Object arg, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap p) throws IllegalArgumentException {
     try {
       if (arg instanceof VectorIntf) {
         VectorIntf x = (VectorIntf) arg;
@@ -81,7 +81,7 @@ public class Norm2Function implements FunctionIntf {
   public static void main(String[] args) {
     int n = args.length;
     double[] x = new double[n];
-    Hashtable p = new Hashtable();
+    HashMap p = new HashMap();
     for (int i=0; i<n; i++) {
       x[i] = Double.parseDouble(args[i]);
     }

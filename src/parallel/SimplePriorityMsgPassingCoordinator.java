@@ -1,6 +1,6 @@
 package parallel;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.TreeSet;
 import java.util.Iterator;
 
@@ -23,7 +23,7 @@ public class SimplePriorityMsgPassingCoordinator {
   private static int _maxSize=10000;  // may be modified only before main use
   private TreeSet _data;  // holds ComparableTaskObject objects
   private static SimplePriorityMsgPassingCoordinator _instance=null;
-  private static Hashtable _instances=new Hashtable();  // map<String name, SPMPC instance>
+  private static HashMap _instances=new HashMap();  // map<String name, SPMPC instance>
 
 
   /**

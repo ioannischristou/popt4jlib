@@ -8,12 +8,12 @@ import java.util.*;
 
 public class HCoarsenerIEC extends HCoarsener {
 
-  public HCoarsenerIEC(HGraph g, int[] partition, Hashtable props) {
+  public HCoarsenerIEC(HGraph g, int[] partition, HashMap props) {
     super(g, partition, props);
   }
 
 
-  public HCoarsener newInstance(HGraph g, int[] partition, Hashtable properties) {
+  public HCoarsener newInstance(HGraph g, int[] partition, HashMap properties) {
     return new HCoarsenerIEC(g, partition, properties);
   }
 
@@ -102,7 +102,7 @@ public class HCoarsenerIEC extends HCoarsener {
     // and finally create the arcs for the new graph
     // for each old arc, if it connects two new nodes, connect the new nodes.
     // if there's already an arc, add the weight of this one to the new one.
-    Hashtable new_arcs_table = new Hashtable();  // map<Integer new_startid, Set<HLinkPair> >
+    HashMap new_arcs_table = new HashMap();  // map<Integer new_startid, Set<HLinkPair> >
     int new_arcs=0;
     for (int i=0; i<_g.getNumArcs(); i++) {
       HLink ll = _g.getHLink(i);
@@ -144,9 +144,9 @@ public class HCoarsenerIEC extends HCoarsener {
     }
 
     _coarseG = new HGraph(new_nodes, new_arcs);
-    Enumeration new_arcs_table_iter = new_arcs_table.keys();
-    while (new_arcs_table_iter.hasMoreElements()) {
-      Integer new_start = (Integer) new_arcs_table_iter.nextElement();
+    Iterator new_arcs_table_iter = new_arcs_table.keySet().iterator();  // .keys();
+    while (new_arcs_table_iter.hasNext()) {
+      Integer new_start = (Integer) new_arcs_table_iter.next();
       Set linkpairs = (Set) new_arcs_table.get(new_start);
       Iterator lpairs_iter = linkpairs.iterator();
       while (lpairs_iter.hasNext()) {
@@ -296,7 +296,7 @@ public class HCoarsenerIEC extends HCoarsener {
 
 
   public String toString() {
-    Hashtable props = getProperties();
+    HashMap props = getProperties();
     String ret = "props=";
     if (props==null) ret+="null";
     else ret += props.size();

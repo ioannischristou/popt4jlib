@@ -3,7 +3,7 @@ package graph.partitioning;
 import graph.*;
 import parallel.ParallelException;
 import utils.*;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.Collections;
 import java.util.Set;
@@ -38,7 +38,7 @@ public class PartitionerGKWR implements PartitionerIntf {
     String partfile = args[3];
     try {
       Graph g = DataMgr.readGraphFromhMeTiSFile(graphfile);
-      Hashtable props = DataMgr.readPropsFromFile(propertiesfile);
+      HashMap props = DataMgr.readPropsFromFile(propertiesfile);
       PartitionerIntf parter = new PartitionerGKWR();
       // do the partitioning
       int[] part = parter.partition(g, k, props);
@@ -72,10 +72,10 @@ public class PartitionerGKWR implements PartitionerIntf {
    * move iff it leads to a gain>0, in terms of weight of cut-edges.)
    * @param g Graph
    * @param k int
-   * @param props Hashtable
+   * @param props HashMap
    * @return int[]
    */
-  synchronized public int[] partition(Graph g, int k, Hashtable props) {
+  synchronized public int[] partition(Graph g, int k, HashMap props) {
     try {
       final int num_nodes = g.getNumNodes();
       // try to find an initial partition to work with
@@ -185,11 +185,11 @@ public class PartitionerGKWR implements PartitionerIntf {
    * @param k int
    * @param partition int[]
    * @param ni Node
-   * @param props Hashtable
+   * @param props HashMap
    * @return int the partition block to move ni, or -1 else
    */
   private int bestPart(Graph g, int k, int[] partition, Node ni,
-                                    Hashtable props) {
+                                    HashMap props) {
     _gain = Double.NEGATIVE_INFINITY;
     final int ni_part = partition[ni.getId()];  // 1...k
     // can we move node ni?

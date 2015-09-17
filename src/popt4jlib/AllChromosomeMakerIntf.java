@@ -18,10 +18,10 @@ public interface AllChromosomeMakerIntf {
    * construct ALL new chromosome objects within the neighborhood of this
    * chromosome.
    * @param chromosome Object
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException
    * @return Vector // Vector&lt;Object chromosome&gt;
    */
-  public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException;
+  public Vector createAllChromosomes(Object chromosome, HashMap params) throws OptimizerException;
 }
 

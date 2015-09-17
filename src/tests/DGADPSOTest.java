@@ -45,7 +45,7 @@ public class DGADPSOTest {
   public static void main(String[] args) {
     try {
       long start_time = System.currentTimeMillis();
-      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       FunctionIntf func = (FunctionIntf) params.get("dga.function");
       FunctionBase wrapper_func = new FunctionBase(func);
       params.put("dga.function",wrapper_func);

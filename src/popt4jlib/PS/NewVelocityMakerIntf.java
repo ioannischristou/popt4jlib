@@ -1,7 +1,7 @@
 package popt4jlib.PS;
 
 import popt4jlib.OptimizerException;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * specifies how to create new velocity objects.
@@ -19,11 +19,11 @@ interface NewVelocityMakerIntf {
    * @param v Object the current individual's velocity
    * @param p Object the best position the individual was found in
    * @param g Object the best position found for the island of individuals (swarm)
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException
    * @return Object
    */
   public Object createNewVelocity(Object x, Object v,
                                   Object p, Object g,
-                                  Hashtable params) throws OptimizerException;
+                                  HashMap params) throws OptimizerException;
 }

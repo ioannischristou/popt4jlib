@@ -15,7 +15,7 @@ import java.util.*;
  */
 public interface LocalOptimizerIntf extends OptimizerIntf {
   public LocalOptimizerIntf newInstance();
-  public Hashtable getParams();
-  public void setParams(Hashtable params) throws OptimizerException;
+  public HashMap getParams();
+  public void setParams(HashMap params) throws OptimizerException;
 }
 

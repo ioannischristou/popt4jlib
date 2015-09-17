@@ -6,7 +6,7 @@ import java.util.*;
 
 /**
  * creates random double[] objects of fixed length, according to parameters
- * passed in a <CODE>Hashtable</CODE> object.
+ * passed in a <CODE>HashMap</CODE> object.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -28,7 +28,7 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
    * parameters, specified in the params argument. The value for each element
    * in the array, is drawn from the uniform distribution restricted within the
    * boundaries of the element's range specified in the params key-value pairs.
-   * @param p Hashtable must contain the following params:
+   * @param p HashMap must contain the following params:
 	 * <ul>
    * <li> &lt;"[dpso.]chromosomelength", $integer_value$&gt; mandatory, the length
    * of the chromosome.
@@ -51,7 +51,7 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
    * @throws OptimizerException
    * @return Object double[] of length specified in the params.
    */
-  public Object createRandomChromosome(Hashtable p) throws OptimizerException {
+  public Object createRandomChromosome(HashMap p) throws OptimizerException {
     try {
       LightweightParams params = new LightweightParams(p);
       final int nmax = params.getInteger("dpso.chromosomelength").intValue();

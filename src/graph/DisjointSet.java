@@ -18,7 +18,7 @@ public class DisjointSet {
   Map _objects;  // map<Object o, DisjointSetElem x>
 
   public DisjointSet() {
-    _objects = new Hashtable();
+    _objects = new HashMap();
   }
 
 

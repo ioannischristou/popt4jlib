@@ -14,7 +14,7 @@ import java.util.*;
 public class RndUtil {
   private static RndUtil _instance = null;
   // private static RndUtil _extras[] = null;
-  private static Hashtable _extras = null;  // map<Integer id, Random r>
+  private static HashMap _extras = null;  // map<Integer id, Random r>
   private static int _curMaxId = 0;
   private Random _random = null;
   private long _seed = 0;  // default seed
@@ -72,7 +72,7 @@ public class RndUtil {
    */
   public static synchronized RndUtil getInstance(int id) {
     if (_extras==null) {
-      _extras = new Hashtable();
+      _extras = new HashMap();
       return addExtraInstance(id);
     }
     RndUtil ru = (RndUtil) _extras.get(new Integer(id));
@@ -86,7 +86,7 @@ public class RndUtil {
    * @param num int
    */
   public static synchronized void addExtraInstances(int num) {
-    if (_extras==null) _extras = new Hashtable(num);
+    if (_extras==null) _extras = new HashMap(num);
     for (int i=0; i<num; i++) {
       addExtraInstance(_curMaxId+1);
     }

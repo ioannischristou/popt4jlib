@@ -31,7 +31,7 @@ public class IntVarArray1AlleleMutationOp implements MutationOpIntf {
 	 * Gaussian processes but obey the range of values specified in params.
    * @param chromosome1 Object int[]
    * @param chromosome2 Object int[]
-   * @param params Hashtable must contain the following:
+   * @param params HashMap must contain the following:
 	 * <ul>
    * <li> &lt;"dga.minallelevalue", $integer_value$&gt; optional, the minimum
    * value for any allele in the chromosome. Default -Infinity.
@@ -53,7 +53,7 @@ public class IntVarArray1AlleleMutationOp implements MutationOpIntf {
    * @return Pair containing the two <CODE>int[]</CODE> arguments: chromosome1 
 	 * and chromosome2
    */
-  public Pair doMutation(Object chromosome1, Object chromosome2, Hashtable params) throws OptimizerException {
+  public Pair doMutation(Object chromosome1, Object chromosome2, HashMap params) throws OptimizerException {
     try {
       final int id = ( (Integer) params.get("thread.id")).intValue();
       int[] a1 = (int[]) chromosome1;

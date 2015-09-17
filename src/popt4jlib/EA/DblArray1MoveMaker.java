@@ -49,11 +49,11 @@ public class DblArray1MoveMaker implements NewChromosomeMakerIntf {
 	 * the Gaussian distribution from which the random distance measures are
 	 * computed along each dimension.</p>
    * @param chromosome Object must be a double[].
-   * @param params Hashtable see discussion above
+   * @param params HashMap see discussion above
    * @throws OptimizerException
    * @return Object a double[]
    */
-  public Object createNewChromosome(Object chromosome, Hashtable params) throws OptimizerException {
+  public Object createNewChromosome(Object chromosome, HashMap params) throws OptimizerException {
     double[] arg = (double[]) chromosome;  // chromosome is a double[] array
     double[] res = new double[arg.length];
     double delta = 1;

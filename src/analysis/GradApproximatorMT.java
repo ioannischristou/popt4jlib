@@ -43,11 +43,11 @@ public class GradApproximatorMT implements VecFunctionIntf {
    * <li> <"gradapproximator.numthreads", Integer nt> optional, the number of
    * threads to use when computing the gradient. Default is 1.
    * @param x VectorIntf the point at which the gradient must be evaluated.
-   * @param params Hashtable any parameters to be passed to the function f
+   * @param params HashMap any parameters to be passed to the function f
    * @throws IllegalArgumentException if x is null or if the algorithm fails
    * @return VectorIntf
    */
-  public VectorIntf eval(VectorIntf x, Hashtable params) throws IllegalArgumentException {
+  public VectorIntf eval(VectorIntf x, HashMap params) throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null arg passed");
     final int n = x.getNumCoords();
     int nt = 1;
@@ -110,12 +110,12 @@ public class GradApproximatorMT implements VecFunctionIntf {
   /**
    * evaluate the partial derivative of the "coordindex"-th variable at x.
    * @param x VectorIntf
-   * @param params Hashtable
+   * @param params HashMap
    * @param coordindex int
    * @throws IllegalArgumentException
    * @return double
    */
-  public double evalCoord(VectorIntf x, Hashtable params, int coordindex) throws IllegalArgumentException {
+  public double evalCoord(VectorIntf x, HashMap params, int coordindex) throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null arg passed");
     // final int n = x.getNumCoords();
     VectorIntf xc = x.newCopy();  // work with copy so as to avoid memory
@@ -161,14 +161,14 @@ class GradApproxTaskObject implements TaskObject {
   private final static long serialVersionUID = -197598046273744656L;
   private VectorIntf _x;
   private FunctionIntf _f;
-  private Hashtable _params;
+  private HashMap _params;
   private boolean _isDone=false;
   VectorIntf _gradf;
   int _start;
   int _end;
 
 
-  GradApproxTaskObject(VectorIntf x, FunctionIntf f, Hashtable params, int start, int end) {
+  GradApproxTaskObject(VectorIntf x, FunctionIntf f, HashMap params, int start, int end) {
     _x = x.newInstance();  // work with copy so as to avoid memory corruption 
 		                       // issues in multi-threaded accesses of vector
     _f = f;

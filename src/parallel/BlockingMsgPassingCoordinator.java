@@ -1,7 +1,7 @@
 package parallel;
 
 import java.util.Vector;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -37,7 +37,7 @@ public class BlockingMsgPassingCoordinator {
   private static final int _maxSize=10000;  // The max. size of the _data Vector
   private BoundedBufferArrayUnsynchronized _data;  // used to be Vector<RegisteredParcel> 
   private static BlockingMsgPassingCoordinator _instance=null;
-  private static Hashtable _instances=new Hashtable();  // map<String name, BMPC instance>
+  private static HashMap _instances=new HashMap();  // map<String name, BMPC instance>
 
 
   /**

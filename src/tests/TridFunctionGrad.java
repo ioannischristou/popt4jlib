@@ -23,11 +23,11 @@ public class TridFunctionGrad implements VecFunctionIntf {
   /**
    * evaluate the TridFunction gradient at point x.
    * @param x VectorIntf
-   * @param p Hashtable unused
+   * @param p HashMap unused
    * @return VectorIntf
    * @throws IllegalArgumentException if x==null
    */
-  public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
+  public VectorIntf eval(VectorIntf x, HashMap p) throws IllegalArgumentException {
     try {
       int n = x.getNumCoords();
       VectorIntf g = x.newInstance();  // x.newCopy();
@@ -50,12 +50,12 @@ public class TridFunctionGrad implements VecFunctionIntf {
   /**
    * evaluate partial derivative at i.
    * @param x VectorIntf
-   * @param p Hashtable
+   * @param p HashMap
    * @param i int
    * @throws IllegalArgumentException
    * @return double
    */
-  public double evalCoord(VectorIntf x, Hashtable p, int i) throws IllegalArgumentException {
+  public double evalCoord(VectorIntf x, HashMap p, int i) throws IllegalArgumentException {
     try {
       int n = x.getNumCoords();
       double xi = x.getCoord(i);

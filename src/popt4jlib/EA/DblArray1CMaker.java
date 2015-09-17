@@ -41,11 +41,11 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
    * <br>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
    * the domain of the variable wider.</br>
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException if the mandatory parameters are not passed in
    * @return Object double[]
    */
-  public Object createRandomChromosome(Hashtable params) throws OptimizerException {
+  public Object createRandomChromosome(HashMap params) throws OptimizerException {
     try {
       final int nmax = ( (Integer) params.get("dea.chromosomelength")).intValue();
       final double maxalleleval=((Double) params.get("dea.maxallelevalue")).doubleValue();

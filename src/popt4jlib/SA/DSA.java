@@ -28,7 +28,7 @@ import java.util.*;
 public class DSA implements OptimizerIntf {
   private static int _nextId=0;
   private int _id;
-  private Hashtable _params=null;
+  private HashMap _params=null;
   double _incValue=Double.MAX_VALUE;
   Object _inc=null;  // incumbent chromosome
   DSAIndividual _schedInc=null;  // incumbent chromosome for a given schedule temp.
@@ -50,12 +50,12 @@ public class DSA implements OptimizerIntf {
   /**
    * public constructor taking as input the parameters of the DSA process to be
    * used later on when the minimize(f) method is called. The parameters will be
-   * copied so modifying the Hashtable that is passed as argument later on, will
+   * copied so modifying the HashMap that is passed as argument later on, will
    * not affect the parameters of the DSA object.
    * Unique id is assigned to this object among all DSA objects.
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public DSA(Hashtable params) {
+  public DSA(HashMap params) {
     this();
     try {
       setParams(params);
@@ -68,24 +68,24 @@ public class DSA implements OptimizerIntf {
   /**
    * return a copy of the parameters. Modifications to the returned object
    * do not affect the data member.
-   * @return Hashtable
+   * @return HashMap
    */
-  synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
   /**
-   * the optimization params are set to p. Later modifying the Hashtable that is
+   * the optimization params are set to p. Later modifying the HashMap that is
    * passed as argument, will not affect the parameters of the DSA object.
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if this method is called while another thread
    * is running the <CODE>minimize(f)</CODE> method on this object.
    */
-  synchronized void setParams(Hashtable p) throws OptimizerException {
+  synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
   }
 
 
@@ -354,8 +354,8 @@ class DSAThreadAux {
   private Chromosome2ArgMakerIntf _c2arg=null;
   private SAScheduleIntf _sched=null;
   private int _ntriesperiter;
-  private Hashtable _p=null;
-  private Hashtable _fp=null;
+  private HashMap _p=null;
+  private HashMap _fp=null;
   private FunctionIntf _f=null;
 
   public DSAThreadAux(DSA master, int id) throws OptimizerException {
@@ -367,7 +367,7 @@ class DSAThreadAux {
     _p.put("thread.id",new Integer(_uid));  // used to be _id
     _f = _master.getFunction();
     // create the _funcParams
-    _fp = new Hashtable();
+    _fp = new HashMap();
     Iterator it = _p.keySet().iterator();
     while (it.hasNext()) {
       String key = (String) it.next();
@@ -500,7 +500,7 @@ class DSAThreadAux {
     RandomChromosomeMakerIntf amaker = (RandomChromosomeMakerIntf) _p.get("dsa.randomchromosomemaker");
     // what to do if no such maker is provided? must have a default one
     if (amaker==null) throw new OptimizerException("no RandomChromosomeMakerIntf "+
-                                                   "provided in the params Hashtable");
+                                                   "provided in the params HashMap");
     Object chromosome = amaker.createRandomChromosome(_p);
     _individual = new DSAIndividual(chromosome, _master, _fp);  // used to be _p
     System.out.println("Individual="+_individual);
@@ -535,7 +535,7 @@ class DSAIndividual {
   private DSA _master;  // ref. back to master DGA object
   private FunctionIntf _f;  // ref. back to master's _f function
 
-  public DSAIndividual(Object chromosome, DSA master, Hashtable p) throws OptimizerException {
+  public DSAIndividual(Object chromosome, DSA master, HashMap p) throws OptimizerException {
     _chromosome = chromosome;
     _master = master;
     _f = _master.getFunction();
@@ -558,7 +558,7 @@ class DSAIndividual {
   }
   public Object getChromosome() { return _chromosome; }
   public double getValue() { return _val; }  // enhance the density value differences
-  public void computeValue(Hashtable p) throws OptimizerException {
+  public void computeValue(HashMap p) throws OptimizerException {
     if (_val==Double.MAX_VALUE) {  // don't do the computation if already done
       Chromosome2ArgMakerIntf c2amaker =
           (Chromosome2ArgMakerIntf) p.get("dsa.c2amaker");

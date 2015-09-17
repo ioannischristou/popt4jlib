@@ -29,11 +29,11 @@ public class AckleyFunctionCEC20XXShifted implements FunctionIntf {
   /**
    * return the value of the Ackley function.
    * @param arg Object must be a <CODE>VectorIntf</CODE> object.
-   * @param params Hashtable unused
+   * @param params HashMap unused
    * @throws IllegalArgumentException if the arg is not of the expected type.
    * @return double
    */
-  public double eval(Object arg, Hashtable params) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap params) throws IllegalArgumentException {
 		VectorIntf x = null;
 		try {
 		 x = (VectorIntf) arg;

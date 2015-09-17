@@ -23,10 +23,10 @@ public interface NeighborhoodFilterIntf {
    * integers that can be added to the reduced solution.
    * @param x Object
    * @param arg Object
-   * @param params Hashtable
+   * @param params HashMap
    * @throws LocalSearchException
    * @return List
    */
-  List filter(Object x, Object arg, Hashtable params) throws LocalSearchException;
+  List filter(Object x, Object arg, HashMap params) throws LocalSearchException;
 }
 

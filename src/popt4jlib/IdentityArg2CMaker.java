@@ -1,6 +1,6 @@
 package popt4jlib;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * class implements the identity Arg-&gt;;Chromosome transformation. The class is
@@ -23,10 +23,10 @@ public class IdentityArg2CMaker implements Arg2ChromosomeMakerIntf {
   /**
    * returns the argument passed in.
    * @param c Object
-   * @param params Hashtable
+   * @param params HashMap
    * @return Object
    */
-  public Object getChromosome(Object c, Hashtable params) {
+  public Object getChromosome(Object c, HashMap params) {
     return c;
   }
 }

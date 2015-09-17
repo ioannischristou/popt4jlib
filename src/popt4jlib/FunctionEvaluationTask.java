@@ -1,7 +1,7 @@
 package popt4jlib;
 
 import parallel.TaskObject;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.io.Serializable;
 
 
@@ -27,7 +27,7 @@ public class FunctionEvaluationTask implements TaskObject {
   // private final static long serialVersionUID = -7654946164692599332L;
   private FunctionIntf _f;
   private Object _arg;
-  private Hashtable _params;
+  private HashMap _params;
   private double _val=Double.MAX_VALUE;
   private boolean _isDone=false;
 
@@ -35,12 +35,12 @@ public class FunctionEvaluationTask implements TaskObject {
    * constructor
    * @param f FunctionIntf
    * @param arg Object
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public FunctionEvaluationTask(FunctionIntf f, Object arg, Hashtable params) {
+  public FunctionEvaluationTask(FunctionIntf f, Object arg, HashMap params) {
     _f = f;
     _arg = arg;
-    _params = new Hashtable(params);  // keep FindBugs happy
+    _params = new HashMap(params);  // keep FindBugs happy
     // interestingly, FindBugs doesn't complain about the previous asgnmnt...
   }
 

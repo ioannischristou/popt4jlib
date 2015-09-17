@@ -102,7 +102,7 @@ public class DPSOTest {
   public static void main(String[] args) {
     try {
       long start_time = System.currentTimeMillis();
-      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       if (args.length>1) {
         long seed = Long.parseLong(args[1]);
         RndUtil.getInstance().setSeed(seed);  // updates all extra instances too!

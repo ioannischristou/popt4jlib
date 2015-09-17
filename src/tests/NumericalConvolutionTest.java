@@ -41,7 +41,7 @@ public class NumericalConvolutionTest {
     double step = Double.parseDouble(args[4]);
     String jplotfile = args[5];
     double[] x = new double[1];
-    Hashtable params = new Hashtable();
+    HashMap params = new HashMap();
     params.put("convolutionapproximator.integrationlowerlimit", new Double(ll));
     params.put("convolutionapproximator.integrationupperlimit", new Double(ul));
     params.put("convolutionapproximator.varindex", new Integer(0));
@@ -97,7 +97,7 @@ public class NumericalConvolutionTest {
 class MyFunction implements FunctionIntf {
   public MyFunction() {
   }
-  public double eval(Object x, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object x, HashMap p) throws IllegalArgumentException {
     double[] t;
     if (x==null) throw new IllegalArgumentException("null arg");
     else if (x instanceof VectorIntf) t = ((VectorIntf) x).getDblArray1();

@@ -29,12 +29,12 @@ public class GriewangkFunction implements FunctionIntf {
    * evaluates the Griewangk function at point x=arg
    * @param arg Object must be <CODE>double[]</CODE> or a
    * <CODE>popt4jlib.VectorIntf</CODE> object.
-   * @param p Hashtable not used
+   * @param p HashMap not used
    * @return double
    * @throws IllegalArgumentException if <CODE>arg</CODE> does
    * not adhere to the above specifications.
    */
-  public double eval(Object arg, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap p) throws IllegalArgumentException {
     try {
       if (arg instanceof VectorIntf) {
         VectorIntf x = (VectorIntf) arg;
@@ -76,7 +76,7 @@ public class GriewangkFunction implements FunctionIntf {
   public static void main(String[] args) {
     int n = args.length;
     double[] x = new double[n];
-    Hashtable p = null;
+    HashMap p = null;
     for (int i=0; i<n; i++) {
       x[i] = Double.parseDouble(args[i]);
     }

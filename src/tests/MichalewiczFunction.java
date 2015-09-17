@@ -30,13 +30,13 @@ public class MichalewiczFunction implements FunctionIntf {
    * evaluates the Michalewicz function at x=arg
    * @param arg Object must be <CODE>double[]</CODE> or
    * <CODE>popt4jlib.VectorIntf</CODE>
-   * @param p Hashtable must contain the pair:
+   * @param p HashMap must contain the pair:
    * <li> <"m", Double v> indicating the value of the parameter m.
    * @return double
    * @throws IllegalArgumentException if any of the two arguments does not adhere
    * to the above specification
    */
-  public double eval(Object arg, Hashtable p) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap p) throws IllegalArgumentException {
     try {
       double m = ( (Double) p.get("m")).doubleValue();
       if (arg instanceof VectorIntf) {
@@ -78,7 +78,7 @@ public class MichalewiczFunction implements FunctionIntf {
     int n = args.length;
     double[] x = new double[n-1];
     double m = Double.parseDouble(args[0]);
-    Hashtable p = new Hashtable();
+    HashMap p = new HashMap();
     p.put("m",new Double(m));
     for (int i=1; i<n; i++) {
       x[i-1] = Double.parseDouble(args[i]);

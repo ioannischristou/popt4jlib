@@ -17,8 +17,8 @@ import popt4jlib.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class PolakRibiereConjugateGradientST implements LocalOptimizerIntf, ObserverIntf {
-  Hashtable _params;
+public class PolakRibiereConjugateGradientST extends GLockingObserverBase implements LocalOptimizerIntf {
+  HashMap _params;
   FunctionIntf _f;
 
 
@@ -26,18 +26,19 @@ public class PolakRibiereConjugateGradientST implements LocalOptimizerIntf, Obse
    * public no-arg constructor
    */
   public PolakRibiereConjugateGradientST() {
-    // no-op
+    super();  // no-op
   }
 
 
   /**
    * public constructor accepting the parameters to use in the optimization
    * process (can be nullified with a call to <CODE>setParams(p)</CODE>).
-   * @param params Hashtable the parameters to use. A local copy is made so that
+   * @param params HashMap the parameters to use. A local copy is made so that
    * later modifications of the argument do no affect the parameters passed in
    */
-  public PolakRibiereConjugateGradientST(Hashtable params) {
-    try {
+  public PolakRibiereConjugateGradientST(HashMap params) {
+    super();
+		try {
       setParams(params);
     }
     catch (Exception e) {
@@ -49,10 +50,10 @@ public class PolakRibiereConjugateGradientST implements LocalOptimizerIntf, Obse
   /**
    * return a copy of the parameters. Modifications to the returned object
    * do not affect the data member.
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  public synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
@@ -67,14 +68,14 @@ public class PolakRibiereConjugateGradientST implements LocalOptimizerIntf, Obse
 
   /**
    * the optimization params are set to p
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object.
    */
-  public synchronized void setParams(Hashtable p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
   }
 
 
@@ -82,29 +83,29 @@ public class PolakRibiereConjugateGradientST implements LocalOptimizerIntf, Obse
    * the main method of the class. Some parameters must have been passed in
    * before calling this method, either in the constructor, or via a later call
    * to <CODE>setParams(p)</CODE>. These are:
-   * <"prcg.x0", VectorIntf x> optional, the initial starting point. If this
+   * &lt;"prcg.x0", VectorIntf x&gt; optional, the initial starting point. If this
    * pair does not exist, or if x is null, then it becomes mandatory that
-   * a pair <"gradientdescent.x0", VectorIntf x> pair with a non-null x is
+   * a pair &lt;"gradientdescent.x0", VectorIntf x&gt; pair with a non-null x is
    * in the parameters that have been set.
-   * <"prcg.gradient", VecFunctionIntf g> optional, the gradient of f, the
+   * &lt;"prcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
    * function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * <"prcg.gtol", Double v> optional, the minimum abs. value for each of the
+   * &lt;"prcg.gtol", Double v&gt; optional, the minimum abs. value for each of the
    * gradient's coordinates, below which if all coordinates of the gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-8.
-   * <"prcg.maxiters", Integer miters> optional, the maximum number of major
+   * &lt;"prcg.maxiters", Integer miters&gt; optional, the maximum number of major
    * iterations of the CG search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * <"prcg.rho", Double v> optional, the value of the parameter ñ in the Armijo
+   * &lt;"prcg.rho", Double v&gt; optional, the value of the parameter &rho; in the Armijo
    * rule. Default is 0.1.
-   * <"prcg.beta", Double v> optional, the value of the parameter â in the
+   * &lt;"prcg.beta", Double v&gt; optional, the value of the parameter &beta; in the
    * approximate line search step-size determination obeying the Armijo rule
    * conditions. Default is 0.9.
-   * <"prcg.gamma", Double v> optional, the value of the parameter ã in the
+   * &lt;"prcg.gamma", Double v&gt; optional, the value of the parameter &gamma; in the
    * approximate line search step-size determination obeying the Armijo rule
    * conditions. Default is 1.0.
-   * <"prcg.looptol", Double v> optional, the minimum step-size allowed. Default
+   * &lt;"prcg.looptol", Double v&gt; optional, the minimum step-size allowed. Default
    * is 1.e-21.
    *
    * @param f FunctionIntf the function to minimize
@@ -143,37 +144,23 @@ public class PolakRibiereConjugateGradientST implements LocalOptimizerIntf, Obse
    * @param subject SubjectIntf
    * @throws OptimizerException
    */
-  public void notifyChange(SubjectIntf subject) throws OptimizerException {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      Object arg = subject.getIncumbent();
-      FunctionIntf f = subject.getFunction();
-      VectorIntf x=null;
-      if (arg instanceof double[]) {
-        x = new DblArray1Vector((double[]) arg);
-      } else if (arg instanceof VectorIntf) x = (DblArray1Vector) arg;
-      else throw new OptimizerException("OPRCGST.notifyChange(): don't know how to convert argument into VectorIntf object");
-      Hashtable params = subject.getParams();
-      params.put("gradientdescent.x0",x);  // add the initial point
-      params.put("prcg.maxiters", new Integer(1000));
-      setParams(params);
-      PairObjDouble p = minimize(f);
-      if (p!=null) {
-        VectorIntf argmin = (VectorIntf) p.getArg();
-        if (arg instanceof DblArray1Vector) subject.addIncumbent(this, argmin);
-        else subject.addIncumbent(this, argmin.getDblArray1());
-      }
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
+  protected void notifyChangeProtected(SubjectIntf subject) throws OptimizerException {
+    Object arg = subject.getIncumbent();
+    FunctionIntf f = subject.getFunction();
+    VectorIntf x=null;
+    if (arg instanceof double[]) {
+      x = new DblArray1Vector((double[]) arg);
+    } else if (arg instanceof VectorIntf) x = (DblArray1Vector) arg;
+    else throw new OptimizerException("OPRCGST.notifyChange(): don't know how to convert argument into VectorIntf object");
+    HashMap params = subject.getParams();
+    params.put("gradientdescent.x0",x);  // add the initial point
+    params.put("prcg.maxiters", new Integer(1000));
+    setParams(params);
+    PairObjDouble p = minimize(f);
+    if (p!=null) {
+      VectorIntf argmin = (VectorIntf) p.getArg();
+      if (arg instanceof DblArray1Vector) subject.addIncumbent(this, argmin);
+      else subject.addIncumbent(this, argmin.getDblArray1());
     }
   }
 
@@ -182,12 +169,12 @@ public class PolakRibiereConjugateGradientST implements LocalOptimizerIntf, Obse
    * the implementation of the Polak-Ribiere CG method with Armijo-rule for
    * step-size determination.
    * @param f FunctionIntf
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if the optimization process fails to find a
    * (near-)stationary point
    * @return PairObjDouble the arg.min and the min. value found.
    */
-  private PairObjDouble min(FunctionIntf f, Hashtable p) throws OptimizerException {
+  private PairObjDouble min(FunctionIntf f, HashMap p) throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("prcg.gradient");
     if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
     final VectorIntf x0 = p.get("prcg.x0") == null ?

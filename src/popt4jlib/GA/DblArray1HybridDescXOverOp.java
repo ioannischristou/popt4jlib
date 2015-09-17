@@ -30,7 +30,7 @@ public class DblArray1HybridDescXOverOp implements XoverOpIntf {
    * implements the x-over operator operating on <CODE>double[]</CODE> objects.
    * @param c1 Object double[]
    * @param c2 Object double[]
-   * @param params Hashtable should contain the following key-value pairs:
+   * @param params HashMap should contain the following key-value pairs:
 	 * <ul>
    * <li> &lt;"dga.minallelevalue", $value$&gt; optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
@@ -69,7 +69,7 @@ public class DblArray1HybridDescXOverOp implements XoverOpIntf {
 	 * or if the process somehow fails
    * @return Pair containing two new <CODE>double[]</CODE> objects
    */
-  public Pair doXover(Object c1, Object c2, Hashtable params) throws OptimizerException {
+  public Pair doXover(Object c1, Object c2, HashMap params) throws OptimizerException {
     try {
       final double[] a1 = (double[]) c1;
       final double[] a2 = (double[]) c2;
@@ -235,7 +235,7 @@ public class DblArray1HybridDescXOverOp implements XoverOpIntf {
   private synchronized static int getNumSuccessful() { return _numSuccessful; }
 
 
-  private boolean diffIsOK(double v1, double v2, Hashtable params) {
+  private boolean diffIsOK(double v1, double v2, HashMap params) {
     double minaccperc = 0.1;
     Double mapD = (Double) params.get("dga.hybriddescxoverop.minaccvaldiffperc");
     if (mapD!=null && mapD.doubleValue()>0)
@@ -245,7 +245,7 @@ public class DblArray1HybridDescXOverOp implements XoverOpIntf {
   }
 
 
-  private boolean isFeasiblePoint(double[] x, Hashtable params) {
+  private boolean isFeasiblePoint(double[] x, HashMap params) {
     double minargval = Double.NEGATIVE_INFINITY;
     Double mavD = (Double) params.get("dga.minallelevalue");
     if (mavD!=null) minargval = mavD.doubleValue();
@@ -267,7 +267,7 @@ public class DblArray1HybridDescXOverOp implements XoverOpIntf {
   }
 
 
-  private void add(double[] a, double[] s, double t, Hashtable params,
+  private void add(double[] a, double[] s, double t, HashMap params,
                    double[] off) {
     final int n = a.length;
     boolean do_barrier = false;

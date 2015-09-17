@@ -28,7 +28,7 @@ public class PDBatchTaskExecutorCltTest {
   private void run() {
     long start = System.currentTimeMillis();
     final int numdims = 100;
-    final int numtasks = 100;
+    final int numtasks = 10000;
     PDBatchTaskExecutorClt client1 = new PDBatchTaskExecutorClt();
     PDBatchTaskExecutorClt client2 = new PDBatchTaskExecutorClt();
     // client-1 tasks
@@ -113,10 +113,21 @@ public class PDBatchTaskExecutorCltTest {
       _client = client;
       _tasks = tasks;
     }
-    public void run() {
+		public void run() {
+			TNLEvalTask[] tasks = new TNLEvalTask[100];  // send 100 tasks at a time
+			int j=0;
+			for (int i=0; i<_tasks.length; i++) {
+				if (j==100) {
+					run(tasks);
+					j=0;
+				}
+				tasks[j++] = _tasks[i];
+			}
+		}
+    private void run(TNLEvalTask[] tasks) {
       try {
-        System.out.println("CltTest: submitting tasks");
-        _results = _client.submitWorkFromSameHost(_tasks);
+        System.out.println("CltTest: submitting tasks of size "+tasks.length);
+        _results = _client.submitWorkFromSameHost(tasks);
         System.out.println("CltTest: got results, exiting.");
       }
       catch (PDBatchTaskExecutorException e) {
@@ -126,11 +137,11 @@ public class PDBatchTaskExecutorCltTest {
         long max_duration = 10*1000L;
         while (System.currentTimeMillis()<now+max_duration) {
           try {
-            _results = _client.submitWorkFromSameHost(_tasks);
+            _results = _client.submitWorkFromSameHost(tasks);
             return;
           }
           catch (PDBatchTaskExecutorException e2) {
-            System.err.println("oops, failed again");
+            System.err.println("oops, failed again with exception "+e2.getMessage());
           }
           catch (Exception e3) {
             e3.printStackTrace();

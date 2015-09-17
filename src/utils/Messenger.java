@@ -17,7 +17,7 @@ import java.util.*;
 public class Messenger {
   private PrintStream _os=null;
   private int _dbgLvl=Integer.MAX_VALUE;  // default: print all
-  private static Hashtable _instances=new Hashtable();  // map<String name, Messenger m>
+  private static HashMap _instances=new HashMap();  // map<String name, Messenger m>
 
 
   /**

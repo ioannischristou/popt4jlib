@@ -40,7 +40,7 @@ final public class GMeansMTClusterer implements ClustererIntf {
   /**
    * maintains the algorithm's parameters
    */
-  Hashtable _params;
+  HashMap _params;
   int[] _clusterIndices;
   private Vector _intermediateClusters;  // Vector<Vector<Integer docid>>
   private Vector _centers;  // Vector<VectorIntf>, size=k
@@ -80,9 +80,9 @@ final public class GMeansMTClusterer implements ClustererIntf {
 
   /**
    * returns the parameters to be used for clustering for this clusterer object.
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
+  public synchronized HashMap getParams() {
     return _params;
   }
 
@@ -359,11 +359,11 @@ final public class GMeansMTClusterer implements ClustererIntf {
 
   /**
    * the clustering params are set to p
-   * @param p Hashtable
+   * @param p HashMap
    */
-  public synchronized void setParams(Hashtable p) {
+  public synchronized void setParams(HashMap p) {
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
   }
 
 

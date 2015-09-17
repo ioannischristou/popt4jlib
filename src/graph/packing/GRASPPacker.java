@@ -116,7 +116,7 @@ public final class GRASPPacker {
 
 
   /**
-   * the method <CODE>g.makeNNbors()</CODE> must have been called prior to this 
+   * the method <CODE>g.makeNNbors()</CODE> must have been called prior to this
 	 * call if k==2.
    * @param g Graph
    * @param active Set // Set&lt;Integer nodeid&gt;
@@ -212,9 +212,9 @@ public final class GRASPPacker {
 		return true;
 	}
 
-	
+
 	/**
-	 * check whether node n is "close enough" to the first (and "best") node 
+	 * check whether node n is "close enough" to the first (and "best") node
 	 * according to the node-weight criterion for the MWIS problem.
 	 * @param n Node
 	 * @param first Node
@@ -229,7 +229,7 @@ public final class GRASPPacker {
 		return fw*_alphaFactor <= nw;
 	}
 
-	
+
   private void updateQueue(Node n) throws PackingException, ParallelException {
     // 0. remove the node n and the nnbors of n from _nodesq
     _nodesq.remove(n);
@@ -310,8 +310,8 @@ public final class GRASPPacker {
 
 
   /**
-   * the method <CODE>_g.makeNNbors()</CODE> must have been called before if 
-	 * <CODE>_k==2</CODE>. This method is only called once from this object's 
+   * the method <CODE>_g.makeNNbors()</CODE> must have been called before if
+	 * <CODE>_k==2</CODE>. This method is only called once from this object's
 	 * constructor.
    */
   private void setup() {
@@ -361,17 +361,17 @@ public final class GRASPPacker {
 	 * solution, Default is 0.
 	 * <li> args[3] numiterations optional, if present describes the number of major
 	 * outer iterations to run. Default is 1.
-	 * <li> args[4] do_local_search optional, if "true" implies a local search via 
-	 * the <CODE>popt4jlib.LocalSearch.DLS</CODE> algorithm to be performed when a 
+	 * <li> args[4] do_local_search optional, if "true" implies a local search via
+	 * the <CODE>popt4jlib.LocalSearch.DLS</CODE> algorithm to be performed when a
 	 * solution is constructed in a major outer iteration. Default is false.
 	 * <li> args[5] num_dls_threads optional, if present describes the number of threads
 	 * to use in the DLS procedure if activated. Default is 1.
 	 * <li> args[6] max_allowed_time optional, if present, sets the max. allowed time
 	 * for the process to run (in milliseconds). Default is +infinity.
-	 * <li> args[7] use_N2RXP_4_DLS optional, if present and true, will force 
+	 * <li> args[7] use_N2RXP_4_DLS optional, if present and true, will force
 	 * the use of the <CODE>IntSetN2RXPGraphAllMovesMaker</CODE> move-maker in the
 	 * local search (if args[4] evaluates to true). Otherwise, if local-search is
-	 * asked for, the <CODE>IntSetN1RXPFirstImprovingGraphAllMovesMaker</CODE> 
+	 * asked for, the <CODE>IntSetN1RXPFirstImprovingGraphAllMovesMaker</CODE>
 	 * class will be used as moves-maker in local-search. Default is false.
 	 * </ul>
    * @throws ParallelException
@@ -431,7 +431,7 @@ public final class GRASPPacker {
 									catch (Exception e) {
 										e.printStackTrace();
 									}
-									if (args.length>7) 
+									if (args.length>7)
 										use_N2RXP_4_ls = "true".equals(args[7]);
 								}
               }
@@ -463,8 +463,11 @@ public final class GRASPPacker {
 					if (use_N2RXP_4_ls) movesmaker = new IntSetN2RXPGraphAllMovesMaker(k);
 					else movesmaker = new IntSetN1RXPFirstImprovingGraphAllMovesMakerMT(k);
           IntSetNeighborhoodFilterIntf filter = new GRASPPackerIntSetNbrhoodFilter2(k);
-          FunctionIntf f = k==2 ? new SetSizeEvalFunction() : new SetWeightEvalFunction(g);
-          Hashtable dlsparams = new Hashtable();
+          //FunctionIntf f = k==2 ? new SetSizeEvalFunction() : new SetWeightEvalFunction(g);
+          FunctionIntf f;
+          if (k==2) f = new SetSizeEvalFunction();
+          else f = new SetWeightEvalFunction(g);
+          HashMap dlsparams = new HashMap();
           dlsparams.put("dls.movesmaker",movesmaker);
           dlsparams.put("dls.x0", nodeids);
           dlsparams.put("dls.numthreads", new Integer(num_threads));

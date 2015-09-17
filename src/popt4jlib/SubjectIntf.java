@@ -1,6 +1,6 @@
 package popt4jlib;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * The SubjectIntf implements the Subject Object's methods in the well-known
@@ -47,9 +47,9 @@ public interface SubjectIntf {
 
   /**
    * returns the parameters associated with this subject.
-   * @return Hashtable
+   * @return HashMap
    */
-  public Hashtable getParams();
+  public HashMap getParams();
 
 
   /**

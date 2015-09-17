@@ -66,7 +66,7 @@ public class CliqueComputingTestMT {
         System.out.println("]");
       }
       // compute sizes:
-      Hashtable sizes = new Hashtable();  // map<Integer size, Integer numcliques>
+      HashMap sizes = new HashMap();  // map<Integer size, Integer numcliques>
       it = output.iterator();
       while (it.hasNext()) {
         Set c = (Set) it.next();

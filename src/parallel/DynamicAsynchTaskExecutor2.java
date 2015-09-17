@@ -4,15 +4,14 @@ import java.util.*;
 import popt4jlib.IdentifiableIntf;
 
 /**
- * an enhancement over <CODE>DynamicAsynchTaskExecutor</CODE> in that it 
+ * an enhancement over <CODE>DynamicAsynchTaskExecutor</CODE> in that it
  * augments its threads in its thread-pool with two local queues so that they
- * first look for tasks in their "hot" local queue, then if no task is in the 
+ * first look for tasks in their "hot" local queue, then if no task is in the
  * global queue either available for execution, they finally go into the "cold"
  * queue. These two queues are meant to reduce contention in the global queue,
  * and also to help the implementation of fork-join parallel programming.
- * Tasks (that need to implement the 
- * <CODE>ThreadSpecificTaskObject</CODE> interface) may go to the local queue by 
- * invoking the special methods 
+ * Tasks (that need to implement the <CODE>ThreadSpecificTaskObject</CODE> 
+ * interface) may go to the local queue by invoking the special methods
  * <CODE>[re]submitToSameThread(ThreadSpecificTaskObject o)</CODE>. In any case,
  * such tasks always execute in the specified thread.
  * <p>Title: popt4jlib</p>
@@ -26,7 +25,7 @@ public final class DynamicAsynchTaskExecutor2 {
   private static int _nextId = 0;
   private int _id;  // DynamicAsynchTaskExecutor2 id
   private List _threads;  // used to be Vector
-	private int _initNumThreads;
+  private int _initNumThreads;
   private int _maxNumThreads;
   private boolean _isRunning;
   private boolean _runOnCurrent=true;
@@ -34,36 +33,36 @@ public final class DynamicAsynchTaskExecutor2 {
   private long _numTasksSubmitted=0;
   private SimpleFasterMsgPassingCoordinator _sfmpc;
 
-	
+
 	/**
 	 * replaces public constructor.
 	 * @param numthreads int
 	 * @param maxthreads int
 	 * @return DynamicAsynchTaskExecutor2 properly initialized
-	 * @throws ParallelException 
+	 * @throws ParallelException
 	 */
 	public static DynamicAsynchTaskExecutor2 newDynamicAsynchTaskExecutor2(int numthreads, int maxthreads) throws ParallelException {
 		DynamicAsynchTaskExecutor2 ex = new DynamicAsynchTaskExecutor2(numthreads, maxthreads);
 		ex.initialize();
 		return ex;
 	}
-	
-	
+
+
 	/**
 	 * replaces public constructor.
 	 * @param numthreads int
 	 * @param maxthreads int
 	 * @param runoncurrent boolean
 	 * @return DynamicAsynchTaskExecutor2 properly initialized
-	 * @throws ParallelException 
+	 * @throws ParallelException
 	 */
-	public static DynamicAsynchTaskExecutor2 newDynamicAsynchTaskExecutor2(int numthreads, int maxthreads, 
+	public static DynamicAsynchTaskExecutor2 newDynamicAsynchTaskExecutor2(int numthreads, int maxthreads,
 					                                                             boolean runoncurrent) throws ParallelException {
 		DynamicAsynchTaskExecutor2 ex = new DynamicAsynchTaskExecutor2(numthreads, maxthreads, runoncurrent);
 		ex.initialize();
 		return ex;
-	}	
-	
+	}
+
 
   /**
    * private constructor, constructing a thread-pool of numthreads threads.
@@ -79,7 +78,7 @@ public final class DynamicAsynchTaskExecutor2 {
       throw new ParallelException("cannot construct so many threads");
     _id = getNextObjId();
     _threads = new ArrayList(numthreads);  // numthreads arg. denotes capacity
-		_initNumThreads = numthreads;
+	_initNumThreads = numthreads;
     _maxNumThreads = maxthreads;
   }
 
@@ -99,7 +98,7 @@ public final class DynamicAsynchTaskExecutor2 {
     _runOnCurrent = runoncurrent;
   }
 
-	
+
 	/**
 	 * called exactly once, right after an object has been constructed.
 	 */
@@ -112,9 +111,9 @@ public final class DynamicAsynchTaskExecutor2 {
       ti.start();
     }
     _isRunning = true;
-    _sfmpc = SimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor2." + _id);		
+    _sfmpc = SimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor2." + _id);
 	}
-	
+
 
   /**
    * get the current number of tasks in the queue awaiting processing.
@@ -141,11 +140,11 @@ public final class DynamicAsynchTaskExecutor2 {
    * wait until threads in the thread-pool finish up their tasks so the queue
    * becomes less than full and can accept more tasks.
    * @param task Runnable
-   * @throws ParallelException if 
-	 * (a) the shutDown() method has been called prior to this call OR 
-	 * (b) there are no available threads to run the task, AND 
-	 * it's not possible to create a new thread (all threads up to capacity are 
-	 * already busy) AND 
+   * @throws ParallelException if
+	 * (a) the shutDown() method has been called prior to this call OR
+	 * (b) there are no available threads to run the task, AND
+	 * it's not possible to create a new thread (all threads up to capacity are
+	 * already busy) AND
 	 * this <CODE>DynamicAsynchTaskExecutor2</CODE> object does not allow
    * running a task directly in the current thread, AND
 	 * the underlying global queue of tasks is full.
@@ -195,18 +194,18 @@ public final class DynamicAsynchTaskExecutor2 {
     }
   }
 
-	
+
 	/**
-	 * forces the argument to be pushed to the current thread's "hot" local queue 
+	 * forces the argument to be pushed to the current thread's "hot" local queue
 	 * of tasks, a fast unsynchronized operation.
 	 * @param tsto
 	 * @throws ParallelException if argument does not designate it should run from
 	 * the current thread's id.
-	 * @throws ClassCastException if current thread is not a 
+	 * @throws ClassCastException if current thread is not a
 	 * <CODE>DATEThread2</CODE> object.
 	 * @throws IllegalStateException if the current thread's local queue is full
 	 */
-	public void submitToSameThread(ThreadSpecificTaskObject tsto) 
+	public void submitToSameThread(ThreadSpecificTaskObject tsto)
 					throws ParallelException, ClassCastException, IllegalStateException {
 		DATEThread2 cur_thread = (DATEThread2) Thread.currentThread();
 		if (cur_thread._id!=tsto.getThreadIdToRunOn())
@@ -214,49 +213,49 @@ public final class DynamicAsynchTaskExecutor2 {
 		cur_thread._hotLocalQueue.addElement(tsto);
 	}
 
-	
+
 	/**
-	 * forces the argument to be pushed to the current thread's cold local queue 
+	 * forces the argument to be pushed to the current thread's cold local queue
 	 * of tasks, a fast unsynchronized operation.
 	 * @param tsto Runnable
-	 * @throws ClassCastException if current thread is not a 
+	 * @throws ClassCastException if current thread is not a
 	 * <CODE>DATEThread2</CODE> object.
 	 */
-	public void resubmitToSameThread(Runnable tsto) 
+	public void resubmitToSameThread(Runnable tsto)
 					throws ClassCastException {
 		DATEThread2 cur_thread = (DATEThread2) Thread.currentThread();
-		cur_thread._coldLocalQueue.offer(tsto);
+		cur_thread._coldLocalQueue.addElement(tsto);  // used to be offer(tsto);
 	}
-	
-	
+
+
 	/**
 	 * returns true iff the hot local queue is not full.
-	 * @return boolean 
-	 * @throws ClassCastException if current thread is not a 
+	 * @return boolean
+	 * @throws ClassCastException if current thread is not a
 	 * <CODE>DATEThread2</CODE> object.
 	 */
 	public boolean hotLocalQueueHasCapacity() throws ClassCastException {
 		DATEThread2 cur_thread = (DATEThread2) Thread.currentThread();
 		return cur_thread._hotLocalQueue.size()<cur_thread._hotLocalQueue.getMaxSize();
 	}
-	
-	
+
+
 	/**
 	 * returns the size of the hot local queue.
-	 * @return int 
-	 * @throws ClassCastException if current thread is not a 
+	 * @return int
+	 * @throws ClassCastException if current thread is not a
 	 * <CODE>DATEThread2</CODE> object.
 	 */
 	public int hotLocalQueueSize() throws ClassCastException {
 		DATEThread2 cur_thread = (DATEThread2) Thread.currentThread();
 		return cur_thread._hotLocalQueue.size();
 	}
-	
-	
+
+
 	/**
 	 * returns the size of the cold local queue.
-	 * @return int 
-	 * @throws ClassCastException if current thread is not a 
+	 * @return int
+	 * @throws ClassCastException if current thread is not a
 	 * <CODE>DATEThread2</CODE> object.
 	 */
 	public int coldLocalQueueSize() throws ClassCastException {
@@ -264,7 +263,7 @@ public final class DynamicAsynchTaskExecutor2 {
 		return cur_thread._coldLocalQueue.size();
 	}
 
-	
+
   /**
    * shut-down all the threads in this executor's thread-pool. It is the
    * caller's responsibility to ensure that after this method has been called
@@ -344,9 +343,9 @@ public final class DynamicAsynchTaskExecutor2 {
     private boolean _isIdle=true;
     private SimpleFasterMsgPassingCoordinator _datetmpc;
 		private BoundedBufferArrayUnsynchronized _hotLocalQueue;
-		private Queue _coldLocalQueue;  // ArrayDeque<Runnable>
+		private UnboundedBufferArrayUnsynchronized _coldLocalQueue;  // serves as ArrayDeque<Runnable>
 
-		
+
     /**
      * public constructor. The id argument is a negative integer.
      * @param e DynamicAsynchTaskExecutor2
@@ -357,7 +356,7 @@ public final class DynamicAsynchTaskExecutor2 {
       _id = id;
     }
 
-		
+
 		/**
 		 * implements the <CODE>IdentifiableIntf</CODE> method.
 		 * @return _id long the (int) id given to it by the main class object.
@@ -365,7 +364,7 @@ public final class DynamicAsynchTaskExecutor2 {
 		public long getId() {
 			return _id;
 		}
-		
+
 
     /**
      * the run() method of the thread, loops continuously, looking for a task
@@ -381,7 +380,8 @@ public final class DynamicAsynchTaskExecutor2 {
       final int fpbteid = _e.getObjId();
       _datetmpc = SimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor2."+fpbteid);
 			_hotLocalQueue = new BoundedBufferArrayUnsynchronized(1000*SimpleFasterMsgPassingCoordinator.getMaxSize());
-			_coldLocalQueue = new ArrayDeque();  // claimed faster than ArrayList 
+			// _coldLocalQueue = new ArrayDeque();  // claimed faster than ArrayList
+      _coldLocalQueue = new UnboundedBufferArrayUnsynchronized(SimpleFasterMsgPassingCoordinator.getMaxSize());
       boolean do_run = true;
 			boolean recvd_from_local;
       while (do_run) {
@@ -401,14 +401,14 @@ public final class DynamicAsynchTaskExecutor2 {
 					if (data == null) {  // 3. go to the cold queue
 						if (_coldLocalQueue.size()>0) {
 							recvd_from_local = true;
-							data = _coldLocalQueue.poll();  // FIFO order processing
+							data = _coldLocalQueue.remove();  // used to be poll();  // FIFO order processing
 						}
 					}
 				}
 				// 4. OK, now block waiting on global queue
-				if (data==null) 
+				if (data==null)
 					data = _datetmpc.recvData(_id);
-		
+
         setIdle(false);
         try {
           if (data instanceof DATEPoissonPill2) {

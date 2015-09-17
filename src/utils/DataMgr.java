@@ -17,7 +17,7 @@ import java.lang.reflect.*;
 /**
  * The class acts as an I/O Manager class for saving and loading data for
  * complex objects in the library such as Graph, HGraph, and properties
- * Hashtable objects.
+ * HashMap objects.
  * The class is thread-safe (reentrant).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -42,7 +42,7 @@ public class DataMgr {
 
   /**
    * Reads properties from the given file and stores them as &lt;key,value&gt;
-	 * pairs in the returned <CODE>Hashtable</CODE>.
+	 * pairs in the returned <CODE>HashMap</CODE>.
 	 * Unless the key string is a special keyword (see below), the value is 
 	 * assumed first to be an int value, and if value does not represent an int
 	 * it is then assumed to be a long value; if value does not represent a long
@@ -60,7 +60,7 @@ public class DataMgr {
    * arguments is given in the rest of the line.
    * <p>In case key is the keyword "rndgen", the <CODE>RndUtil</CODE> class's 
 	 * seed is populated with the value of this line (long int). The seed does not 
-	 * need to be stored in the <CODE>Hashtable</CODE> returned. Also, if a 3rd 
+	 * need to be stored in the <CODE>HashMap</CODE> returned. Also, if a 3rd 
 	 * argument is provided, it indicates the number of distinct threads to 
 	 * require access to RndUtil, and thus it sets the required extra instances of 
 	 * Random objects needed.
@@ -91,11 +91,11 @@ public class DataMgr {
    * <p>Empty lines and lines starting with # are ignored.</p>
    * @param filename String
    * @throws IOException
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized static Hashtable readPropsFromFile(String filename)
+  public synchronized static HashMap readPropsFromFile(String filename)
       throws IOException {
-    Hashtable props = new Hashtable();
+    HashMap props = new HashMap();
     BufferedReader br=null;
     try {
       br = new BufferedReader(new FileReader(filename));
@@ -282,7 +282,7 @@ public class DataMgr {
   }
 
 
-  private static Pair getArgTypesAndObjs(String line, Hashtable currentProps) {
+  private static Pair getArgTypesAndObjs(String line, HashMap currentProps) {
     if (line == null || line.length() == 0) return null;
     StringTokenizer st = new StringTokenizer(line, ",");
     int numargs = st.countTokens();  // used to be st.countTokens()/2;

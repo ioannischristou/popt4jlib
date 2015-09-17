@@ -6,7 +6,7 @@
 
 package parallel;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.io.Serializable;
 
 
@@ -27,8 +27,8 @@ public abstract class ReduceOperator implements Serializable {
 	
 	/**
 	 * the reduction operation.
-	 * @param threadsData Hashtable // map&lteThread, Object data&gt;
+	 * @param threadsData HashMap // map&lteThread, Object data&gt;
 	 * @return 
 	 */
-	public abstract Object reduce(Hashtable threadsData);
+	public abstract Object reduce(HashMap threadsData);
 }

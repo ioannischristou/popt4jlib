@@ -28,7 +28,7 @@ import java.util.*;
  */
 public class ComplexBarrier {
   private static ComplexBarrier _instance;
-  private static Hashtable _instances = new Hashtable();  // map<String name, Barrier b>
+  private static HashMap _instances = new HashMap();  // map<String name, Barrier b>
   // private int _origNumThreads; // this is _threads.size()
   private int _numThreads2Wait4=0;
   private Set _threads = new HashSet();  // Set<Thread>

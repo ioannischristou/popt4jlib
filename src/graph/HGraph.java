@@ -10,7 +10,7 @@ public class HGraph {
                                  // id in a larger graph, of which this node
                                  // is a sub-graph, and can be used to get the
                                  // support of this graph in other graphs.
-  private Hashtable _labelMap;  // map<Object label, Integer nodeid>
+  private HashMap _labelMap;  // map<Object label, Integer nodeid>
 
   private int _addLinkPos = 0;  // pointer to the last arc set by addLink()
   private int _comps[]=null;  // the array describes the maximal connected
@@ -36,7 +36,7 @@ public class HGraph {
   public HGraph(int numnodes, int numarcs, Object[] labels) {
     this(numnodes, numarcs);
     _nodeLabels = labels;
-    _labelMap = new Hashtable();
+    _labelMap = new HashMap();
     for (int i=0; i<numnodes; i++)
       _labelMap.put(_nodeLabels[i], new Integer(i));
   }
@@ -88,7 +88,7 @@ public class HGraph {
   public void setHNodeLabel(int i, Object o) {
     if (_nodeLabels==null) {
       _nodeLabels = new Object[_nodes.length];
-      _labelMap = new Hashtable();
+      _labelMap = new HashMap();
     }
     if (_nodeLabels[i]!=null) _labelMap.remove(_nodeLabels[i]);
     _nodeLabels[i] = o;

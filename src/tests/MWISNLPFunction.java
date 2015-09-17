@@ -39,11 +39,11 @@ public class MWISNLPFunction implements FunctionIntf {
 	 * evaluates the function f(x)=-\Sum_{i=1}^n (1-x_i) \Pi_{(i,j) \in E(G)} x_j.
 	 * The domain of definition is [0,1]^n.
 	 * @param x Object // double[] or VectorIntf
-	 * @param params Hashtable unused
+	 * @param params HashMap unused
 	 * @return double 
 	 * @throws IllegalArgumentException 
 	 */
-	public double eval(Object x, Hashtable params) throws IllegalArgumentException {
+	public double eval(Object x, HashMap params) throws IllegalArgumentException {
 		double res = 0.0;
 		if (x instanceof double[]) {
 			double[] xa = (double[]) x;

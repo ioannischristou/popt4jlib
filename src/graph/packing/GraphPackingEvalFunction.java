@@ -36,11 +36,11 @@ public class GraphPackingEvalFunction implements FunctionIntf {
 	 * return <CODE>-((Set)arg).size()</CODE> if arg is a feasible solution, else
 	 * returns +infinity.
 	 * @param arg Set Set&lt;Node&gt;
-	 * @param params Hashtable unused
+	 * @param params HashMap unused
 	 * @return double specified above
 	 * @throws IllegalArgumentException if arg is not a Set&lt;Node&gt; 
 	 */
-  public double eval(Object arg, Hashtable params) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap params) throws IllegalArgumentException {
     try {
       double val = Double.MAX_VALUE;
       Set s = (Set) arg;

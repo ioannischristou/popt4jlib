@@ -48,12 +48,12 @@ public class IntVarArray1MoveMaker implements NewChromosomeMakerIntf {
 	 * into the nearest integer value when setting the values of the array that is
 	 * returned.</p>
    * @param chromosome Object must be an int[]
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException if any of the parameters are not passed in
    * properly
    * @return Object int[]
    */
-  public Object createNewChromosome(Object chromosome, Hashtable params) throws OptimizerException {
+  public Object createNewChromosome(Object chromosome, HashMap params) throws OptimizerException {
     try {
       int[] arg = (int[]) chromosome; // chromosome is a var int[] array
       int[] res = new int[arg.length];

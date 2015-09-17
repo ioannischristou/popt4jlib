@@ -2,7 +2,7 @@ package popt4jlib.PS;
 
 import popt4jlib.OptimizerException;
 import utils.RndUtil;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * the standard implementation of NewVelocityMakerIntf for the case where
@@ -29,7 +29,7 @@ public class DblArray1StdVelocityMaker implements NewVelocityMakerIntf {
    * @param v Object of type double[]
    * @param p Object of type double[]
    * @param g Object of type double[]
-   * @param params Hashtable may contain the following entries:
+   * @param params HashMap may contain the following entries:
    * <li> &lt;"dpso.fp", $value$&gt; optional, the parameter ö_p, default is 2.0.
    * <li> &lt;"dpso.fg", $value$&gt; optional, the parameter ö_g, default is 2.0.
    * <li> &lt;"dpso.w", $value$&gt; optional, the parameter ù, default is 0.6.
@@ -41,7 +41,7 @@ public class DblArray1StdVelocityMaker implements NewVelocityMakerIntf {
    * @return Object
    */
   public Object createNewVelocity(Object x, Object v, Object p, Object g,
-                                  Hashtable params)
+                                  HashMap params)
       throws OptimizerException {
     if (x==null || v==null || p==null || g==null || params==null)
       throw new OptimizerException("null args passed in");

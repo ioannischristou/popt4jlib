@@ -25,7 +25,7 @@ public class FastDblArray1VectorURndMaker {
 
   /**
    * constructor.
-   * The parameters that must be passed in (the Hashtable arg) are as follows:
+   * The parameters that must be passed in (the HashMap arg) are as follows:
 	 * <ul>
    * <li> &lt;"dde.numdimensions", Integer nd&gt; mandatory, the number of dimensions
    * <li> &lt;"dde.minargval", Double v&gt; optional, the min. value that any
@@ -40,9 +40,9 @@ public class FastDblArray1VectorURndMaker {
    * <br>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
    * the domain of the variable wider.</br>
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public FastDblArray1VectorURndMaker(Hashtable params) throws IllegalArgumentException {
+  public FastDblArray1VectorURndMaker(HashMap params) throws IllegalArgumentException {
     _minargval = Double.NEGATIVE_INFINITY;
     try {
       Double mingvD = (Double) params.get("dde.minargval");

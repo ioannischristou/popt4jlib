@@ -82,7 +82,7 @@ public class PRCGTest {
   public static void main(String[] args) {
     try {
       long start_time = System.currentTimeMillis();
-      Hashtable params = utils.DataMgr.readPropsFromFile(args[0]);
+      HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       final int n = ((Integer) params.get("prcg.numdimensions")).intValue();
       final double maxargval = ((Double) params.get("prcg.functionargmaxval")).doubleValue();
       final double minargval = ((Double) params.get("prcg.functionargminval")).doubleValue();

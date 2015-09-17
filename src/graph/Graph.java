@@ -31,7 +31,7 @@ public class Graph implements Serializable {
                                  // id in a larger graph, of which this node
                                  // is a sub-graph, and can be used to get the
                                  // support of this graph in other graphs.
-  private Hashtable _labelMap;  // map<Object label, Integer nodeid>
+  private HashMap _labelMap;  // map<Object label, Integer nodeid>
   private int _addLinkPos = 0;  // pointer to the last arc set by addLink()
   private int _comps[]=null;  // the array describes the maximal connected
                               // components of this Graph.
@@ -39,9 +39,9 @@ public class Graph implements Serializable {
   private Vector _compCards;  // holds each component's cardinality
   private int _compindex=-1;  // holds number of max. connected components of
                               // Graph
-	private Hashtable _maxNodeWeights;  // map<String wname, Double val> maintains
+	private HashMap _maxNodeWeights;  // map<String wname, Double val> maintains
 	                                    // the max. node weight value for a wname.
-	private Hashtable _sortedNodeArrays;  // map<String name, 
+	private HashMap _sortedNodeArrays;  // map<String name, 
 	                                      //     Node[] nodes_sorted_desc>
   private DMCoordinator _rwLocker=null;  // used for ensuring that the methods
                                          // are re-entrant (i.e. thread-safe)
@@ -106,8 +106,8 @@ public class Graph implements Serializable {
     if (numarcs>0) _arcs = new Link[numarcs];
     _nodeLabels = null;
     _labelMap = null;
-		_maxNodeWeights = new Hashtable();
-		_sortedNodeArrays = new Hashtable();
+		_maxNodeWeights = new HashMap();
+		_sortedNodeArrays = new HashMap();
 
     // itc 2015-02-25: move Node initialization to avoid escaping this
 		// for (int i=0; i<numnodes; i++) _nodes[i] = new Node(this, i);
@@ -131,7 +131,7 @@ public class Graph implements Serializable {
   private Graph(int numnodes, int numarcs, Object[] labels) {
     this(numnodes, numarcs);
     _nodeLabels = labels;
-    _labelMap = new Hashtable();
+    _labelMap = new HashMap();
     for (int i=0; i<numnodes; i++)
       _labelMap.put(_nodeLabels[i], new Integer(i));
   }
@@ -189,7 +189,7 @@ public class Graph implements Serializable {
 			}
 		}
 		if (g._maxNodeWeights!=null) 
-			_maxNodeWeights = new Hashtable(g._maxNodeWeights);
+			_maxNodeWeights = new HashMap(g._maxNodeWeights);
 		// don't bother with _sortedNodeWeights: they will be re-generated on demand
 		try {
 			g.releaseReadAccess();
@@ -249,7 +249,7 @@ public class Graph implements Serializable {
 			}
 		}
 		if (g._maxNodeWeights!=null) 
-			_maxNodeWeights = new Hashtable(g._maxNodeWeights);
+			_maxNodeWeights = new HashMap(g._maxNodeWeights);
 		// don't bother with _sortedNodeWeights: they will be re-generated on demand
 		try {
 			g.releaseReadAccess();
@@ -461,7 +461,7 @@ public class Graph implements Serializable {
 			got_wlock=true;
       if (_nodeLabels == null) {
         _nodeLabels = new Object[_nodes.length];
-        _labelMap = new Hashtable();
+        _labelMap = new HashMap();
       }
       if (_nodeLabels[i] != null) _labelMap.remove(_nodeLabels[i]);
       _nodeLabels[i] = o;
@@ -524,7 +524,7 @@ public class Graph implements Serializable {
       if (s == t)return 0.0;
       Stack stack = new Stack();
       stack.add(s);
-      Hashtable labels = new Hashtable(); // map<Node n, Double dist>
+      HashMap labels = new HashMap(); // map<Node n, Double dist>
       labels.put(s, new Double(0));
       while (stack.size() > 0) {
         Node n = (Node) stack.pop();

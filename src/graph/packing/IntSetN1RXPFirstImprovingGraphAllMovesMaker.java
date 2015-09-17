@@ -33,7 +33,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
   /**
    * implements the N_{-1+P} neighborhood for sets of integers.
    * @param chromosome Object Set&lt;Integer node-id&gt;
-   * @param params Hashtable must contain the following key-value pairs:
+   * @param params HashMap must contain the following key-value pairs:
 	 * <ul>
 	 * <li>&lt;"dls.graph", Graph g&gt; the graph of the problem
    * <li>&lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;
@@ -47,7 +47,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    * @throws OptimizerException
    * @return Vector // Vector&lt;Set&lt;Integer&gt; &gt;
    */
-  public Vector createAllChromosomes(Object chromosome, Hashtable params) throws OptimizerException {
+  public Vector createAllChromosomes(Object chromosome, HashMap params) throws OptimizerException {
     if (chromosome==null) throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): null chromosome");
     boolean rlocked_graph = false;
     Graph g = null;
@@ -130,10 +130,10 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    * @param rmid Integer
    * @param tryids List // List&lt;Integer&gt;
    * @param maxcard int
-   * @param params Hashtable
+   * @param params HashMap
    * @return Set // IntSet
    */
-  protected Set createSet(Set res, int rmid, List tryids, int maxcard, Hashtable params) {
+  protected Set createSet(Set res, int rmid, List tryids, int maxcard, HashMap params) {
     IntSet x = (IntSet) res;
     for (int i=0; i<tryids.size(); i++) {
       Integer tid = (Integer) tryids.get(i);
@@ -158,10 +158,10 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    * Overrides this method to modify the behavior of the base move-maker.
    * @param tid Integer
    * @param x IntSet
-   * @param params Hashtable
+   * @param params HashMap
    * @return boolean
    */
-  protected boolean isOK2Add(Integer tid, IntSet x, Hashtable params) {
+  protected boolean isOK2Add(Integer tid, IntSet x, HashMap params) {
     try {
       Graph g = (Graph) params.get("dls.graph");
       Node n = g.getNode(tid.intValue());

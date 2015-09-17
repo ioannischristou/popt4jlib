@@ -31,10 +31,10 @@ public class FunctionBase implements FunctionIntf {
    * increments the evaluation count and calls the <CODE>eval(arg,params)</CODE>
    * method of the function passed in the constructor.
    * @param arg Object
-   * @param params Hashtable
+   * @param params HashMap
    * @return double
    */
-  public double eval(Object arg, Hashtable params) {
+  public double eval(Object arg, HashMap params) {
     Long max_countL = (Long) params.get("maxfuncevalslimit");
     if (max_countL!=null && max_countL.longValue() <= getEvalCount())
       return Double.MAX_VALUE;  // stop the function evaluation process

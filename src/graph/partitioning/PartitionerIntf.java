@@ -1,7 +1,7 @@
 package graph.partitioning;
 
 import graph.*;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 public interface PartitionerIntf {
 
@@ -18,9 +18,9 @@ public interface PartitionerIntf {
    * set in the call setObjectiveFunction(f).
    * @param g Graph
    * @param k int
-   * @param properties Hashtable
+   * @param properties HashMap
    * @return int[]
    */
-  public int[] partition(Graph g, int k, Hashtable properties);
+  public int[] partition(Graph g, int k, HashMap properties);
 }
 

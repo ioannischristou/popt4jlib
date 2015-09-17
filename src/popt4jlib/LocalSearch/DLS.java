@@ -21,7 +21,7 @@ import java.util.*;
 public class DLS implements OptimizerIntf {
   private static int _nextId=0;
   private int _id;
-  private Hashtable _params=null;
+  private HashMap _params=null;
   private boolean _setParamsFromSameThreadOnly=false;
   private Thread _originatingThread=null;
   private Chromosome2ArgMakerIntf _c2amaker=null;
@@ -46,9 +46,9 @@ public class DLS implements OptimizerIntf {
    * all DLS objects, and sets the appropriate parameters for the optimization
    * process via the setParams(params) process. The parameters are discussed in
    * the javadoc for the <CODE>minimize(f)</CODE> method.
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public DLS(Hashtable params) {
+  public DLS(HashMap params) {
     this();
     try {
       setParams(params);
@@ -63,10 +63,10 @@ public class DLS implements OptimizerIntf {
    * Constructor of a DLS object, that assigns a unique id plus the parameters
    * passed into the argument. Also, it prevents other threads from modifying
    * the parameters passed into this object if the second argument is true.
-   * @param params Hashtable
+   * @param params HashMap
    * @param setParamsOnlyFromSameThread boolean
    */
-  public DLS(Hashtable params, boolean setParamsOnlyFromSameThread) {
+  public DLS(HashMap params, boolean setParamsOnlyFromSameThread) {
     this();
     try {
       setParams(params);
@@ -82,16 +82,16 @@ public class DLS implements OptimizerIntf {
   /**
    * return a copy of the parameters. Modifications to the returned object
    * do not affect the original data member
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  public synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
   /**
    * the optimization params are set to p
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object. Note that unless the 2-arg
    * constructor DLS(params, use_from_same_thread_only=true) is used to create
@@ -100,14 +100,14 @@ public class DLS implements OptimizerIntf {
 	 * some other param-set, and then the first thread to call 
 	 * <CODE>minimize(f)</CODE>.
    */
-  public synchronized void setParams(Hashtable p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     if (_setParamsFromSameThreadOnly) {
       if (Thread.currentThread()!=_originatingThread)
         throw new OptimizerException("Current Thread is not allowed to call setParams() on this DLS.");
     }
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
     try {
       _c2amaker = (Chromosome2ArgMakerIntf) _params.get("dls.c2amaker");
     }
@@ -213,7 +213,7 @@ public class DLS implements OptimizerIntf {
         catch (ParallelException e) {
           // no-op: never happens
         }
-        Hashtable p = getParams();
+        HashMap p = getParams();
         Object x = x0;
         try {
           _incValue = _f.eval(x, p);

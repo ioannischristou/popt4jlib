@@ -25,12 +25,12 @@ public class DblArray1VectorMaker implements Chromosome2ArgMakerIntf {
   /**
    * Chromosome->FunctionArgument Map
    * @param chromosome Object must be double[]
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException
    * @throws IllegalArgumentException if chromosome is not a double[]
    * @return Object DblArray1Vector having as data the double[] ref. passed in
    */
-  public Object getArg(Object chromosome, Hashtable params) throws OptimizerException, IllegalArgumentException {
+  public Object getArg(Object chromosome, HashMap params) throws OptimizerException, IllegalArgumentException {
     try {
       double[] arr = (double[]) chromosome;
       // DblArray1Vector v = new DblArray1Vector(arr);

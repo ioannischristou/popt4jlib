@@ -4,7 +4,7 @@ import analysis.FixedPointApproximatorMT;
 import popt4jlib.VecFunctionIntf;
 import popt4jlib.VectorIntf;
 import popt4jlib.DblArray1Vector;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * test-driver for FixedPointApproximatorMT. Computes a fixed point of
@@ -35,7 +35,7 @@ public class FixedPointApproximatorMTTest {
       if (args.length > 2) max_iters = Integer.parseInt(args[2]);
       double tol = 1.e-6;
       if (args.length > 3) tol = Double.parseDouble(args[3]);
-      Hashtable p = new Hashtable();
+      HashMap p = new HashMap();
       double[][] A = utils.DataMgr.readMatrixFromFile(filename);
       VectorIntf x0=null;
       if (A.length!=A[0].length) {
@@ -94,7 +94,7 @@ public class FixedPointApproximatorMTTest {
  */
 class F2 implements VecFunctionIntf {
 
-  public VectorIntf eval(VectorIntf x, Hashtable p) throws IllegalArgumentException {
+  public VectorIntf eval(VectorIntf x, HashMap p) throws IllegalArgumentException {
     if (x==null || x.getNumCoords()!=2 || x.getCoord(0) < 0 || x.getCoord(0) > 1 ||
         x.getCoord(1) < 0 || x.getCoord(1) > 1)
       throw new IllegalArgumentException("invalid x");
@@ -104,7 +104,7 @@ class F2 implements VecFunctionIntf {
     return y;
   }
 
-  public double evalCoord(VectorIntf x, Hashtable p, int i) throws IllegalArgumentException {
+  public double evalCoord(VectorIntf x, HashMap p, int i) throws IllegalArgumentException {
     if (i<0 || i>1) throw new IllegalArgumentException("can't evaluate F2 with given index i="+i);
     try {
       if (i==0)

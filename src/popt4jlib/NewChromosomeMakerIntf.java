@@ -17,10 +17,10 @@ public interface NewChromosomeMakerIntf {
    * the main method: given an existing chromosome and some parameters,
    * construct a new chromosome object.
    * @param chromosome Object
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException
    * @return Object
    */
-  public Object createNewChromosome(Object chromosome, Hashtable params) throws OptimizerException;
+  public Object createNewChromosome(Object chromosome, HashMap params) throws OptimizerException;
 }
 

@@ -16,13 +16,13 @@ import java.io.Serializable;
  * some quantity).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public final class AlternatingVariablesDescent implements LocalOptimizerIntf, ObserverIntf {
-  private Hashtable _params;
+public final class AlternatingVariablesDescent extends GLockingObserverBase implements LocalOptimizerIntf {
+  private HashMap _params;
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
   private FunctionIntf _f;
@@ -32,17 +32,19 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
    * public no-arg no-op constructor
    */
   public AlternatingVariablesDescent() {
-    // no-op
+    super();
+		// no-op
   }
 
   /**
    * public constructor. The parameters passed in the argument are copied
    * in the data member _params so that later modifications to the argument
    * do not affect this object or its methods.
-   * @param params Hashtable
+   * @param params HashMap
    */
-  public AlternatingVariablesDescent(Hashtable params) {
-    try {
+  public AlternatingVariablesDescent(HashMap params) {
+		super();
+		try {
       setParams(params);
     }
     catch (Exception e) {
@@ -54,10 +56,10 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
   /**
    * return a copy of the parameters. Modifications to the returned object
    * do not affect the data member.
-   * @return Hashtable
+   * @return HashMap
    */
-  public synchronized Hashtable getParams() {
-    return new Hashtable(_params);
+  public synchronized HashMap getParams() {
+    return new HashMap(_params);
   }
 
 
@@ -73,50 +75,50 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
 
   /**
    * the optimization params are set to a copy of p
-   * @param p Hashtable
+   * @param p HashMap
    * @throws OptimizerException if another thread is currently executing the
    * <CODE>minimize(f)</CODE> method of this object.
    */
-  public synchronized void setParams(Hashtable p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
   }
 
 
   /**
    * the main method of the class. Before it is called, a number of parameters
    * must have been set (via the parameters passed in the constructor, or via
-   * a later call to setParams(p). These are:
-   * <li> <"avd.x0", VectorIntf x> optional, the initial starting point. If this
+   * a later call to setParams(p)). These are:
+   * <li> &lt;"avd.x0", VectorIntf x&gt; optional, the initial starting point. If this
    * pair does not exist, then it becomes mandatory that a pair
-   * <"gradientdescent.x0", VectorIntf x> pair with a non-null x is in the
+   * &lt;"gradientdescent.x0", VectorIntf x&gt; pair with a non-null x is in the
    * parameters that have been set.
-   * <li> <"avd.numthreads", Integer nt> optional, the number of threads to use in
+   * <li> &lt;"avd.numthreads", Integer nt&gt; optional, the number of threads to use in
    * the optimization process (only if the key "avd.tryorder" does not exist in the
    * parameters). Default is 1.
-   * <li> <"avd.numtries", Integer ntries> optional, the max number of outer
+   * <li> &lt;"avd.numtries", Integer ntries&gt; optional, the max number of outer
    * loops allowed. Default is Integer.MAX_VALUE.
-   * <li> <"avd.minstepsize", Double val> optional, if it exists, indicates the
+   * <li> &lt;"avd.minstepsize", Double val&gt; optional, if it exists, indicates the
    * min step size (quantum) for any of the variables to be allowed to be a
    * multiple of. Default is 1.e-6.
-   * <li> <"avd.minstepsize$i$", Double val> optional, if it exists indicates the
+   * <li> &lt;"avd.minstepsize$i$", Double val&gt; optional, if it exists indicates the
    * min step size (quantum) that the i-th variable must be a multiple of. If
    * a global step size also exists, then the maximum of the two is taken as
    * the min. step size required for the i-th variable.
-   * <li> <"avd.minargval", Double val> optional, a double number that is a lower
+   * <li> &lt;"avd.minargval", Double val&gt; optional, a double number that is a lower
    * bound for all variables of the optimization process, i.e. all variables
    * must satisfy x_i >= val.doubleValue(), default is -infinity.
-   * <li> <"avd.maxargval", Double val> optional, a double number that is an upper
+   * <li> &lt;"avd.maxargval", Double val&gt; optional, a double number that is an upper
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i <= val.doubleValue(), default is +infinity.
-   * <li> <"avd.minargvals", double[] vals> optional, the lower
+   * must satisfy x_i &lte; val.doubleValue(), default is +infinity.
+   * <li> &lt;"avd.minargvals", double[] vals&gt; optional, the lower
    * bounds for each variable of the optimization process, i.e. variable
-   * must satisfy x_i >= vals[i], default is none.
-   * <li> <"avd.maxargvals", double[] vals> optional, the upper
+   * must satisfy x_i &gte; vals[i], default is none.
+   * <li> &lt;"avd.maxargvals", double[] vals&gt; optional, the upper
    * bounds for each variable of the optimization process, i.e. variable
-   * must satisfy x_i <= vals[i], default is none.
-   * <li> <"avd.tryorder", int[] order> optional, if present denotes the order
+   * must satisfy x_i &lte; vals[i], default is none.
+   * <li> &lt;"avd.tryorder", int[] order&gt; optional, if present denotes the order
    * in which the variables will be optimized in each major iteration. (It is
    * NOT necessary to be a permutation of the numbers {1,...n} where n is the
    * dimensionality of the domain, but it is necessary that each value in the
@@ -125,12 +127,12 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
    * in each major iteration, all variables are optimized (in parallel, but
    * considered in each thread one-by-one) and the optimization resulting in the
    * largest descent is chosen each time.
-   * <li> <"avd.niterbnd", Integer n> optional, the number of inner-iterations
-   * in the OneDStepQuantumOptimizer process before changing the length of the
-   * step-size. Default is 5.
-   * <li> <"avd.multfactor", Integer n> optional, the multiplication factor when
-   * changing the inner step-size length. Default is 2.
-   * <li> <"avd.ftol", Double tol> optional, the min. abs. value below which the
+   * <li> &lt;"avd.niterbnd", Integer n&gt; optional, the number of inner-iterations
+   * in the <CODE>OneDStepQuantumOptimizer</CODE> process before changing the 
+	 * length of the step-size. Default is 5.
+   * <li> &lt;"avd.multfactor", Integer n&gt; optional, the multiplication 
+	 * factor when changing the inner step-size length. Default is 2.
+   * <li> &lt;"avd.ftol", Double tol&gt; optional, the min. abs. value below which the
    * absolute value of the difference between two function evaluations is
    * considered to be zero. Default is 1.e-8.
    *
@@ -407,7 +409,7 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
   }
 
 
-  // ObserverIntf methods implementation
+  // GLockingObserverBase template method implementation
   /**
    * when a subject's thread calls the method notifyChange, in response, this
    * object will call its minimize() method, and add the result back into the
@@ -415,45 +417,33 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
    * @param subject SubjectIntf
    * @throws OptimizerException
    */
-  public void notifyChange(SubjectIntf subject) throws OptimizerException {
-    try {
-      DMCoordinator.getInstance("popt4jlib").getWriteAccess();
-      Object arg = subject.getIncumbent();
-      FunctionIntf f = subject.getFunction();
-      VectorIntf x=null;
-      if (arg instanceof double[]) {
-        x = new DblArray1Vector((double[]) arg);
-      } else if (arg instanceof VectorIntf) x = (DblArray1Vector) arg;
-      else throw new OptimizerException("AVD.notifyChange(): don't know how to convert argument into VectorIntf object");
-      Hashtable params = subject.getParams();
-      params.put("gradientdescent.x0",x);  // add the initial point
-      setParams(params);  // set the params of this object
-      PairObjDouble p = minimize(f);
-      if (p!=null) {
-        VectorIntf argmin = (VectorIntf) p.getArg();
-        if (arg instanceof DblArray1Vector) subject.addIncumbent(this, argmin);
-        else subject.addIncumbent(this, argmin.getDblArray1());
-      }
-    }
-    catch (ParallelException e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        DMCoordinator.getInstance("popt4jlib").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();
-      }
+  protected void notifyChangeProtected(SubjectIntf subject) throws OptimizerException {
+    Object arg = subject.getIncumbent();
+    FunctionIntf f = subject.getFunction();
+    VectorIntf x=null;
+    if (arg instanceof double[]) {
+      x = new DblArray1Vector((double[]) arg);
+    } else if (arg instanceof VectorIntf) 
+		x = new DblArray1Vector(((VectorIntf) arg).getDblArray1());  // don't know what kind of vector it is...
+    else throw new OptimizerException("AVD.notifyChange(): don't know how to convert argument into VectorIntf object");
+    HashMap params = subject.getParams();
+    params.put("gradientdescent.x0",x);  // add the initial point
+    setParams(params);  // set the params of this object
+    PairObjDouble p = minimize(f);
+    if (p!=null) {
+      VectorIntf argmin = (VectorIntf) p.getArg();
+      if (arg instanceof VectorIntf) subject.addIncumbent(this, argmin);
+      else subject.addIncumbent(this, argmin.getDblArray1());
     }
   }
 
+	
   /**
    * nested auxiliary inner-class to help with the parallel aspects of the
    * algorithm.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
-   * <p>Copyright: Copyright (c) 2011</p>
+   * <p>Copyright: Copyright (c) 2011-2015</p>
    * <p>Company: </p>
    * @author Ioannis T. Christou
    * @version 1.0
@@ -462,7 +452,7 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
     private final static long serialVersionUID = 6310656709486850778L;
     private FunctionIntf _f;
     private VectorIntf _x0;
-    private Hashtable _params;
+    private HashMap _params;
     private int _j;
     private double _stepsize;
     private double _lowerbound;
@@ -477,7 +467,7 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
      * sole class constructor.
      * @param f FunctionIntf
      * @param x0 VectorIntf
-     * @param p Hashtable
+     * @param p HashMap
      * @param j int
      * @param ss double
      * @param lb double
@@ -486,12 +476,12 @@ public final class AlternatingVariablesDescent implements LocalOptimizerIntf, Ob
      * @param mul int
      * @param ftol double
      */
-    Opt1DTask(FunctionIntf f, VectorIntf x0, Hashtable p,
+    Opt1DTask(FunctionIntf f, VectorIntf x0, HashMap p,
                      int j, double ss, double lb, double ub,
                      int niterbnd, int mul, double ftol) {
       _f = f;
       _x0 = x0.newInstance();  // used to be x0.newCopy();
-      _params = new Hashtable(p);
+      _params = new HashMap(p);
       _j = j;
       _stepsize = ss;
       _lowerbound = lb;

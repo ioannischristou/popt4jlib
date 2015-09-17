@@ -18,7 +18,7 @@ import java.util.*;
 public final class DetAnnealClusterer implements ClustererIntf {
   private Vector _centers;  // Vector<VectorIntf>, size=k
   private Vector _docs;  // Vector<VectorIntf>, size=n
-  private Hashtable _params;
+  private HashMap _params;
   private int[] _clusterIndices;
   private KMeansSqrEvaluator _evaluator;
   private Vector _intermediateClusters;  // Vector<Vector<Integer docid>>
@@ -48,9 +48,9 @@ public final class DetAnnealClusterer implements ClustererIntf {
 
   /**
    * returns the parameters for this clusterer.
-   * @return Hashtable
+   * @return HashMap
    */
-  public Hashtable getParams() {
+  public HashMap getParams() {
     return _params;
   }
 
@@ -328,11 +328,11 @@ public final class DetAnnealClusterer implements ClustererIntf {
 
   /**
    * the clustering params are set to p
-   * @param p Hashtable
+   * @param p HashMap
    */
-  public void setParams(Hashtable p) {
+  public void setParams(HashMap p) {
     _params = null;
-    _params = new Hashtable(p);  // own the params
+    _params = new HashMap(p);  // own the params
   }
 
 

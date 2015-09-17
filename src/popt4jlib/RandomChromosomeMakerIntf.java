@@ -16,10 +16,10 @@ public interface RandomChromosomeMakerIntf {
 
   /**
    * the sole method every RandomChromosomeMakerIntf implementation must provide.
-   * @param params Hashtable
+   * @param params HashMap
    * @throws OptimizerException
    * @return Object
    */
-  public Object createRandomChromosome(Hashtable params) throws OptimizerException;
+  public Object createRandomChromosome(HashMap params) throws OptimizerException;
 }
 
