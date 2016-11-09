@@ -24,6 +24,7 @@ public class ISN2RXPFIGAMMTest {
 	/**
 	 * invoke as <CODE>java -cp &lt;classpath&gt; graph.packing.ISN2RXPFIGAMMTest &lt;graph_file&gt; &lt;int_file&gt; [k(1)]</CODE>.
 	 * @param args String[]
+	 * @throws Exception 
 	 */
 	public static void main(String[] args) throws Exception {
 		graph.Graph g = DataMgr.readGraphFromFile2(args[0]);

@@ -74,7 +74,7 @@ public class NeuralGasMTClustererTest {
       ngclusterer.addAllVectors(docs);
       ngclusterer.setParams(p);
       ngclusterer.setInitialClustering(init_centers);
-      Vector centers = useoldnslowmethod==false ? ngclusterer.clusterVectors() :
+      List centers = useoldnslowmethod==false ? ngclusterer.clusterVectors() :
           ngclusterer.clusterVectorsOldnSlow();
       long dur = System.currentTimeMillis()-start;
       long dur_compute = System.currentTimeMillis()-start_compute;

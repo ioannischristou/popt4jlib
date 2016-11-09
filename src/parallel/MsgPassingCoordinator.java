@@ -95,7 +95,7 @@ public class MsgPassingCoordinator {
 	 * @param num int the new maximum size of the queue.
 	 * @throws ParallelException if a call to the <CODE>getInstance()</CODE> 
 	 * methods occurred before this call.
-	 * @throws IllegalArgumentException if the argument is &lte; 0. 
+	 * @throws IllegalArgumentException if the argument is &le; 0. 
 	 */
 	public synchronized static void setMaxSize(int num) throws ParallelException, IllegalArgumentException {
 		if (_instance!=null || _instances.size()>0)
@@ -281,7 +281,7 @@ public class MsgPassingCoordinator {
 	 * first if a selective receive operation is currently under way by another
 	 * thread (without checking if any data exist or not), and will
 	 * be notified when the selective receive finishes.
-   * @param threadId int
+   * @param myid int the threadId
    * @return Object
    */
   public synchronized Object recvDataIfAnyExist(int myid) {
@@ -376,7 +376,7 @@ public class MsgPassingCoordinator {
 	 * thread (without checking if any data exist or not), and will
 	 * be notified when the selective receive finishes.
    * @param myid int
-   * @param fromId int the msg must be from this sender
+   * @param fromid int the msg must be from this sender
    * @return Object
    * @throws ParallelException if myid==fromid
    */
@@ -414,7 +414,7 @@ public class MsgPassingCoordinator {
 	/**
 	 * perform an essentially selective-receive (interruptible) blocking operation.
 	 * @param myid int
-	 * @param fromids List<Integer>
+	 * @param fromids List // List&lt;Integer&gt;
 	 * @return PairObjDouble a Pair object whose "object" part is the received
 	 * data and the "Double" part is the integer id of the fromids list on which
 	 * the data was received.

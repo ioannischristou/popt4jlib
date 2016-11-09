@@ -73,7 +73,6 @@ public class Graph implements Serializable {
 	 * distinct hash-codes so that they can serve as keys in the reverse map from 
 	 * label-object to node-id.
 	 * @return Graph 
-	 * @throws 
 	 */
 	public static Graph newGraph(int numnodes, int numarcs, Object[] labels) {
 		Graph g = new Graph(numnodes, numarcs, labels);

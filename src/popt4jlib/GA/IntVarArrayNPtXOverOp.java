@@ -33,9 +33,11 @@ public class IntVarArrayNPtXOverOp implements XoverOpIntf {
    * @param c1 Object int[]
    * @param c2 Object int[]
    * @param params HashMap must contain the following key,value pair:
+	 * <ul>
    * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread
+	 * </ul>
    * @throws OptimizerException if the params are not correctly set
    * @return Pair Pair&lt;int[], int[]&gt; with the first array of the pair having
 	 * dimension equal to c1's dimension, and the second having dimension equal to

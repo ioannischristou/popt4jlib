@@ -24,8 +24,10 @@ public class MichalewiczFunctionGrad implements VecFunctionIntf {
    * evaluates the gradient of the Michalewicz function at the point x.
    * @param x VectorIntf
    * @param p HashMap must contain the following pair:
-   * <li> <"m", Double val> the value of the "m" parameter in the definition
+	 * <ul>
+   * <li> &lt;"m", Double val&gt; the value of the "m" parameter in the definition
    * or the Michalewicz function.
+	 * </ul>
    * @return VectorIntf
    * @throws IllegalArgumentException if the hashtable does not contain the
    * parameter "m", or if x is null.

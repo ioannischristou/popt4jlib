@@ -60,7 +60,7 @@ public class RastriginFastDefFunction implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &lt;classpath&gt; tests.RastriginFunction &lt;x_1&gt; ... &lt;x_n&gt;
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.RastriginFunction &lt;x_1&gt; ... &lt;x_n&gt;</CODE>
    * where the arguments x_1 ... x_n are the values of the components of the
    * vector point at which the function is to be evaluated.
    * @param args String[]

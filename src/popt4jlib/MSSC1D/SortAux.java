@@ -23,7 +23,7 @@ class SortAux implements Comparable {
     if (o==null) return false;
     try {
       SortAux s = (SortAux) o;
-      if (_v==s._v) return true;
+      if (Double.compare(_v, s._v)==0 && _i==s._i) return true;
       else return false;
     }
     catch (ClassCastException e) {
@@ -42,6 +42,8 @@ class SortAux implements Comparable {
     // this < c => return -1
     // this == c => return 0
     // this > c => return 1
-    return Double.compare(_v, c._v);
+    int v = Double.compare(_v, c._v);
+		if (v!=0) return v;
+		else return Integer.compare(_i, c._i);
   }
 }

@@ -27,12 +27,12 @@ public class KMeansSqrEvaluator implements EvaluatorIntf {
    * it belongs.
    * @param cl Clusterer
    * @return double
-   * @throws Exception
+   * @throws ClustererException
    */
   public double eval(ClustererIntf cl) throws ClustererException {
     double ret = 0.0;
-    Vector centers = cl.getCurrentCenters();
-    Vector docs = cl.getCurrentVectors();
+    List centers = cl.getCurrentCenters();
+    List docs = cl.getCurrentVectors();
     int[] asgnms = cl.getClusteringIndices();
     if (asgnms==null) {
       // no clustering has occured yet, or failed
@@ -41,8 +41,8 @@ public class KMeansSqrEvaluator implements EvaluatorIntf {
     final int n = docs.size();
     // final int k = centers.size();
     for (int i=0; i<n; i++) {
-      VectorIntf di = (VectorIntf) docs.elementAt(i);
-      VectorIntf ci = (VectorIntf) centers.elementAt(asgnms[i]);
+      VectorIntf di = (VectorIntf) docs.get(i);
+      VectorIntf ci = (VectorIntf) centers.get(asgnms[i]);
       //ret += _m.dist(di, ci);
       double dist2 = VecUtil.getEuclideanDistance(di,ci);
       dist2 *= dist2;  // square it

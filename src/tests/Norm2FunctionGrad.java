@@ -24,8 +24,10 @@ public class Norm2FunctionGrad implements VecFunctionIntf {
    * evaluates the gradient of the function (Ax)'x at the given point x.
    * @param x VectorIntf
    * @param p HashMap if not null, may contain pairs of the following form:
-   * <li> <"a"$i$, Double a> indicating the value of the element A[$i$+1][$i$+1]
+	 * <ul>
+   * <li> &lt;"a"$i$, Double a&gt; indicating the value of the element A[$i$+1][$i$+1]
    * (if non-existent, it is assumed to be 1)
+	 * </ul>
    * @return VectorIntf
    * @throws IllegalArgumentException if the above specification for the arguments
    * is not adhered to

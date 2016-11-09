@@ -49,8 +49,8 @@ class ReleaseFNPTask2ObjectPool {
    * factory object creation method, first tries to return a managed object from
    * the pool, and if it cannot find one, creates a new (unmanaged) one. The
    * returned object, always has its data members (values) correctly set.
-   * @param obj FNPTask2 
-   * @param tid int
+   * @param data FNPTask2 
+   * @param threadid int
    * @return ReleaseFNPTask2Object
    */
   static ReleaseFNPTask2Object getObject(FNPTask2 data, int threadid) {
@@ -106,7 +106,7 @@ class ReleaseFNPTask2ObjectPool {
 	 * Must only be called once, before any pool is actually constructed (should
 	 * only be called from the ReleaseFNPTask2ObjectThreadLocalPools class).
 	 * @param num int
-	 * @throws IllegalArgumentException if the argument is &lte; 0
+	 * @throws IllegalArgumentException if the argument is &le; 0
 	 */
 	static void setPoolSize(int num) throws IllegalArgumentException {
 		if (num <= 0) 

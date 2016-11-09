@@ -11,7 +11,7 @@ import parallel.*;
  * The main disadvantage of this approach is that it generates too many open
  * nodes in the beginning of the search process, and therefore takes too long
  * before it locates high-quality solutions that can be used to prune other
- * parts of the B&B-tree.
+ * parts of the B&amp;B-tree.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>

@@ -39,7 +39,7 @@ class TaskObjectsExecutionRequest extends RRObject {
 
   /**
    * sole public constructor.
-   * @param originating_client String
+   * @param originator String the name of the originating client
    * @param tasks TaskObject[]
    */
   public TaskObjectsExecutionRequest(String originator, TaskObject[] tasks) {
@@ -93,6 +93,137 @@ class TaskObjectsExecutionRequest extends RRObject {
 
 
 /**
+ * auxiliary class wrapping a request for processing asynchronously TaskObjects.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2016</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class TaskObjectsAsynchExecutionRequest extends RRObject {
+  //private final static long serialVersionUID = 5801899648236803371L;
+  TaskObject[] _tasks;
+  Vector _originatingClients;  // Vector<String>  ordered by event time
+
+
+  /**
+   * sole public constructor.
+   * @param originator String the name of the originating client
+   * @param tasks TaskObject[]
+   */
+  public TaskObjectsAsynchExecutionRequest(String originator, TaskObject[] tasks) {
+    _tasks = tasks;
+    _originatingClients = new Vector();
+    _originatingClients.addElement(originator);
+  }
+
+
+  /**
+   * constructor used only by servers that have a client connection to
+   * other servers.
+   * @param originators Vector  // Vector&lt;String&gt;
+   * @param tasks TaskObject[]
+   */
+  TaskObjectsAsynchExecutionRequest(Vector originators, TaskObject[] tasks) {
+    _tasks = tasks;
+    _originatingClients = originators;
+  }
+
+
+  /**
+   * finds a free worker and submits the tasks for processing, then sends
+   * OKReply back to the requestor. In case no worker is available,
+   * sends back the tasks, wrapped in a NoWorkerAvailableResponse object.
+   * @param srv PDAsynchBatchTaskExecutorSrv
+   * @param ois ObjectInputStream
+   * @param oos ObjectOutputStream
+   * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws PDAsynchBatchTaskExecutorException
+   */
+  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) 
+		throws IOException, ClassNotFoundException, PDAsynchBatchTaskExecutorException {
+    if (_tasks==null || _tasks.length==0)
+      throw new PDAsynchBatchTaskExecutorException("TaskObjectsAsynchExecutionRequest.runProtocol(): null or empty _tasks?");
+		try {
+			// 1. find an available worker on the net, submit work
+			srv.submitWork(_originatingClients, _tasks);
+		}
+		catch (IOException e) {  // worker disconnected, try one last time
+			utils.Messenger.getInstance().msg("worker connection lost, will try one last time", 1);
+			srv.submitWork(_originatingClients, _tasks);
+		}
+		// 2. send back OKReply to requestor
+		oos.writeObject(new OKReply());
+		oos.flush();
+		// return;
+  }
+	
+	
+	/**
+	 * unsupported method always throws PDAsynchBatchTaskExecutorException.
+	 * @param srv PDBatchTaskExecutorSrv
+	 * @param ois ObjectInputStream
+	 * @param oos ObjectOutputStream
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws PDAsynchBatchTaskExecutorException 
+	 */
+  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+		throw new PDAsynchBatchTaskExecutorException("Unsupported method");
+	}
+}
+
+
+/**
+ * auxiliary class wrapping a request for asking for worker availability.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2016</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class PDAsynchBatchTaskExecutorWrkAvailabilityRequest extends RRObject {
+  //private final static long serialVersionUID = 5801899648236803371L;
+
+
+  /**
+   * sole public constructor.
+   */
+  public PDAsynchBatchTaskExecutorWrkAvailabilityRequest() {
+		// no-op.
+  }
+
+
+  /**
+	 * unsupported operation always throws.
+   * @param srv PDAsynchBatchTaskExecutorSrv
+   * @param ois ObjectInputStream
+   * @param oos ObjectOutputStream
+	 * @throws PDAsynchBatchTaskExecutorException
+   */
+  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) 
+		throws PDAsynchBatchTaskExecutorException {
+    throw new PDAsynchBatchTaskExecutorException("Unsupported method");
+  }
+	
+	
+	/**
+	 * unsupported method always throws PDAsynchBatchTaskExecutorException.
+	 * @param srv PDBatchTaskExecutorSrv
+	 * @param ois ObjectInputStream
+	 * @param oos ObjectOutputStream
+	 * @throws PDAsynchBatchTaskExecutorException 
+	 */
+  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws PDAsynchBatchTaskExecutorException {
+		throw new PDAsynchBatchTaskExecutorException("Unsupported method");
+	}
+}
+
+
+/**
  * auxiliary class wrapping a request for processing in parallel TaskObjects.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -105,16 +236,35 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
   // private final static long serialVersionUID = 5801899648236803371L;
 	private final static int _MAX_NUM_THREADS_TO_USE = 64;  // max. number of threads to use to submit batches
 	private final static int _GRAIN_SIZE=3;  // this size controls the granularity 
-	// of the batch jobs to be submitted to the server to forward to workers.
+	// of the batch jobs to be submitted to the server to forward to workers, 
+	// unless it is overridden by the value below; a grain-size of 1, implies that
+	// the tasks will be divided (normally) among the number of workers known to 
+	// the system and submitted to them in a single batch for each; a grain-size
+	// of 2, implies that there will be twice as many batches as there are workers
+	// known to the system, and each batch independently submitted to the server,
+	// and so on.
+	private int _grainSize=-1;  // if positive, use this size as grain-size
 
 
   /**
    * sole public constructor.
-   * @param originating_client String
+   * @param originator String the name of the originating client
    * @param tasks TaskObject[]
    */
   public TaskObjectsParallelExecutionRequest(String originator, TaskObject[] tasks) {
 		super(originator, tasks);
+  }
+
+	
+  /**
+   * sole public constructor.
+   * @param originator String the name of the originating client
+   * @param tasks TaskObject[]
+	 * @param grainsize int
+   */
+  public TaskObjectsParallelExecutionRequest(String originator, TaskObject[] tasks, int grainsize) {
+		super(originator, tasks);
+		_grainSize = grainsize;
   }
 
 
@@ -126,6 +276,20 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
    */
   TaskObjectsParallelExecutionRequest(Vector originators, TaskObject[] tasks) {
 		super(originators, tasks);
+  }
+
+
+  /**
+   * constructor used only by servers that have a client connection to
+   * other servers.
+   * @param originators Vector  // Vector&lt;String&gt;
+   * @param tasks TaskObject[]
+	 * @param grainsize int the grain-size to use when breaking up the tasks into
+	 * chunks (batches) to send to workers to execute
+   */
+  TaskObjectsParallelExecutionRequest(Vector originators, TaskObject[] tasks, int grainsize) {
+		super(originators, tasks);
+		_grainSize = grainsize;
   }
 
 
@@ -147,7 +311,8 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
     if (_tasks==null || _tasks.length==0)
       throw new PDBatchTaskExecutorException("TaskObjectsParallelExecutionRequest.runProtocol(): null or empty _tasks?");
 		ArrayList batches = new ArrayList();  // ArrayList<TaskObject[]>
-		int num_threads = _GRAIN_SIZE*srv.getNumWorkers();  // #threads up to _GRAIN_SIZE*#workers_currently_available
+		int grain_size = _grainSize <= 0 ? _GRAIN_SIZE : _grainSize;
+		int num_threads = grain_size*srv.getNumWorkers();  // #threads up to grain_size*#workers_currently_available
 		if (num_threads>_MAX_NUM_THREADS_TO_USE) num_threads = _MAX_NUM_THREADS_TO_USE;
 		// when num_threads > srv.getNumWorkers(), it is necessary that the 
 		// srv.submitWork(clients, tasks); method does not throw after a small number

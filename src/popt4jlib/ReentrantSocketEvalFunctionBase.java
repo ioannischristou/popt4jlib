@@ -29,6 +29,10 @@ public class ReentrantSocketEvalFunctionBase implements FunctionIntf {
 
   /**
    * public constructor, setting up the evaluation count to zero.
+	 * @param host String
+	 * @param port int
+	 * @throws IOException
+	 * @throws SocketException
    */
   public ReentrantSocketEvalFunctionBase(String host, int port) throws IOException, SocketException {
     _s = new Socket(host, port);

@@ -27,8 +27,10 @@ public class Norm2Function implements FunctionIntf {
    * @param arg Object must be a <CODE>double[]</CODE> or a <CODE>VectorIntf</CODE>
    * object.
    * @param p HashMap if not null, may contain pairs of the form
-   * <li> <"a"$i$, Double v> where v is the weight associates with the (i+1)-st
+	 * <ul>
+   * <li> &lt;"a"$i$, Double v&gt; where v is the weight associates with the (i+1)-st
    * variable.
+	 * </ul>
    * @return double
    * @throws IllegalArgumentException if the arguments don't adhere to the above
    * specifications.

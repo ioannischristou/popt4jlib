@@ -37,9 +37,9 @@ public class FastDblArray1VectorURndMaker {
    * <li> &lt;"dde.maxargval"+$i$, Double v&gt; optional, the max. value that the i-th
    * component of the returned vector may assume (i={0,1,...nd.intValue()-1})
    * </ul>
-   * <br>The "local" constraints can only impose more strict constraints on the
+   * <p>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
-   * the domain of the variable wider.</br>
+   * the domain of the variable wider.</p>
    * @param params HashMap
    */
   public FastDblArray1VectorURndMaker(HashMap params) throws IllegalArgumentException {

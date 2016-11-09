@@ -30,11 +30,13 @@ public class FletcherPowellFunction implements FunctionIntf {
 
   /**
    * evaluates the Fletcher-Powell test-function at the point x=arg
-   * @param arg Object must be a <CODE>double[]></CODE> or
+   * @param arg Object must be a <CODE>double[]</CODE> or
    * <CODE>popt4jlib.VectorIntf</CODE> object.
    * @param p HashMap MUST contain the following pairs:
-   * <li> <"A", Vector[]> where each element of the Vector[] is a Vector<Double>
-   * <li> <"B", Vector[]> where each element of the Vector[] is a Vector<Double>
+	 * <ul>
+   * <li> &lt;"A", Vector[]&gt; where each element of the Vector[] is a Vector&lt;Double&gt;
+   * <li> &lt;"B", Vector[]&gt; where each element of the Vector[] is a Vector&lt;Double&gt;
+	 * </ul>
    * @return double
    * @throws IllegalArgumentException if arg or p do not comply with the above
    * specifications.

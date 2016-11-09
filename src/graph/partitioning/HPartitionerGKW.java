@@ -28,7 +28,7 @@ public class HPartitionerGKW implements HPartitionerIntf {
    * returns an array of size g.getNumNodes() with values in [1,...,k]
    * implements the Greedy K-way partitioning scheme (simplification over
    * F-M style algorithms since it visits nodes randomly and makes the best
-   * move iff it leads to a gain>0, in terms of weight of cut-edges.)
+   * move iff it leads to a gain&gt;0, in terms of weight of cut-edges.)
    * @param g HGraph
    * @param k int
    * @param props HashMap

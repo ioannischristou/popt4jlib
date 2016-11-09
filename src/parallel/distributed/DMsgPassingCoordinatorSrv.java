@@ -23,9 +23,9 @@ public class DMsgPassingCoordinatorSrv {
 
   /**
    * constructor specifying the port the server will listen to, and
-   * the max. number of threads in the thread-pool.
-   * @param port int if < 1024, the number 7894 is used.
-   * @param maxthreads int if < 10000, the number 9999 is used.
+   * the maximum number of threads in the thread-pool.
+   * @param port int if &lt; 1024, the number 7894 is used.
+   * @param maxthreads int if &lt; 10000, the number 9999 is used.
    */
   DMsgPassingCoordinatorSrv(int port, int maxthreads) {
     if (port >= 1024)

@@ -60,10 +60,10 @@ final public class DblArray1VectorThreadLocalPools {
 	 * sets the size of the thread-local pools. Must only be called once, before
 	 * any other call to methods of this class or any other of the 
 	 * DblArray1Vector* classes.
-	 * @param poolsize
+	 * @param poolsize int
 	 * @throws IllegalStateException if there has been a call to any of the other 
 	 * methods of the family of DblArray1Vector* classes.
-	 * @throws IllegalArgumentException if poolsize &lte;; 0.
+	 * @throws IllegalArgumentException if poolsize &le; 0.
 	 */
 	public static synchronized void setPoolSize(int poolsize) 
 	  throws IllegalArgumentException, IllegalStateException {

@@ -77,16 +77,37 @@ public class FIFOLock extends Lock {
     }
     super.releaseLock();
   }
-}
 
+	
+	/**
+	 * gets the lock if it is immediately available and there are no other waiting
+	 * threads to get it. Method returns immediately.
+	 * @return boolean true if thread got the lock, false otherwise.
+	 */
+	public boolean getLockIfAvailable() {
+		if (super.getLockIfAvailable()) {
+			if (_isFree && _waitingOn.size()==0) {
+				_isFree = false;
+				super.releaseLock();
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	/**
+	 * private helper inner class. Not part of the public API.
+	 */
+	class WObject {
+		boolean _isDone=false;
 
-class WObject {
-  boolean _isDone=false;
+		public WObject() {
+			// no-op
+		}
+		public void setDone() { _isDone = true; }
+		public boolean getIsDone() { return _isDone; }
+	}
 
-  public WObject() {
-    // no-op
-  }
-  public void setDone() { _isDone = true; }
-  public boolean getIsDone() { return _isDone; }
 }
 

@@ -149,16 +149,16 @@ public class DDE implements OptimizerIntf {
    * double number in [0,1], default is 0.9
    * <li> &lt;"dde.minargval", Double val&gt; optional, a double number that is a lower
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i &gte; val.doubleValue(), default is -infinity
+   * must satisfy x_i &ge; val.doubleValue(), default is -infinity
    * <li> &lt;"dde.maxargval", Double val&gt; optional, a double number that is an upper
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i &lte; val.doubleValue(), default is +infinity
+   * must satisfy x_i &le; val.doubleValue(), default is +infinity
    * <li> &lt;"dde.minargval$i$", Double val&gt; optional, a double number that is a lower
    * bound for the i-th variable of the optimization process, i.e. variable
-   * must satisfy x_i &gte; val.doubleValue(), default is -infinity
+   * must satisfy x_i &ge; val.doubleValue(), default is -infinity
    * <li> &lt;"dde.maxargval$i$", Double val&gt; optional, a double number that is an upper
    * bound for the i-th variable of the optimization process, i.e. variable
-   * must satisfy x_i &lte; val.doubleValue(), default is +infinity
+   * must satisfy x_i &le; val.doubleValue(), default is +infinity
 	 * <li> &lt;"dde.de/best/1/binstrategy", Boolean val&gt; optional, a boolean value
 	 * that if present and true, indicates that the DE/best/1/bin strategy should
 	 * be used in evolving the population instead of the DE/rand/1/bin strategy,
@@ -199,6 +199,20 @@ public class DDE implements OptimizerIntf {
 	 * indicates the address in which the reducer server process listens at; 
 	 * default is -1
    * </ul>
+	 * <p> Notice that in case of running DDE in a distributed manner, there are
+	 * two important constraints: 
+	 * <ul>
+	 * <li> First of all, the various processes participating in the distributed 
+	 * DDE process must have their dde.dmpthisprocessid and dde.dmpnextprocessid
+	 * parameters set up so that the flow of migration forms an exact ring, e.g.
+	 * for a 3-process DDE we have that DDE_0 sends migrants to DDE_1 which sends 
+	 * migrants to DDE_2 which sends migrants to DDE_0. 
+	 * <li> The constraint dde.numgensbetweenmigrations &le; dde.numtries must hold.
+	 * </ul>
+	 * Otherwise, there is no way for processes to block in at least one migration 
+	 * cycle (and thereby have the DReduceSrv know the total number of processes 
+	 * before the final reduce operation), and therefore the distributed reduce 
+	 * operation afterwards is not guaranteed to work properly.</p>
    * @param f FunctionIntf the function to be minimized
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object or if the optimization
@@ -476,6 +490,9 @@ class DDEThread extends Thread {
 					_dmsgpassClient = new DActiveMsgPassingCoordinatorLongLivedConnClt(_master._dmpCoordinator, _master._dmpPort, coordname);
 					Integer ngbmI = (Integer) p.get("dde.numgensbetweenmigrations");
 					if (ngbmI!=null) _master._numGensBetweenMigrations = ngbmI.intValue();
+					if (_master._numGensBetweenMigrations>=numtries) {  // force at least one migration to ensure reduce op correctness
+						_master._numGensBetweenMigrations=numtries-1;
+					}
 					Integer nmI = (Integer) p.get("dde.nummigrants");
 					if (nmI!=null) _master._numMigrants = nmI.intValue();
 				}

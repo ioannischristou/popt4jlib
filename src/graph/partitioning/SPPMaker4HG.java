@@ -37,8 +37,8 @@ public class SPPMaker4HG implements SPPMakerIntf {
   }
 
   /**
-   * partitions is a Vector<int[] partition>
-   * Each partition index starts at 1, and is in the range [1,k] inclusive.
+   * partitions is a Vector&lt;int[] partition&gt;, and
+   * each partition index starts at 1, and is in the range [1,k] inclusive.
    * @param g HGraph
    * @param partitions Vector
    * @param k int

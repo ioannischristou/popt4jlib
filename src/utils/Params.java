@@ -37,9 +37,9 @@ public class Params {
 
 
   /**
-   * get an Integer object corresponding to the passed <name> argument.
-   * It searches the keys it knows for an appearance of <name>, but if it
-   * cannot find one, it starts dropping parts of the <name> (separated by a
+   * get an Integer object corresponding to the passed &lt;name&gt; argument.
+   * It searches the keys it knows for an appearance of &lt;name&gt;, but if it
+   * cannot find one, it starts dropping parts of the &lt;name&gt; (separated by
    * "." character) from left to right, until it finds a match. This match must
    * then be "mappable" to an int, else it throws IllegalArgumentException. If
    * no match can be found, it returns null.
@@ -147,7 +147,7 @@ public class Params {
 
   /**
    * same logic as in getInteger(name), but this time it just returns whatever
-   * object best matches the input <name>.
+   * object best matches the input &lt;name&gt;.
    * @param name String
    * @return Object
    */

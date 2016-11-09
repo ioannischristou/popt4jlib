@@ -36,7 +36,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
   /**
    * constructs the zero sparse vector in n-dimensional space.
    * @param n int the number of dimensions
-   * @throws IllegalArgumentException if n&lte;;0
+   * @throws IllegalArgumentException if n&le;0
    */
   public DblArray1SparseVectorMT(int n) throws IllegalArgumentException {
     super(n);
@@ -50,7 +50,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * @param values double[] corresponds to values for each index in the indices array
    * @param n int total length of the vector
    * @throws IllegalArgumentException if any of indices or values is null or if
-	 * they have different lengths or if n&lte;;indices[indices.length-1].
+	 * they have different lengths or if n&le;indices[indices.length-1].
    */
   public DblArray1SparseVectorMT(int[] indices, double[] values, int n) throws IllegalArgumentException {
     super(indices, values, n);
@@ -321,7 +321,6 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * @throws IndexOutOfBoundsException if i is not in the set mentioned above
    * @throws ParallelException if a read-lock for this object is already
    * acquired by the current thread and some-other thread as well.
-   * @return double
    */
   public void setCoord(int i, double val) throws IndexOutOfBoundsException, ParallelException {
     if (i<0 || i>=getNumCoords()) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
@@ -514,11 +513,11 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
   /**
    * the purpose of this routine is to allow a traversal of the non-zeros of
    * this object as follows:
-   * <p>
+   * <br>
 	 * <pre>
    * <CODE>
    * sparsevector.getReadLock();
-   * for (int i=0; i<sparsevector.getNumNonZeros(); i++) {
+   * for (int i=0; i&lt;sparsevector.getNumNonZeros(); i++) {
    *   int    pos = sparsevector.getIthNonZeroPos(i);
    *   double val = sparsevector.getCoord(pos);
    *   // do whatever must be done...
@@ -526,7 +525,6 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * sparsevector.releaseReadLock();
    * </CODE>
 	 * </pre>
-	 * </p>
    * It is possible that one or more of the positions returned contain zero
    * values (but in the past they must have had non-zero value). But no position
    * with a current non-zero value will be missed.
@@ -762,7 +760,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
   /**
    * return the k-th norm of this vector.
    * @param k int
-   * @throws IllegalArgumentException if k&lte;;0
+   * @throws IllegalArgumentException if k&le;0
    * @return double
    */
   public double norm(int k) throws IllegalArgumentException {

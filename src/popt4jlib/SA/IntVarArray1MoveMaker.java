@@ -32,6 +32,7 @@ public class IntVarArray1MoveMaker implements NewChromosomeMakerIntf {
    * region (if any such box-constraints exist).
    * @param chromosome Object int[]
    * @param params HashMap must contain the following pairs:
+	 * <ul>
    * <li> &lt;"dsa.minallelevalue", $integer_value$&gt; mandatory, the min. value
    * for any allele in the chromosome.
    * <li> &lt;"dsa.minallelevalue$i$", $integer_value$&gt; optional, the min.
@@ -48,6 +49,7 @@ public class IntVarArray1MoveMaker implements NewChromosomeMakerIntf {
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
    * <li> &lt;"dsa.movedelta",$value"&gt; mandatory, the value of the ä parameter.
+	 * </ul>
    * @throws OptimizerException
    * @return Object int[]
    */

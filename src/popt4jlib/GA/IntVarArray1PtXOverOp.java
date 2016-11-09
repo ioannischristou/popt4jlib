@@ -28,7 +28,7 @@ public class IntVarArray1PtXOverOp implements XoverOpIntf {
    * arrays of integers (<CODE>int[]</CODE> objects).
    * @param c1 Object (a double[])
    * @param c2 Object (a double[])
-   * @param params HashMap must contain a pair <"thread.id", $integer_value$>
+   * @param params HashMap must contain a pair &lt;"thread.id", $integer_value$&gt;
    * @throws OptimizerException if the params are incorrectly set
    * @return Pair containing two new <CODE>int[]</CODE> objects, the first
 	 * having dimension equal to c1' dimension, the second having dimension equal

@@ -5,7 +5,7 @@ import java.util.*;
 /**
  * The class is a wrapper class for FunctionIntf objects, that evaluates the
  * FunctionIntf object not on the actual VectorIntf or double[] argument x that
- * it is given, but rather on a shifted vector x-&delta, where the shift &delta 
+ * it is given, but rather on a shifted vector x-&delta;, where the shift &delta; 
  * is passed in the params hashtable as a pair 
  * &lt;"function.shiftarg", double[] delta&gt;.
  * However, if it is passed a non-vector of doubles argument, the eval() method

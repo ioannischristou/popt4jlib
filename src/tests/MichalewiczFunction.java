@@ -31,7 +31,9 @@ public class MichalewiczFunction implements FunctionIntf {
    * @param arg Object must be <CODE>double[]</CODE> or
    * <CODE>popt4jlib.VectorIntf</CODE>
    * @param p HashMap must contain the pair:
-   * <li> <"m", Double v> indicating the value of the parameter m.
+	 * <ul>
+   * <li> &lt;"m", Double v&gt; indicating the value of the parameter m.
+	 * </ul>
    * @return double
    * @throws IllegalArgumentException if any of the two arguments does not adhere
    * to the above specification

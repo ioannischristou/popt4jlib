@@ -48,8 +48,8 @@ public final class GASPPacker {
 
   /**
    * create a dist-2 packing for Graph _g via a GASP method and return it
-   * as a Set<Node> of the active nodes.
-   * @return Set  // Set<Node>
+   * as a Set&lt;Node&gt; of the active nodes.
+   * @return Set  // Set&lt;Node&gt;
    * @throws ParallelException
    */
   public Set pack() throws ParallelException {
@@ -78,7 +78,8 @@ public final class GASPPacker {
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set  // Set<Node>
+   * @param active Set  // Set&lt;Node&gt;
+	 * @throws ParallelException
    * @return boolean // true iff nj can be added to active
    */
   private boolean isFree2Cover(Node nj, Set active) throws ParallelException {
@@ -125,7 +126,7 @@ public final class GASPPacker {
   /**
    * return true iff all nodes in active set can be set to one without
    * violating feasibility.
-   * @param active Set  // Set<Node>
+   * @param active Set  // Set&lt;Node&gt;
    * @return boolean
    * @throws ParallelException
    */

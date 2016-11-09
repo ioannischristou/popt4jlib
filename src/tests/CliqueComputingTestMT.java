@@ -24,7 +24,7 @@ public class CliqueComputingTestMT {
 
   /**
    * the main method: invoke from command line as follows:
-   * <CODE>java -cp <classpath> tests.CliqueComputingTestMT &lt;graph_file_name&gt; &lt;thres&gt; &lt;numthreads&gt;</CODE>
+   * <CODE>java -cp &lt;classpath&gt; tests.CliqueComputingTestMT &lt;graph_file_name&gt; &lt;thres&gt; &lt;numthreads&gt;</CODE>
    * where the parameter graph_file_name contains the graph whose cliques we
    * seek, and the parameter thres defines the minimum weight that each edge
    * of the graph must have so that it "counts" as a "true edge" in the

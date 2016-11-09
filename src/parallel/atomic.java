@@ -4,15 +4,17 @@ import java.util.*;
 
 
 /**
- * A class implementing the <atomic> critical section protocol in Java.
+ * A class implementing the &lt;atomic&gt; critical section protocol in Java.
  * Users of this class wishing to ensure that certain pieces of code execute
  * atomically, must enclose the critical section in the calls
- *
- * <li> <CODE>atomic.start(i)</CODE>
- * <li> <CODE> &lt;critical section code&gt; </CODE>
- * <li> <CODE>atomic.end(i)</CODE>
- *
- * where <CODE>i >= 0</CODE>.
+ * <pre>
+ * <CODE>
+ * atomic.start(i);
+ * &lt;critical section code&gt;
+ * atomic.end(i);
+ * </CODE>
+ * </pre>
+ * where <CODE>i &gt;= 0</CODE>.
  * However, the class semantics are such so that it is possible for another
  * thread to release the lock that another thread has acquired. If this
  * possibility is unacceptable, then the class Semaphore can be used

@@ -30,6 +30,7 @@ public class DblArray1ChromosomeVelocityAdder implements ChromosomeVelocityAdder
    * @param chromosome Object
    * @param velocity Object
    * @param params HashMap may contain the following params:
+	 * <ul>
    * <li> &lt;"dpso.minallelevalue", $value$&gt; optional, the minimum value
    * for any allele in the chromosome.
    * <li> &lt;"dpso.minallelevalue$i$", $value$&gt; optional, the minimum value
@@ -42,6 +43,7 @@ public class DblArray1ChromosomeVelocityAdder implements ChromosomeVelocityAdder
    * for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}). If this value is greater than the global
    * value specified by the "dpso.maxallelevalue" key, it is ignored.
+	 * </ul>
    * @throws OptimizerException if any of the arguments is null or not of type
    * <CODE>double[]</CODE> or not of same length.
    * @return Object

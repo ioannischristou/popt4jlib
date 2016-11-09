@@ -108,7 +108,7 @@ public class PDBatchTaskExecutorCltTest {
   class PDBTECTThread extends Thread {
     PDBatchTaskExecutorClt _client;
     TNLEvalTask[] _tasks;
-    Object[] _results;  // must be Serializable
+    Double[] _results = new Double[100];  // must be Serializable
     PDBTECTThread(PDBatchTaskExecutorClt client, TNLEvalTask[] tasks) {
       _client = client;
       _tasks = tasks;
@@ -122,12 +122,16 @@ public class PDBatchTaskExecutorCltTest {
 					j=0;
 				}
 				tasks[j++] = _tasks[i];
+				if (i==_tasks.length-1) {
+					run(tasks);
+				}
 			}
 		}
     private void run(TNLEvalTask[] tasks) {
       try {
         System.out.println("CltTest: submitting tasks of size "+tasks.length);
-        _results = _client.submitWorkFromSameHost(tasks);
+        Object[] results = _client.submitWorkFromSameHost(tasks);
+				setResults(results);
         System.out.println("CltTest: got results, exiting.");
       }
       catch (PDBatchTaskExecutorException e) {
@@ -137,7 +141,8 @@ public class PDBatchTaskExecutorCltTest {
         long max_duration = 10*1000L;
         while (System.currentTimeMillis()<now+max_duration) {
           try {
-            _results = _client.submitWorkFromSameHost(tasks);
+            Object[] results = _client.submitWorkFromSameHost(tasks);
+						setResults(results);
             return;
           }
           catch (PDBatchTaskExecutorException e2) {
@@ -156,6 +161,14 @@ public class PDBatchTaskExecutorCltTest {
         System.err.println("PDBTECTThread.run(): exits due to exception");
       }
     }
+		private void setResults(Object[] results) {
+			for (int i=0; i<results.length; i++) {
+				Double ri = (Double) results[i];
+				if (_results[i]==null || ri.doubleValue()<_results[i].doubleValue()) {
+					_results[i] = ri;
+				}
+			}
+		}
   }
 
 }

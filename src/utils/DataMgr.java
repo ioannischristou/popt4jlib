@@ -82,12 +82,11 @@ public class DataMgr {
 	 * class's pool size is set to the value of this line (int), via a call to 
 	 * <CODE>RegisteredParcelThreadLocalPools.setPoolSize(val)</CODE>.
 	 * 
-   * <p>file format is
+   * <p>File format is:
 	 * <PRE>
    * key,value[,classname|graphfilename][,opts]
    * [...]
-	 * </PRE>
-   * </p>
+	 * </PRE>.
    * <p>Empty lines and lines starting with # are ignored.</p>
    * @param filename String
    * @throws IOException
@@ -357,7 +356,7 @@ public class DataMgr {
    * zero.
    * @param filename String
    * @return Vector // Vector&lt;VectorIntf&gt;
-   * @throws IOException, ClustererException
+   * @throws IOException
    */
   public static Vector readVectorsFromFile(String filename)
       throws IOException {
@@ -470,7 +469,7 @@ public class DataMgr {
    * a vector in a vector space of dimension totaldimensions
    * @param filename String
    * @return Vector // Vector&lt;DblArray1SparseVector&gt;
-   * @throws IOException, ClustererException
+   * @throws IOException
    */
   public static Vector readSparseVectorsFromFile(String filename)
       throws IOException {
@@ -534,7 +533,7 @@ public class DataMgr {
    * <CODE>getIthNonnZeroPos(i)</CODE> operations.
    * @param filename String
    * @return Vector // Vector&lt;DblArray1SparseVectorFE&gt;
-   * @throws IOException, ClustererException
+   * @throws IOException
    */
   public static Vector readSparseVectorsFEFromFile(String filename)
       throws IOException {
@@ -596,7 +595,7 @@ public class DataMgr {
    * a vector in a vector space of dimension totaldimensions
    * @param filename String
    * @return Vector // Vector&lt;DblArray1SparseVectorMT&gt;
-   * @throws IOException, ClustererException
+   * @throws IOException
    */
   public static Vector readSparseVectorsMTFromFile(String filename)
       throws IOException {
@@ -1542,7 +1541,7 @@ public class DataMgr {
   /**
    * writes the int[] given in the first argument to the file given in the
    * second argument.
-   * @param int[] the asgn to write
+   * @param indices int[] the asgn to write
    * @param filename String
    * @throws IllegalArgumentException
    * @throws FileNotFoundException

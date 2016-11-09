@@ -2,6 +2,7 @@ package graph;
 
 import java.util.*;
 
+
 /**
  * Union-Find Set Data Structure.
  * Adapted from Ullman, Hopckroft, and later Tarjan's data structures.
@@ -66,6 +67,15 @@ public class DisjointSet {
 }
 
 
+/**
+ * auxiliary class not part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: parallel optimization library in Java</p>
+ * <p>Copyright: Copyright (c) 2005</p>
+ * <p>Company: AIT</p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
 class DisjointSetElem {
   private DisjointSetElem _parent;
   private int _rank;

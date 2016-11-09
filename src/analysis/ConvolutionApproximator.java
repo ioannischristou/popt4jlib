@@ -30,11 +30,12 @@ public class ConvolutionApproximator implements FunctionIntf {
    * number of variables. In case of multi-variate functions, the convolution
    * is computed around 1 variable only, around the same values for all the
    * other variables.
-   * @param f FunctionIntf must accept as input <CODE>double[]</DOUBLE> or
+   * @param f FunctionIntf must accept as input <CODE>double[]</CODE> or
    * <CODE>VectorIntf</CODE> objects.
-   * @param g FunctionIntf must accept as input <CODE>double[]</DOUBLE> or
+   * @param g FunctionIntf must accept as input <CODE>double[]</CODE> or
    * <CODE>VectorIntf</CODE> objects.
    * @param params HashMap the params table may contain the following pairs:
+	 * <ul>
    * <li> &lt;"convolutionapproximator.integrationlowerlimit", Double l&gt; optional,
    * the initial lower limit of the infinite integral involved in the convolution,
    * default is -1.
@@ -50,6 +51,7 @@ public class ConvolutionApproximator implements FunctionIntf {
    * <li> &lt;"integralapproximator.levelmax", Integer level&gt; if present specifies
    * maximum level of recursion in the Simpson method, default is
    * <CODE>Integer.MAX_VALUE</CODE>.
+	 * </ul>
    * @throws IllegalArgumentException
    */
   public ConvolutionApproximator(FunctionIntf f, FunctionIntf g,

@@ -31,6 +31,7 @@ public class DblArray1MoveMaker implements NewChromosomeMakerIntf {
    * box-constrained integer feasible region (whenever box-constraints exist).
    * @param chromosome Object double[]
    * @param params HashMap must contain the following pairs:
+	 * <ul>
    * <li> &lt;"dsa.minallelevalue", $value$&gt; mandatory, the minimum value
    * for any allele in the chromosome.
    * <li> &lt;"dsa.minallelevalue$i$", $value$&gt; optional, the minimum value
@@ -47,6 +48,7 @@ public class DblArray1MoveMaker implements NewChromosomeMakerIntf {
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
    * <li> &lt;"dsa.movedelta",$value"&gt; mandatory, the value of the ä parameter.
+	 * </ul>
    * @throws OptimizerException
    * @return Object double[]
    */

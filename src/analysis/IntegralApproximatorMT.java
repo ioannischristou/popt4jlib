@@ -38,14 +38,16 @@ public class IntegralApproximatorMT implements FunctionIntf {
    * public constructor.
    * @param f FunctionIntf
    * @param params HashMap may contain the following pairs:
-   * <"integralapproximator.eps", Double eps> if present specifies the required
+	 * <ul>
+   * <li> &lt;"integralapproximator.eps", Double eps&gt; if present specifies the required
    * precision, default is 1.e-6,
-   * <"integralapproximator.levelmax", Integer level> if present specifies the
+   * <li> &lt;"integralapproximator.levelmax", Integer level&gt; if present specifies the
    * maximum level of recursion in the Simpson method, default is
    * <CODE>Integer.MAX_VALUE</CODE>, and
-   * <"integralapproximatormt.maxnumthreads", Integer num> if present specifies
+   * <li> &lt;"integralapproximatormt.maxnumthreads", Integer num&gt; if present specifies
    * the maximum number of threads to be used, default is
-   * <CODE>Integer.MAX_VALUE</CODE>.
+   * <CODE>Integer.MAX_VALUE</CODE>
+	 * </ul>.
    */
   public IntegralApproximatorMT(FunctionIntf f, HashMap params) {
     _f = f;
@@ -81,18 +83,20 @@ public class IntegralApproximatorMT implements FunctionIntf {
    * HashMap, to the specified value x_i in the vector <CODE>x</CODE>.
    * @param x Object a <CODE>VectorIntf</CODE> or <CODE>double[]</CODE> object.
    * @param params HashMap must contain at least a pair of the form
-   * <li> <"integralapproximator.a", Double a> indicating the lower limit of
+	 * <ul>
+   * <li> &lt;"integralapproximator.a", Double a&gt; indicating the lower limit of
    * integration and a pair of the form
-   * <li> <"integralapproximator.integrandvarindex", Integer i> indicating the
+   * <li> &lt;"integralapproximator.integrandvarindex", Integer i&gt; indicating the
    * variable index for the integration (must range in
    * [0,<CODE>x.length-1</CODE>] if <CODE>x</CODE> is a <CODE>double[]</CODE> or
    * in [0,<CODE>x.getNumCoords()-1</CODE>] if <CODE>x</CODE> is a
    * <CODE>VectorIntf</CODE> object). Additionally, params must contain whatever
    * parameters are needed so that the function <CODE>f</CODE> passed in the
    * constructor needs in order to be evaluated.
-   * <li> <"integralapproximator.H", Double h> if present specifies the width of
+   * <li> &lt;"integralapproximator.H", Double h&gt; if present specifies the width of
    * each sub-interval of the integration interval on which the adaptive
    * Simpson procedure will be used, default is (b-a)/100.0.
+	 * </ul>
    * @throws IllegalArgumentException if any of the two pairs required in params
    * HashMap are not present, or if the integration could not be carried out
    * with the required precision.

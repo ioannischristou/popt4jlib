@@ -26,6 +26,7 @@ public class MonteCarloTest {
   /**
    * invoke as <CODE>java -cp &lt;classpath&gt; tests.MonteCarloTest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>
    * where params_file must contain the following lines:
+	 * <ul>
    * <li> class,mcs.function, &lt;fullclassname&gt; mandatory, the full class name
    * of the function to be minimized.
    * <li> mcs.numtries, $num$ mandatory, the number of random attempts
@@ -43,12 +44,12 @@ public class MonteCarloTest {
    * present). The value of num should be a positive integer.
    * <li> any other parameters required for the evaluation of the function, or
    * by the objects passed in above (e.g. the RandomArgMakerIntf object etc.)
-   *
+   * </ul>
    * <p> if the second optional argument is passed in, it overrides the random
-   * seed specified in the params_file.
+   * seed specified in the params_file.</p>
    * <p> The optional third argument, if present, overrides any max. limit set
    * on the number of function evaluations allowed specified in the params_file.
-   *
+   * </p>
    * @param args String[]
    */
   public static void main(String[] args) {

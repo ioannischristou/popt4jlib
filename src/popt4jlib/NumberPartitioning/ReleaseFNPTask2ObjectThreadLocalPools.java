@@ -63,7 +63,7 @@ class ReleaseFNPTask2ObjectThreadLocalPools {
 	 * @param poolsize int
 	 * @throws ParallelException if there has been a call to any of the other 
 	 * methods of the family of ReleaseFNPTask2Object* classes.
-	 * @throws IllegalArgumentException if poolsize &lte; 0.
+	 * @throws IllegalArgumentException if poolsize &le; 0.
 	 */
 	public static synchronized void setPoolSize(int poolsize) 
 	  throws ParallelException, IllegalArgumentException {

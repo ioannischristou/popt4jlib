@@ -56,7 +56,7 @@ public class DataFileAccessClt {
 	 * file to read vectors from
 	 * @param fromind int the starting index of the range (inclusive, including zero)
 	 * @param toind int the ending index of the range (inclusive, including zero)
-	 * @return Vector Vector<VectorIntf>
+	 * @return Vector Vector&lt;VectorIntf&gt;
 	 * @throws IOException
 	 * @throws ParallelException
 	 * @throws IllegalArgumentException

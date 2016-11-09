@@ -39,7 +39,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
   /**
    * constructs the zero sparse vector in n-dimensional space.
    * @param n int the number of dimensions
-   * @throws IllegalArgumentException if n &lte;; 0
+   * @throws IllegalArgumentException if n &le; 0
    */
   public IntArray1SparseVector(int n) throws IllegalArgumentException {
     if (n<=0) throw new IllegalArgumentException("dimensions must be >= 1");
@@ -270,7 +270,6 @@ public class IntArray1SparseVector implements SparseVectorIntf {
    * @param val double must hold an integer value
    * @throws IndexOutOfBoundsException if i is not in the set mentioned above
 	 * @throws IllegalArgumentException -if val does not represent an integer
-   * @return double
    */
   public void setCoord(int i, double val) throws IndexOutOfBoundsException, 
 					                                       IllegalArgumentException {
@@ -361,16 +360,15 @@ public class IntArray1SparseVector implements SparseVectorIntf {
   /**
    * the purpose of this routine is to allow a traversal of the non-zeros of
    * this object as follows:
-   * <p>
+   * <br>
    * <pre>
 	 * <CODE>
-   * for (int i=0; i<sparsevector.getNumNonZeros(); i++) {
+   * for (int i=0; i&lt;sparsevector.getNumNonZeros(); i++) {
    *   int    pos = sparsevector.getIthNonZeroPos(i);
    *   double val = sparsevector.getCoord(pos);
    * }
 	 * </CODE>
    * </pre>
-	 * </p>
    * @param i int
    * @throws IndexOutOfBoundsException if i is out-of-bounds. Always throws if
    * this is the zero vector
@@ -472,7 +470,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
   /**
    * return the k-th norm of this vector.
    * @param k int
-   * @throws IllegalArgumentException if k &lte;; 0
+   * @throws IllegalArgumentException if k &le; 0
    * @return double
    */
   public double norm(int k) throws IllegalArgumentException {

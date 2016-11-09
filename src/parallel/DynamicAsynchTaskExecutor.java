@@ -86,7 +86,7 @@ public final class DynamicAsynchTaskExecutor {
    * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of initial threads in the thread-pool
    * @param maxthreads int the max. number of threads in the thread-pool
-   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
+   * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created or if maxthreads &lt; numthreads.
    */
   private DynamicAsynchTaskExecutor(int numthreads, int maxthreads) throws ParallelException {
@@ -116,7 +116,7 @@ public final class DynamicAsynchTaskExecutor {
    * @param maxthreads int the max number of threads in the thread-pool.
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full and no new thread can be created.
-   * @throws ParallelException if numthreads &lte; 0 or if numthreads>maxthreads.
+   * @throws ParallelException if numthreads &le; 0 or if numthreads&gt;maxthreads.
    */
   private DynamicAsynchTaskExecutor(int numthreads, int maxthreads,
                                    boolean runoncurrent)
@@ -303,7 +303,7 @@ public final class DynamicAsynchTaskExecutor {
     /**
      * the run() method of the thread, loops continuously, waiting for a task
      * to arrive via the SimpleFasterMsgPassingCoordinator class and executes it.
-     * Any exceptions the task throws are caught & ignored. In case the data that
+     * Any exceptions the task throws are caught &amp; ignored. In case the data that
      * arrives is a PoissonPill, the thread exits its run() loop.
      */
     public void run() {

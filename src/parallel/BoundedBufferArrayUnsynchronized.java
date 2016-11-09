@@ -103,7 +103,7 @@ public class BoundedBufferArrayUnsynchronized {
 	 * @param hintPos int a hint on the index position to start the search
 	 * @return int the position where the object was found
 	 * @throws IllegalArgumentException if the object is not found or 
-	 * if hintPos &le 0 or if p is null
+	 * if hintPos &le; 0 or if p is null
 	 */
 	public int remove(Object p, int hintPos) throws IllegalArgumentException {
 		if (hintPos<0) 

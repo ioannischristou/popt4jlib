@@ -10,6 +10,10 @@ package graph;
  * @version 1.0
  */
 public class GraphException extends Exception {
+	/**
+	 * sole public constructor.
+	 * @param msg String
+	 */
   public GraphException(String msg) {
     System.err.println(msg);
     System.err.flush();

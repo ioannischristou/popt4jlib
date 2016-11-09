@@ -38,10 +38,12 @@ public class GradApproximatorMT implements VecFunctionIntf {
    * compute the gradient of the function f passed in the constructor, at the
    * point x using Richardson extrapolation. The params hash-table may contain
    * the following pairs:
-   * <li> <"gradapproximator.nmax", Integer n> optional, the dimension of the
+	 * <ul>
+   * <li> &lt;"gradapproximator.nmax", Integer n&gt; optional, the dimension of the
    * Richardson extrapolation. Default is 10.
-   * <li> <"gradapproximator.numthreads", Integer nt> optional, the number of
+   * <li> &lt;"gradapproximator.numthreads", Integer nt&gt; optional, the number of
    * threads to use when computing the gradient. Default is 1.
+	 * </ul>
    * @param x VectorIntf the point at which the gradient must be evaluated.
    * @param params HashMap any parameters to be passed to the function f
    * @throws IllegalArgumentException if x is null or if the algorithm fails

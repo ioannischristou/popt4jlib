@@ -53,7 +53,7 @@ public class RosenbrockFunctionCEC20XXShifted implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &lt;classpath&gt; tests.RosenbrockFunctionCEC20XXShifted &lt;x_1&gt; ... &lt;x_n&gt;
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.RosenbrockFunctionCEC20XXShifted &lt;x_1&gt; &lt;x_n&gt;</CODE>
    * where the parameters are the components of the vector point at which the
    * function must be evaluated. There must be no more than 1000 numbers.
    * @param args String[]

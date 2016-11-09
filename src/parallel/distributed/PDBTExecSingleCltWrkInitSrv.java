@@ -22,10 +22,10 @@ import java.util.*;
  * Notice also that this server achieves load-balancing among connected workers
  * by dividing equally the load of the multiple TaskObject objects submitted in 
  * each client request, among many <CODE>WrkSubmissionThread</CODE> threads 
- * (many more than the number of available workers) that simultaneously attempt
- * to submit their load to the available workers; as faster workers finish first
- * they become available for picking up the work of the waiting threads, and 
- * thus load balancing is achieved.
+ * (defined in RRObject.java; many more than the number of available workers) 
+ * that simultaneously attempt to submit their load to the available workers; as 
+ * faster workers finish first they become available for picking up the work of 
+ * the waiting threads, and thus load balancing is achieved.
  * Computing Policies:
  * If a worker connection is lost during processing a batch of tasks, the batch
  * will be re-submitted once more to the next available worker, as soon as such
@@ -164,7 +164,7 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
     utils.Messenger.getInstance().msg("PDBTExecSingleCltWrkInitSrv.submitWork(tasks): finished running submitWork(req,ois,oos)",1);
     synchronized (this) {
       getWorking().remove(t);  // declare worker's availability again
-			notifyAll();  // declare I'm done.
+			notifyAll();  // declare I'm done. With only a single client connected, not of much use.
     }
     if (res instanceof TaskObjectsExecutionResults)
       return (TaskObjectsExecutionResults) res;
@@ -252,6 +252,13 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
     }
 
 
+		/**
+		 * creates a server socket listening on port specified in the object 
+		 * constructor, and then enters an infinite loop waiting for incoming
+		 * socket connection requests representing a worker process attempting to
+		 * connect to this server, which it handles via the enclosing server's
+		 * <CODE>addNewWorkerConnection(s)</CODE> method.
+		 */
     public void run() {
       try {
         ServerSocket ss = new ServerSocket(_port);
@@ -274,7 +281,8 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
       catch (IOException e) {
         // e.printStackTrace();
 				utils.Messenger.getInstance().msg("PDBTExecSingleCltWrkInitSrv.W2Thread.run(): "+
-					                                "Failed to create Server Socket, thread exiting.", 0);
+					                                "Failed to create Server Socket, Server exiting.", 0);
+				System.exit(-1);
       }
     }
   }
@@ -298,6 +306,12 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
     }
 
 		
+		/**
+		 * creates a server socket listening on the port specified in the parameter 
+		 * of the constructor, and waits for a single incoming client connection
+		 * which it handles by invoking the <CODE>addNewClientConnection(s)</CODE>
+		 * method of the enclosing server, and then the thread exits.
+		 */
     public void run() {
       try {
         ServerSocket ss = new ServerSocket(_port);
@@ -319,7 +333,8 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
       catch (IOException e) {
         // e.printStackTrace();
 				utils.Messenger.getInstance().msg("PDBTExecSingleCltWrkInitSrv.C2Thread.run(): "+
-					                                "Failed to create Server Socket, thread exiting.", 0);
+					                                "Failed to create Server Socket, Server exiting.", 0);
+				System.exit(-1);
       }
     }
   }
@@ -350,6 +365,14 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
     }
 
 
+		/**
+		 * reads from the input stream the initialization command sent to it, sends
+		 * back to the client an <CODE>OKReply</CODE> "ACK" msg, and then enters an
+		 * infinite loop waiting to read from the input stream an 
+		 * <CODE>RRObject</CODE> obj that should really be of type 
+		 * <CODE>TaskObjectsExecutionRequest</CODE>, on which it executes its method
+		 * <CODE>obj.runProtocol(_srv,_ois, _oos)</CODE>.
+		 */
     public void run() {
 			// first, read from socket the worker-initialization object that will
 			// be broadcast for execution to every worker connecting to this server.

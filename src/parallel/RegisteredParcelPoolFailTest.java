@@ -25,7 +25,7 @@ import java.util.HashMap;
  */
 public class RegisteredParcelPoolFailTest {
 	/**
-	 * creates n &gte; 1 SFMPCOld coordinators, and m &gte; n threads. The
+	 * creates n &ge; 1 SFMPCOld coordinators, and m &ge; n threads. The
 	 * main thread then sends data to all the others through the "respective" 
 	 * coordinator. Each of the other m threads simply receive that data.
 	 * If n=1 then there should be no exception raised. If n &gt; 1 there should

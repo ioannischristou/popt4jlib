@@ -34,8 +34,8 @@ public class SumOfVarianceEvaluator implements EvaluatorIntf {
    */
   public double eval(ClustererIntf cl) throws ClustererException {
     double ret = 0.0;
-    Vector centers = cl.getCurrentCenters();
-    Vector docs = cl.getCurrentVectors();
+    List centers = cl.getCurrentCenters();
+    List docs = cl.getCurrentVectors();
     int[] asgnms = cl.getClusteringIndices();
     if (asgnms==null) {
       // no clustering has occured yet, or failed
@@ -48,8 +48,8 @@ public class SumOfVarianceEvaluator implements EvaluatorIntf {
 			dists[i] = new ArrayList();
 		}
     for (int i=0; i<n; i++) {
-      VectorIntf di = (VectorIntf) docs.elementAt(i);
-      VectorIntf ci = (VectorIntf) centers.elementAt(asgnms[i]);
+      VectorIntf di = (VectorIntf) docs.get(i);
+      VectorIntf ci = (VectorIntf) centers.get(asgnms[i]);
       double dist = VecUtil.getEuclideanDistance(di,ci);
       dists[asgnms[i]].add(new Double(dist));
     }

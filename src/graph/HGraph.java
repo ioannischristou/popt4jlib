@@ -2,6 +2,17 @@ package graph;
 
 import java.util.*;
 
+/**
+ * HGraph class represents hyper-graphs where each edge ("net" to be precise), 
+ * connects two or more nodes together. The class is NOT thread-safe and none
+ * of its methods is properly synchronized for multi-threaded use.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0 
+ */
 public class HGraph {
   private HNode[] _nodes;
   private HLink[] _arcs;
@@ -21,6 +32,13 @@ public class HGraph {
                               // Graph
 
 
+	/**
+	 * public constructor specifying hyper-graph dimensions. Node labels are 
+	 * initialized to null. Nets have to be added via repeated calls to 
+	 * <CODE>addHLink(nodeids, weight);</CODE>.
+	 * @param numnodes int number of nodes in the hyper-graph.
+	 * @param numarcs int number of nets the hyper-graph has.
+	 */
   public HGraph(int numnodes, int numarcs) {
     _nodes = new HNode[numnodes];
     _arcs = new HLink[numarcs];
@@ -33,6 +51,15 @@ public class HGraph {
   }
 
 
+	/**
+	 * public constructor specifying hyper-graph dimensions as well as node labels.
+	 * Nets have to be added via repeated calls to 
+	 * <CODE>addHLink(nodeids, weight);</CODE>.
+	 * @param numnodes int number of nodes.
+	 * @param numarcs int number of nets.
+	 * @param labels Object[] an array of labels for each of the nodes of the 
+	 * hyper-graph. labels[i] is the label of node with id i.
+	 */
   public HGraph(int numnodes, int numarcs, Object[] labels) {
     this(numnodes, numarcs);
     _nodeLabels = labels;
@@ -42,25 +69,51 @@ public class HGraph {
   }
 
 
+	/**
+	 * adds a net to this hyper-graph.
+	 * @param nodeids Set // Set&lt;Integer&gt; the set of node-ids this net covers.
+	 * @param weight double weight of the net.
+	 * @throws GraphException if this hyper-graph already has the specified 
+	 * number of nets added to it.
+	 */
   public void addHLink(Set nodeids, double weight) throws GraphException {
     if (_addLinkPos>=_arcs.length) throw new GraphException("cannot add more arcs.");
     _arcs[_addLinkPos] = new HLink(this, _addLinkPos++, nodeids, weight);
   }
 
 
+	/**
+	 * get a reference to the i-th net.
+	 * @param id int net-id (in [0,num_nets-1]).
+	 * @return HLink the i-th net.
+	 */
   public HLink getHLink(int id) {
     return _arcs[id];
   }
 
 
+	/**
+	 * get a reference to the i-th node.
+	 * @param id int node-id (in [0,num_nodes-1]).
+	 * @return HNode the i-th node.
+	 */
   public HNode getHNode(int id) {
     return _nodes[id];
   }
 
 
+	/**
+	 * returns the number of nodes this HGraph has.
+	 * @return int
+	 */
   public int getNumNodes() { return _nodes.length; }
 
 
+	/**
+	 * get the total weight of all nodes in this HGraph, specified as the value
+	 * of the "cardinality" weight property of each of the nodes.
+	 * @return double
+	 */
   public double getTotalNodeWeight() {
     double sum = 0.0;
     for (int i=0; i<_nodes.length; i++)
@@ -69,15 +122,31 @@ public class HGraph {
   }
 
 
+	/**
+	 * return the number of nets this HGraph has.
+	 * @return int
+	 */
   public int getNumArcs() { return _arcs.length; }
 
 
+	/**
+	 * get the label of the i-th node.
+	 * @param i int (in [0,num_nodes-1]).
+	 * @return Object the label of the i-th node.
+	 */
   public Object getHNodeLabel(int i) {
     if (_nodeLabels==null) return null;
     return _nodeLabels[i];
   }
 
 
+	/**
+	 * get the id (in [0,num_nodes-1]) of the node whose label is the given 
+	 * argument.
+	 * @param label Object
+	 * @return int node-id in [0,num_nodes-1].
+	 * @throws GraphException if no node has the requested label.
+	 */
   public int getHNodeIdByLabel(Object label) throws GraphException {
     Integer nid = (Integer) _labelMap.get(label);
     if (nid==null) throw new GraphException("no such label");
@@ -85,6 +154,12 @@ public class HGraph {
   }
 
 
+	/**
+	 * set the label of the i-th node. Will replace any existing label for that 
+	 * node.
+	 * @param i int the id of the node (in [0,num_nodes-1]).
+	 * @param o  Object the label for the i-th node.
+	 */
   public void setHNodeLabel(int i, Object o) {
     if (_nodeLabels==null) {
       _nodeLabels = new Object[_nodes.length];
@@ -96,6 +171,11 @@ public class HGraph {
   }
 
 
+	/**
+	 * gets the number of components for this HGraph, computing them if they are
+	 * not yet computed.
+	 * @return int
+	 */
   public int getNumComponents() {
     if (_compindex==-1) getComponents();
     return _compindex;
@@ -131,8 +211,8 @@ public class HGraph {
 
 
   /**
-   * return the number of nodes in max. connected component i
-   * i is in the range [0...#comps-1]
+   * return the number of nodes in max connected component i, where 
+   * i is in the range [0, #comps-1].
    * @param i int
    * @return int
    */
@@ -143,6 +223,11 @@ public class HGraph {
   }
 
 
+	/**
+	 * return a String representation of this HGraph by specifying its number of 
+	 * nodes and nets, and then, the node ids for each of its nets.
+	 * @return String
+	 */
   public String toString() {
     String ret = "#nodes="+_nodes.length+" #arcs="+_arcs.length;
     for (int i=0; i<_arcs.length; i++)
@@ -152,11 +237,10 @@ public class HGraph {
 
 
   /**
-   * nid is a Node id
-   * c is the component which this node and all nodes reachable by it
+   * helper method used in <CODE>getComponents()</CODE>.
+   * @param nid int is a Node id
+   * @param c int is the component which this node and all nodes reachable by it
    * belong to.
-   * @param nid int
-   * @param c int
    * @return int number of nodes labeled
    */
   private int labelComponent(int nid, int c) {

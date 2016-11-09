@@ -13,7 +13,7 @@ import cern.colt.matrix.DoubleMatrix2D;
  * implements multi-level partitioning of hyper-graphs.
  * This class should be used when commercial optimizers such as Gurobi are
  * used, with a cmdline of the form:
- * <CODE>%>gurobi_cl ResultFile=\\tmp\\sol.txt input.mps</CODE>
+ * <CODE>%&lt;gurobi_cl ResultFile=\\tmp\\sol.txt input.mps</CODE>
  * <p>Title: popt4jlib</p>
  * <p>Description: parallel optimization 4 java</p>
  * <p>Copyright: Copyright (c) 2010</p>

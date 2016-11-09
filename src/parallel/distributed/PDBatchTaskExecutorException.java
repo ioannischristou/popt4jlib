@@ -16,4 +16,7 @@ public class PDBatchTaskExecutorException extends Exception {
     _msg = msg;
     System.err.println(msg);
   }
+	public String getMessage() {
+		return _msg;
+	}
 }

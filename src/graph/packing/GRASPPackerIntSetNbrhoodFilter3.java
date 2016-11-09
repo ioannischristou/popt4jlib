@@ -122,10 +122,10 @@ class GRASPPackerIntSetNbrhoodFilter3 implements IntSetNeighborhoodFilterIntf {
 	 * the id of a node ny whose immediate neighbors intersect the set of 
 	 * neighbors of x at distance 1 for 1-packing problems, or distance 3 for 
 	 * 2-packing problems. Essentially, returns a list of sets of pairs 
-	 * of nodes &lt;x,y&gt; for each y in arg, that happens to be at distance &lte;  
+	 * of nodes &lt;x,y&gt; for each y in arg, that happens to be at distance &le;  
 	 * 2*_k from x.
    * @param x // Integer
-   * @param arg Set // IntSet values in arg &lte; to the value of x are ignored
+   * @param arg Set // IntSet values in arg &le; to the value of x are ignored
    * @param params HashMap must contain a key-value pair &lt;"dls.graph", Graph g&gt;
 	 * unless this object was constructed with the 2-arg constructor
    * @throws LocalSearchException if any params are incorrectly set

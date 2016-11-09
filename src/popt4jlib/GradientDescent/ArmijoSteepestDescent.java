@@ -84,29 +84,30 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
    * the main method of the class. Before it is called, a number of parameters
    * must have been set (via the parameters passed in the constructor, or via
    * a later call to setParams(p). These are:
-   * <"asd.numthreads", Integer nt> optional, the number of threads to use in
+	 * <ul>
+   * <li> &lt;"asd.numthreads", Integer nt&gt; optional, the number of threads to use in
    * the optimization process. Default is 1.
-   * <"asd.numtries", Integer ntries> optional, the number of tries (starting
+   * <li> &lt;"asd.numtries", Integer ntries&gt; optional, the number of tries (starting
    * from different initial points). Default is 1.
-   * <"asd.gradient", VecFunctionIntf g> optional, the gradient of f, the
+   * <li> &lt;"asd.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
    * function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * <"asd.gtol", Double v> optional, the minimum abs. value for each of the
+   * <li> &lt;"asd.gtol", Double v&gt; optional, the minimum abs. value for each of the
    * gradient's coordinates, below which if all coordinates of the gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-6.
-   * <"asd.maxiters", Integer miters> optional, the maximum number of major
+   * <li> &lt;"asd.maxiters", Integer miters&gt; optional, the maximum number of major
    * iterations of the SD search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * <"asd.rho", Double v> optional, the value for the parameter ñ in the
+   * <li> &lt;"asd.rho", Double v&gt; optional, the value for the parameter ñ in the
    * Armijo rule implementation. Default is 0.1.
-   * <"asd.beta", Double v> optional, the value for the parameter â in the
+   * <li> &lt;"asd.beta", Double v&gt; optional, the value for the parameter â in the
    * Armijo rule implementation. Default is 0.8.
-   * <"asd.gamma", Double v> optional, the value for the parameter ã in the
+   * <li> &lt;"asd.gamma", Double v&gt; optional, the value for the parameter ã in the
    * Armijo rule implementation. Default is 1.
-   * <"asd.looptol", Double v> optional, the minimum step-size allowed. Default
+   * <li> &lt;"asd.looptol", Double v&gt; optional, the minimum step-size allowed. Default
    * is 1.e-21.
-   *
+   * </ul>
    * @param f FunctionIntf the function to minimize
    * @throws OptimizerException if another thread is currently executing the
    * same method or if the method fails to find a minimizer

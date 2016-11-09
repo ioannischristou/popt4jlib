@@ -41,8 +41,9 @@ final class RegisteredParcel {
    * interface method for getting a new object (the programmer has no control
    * over whether the object will come from the current thread's local pool
    * or via a call to <CODE>new RegisteredParcel(f,t,d);</CODE>.)
-   * @param i int
-   * @param val double
+   * @param from int
+   * @param to int
+	 * @param data Object
    * @return RegisteredParcel
    */
   static RegisteredParcel newInstance(int from, int to, Object data) {

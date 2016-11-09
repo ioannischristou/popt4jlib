@@ -29,7 +29,7 @@ public class DblArray1PtXOverOp implements XoverOpIntf {
    * arrays of doubles.
    * @param c1 Object (a double[])
    * @param c2 Object (a double[])
-   * @param params HashMap must contain a pair <"thread.id", $integer_value$>
+   * @param params HashMap must contain a pair &lt;"thread.id", $integer_value$&gt;
    * @throws OptimizerException
    * @return Pair containing two new <CODE>double[]</CODE> objects.
    */

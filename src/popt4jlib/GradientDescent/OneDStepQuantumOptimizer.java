@@ -38,7 +38,7 @@ public final class OneDStepQuantumOptimizer {
 
   /**
    * computes a local minimum of the restriction of the function f in the j-th
-   * variable, under the box-constraints lowerbound <= x_j <= upperbound, and
+   * variable, under the box-constraints lowerbound &le; x_j &le; upperbound, and
    * also under the constraint that x_j = x0_j + k*stepquantum where k is an
    * integer quantity.
    * @param f FunctionIntf

@@ -22,7 +22,7 @@ import java.io.*;
 public class DReducer {
   private String _host = "localhost";
   private int _port = 7901;
-  private String _coordname = "DBarrierCoord_"+_host+"_"+_port;  // coordname and reducer name are the same
+  private String _coordname = "DReduceCoord_"+_host+"_"+_port;  // coordname and reducer name are the same
   private DActiveMsgPassingCoordinatorLongLivedConnClt _coordclt=null;
   private Thread _originatingThread = null;
 
@@ -32,7 +32,7 @@ public class DReducer {
 	 * <ul>
    * <li> host="localhost"
    * <li> port=7901
-   * <li> reducer/coord name = "DReduceCoord_localhost_7896"
+   * <li> reducer/coord name = "DReduceCoord_localhost_7901"
 	 * </ul>
    * The constructor will actually register the current thread with the reducer
    * object of the server, so that later invocations of the <CODE>reduce(.,.)</CODE>

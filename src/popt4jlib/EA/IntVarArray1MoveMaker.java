@@ -27,9 +27,10 @@ public class IntVarArray1MoveMaker implements NewChromosomeMakerIntf {
    * create and return a <CODE>int[]</CODE> object that will represent a
    * random "move" from the current chromosome argument passed in as first
    * argument. The parameters passed in the second argument are as follows:
-   * <li> &lt;"dea.movesigma", Double v&gt; optional, the &delta value to use as &sigma when
+	 * <ul>
+   * <li> &lt;"dea.movesigma", Double v&gt; optional, the &delta; value to use as &sigma; when
    * determining the distance to move in each dimension. Default is 1.0.
-   * <li> &lt;"dea.movesigma$i$", Double v&gt; optional, the &delta value to use as &sigma when
+   * <li> &lt;"dea.movesigma$i$", Double v&gt; optional, the &delta; value to use as &sigma; when
    * determining the distance to move in the i-th dimension. Default is null.
    * <li> &lt;"dea.minallelevalue", Integer v&gt; optional, the min. value that any
    * component of the returned vector may assume.
@@ -39,10 +40,11 @@ public class IntVarArray1MoveMaker implements NewChromosomeMakerIntf {
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
    * <li> &lt;"dea.maxallelevalue"+$i$, Integer v&gt; optional, the max value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * <br>The "local" constraints can only impose more strict constraints on the
+	 * </ul>
+   * <p>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
-   * the domain of the variable wider.</br>
-	 * <p>Notice that the &sigma values are used in determining the variance of 
+   * the domain of the variable wider.</p>
+	 * <p>Notice that the &sigma; values are used in determining the variance of 
 	 * the Gaussian distribution from which the random distance measures are
 	 * computed along each dimension. Double computations are finally rounded
 	 * into the nearest integer value when setting the values of the array that is

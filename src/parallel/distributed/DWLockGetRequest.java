@@ -43,7 +43,6 @@ public class DWLockGetRequest implements DMsgIntf {
 	 * the same thread for each remote thread connecting to the server, thus the 
 	 * need for the long-lived connection objects mentioned in the header comments.
    * @param oos ObjectOutputStream
-   * @throws ParallelException
    * @throws IOException
    */
   public void execute(ObjectOutputStream oos) throws IOException {

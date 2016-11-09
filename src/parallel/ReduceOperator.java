@@ -27,8 +27,8 @@ public abstract class ReduceOperator implements Serializable {
 	
 	/**
 	 * the reduction operation.
-	 * @param threadsData HashMap // map&lteThread, Object data&gt;
-	 * @return 
+	 * @param threadsData HashMap // map&lt;Thread, Object data&gt;
+	 * @return Object
 	 */
 	public abstract Object reduce(HashMap threadsData);
 }

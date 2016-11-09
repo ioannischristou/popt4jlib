@@ -41,7 +41,7 @@ public final class BBGASPPacker {
    * <li> numthreads, $num$ optional, the number of threads to use. Default is 1.
    * <li> maxqsize, $num$ optional, the maximum size of the BBGASP Task-Queue.
    * Default is Integer.MAX_VALUE.
-   * <li> tightenboundlevel, $num$ optional, the depth in the B&B tree constructed
+   * <li> tightenboundlevel, $num$ optional, the depth in the B&amp;B tree constructed
    * at which a stronger computation of the upper bound will be started, default
    * is 0.
    * <li> cutnodes, $boolean$ optional, if true, then when the BBQueue of nodes
@@ -72,7 +72,7 @@ public final class BBGASPPacker {
 	 * with MWIS (k=1) type problems and is ignored for 2-packing problems.
    * <li> usemaxsubsets, $boolean$ optional, if false, then each GASP process
    * augmenting candidate packings will augment these sets one node at a time,
-   * leading to the possibility that many active nodes in the B&B tree will
+   * leading to the possibility that many active nodes in the B&amp;B tree will
    * represent the same packing. In such a case, a "recent-nodes" queue will
    * be used to safe-guard against the possibility of having the same nodes
    * created and processed within a "short" interval. Default is true.
@@ -96,7 +96,7 @@ public final class BBGASPPacker {
    * of children any node is allowed to create. Default is Integer.MAX_VALUE.
    * <li> class,bbnodecomparator, &lt;fullclassname&gt; optional, the full class
    * name of a class implementing the <CODE>graph.packing.BBNodeComparatorIntf</CODE>
-   * that is used to define the order in which B&ampB nodes in the tree are picked
+   * that is used to define the order in which B&amp;B nodes in the tree are picked
    * for processing. Default is <CODE>graph.packing.DefBBNodeComparator</CODE>.
 	 * <li>ff, $num$ optional, specify the "fudge factor" used in determining what
 	 * constitutes the list of "best nodes" in the 1-packing problem (a.k.a. the
@@ -107,7 +107,7 @@ public final class BBGASPPacker {
 	 * smaller this value, the longer it will take for the search to complete,
 	 * with potentially better solutions found.
 	 * <li> minknownbound, $num$ optional, a known bound to the problem at hand,
-	 * which will be used to fathom B&ampB nodes having smaller bounds than this
+	 * which will be used to fathom B&amp;B nodes having smaller bounds than this
 	 * number. Currently only applies to 1-packing problems. Default is -infinity.
 	 * <li> expandlocalsearchfactor, $num$ optional, if present, then when a
 	 * solution is found within the specified factor of the best known solution,
@@ -115,7 +115,7 @@ public final class BBGASPPacker {
 	 * does local search kicks in). Currently only applies to 1-packing problems.
    * </ul>
    * <br>args[2]: [optional] override max num nodes in params_file to create in
-	 * B&ampB procedure
+	 * B&amp;B procedure
    * <br>args[3]: [optional] override numthreads in params_file to use
 	 * <p> This implementation writes the solution in a text file called "sol.out"
 	 * in the current directory, whose lines contain one number each, the id of
@@ -132,8 +132,8 @@ public final class BBGASPPacker {
       // register handle to show best soln if we stop the program via ctrl-c
       Runtime.getRuntime().addShutdownHook(new Thread() {
         public void run() {
-					if (BBTree._curIncumbent!=null) {
-						synchronized (BBTree.class) {
+					synchronized (BBTree.class) {
+						if (BBTree._curIncumbent!=null) {  // the synchronized and if () stmts used to be in opposite order
 							Iterator it = BBTree._curIncumbent.iterator();
 							while (it.hasNext()) {
 								Node n = (Node) it.next();

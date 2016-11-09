@@ -42,7 +42,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * public factory constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
 	 * @return FasterParallelAsynchBatchPriorityTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
+   * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created.
    */	
 	public static FasterParallelAsynchBatchPriorityTaskExecutor newFasterParallelAsynchBatchPriorityTaskExecutor(int numthreads) throws ParallelException {
@@ -58,7 +58,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full.
 	 * @return FasterParallelAsynchBatchPriorityTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
+   * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created.
    */		
 	public static FasterParallelAsynchBatchPriorityTaskExecutor newFasterParallelAsynchBatchPriorityTaskExecutor(int numthreads, boolean runoncurrent) throws ParallelException {
@@ -71,7 +71,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
   /**
    * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
-   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
+   * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created.
    */
   private FasterParallelAsynchBatchPriorityTaskExecutor(int numthreads) throws ParallelException {
@@ -97,7 +97,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * @param numthreads int the number of threads in the thread-pool
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full.
-   * @throws ParallelException if numthreads &lte; 0.
+   * @throws ParallelException if numthreads &le; 0.
    */
   private FasterParallelAsynchBatchPriorityTaskExecutor(int numthreads,
                                                        boolean runoncurrent)
@@ -160,14 +160,14 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * @param tasks Collection a Collection of ComparableTaskObject objects
    * @throws ParallelException if the shutDown() method has been called prior
    * to this call
-   * @throws ParallelExceptionUnSubmittedTasks if this object does not allow
+   * @throws ParallelExceptionUnsubmittedTasks if this object does not allow
    * running tasks in the current thread and some tasks could not be sent to
    * the thread-pool due to a full <CODE>SimplePriorityMsgPassingCoordinator</CODE>
    * msg-queue; in this case the unsubmitted tasks are returned inside the
    * exception object, along with any object in the <CODE>tasks</CODE> argument
 	 * that does not implement the <CODE>ComparableTaskObject</CODE> interface (if 
 	 * there is even a single such object, this exception will be thrown as well,
-	 * even though all other <COCE>ComparableTaskObject</CODE> objects in the arg.
+	 * even though all other <CODE>ComparableTaskObject</CODE> objects in the arg
 	 * will be submitted normally for execution).
    */
   public void executeBatch(Collection tasks) throws ParallelException, ParallelExceptionUnsubmittedTasks {
@@ -265,7 +265,6 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * The executor cannot be used afterwards, and will throw ParallelException
    * if the method executeBatch() or shutDown() is called again.
    * @throws ParallelException
-   * @throws InterruptedException
    * @throws ParallelExceptionUnsubmittedTasks
    */
   public synchronized void shutDown() throws ParallelException, ParallelExceptionUnsubmittedTasks {
@@ -376,7 +375,7 @@ class FPABPTEThread extends Thread implements popt4jlib.IdentifiableIntf {
    * the run() method of the thread, loops continuously, waiting for a task
    * to arrive via the <CODE>SimplePriorityMsgPassingCoordinator</CODE> class 
 	 * and executes it.
-   * Any exceptions the task throws are caught & ignored. In case the data that
+   * Any exceptions the task throws are caught &amp; ignored. In case the data that
    * arrives is a <CODE>ComparablePoissonPill</CODE>, the thread exits its 
 	 * <CODE>run()</CODE> loop.
    */

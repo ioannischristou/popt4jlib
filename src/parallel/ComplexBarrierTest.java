@@ -34,7 +34,7 @@ class CBThread extends Thread {
   private int _id;
   public CBThread(int id) { _id = id; }
   /**
-   * all threads perform barrier 50 times, but the threads with _id>=100
+   * all threads perform barrier 50 times, but the threads with _id &ge; 100
    * exit the barrier after this number.
    */
   public void run() {

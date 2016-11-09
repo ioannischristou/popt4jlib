@@ -39,7 +39,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
    * public factory constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
 	 * @return FasterParallelAsynchBatchTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
+   * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created.
    */	
 	public static FasterParallelAsynchBatchTaskExecutor 
@@ -57,7 +57,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full.
 	 * @return FasterParallelAsynchBatchTaskExecutor properly initialized
-   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
+   * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created.
    */					
 	public static FasterParallelAsynchBatchTaskExecutor 
@@ -73,7 +73,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
   /**
    * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
-   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
+   * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created.
    */
   private FasterParallelAsynchBatchTaskExecutor(int numthreads) throws ParallelException {
@@ -99,7 +99,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
    * @param numthreads int the number of threads in the thread-pool
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full.
-   * @throws ParallelException if numthreads &lte; 0.
+   * @throws ParallelException if numthreads &le; 0.
    */
   private FasterParallelAsynchBatchTaskExecutor(int numthreads,
                                                boolean runoncurrent)
@@ -162,7 +162,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
    * @param tasks Collection
    * @throws ParallelException if the shutDown() method has been called prior
    * to this call
-   * @throws ParallelExceptionUnSubmittedTasks if this object does not allow
+   * @throws ParallelExceptionUnsubmittedTasks if this object does not allow
    * running tasks in the current thread and some tasks could not be sent to
    * the thread-pool due to a full <CODE>SimpleFasterMsgPassingCoordinator</CODE>
    * msg-queue; in this case the unsubmitted tasks are returned inside the
@@ -224,7 +224,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
   /**
    * shut-down all the threads in this executor's thread-pool. It is the
    * caller's responsibility to ensure that after this method has been called
-   * no other thread (including the threads in the thread-pool) won't call the
+   * no other thread (including the threads in the thread-pool) will call the
    * executeBatch() method. Use of condition-counters or similar (e.g. as in the
    * class <CODE>graph.AllMWCFinderBKMT</CODE>) may be necessary when tasks
    * given to the thread-pool for execution may call the
@@ -232,7 +232,6 @@ public final class FasterParallelAsynchBatchTaskExecutor {
    * The executor cannot be used afterwards, and will throw ParallelException
    * if the method executeBatch() or shutDown() is called again.
    * @throws ParallelException
-   * @throws InterruptedException
    * @throws ParallelExceptionUnsubmittedTasks
    */
   public synchronized void shutDown() throws ParallelException, ParallelExceptionUnsubmittedTasks {
@@ -248,6 +247,25 @@ public final class FasterParallelAsynchBatchTaskExecutor {
     _isRunning = false;
     return;
   }
+	
+	
+	/**
+	 * invokes the <CODE>shutDown()</CODE> method and waits until all threads have
+	 * finished their execution.
+	 * @throws ParallelException
+	 * @throws ParallelExceptionUnsubmittedTasks 
+	 */
+	public void shutDownAndWait4Threads2Finish() throws ParallelException, ParallelExceptionUnsubmittedTasks {
+		shutDown();
+		for (int i=0; i<_threads.length; i++) {
+			try {
+				_threads[i].join();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+	}
 
 
   /**
@@ -330,7 +348,7 @@ class FPABTEThread extends Thread {
   /**
    * the run() method of the thread, loops continuously, waiting for a task
    * to arrive via the SimpleFasterMsgPassingCoordinator class and executes it.
-   * Any exceptions the task throws are caught & ignored. In case the data that
+   * Any exceptions the task throws are caught &amp; ignored. In case the data that
    * arrives is a PoissonPill, the thread exits its run() loop.
    */
   public void run() {

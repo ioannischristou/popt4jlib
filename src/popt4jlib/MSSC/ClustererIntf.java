@@ -28,9 +28,9 @@ public interface ClustererIntf {
   /**
    * adds a set of VectorIntf vectors to the current set of vectors to be later
    * clustered (via a call to <CODE>clusterVectors()</CODE>.
-   * @param docs Vector Vector<VectorIntf>
+   * @param docs List // Vector&lt;VectorIntf&gt;
    */
-  public void addAllVectors(Vector docs);
+  public void addAllVectors(List docs);
 
 
   /**
@@ -43,7 +43,7 @@ public interface ClustererIntf {
 
   /**
    * returns the set of parameters to be used in the clustering process.
-   * @return HashMap Map<String key , Object value>
+   * @return HashMap // Map&lt;String key , Object value&gt;
    */
   public HashMap getParams();
 
@@ -51,11 +51,11 @@ public interface ClustererIntf {
   /**
    * sets the initial centers to be used by the clusterer in the clustering
    * process. This call also defines the number of clusters sought.
-   * @param centers Vector Vector<VectorIntf center>
+   * @param centers List // List&lt;VectorIntf center&gt;
    * @throws ClustererException if the argument is empty or null or contains
    * objects that are not VectorIntf objects or if the dimensions don't agree.
    */
-  public void setInitialClustering(Vector centers) throws ClustererException;
+  public void setInitialClustering(List centers) throws ClustererException;
 
 
   /**
@@ -67,23 +67,22 @@ public interface ClustererIntf {
   /**
    * returns current centers. Maybe non responsive from other threads while the
    * clustering process is running (eg synchronized)
-   * @return Vector Vector<VectorIntf center>
+   * @return List  // List&lt;VectorIntf center&gt;
    */
-  public Vector getCurrentCenters();
+  public List getCurrentCenters();
 
   /**
    * returns current vectors to be clustered. Maybe non responsive from other
    * threads while the clustering process is running (eg synchronized)
-   * @return Vector Vector<VectorIntf doc>
+   * @return List // List&lt;VectorIntf doc&gt;
    */
-  public Vector getCurrentVectors();
+  public List getCurrentVectors();
 
   /**
-   * cluster the document vectors and return the Vector<VectorIntf>
-   * with the cluster centers.
-   * @return Vector
+   * cluster the document vectors and return the list with the cluster centers.
+   * @return List  // List&lt;VectorIntf&gt;
    */
-  public Vector clusterVectors() throws ClustererException;
+  public List clusterVectors() throws ClustererException;
 
 
   /**
@@ -125,12 +124,12 @@ public interface ClustererIntf {
 
 
   /**
-   * return in a Vector<Set cluster> some or all of the clusters produced
+   * return in a List&lt;Set cluster&gt; some or all of the clusters produced
    * during the run of the clustering algorithm. May also choose to throw
    * an exception instead, so any calling code must guard for ClustererException
    * @throws ClustererException
-   * @return Vector Vector<Set>
+   * @return List  // Vector&lt;Set&gt;
    */
-  public Vector getIntermediateClusters() throws ClustererException;
+  public List getIntermediateClusters() throws ClustererException;
 
 }

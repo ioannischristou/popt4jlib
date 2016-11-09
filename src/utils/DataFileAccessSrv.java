@@ -59,8 +59,8 @@ public class DataFileAccessSrv {
   /**
    * constructor specifying the port the server will listen to, and
    * the max. number of threads in the thread-pool.
-   * @param port int if < 1024, the number 7899 is used.
-   * @param maxthreads int if < 10000, the number 10000 is used.
+   * @param port int if &lt; 1024, the number 7899 is used.
+   * @param maxthreads int if &lt; 10000, the number 10000 is used.
    */
   DataFileAccessSrv(int port, int maxthreads) {
     if (port >= 1024)
@@ -134,12 +134,12 @@ public class DataFileAccessSrv {
 	/**
 	 * gets the data from the cache if available, else reads them from the file.
 	 * If it has to read the data from the file, this method also sends the data
-	 * through the <CODE>ObjectOutputStream<CODE> parameter passed in and returns 
+	 * through the <CODE>ObjectOutputStream</CODE> parameter passed in and returns 
 	 * null, otherwise the caller is responsible for sending the data that the 
 	 * method returns.
 	 * @param fadmsg DFileDataVectorReadRequest
 	 * @param oos ObjectOutputStream
-	 * @return Vector Vector<VectorIntf>
+	 * @return Vector Vector&lt;VectorIntf&gt;
 	 * @throws IOException 
 	 */
 	private Vector getData(DFileDataVectorReadRequest fadmsg, ObjectOutputStream oos) 

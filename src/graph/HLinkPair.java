@@ -2,6 +2,15 @@ package graph;
 
 import java.util.*;
 
+/**
+ * the analogue of the LinkPair class for hyper-graphs. Not thread-safe.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
 public class HLinkPair {
   private Set _nodeids;
   private double _w;

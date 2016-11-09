@@ -2,6 +2,15 @@ package graph;
 
 import java.util.*;
 
+/**
+ * the analogue of the Node class for hyper-graphs. Not thread-safe.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
 public class HNode {
   private int _id;
   private boolean _dirtyflag = false;
@@ -40,7 +49,7 @@ public class HNode {
   /**
    * return the neighbors of this HNode in the HGraph g.
    * @param g HGraph
-   * @return Set Set<HNode node>
+   * @return Set // Set&lt;HNode node&gt;
    */
   public Set getNbors(HGraph g) {
     if (_nbors==null || _dirtyflag) {

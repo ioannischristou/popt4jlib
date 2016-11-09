@@ -103,7 +103,7 @@ public class VecUtil {
    * return the k-th norm of the vector x.
    * @param x VectorIntf
    * @param k int
-   * @throws IllegalArgumentException if x==null or if k<=0
+   * @throws IllegalArgumentException if x==null or if k&le;0
    * @return double
    */
   public static double norm(VectorIntf x, int k) throws IllegalArgumentException {
@@ -189,7 +189,7 @@ public class VecUtil {
    *
    * @param x VectorIntf
    * @param y VectorIntf
-   * @throws IllegalArgumentException if x & y are both null
+   * @throws IllegalArgumentException if x &amp; y are both null
    * @return boolean true iff all the components of the vectors x and y are
    * equal (so that for each component i, the comparison xi==yi returns true).
    * Returns false if the two vectors have different lengths.

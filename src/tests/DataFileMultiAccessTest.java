@@ -28,7 +28,7 @@ public class DataFileMultiAccessTest {
 	
 	/**
 	 * invoke as:
-	 * java -cp <classpath> tests.DataFileMultiAccessTest <filename> [hostname(localhost)] [startind(0)] [endind(0)]
+	 * <CODE>java -cp &lt;classpath&gt; tests.DataFileMultiAccessTest &lt;filename&gt; [hostname(localhost)] [startind(0)] [endind(0)]</CODE>
 	 * @param args 
 	 */
 	public static void main(String[] args) {

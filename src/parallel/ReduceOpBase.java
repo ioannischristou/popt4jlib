@@ -148,7 +148,7 @@ public class ReduceOpBase {
    * before all threads have exited the previous reduce() call it will wait
    * first for all the other threads to exit and then will proceed.
    * @param data Object - the data of this thread to participate in the reduce
-	 * @param reduceOp ReduceOperator - the operator to apply to the data
+	 * @param op ReduceOperator - the operator to apply to the data
 	 * @throws ParallelException if current thread is not registered via addThread
 	 * @return Object - the result of the reduce operation
    */

@@ -9,7 +9,7 @@ import java.util.*;
 /**
  * Test driver class for the Conjugate-Gradient algorithm using the
  * Fletcher-Reeves formula for updating the b parameter, and the Al-Baali -
- * Fletcher bracketing &amp sectioning method for step-size determination. The
+ * Fletcher bracketing &amp; sectioning method for step-size determination. The
  * above are described in:
  * Fletcher R.(1987) Practical Methods of Optimization 2nd ed. Wiley, Chichester
  * <p>Title: popt4jlib</p>

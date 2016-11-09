@@ -48,7 +48,7 @@ class BBNode1 extends BBNodeBase {
   /**
    * Sole constructor of a BBNode1 object. Clients are not expected to
    * create such objects which are instead created dynamically through the
-   * B&B process.
+   * B&amp;B process.
    * @param master BBTree the master BBTree object of which this is a node.
    * @param r Set // Set&lt;Node&gt; the set of (graph) nodes to be added to the
 	 * nodes of the parent to represent a new partial solution.
@@ -123,8 +123,8 @@ class BBNode1 extends BBNodeBase {
       // step 4.
       // check for incumbent
       if (getCost() >= _master.getBound()*_master.getLocalSearchExpandFactor()) {
-        // itc 2015-26-02: inequality used to be strict (>)
-				// itc 2015-20-03: added local-search expansion factor multiplication to
+        // itc 2015-02-26: inequality used to be strict (>)
+				// itc 2015-03-20: added local-search expansion factor multiplication to
 				// broaden cases where local-search kicks in.
         if (getCost()>_master.getBound()) _master.setIncumbent(this);
         foundincumbent = true;
@@ -634,8 +634,9 @@ class BBNode1 extends BBNodeBase {
 	 * heuristic criterion is utilized, so that the free nodes that are within
 	 * <CODE>_ff</CODE> times from the maximum value of the quantity
 	 * $w_n / \Sum_{v \in N^+_n}$ form the return set.
-	 * @param boolean isroot if true then _ff is set to zero, so that all
+	 * @param isroot boolean if true then _ff is set to zero, so that all
 	 * non-forbidden nodes with min. sum of neighbors-weights are returned.
+	 * @throws ParallelException
    * @return Set // Set&lt;Node&gt;
    */
   private Set getBestNodes2Add(boolean isroot) throws ParallelException {

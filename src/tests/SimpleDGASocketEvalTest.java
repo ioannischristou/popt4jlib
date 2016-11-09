@@ -26,8 +26,9 @@ public class SimpleDGASocketEvalTest {
 
 
   /**
-   * run as <CODE> java -cp &lt;classpath&gt; tests.SimpleDGASocketEvalTest &lt;params_file&gt; </CODE>
-   * where the params_file must contain lines of the following form:
+   * run as <CODE> java -cp &lt;classpath&gt; tests.SimpleDGASocketEvalTest &lt;params_file&gt; </CODE>.
+   * The params_file must contain lines of the following form:
+	 * <ul>
    * <li> dga.function.hostname, &lt;hostname&gt; optional, the name
    * of the host where the process computing the function to be minimized runs.
    * Default is localhost
@@ -83,6 +84,7 @@ public class SimpleDGASocketEvalTest {
    * <li> In addition, the various operators (xover, mutation, a2cmaker,
    * c2amaker, randomchromosomemaker etc.) may require additional parameters as
    * they are defined and documented in their respective class file definitions.
+	 * </ul>
    * @param args String[]
    */
   public static void main(String[] args) {

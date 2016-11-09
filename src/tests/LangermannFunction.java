@@ -29,8 +29,10 @@ public class LangermannFunction implements FunctionIntf {
    * evaluates the Langermann function at x=arg
    * @param arg Object must be <CODE>double[]</CODE> or <CODE>popt4jlib.VectorIntf</CODE>
    * @param p HashMap must contain the following pairs:
-   * <li> <"A", Vector[]> where each element of the Vector[] is a Vector<Double>
-   * <li> <"c", Vector<Double> >
+	 * <ul>
+   * <li> &lt;"A", Vector[]&gt; where each element of the Vector[] is a Vector&lt;Double&gt;
+   * <li> &lt;"c", Vector&lt;Double&gt; &gt;
+	 * </ul>
    * @return double
    */
   public double eval(Object arg, HashMap p) {

@@ -17,7 +17,7 @@ interface MutationOpIntf {
 	 * behavior in this case.
    * @param chromosome1 Object
    * @param chromosome2 Object
-   * @param HashMap params
+   * @param params HashMap 
    * @throws OptimizerException
    * @return Pair
    */

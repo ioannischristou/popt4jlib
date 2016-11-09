@@ -27,8 +27,10 @@ public class LinearOpFunction implements VecFunctionIntf {
    * evaluate Ax+b.
    * @param x VectorIntf
    * @param p HashMap must contain the following pairs:
-   * <li> <"A", double[][]> the matrix A, optional.
-   * <li> <"b", double[]> the vector b, optional.
+	 * <ul>
+   * <li> &lt;"A", double[][]&gt; the matrix A, optional.
+   * <li> &lt;"b", double[]&gt; the vector b, optional.
+	 * </ul>
    * @throws IllegalArgumentException if A=b=null, or if A, b, and x dimensions
    * don't match.
    * @return VectorIntf the vector y=Ax+b

@@ -68,7 +68,7 @@ public final class DynamicAsynchTaskExecutor2 {
    * private constructor, constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of initial threads in the thread-pool
    * @param maxthreads int the max. number of threads in the thread-pool
-   * @throws ParallelException if numthreads &lte; 0 or if too many threads are
+   * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created or if maxthreads &lt; numthreads.
    */
   private DynamicAsynchTaskExecutor2(int numthreads, int maxthreads) throws ParallelException {
@@ -89,7 +89,7 @@ public final class DynamicAsynchTaskExecutor2 {
    * @param maxthreads int the max number of threads in the thread-pool.
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full and no new thread can be created.
-   * @throws ParallelException if numthreads &lte; 0 or if numthreads>maxthreads.
+   * @throws ParallelException if numthreads &le; 0 or if numthreads&gt;maxthreads.
    */
   private DynamicAsynchTaskExecutor2(int numthreads, int maxthreads,
                                    boolean runoncurrent)
@@ -372,7 +372,7 @@ public final class DynamicAsynchTaskExecutor2 {
 		 * else looks for a task in the global shared queue; if it cannot find one,
 		 * it checks its old local queue, and if there is none, then
 		 * goes waiting for a task from the global queue.
-     * Any exceptions the task throws are caught & ignored. If the data that
+     * Any exceptions the task throws are caught &amp; ignored. If the data that
      * arrives is a PoissonPill2, the thread exits its run() loop, without any
 		 * regard to the tasks in its local queue.
      */

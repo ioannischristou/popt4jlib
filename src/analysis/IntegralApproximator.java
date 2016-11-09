@@ -22,11 +22,13 @@ public class IntegralApproximator implements FunctionIntf {
    * public constructor.
    * @param f FunctionIntf
    * @param params HashMap may contain the following pairs:
-   * <"integralapproximator.eps", Double eps> if present specifies the required
+	 * <ul>
+   * <li> &lt;"integralapproximator.eps", Double eps&gt; if present specifies the required
    * precision, default is 1.e-6,
-   * <"integralapproximator.levelmax", Integer level> if present specifies the
+   * <li> &lt;"integralapproximator.levelmax", Integer level&gt; if present specifies the
    * maximum level of recursion in the Simpson method, default is
-   * <CODE>Integer.MAX_VALUE</CODE>
+   * <CODE>Integer.MAX_VALUE</CODE>.
+	 * </ul>
    */
   public IntegralApproximator(FunctionIntf f, HashMap params) {
     _f = f;
@@ -55,11 +57,11 @@ public class IntegralApproximator implements FunctionIntf {
    * HashMap, to the specified value x_i in the vector <CODE>x</CODE>.
    * @param x Object a VectorIntf or double[] object.
    * @param params HashMap must contain at least a pair of the form
-   * <"integralapproximator.a", Double a> indicating the lower limit of
+   * &lt;"integralapproximator.a", Double a&gt; indicating the lower limit of
    * integration and a pair of the form
-   * <"integralapproximator.integrandvarindex", Integer i> indicating the
+   * &lt;"integralapproximator.integrandvarindex", Integer i&gt; indicating the
    * variable index for the integration (must range in
-   * [0,<CODE>x.length-1</CODE>] if <CODEx</CODE> is a <CODE>double[]</CODE> or
+   * [0,<CODE>x.length-1</CODE>] if <CODE>x</CODE> is a <CODE>double[]</CODE> or
    * in [0,<CODE>x.getNumCoords()-1</CODE>] if <CODE>x</CODE> is a
    * <CODE>VectorIntf</CODE> object). Additionally, params must contain whatever
    * parameters are needed so that the function <CODE>f</CODE> passed in the

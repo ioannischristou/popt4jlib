@@ -125,6 +125,39 @@ public class DMsgPassingCoordinatorClt {
       s.close();
     }
   }
+	
+	
+  /**
+   * send a <CODE>DMsgIntf</CODE> object to be executed on the server.
+   * @param command DMsgIntf
+   * @throws IOException
+   * @throws ClassNotFoundException
+   * @throws ParallelException
+   */
+  public synchronized void sendData(DMsgIntf command) throws IOException, ClassNotFoundException, ParallelException {
+    Socket s = new Socket(_host, _port);
+    ObjectOutputStream oos = null;
+    ObjectInputStream ois = null;
+    try {
+      oos = new ObjectOutputStream(s.getOutputStream());
+      oos.flush();
+      ois = new ObjectInputStream(s.getInputStream());
+      oos.writeObject(command);
+      oos.flush();
+      Object reply = ois.readObject();
+      if (reply instanceof OKReply) {
+        return;
+      }
+      else {
+        throw new ParallelException("sendData(command) failed");
+      }
+    }
+    finally {
+      if (oos!=null) oos.close();
+      if (ois!=null) ois.close();
+      s.close();
+    }
+  }
 
 
   /**

@@ -10,10 +10,10 @@ import cern.colt.matrix.DoubleMatrix2D;
 public interface SPPMakerIntf {
   // create/update method
   /**
-   * creates an SPP problem to choose among the partition bloks the k ones that
+   * creates an SPP problem to choose among the partition blocks the k ones that
    * minimize the Obj Function described in obj
    * @param g HGraph
-   * @param partitions Vector Vector<int[] partition>
+   * @param partitions Vector Vector&lt;int[] partition&gt;
    * @param k int
    * @param obj HObjFncIntf
    * @throws PartitioningException

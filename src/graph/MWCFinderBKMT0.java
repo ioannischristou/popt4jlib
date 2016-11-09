@@ -44,12 +44,12 @@ public class MWCFinderBKMT0 extends AllMWCFinder {
    * complexity... Use only on small graphs.
    * The higher the argument, the less cliques it searches for, and the more
    * the computational savings.
-   * The method it implements is the Bron & Kerbosch (1973) algorithm
+   * The method it implements is the Bron &amp; Kerbosch (1973) algorithm
    * BronKerbosch2 (with pivoting from the set P U X) but maintains only the
    * maximum weighted cliques in the graph (and not all maximal weighted ones).
-   * It returns the cliques in a Set<Set<NodeId> >
-   * @param double minaccnodecliqueweight
-   * @return Set a Set<Set<Integer nodeId> >
+   * It returns the cliques in a Set&lt;Set&lt;Integer nodeId&gt; &gt;
+   * @param minaccnodecliqueweight double
+   * @return Set // Set&lt;Set&lt;Integer nodeId&gt; &gt;
    */
   public Set getAllMaximalCliques(double minaccnodecliqueweight) {
     final Graph g = getGraph();

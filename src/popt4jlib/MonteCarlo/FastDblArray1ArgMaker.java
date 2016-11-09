@@ -45,7 +45,7 @@ public class FastDblArray1ArgMaker implements RandomArgMakerClonableIntf {
 	 * synchronization when invoked, as different threads own different objects.
 	 * Notice that the <CODE>_lastArg</CODE> data member, if not null, is also 
 	 * deep-copied into the new instance that is returned.
-	 * @param p HashMap must contain the following params:
+	 * @param params HashMap must contain the following params:
 	 * <ul>
    * <li> &lt;"mcs.arglength", $integer_value$&gt; mandatory, the length
    * of the argument.

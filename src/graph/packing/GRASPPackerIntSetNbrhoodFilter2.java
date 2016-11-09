@@ -100,7 +100,7 @@ class GRASPPackerIntSetNbrhoodFilter2 implements IntSetNeighborhoodFilterIntf {
 	 * for each y in arg, that happens to be at distance 2 or 3 from x, depending
 	 * on the value of the k-packing problem that is being solved.
    * @param x // Integer
-   * @param arg Set // IntSet values in arg &lte; to the value of x are ignored
+   * @param arg Set // IntSet values in arg &le; to the value of x are ignored
    * @param params HashMap must contain a key-value pair &lt;"dls.graph", Graph g&gt;
 	 * unless this object was constructed with the 2-arg constructor
    * @throws LocalSearchException if any params are incorrectly set

@@ -24,7 +24,7 @@ public class DataFileAccessSrvCacheStatsTest {
 	
 	/**
 	 * invoke as:
-	 * java -cp <classpath> tests.DataFileAccessSrvCacheStatsTest <filename> [hostname(localhost)]
+	 * <CODE>java -cp &lt;classpath&gt; tests.DataFileAccessSrvCacheStatsTest &lt;filename&gt; [hostname(localhost)]</CODE>
 	 * @param args 
 	 */
 	public static void main(String[] args) {

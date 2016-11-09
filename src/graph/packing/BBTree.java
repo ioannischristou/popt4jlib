@@ -6,7 +6,7 @@ import java.util.*;
 import popt4jlib.AllChromosomeMakerClonableIntf;
 
 /**
- * represents the Branch&Bound Tree of the method.
+ * represents the Branch&amp;Bound Tree of the method.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -189,7 +189,7 @@ final class BBTree {
 	}
 	/**
 	 * get the total number of local-searches performed in this BB-Tree.
-	 * @return 
+	 * @return long
 	 */
 	synchronized long getNumDLSPerformed() {
 		return _numDLSPerformed;

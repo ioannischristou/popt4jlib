@@ -28,6 +28,7 @@ public class PRCGTest {
   /**
    * run as <CODE> java -cp &lt;classpath&gt; tests.PRCGTest &lt;params_file&gt; </CODE>
    * where the params_file must contain lines of the following form:
+	 * <ul>
    * <li> class,prcg.function, &lt;fullclassname&gt; mandatory, the full class name
    * of the function to be minimized. The function must accept <CODE>double[]</CODE>
    * or <CODE>popt4jlib.VectorIntf</CODE> objects as arguments.
@@ -44,8 +45,8 @@ public class PRCGTest {
    * a more strict lower bound on the ($j$+1)-st variable (j ranges in
    * [0, prcg.numdimensions-1])
    * <li> prcg.numtries", $num$ optional, the number of initial starting points
-   * to use (must either exist then ntries <"x$i$",VectorIntf v> pairs in the
-   * parameters or a pair <"gradientdescent.x0",VectorIntf v> pair in params).
+   * to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; pairs in the
+   * parameters or a pair &lt;"gradientdescent.x0",VectorIntf v&gt; pair in params).
    * Default is 1.
    * <li> prcg.numthreads, $num$ optional, the number of threads to use.
    * Default is 1.
@@ -76,7 +77,7 @@ public class PRCGTest {
    * is 1.e-21.
    * <li> Also, any other parameters e.g. needed by the function to be evaluated
    * must be provided as separate lines in the params_file
-   *
+   * </ul>
    * @param args String[]
    */
   public static void main(String[] args) {

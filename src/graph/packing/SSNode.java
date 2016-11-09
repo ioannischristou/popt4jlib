@@ -7,7 +7,7 @@ import java.util.*;
 /**
  * A class implementing the Self-Stabilizing algorithm for finding a maximal
  * 2-packing in a graph.
- * @see F. Manne & M. Mjelde, "A Memory Efficient Self-stabilizing Algorithm for
+ * See F. Manne &amp; M. Mjelde, "A Memory Efficient Self-stabilizing Algorithm for
  * Maximal k-Packing", LNCS, vol. 4280, pp. 428-439, 2006.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>

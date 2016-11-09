@@ -24,7 +24,7 @@ public class KMeansPP {
 
   /**
    * public constructor.
-   * @param vectors List List<VectorIntf> objects.
+   * @param vectors List List&lt;VectorIntf&gt; objects.
    * @throws IllegalArgumentException if arg is empty or null.
    */
   public KMeansPP(List vectors) throws IllegalArgumentException {
@@ -40,7 +40,7 @@ public class KMeansPP {
    * the main method of the class.
    * @param k int
    * @throws IllegalArgumentException
-   * @return Vector Vector<VectorIntf> 
+   * @return Vector // Vector&lt;VectorIntf&gt;
    */
   public List getInitialCenters(int k) throws IllegalArgumentException {
     final int n = _vectors.size();
@@ -93,7 +93,7 @@ public class KMeansPP {
 	/**
 	 * Not used any more.
 	 * @param x VectorIntf
-	 * @param centers List<VectorIntf>
+	 * @param centers List&lt;VectorIntf&gt;
 	 * @return double
 	 */
   private double getMinDist(VectorIntf x, List centers) {

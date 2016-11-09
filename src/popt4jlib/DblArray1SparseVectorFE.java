@@ -28,7 +28,7 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
   /**
    * constructs the zero sparse vector in n-dimensional space.
    * @param n int the number of dimensions
-   * @throws IllegalArgumentException if n&lte;;0
+   * @throws IllegalArgumentException if n&le;0
    */
   public DblArray1SparseVectorFE(int n) throws IllegalArgumentException {
     if (n<=0) throw new IllegalArgumentException("dimensions must be >= 1");
@@ -43,7 +43,7 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
    * @param values double[] corresponds to values for each index in the indices array
    * @param n int total length of the vector
    * @throws IllegalArgumentException if indices or values is null or of 
-	 * different length or if n&lte;;indices[indices.length-1]
+	 * different length or if n&le;indices[indices.length-1]
    */
   public DblArray1SparseVectorFE(int[] indices, double[] values, int n) throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
@@ -68,7 +68,7 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
    * @param n int total length of the vector
    * @param multFactor double
    * @throws IllegalArgumentException if indices or values is null or of 
-	 * different length or if n&lte;;indices[indices.length-1]
+	 * different length or if n&le;indices[indices.length-1]
    */
   public DblArray1SparseVectorFE(int[] indices, double[] values, int n, double multFactor) throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
@@ -194,7 +194,6 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
    * @param i int
    * @param val double
    * @throws IndexOutOfBoundsException if i is not in the set mentioned above
-   * @return double
    */
   public void setCoord(int i, double val) throws IndexOutOfBoundsException {
     if (i<0 || i>=_n) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
@@ -269,16 +268,15 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
   /**
    * the purpose of this routine is to allow a traversal of the non-zeros of
    * this object as follows:
-   * <p>
+   * <br>
 	 * <pre>
    * <CODE>
-   * for (int i=0; i<sparsevector.getNumNonZeros(); i++) {
+   * for (int i=0; i&lt;sparsevector.getNumNonZeros(); i++) {
    *   int    pos = sparsevector.getIthNonZeroPos(i);
    *   double val = sparsevector.getCoord(pos);
    * }
    * </CODE>
 	 * </pre>
-	 * </p>
    * @param i int.
    * @throws IndexOutOfBoundsException if i is out-of-bounds. Always throws if
    * this is the zero vector.
@@ -391,7 +389,7 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
   /**
    * return the k-th norm of this vector.
    * @param k int
-   * @throws IllegalArgumentException if x==null or if k&lte;;0
+   * @throws IllegalArgumentException if x==null or if k&le;0
    * @return double
    */
   public double norm(int k) throws IllegalArgumentException {

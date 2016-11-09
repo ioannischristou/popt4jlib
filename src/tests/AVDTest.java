@@ -41,10 +41,10 @@ public class AVDTest {
    * classname of the java class defining the function to be optimized.
    * <li> avd.minargval, $val$ mandatory, a double number that is a lower
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i &gte; val.
+   * must satisfy x_i &ge; val.
    * <li> avd.maxargval, $val$ mandatory, a double number that is an upper
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i &lte; val.
+   * must satisfy x_i &le; val.
    * <li> avd.tryorder$i$, $n$ optional, an integer value specifying which
    * variable to be optimized in the i-th inner iteration. If no such line
    * exists, and also, the pair ("avd.tryallparallel",true) exists in params,

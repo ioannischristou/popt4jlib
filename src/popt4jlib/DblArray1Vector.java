@@ -220,7 +220,6 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
    * @param i int
    * @param val double
    * @throws IndexOutOfBoundsException if i is not in the set mentioned above
-   * @return double
    */
   public void setCoord(int i, double val) throws IndexOutOfBoundsException {
     if (i<0 || i>=_x.length) throw new IndexOutOfBoundsException("index "+i+" out of bounds");

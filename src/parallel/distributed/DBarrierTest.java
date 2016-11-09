@@ -41,13 +41,13 @@ public class DBarrierTest {
 
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.DBarrierTest &lt;startid&gt; &lte;ndid&gt; &lt;jvmid&gt; &lt;maxjvmid&gt; &lt;numiters&gt;
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.DBarrierTest &lt;startid&gt; &lt;endid&gt; &lt;jvmid&gt; &lt;maxjvmid&gt; &lt;numiters&gt;
    * [host(localhost)] [port(7896)] [barriername(DBarrierCoord_localhost_7896)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
     String host=null;
-    int port=-1;
+    int port=_port;  // used to be -1
     String bname=null;
     if (args.length<5) {
       usage();
@@ -63,11 +63,12 @@ public class DBarrierTest {
     }
     if (args.length>6) {
       port = Integer.parseInt(args[6]);
+			if (port < 1024) port = _port;
     }
     if (args.length>7) {
       bname = args[7];
     }
-    else bname = "DBarrierCoord_"+(host==null ? _host : host) +"_"+ (port<1024 ? _port : port) ;
+    else bname = "DBarrierCoord_"+(host==null ? _host : host) +"_"+port ;
 
     try {
       DBarrierTest dbt = null;

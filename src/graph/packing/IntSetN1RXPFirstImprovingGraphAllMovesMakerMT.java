@@ -35,7 +35,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
 	/**
 	 * set the k in the k-packing problem, to determine if it's for the 
 	 * max weighted independent set problem or the 2-packing problem. 
-	 * @param k 
+	 * @param k int
 	 */
   public IntSetN1RXPFirstImprovingGraphAllMovesMakerMT(int k) {
 		_k = k;
@@ -74,8 +74,8 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
 	 * indicates that the graph and its elements will be accessed without any
 	 * synchronization. Default is true.
 	 * </ul>
-   * <br>The filter must specify what ints to be tried for addition to the set given
-   * an int to be removed from the set.</br>
+   * <p>The filter must specify what ints to be tried for addition to the set given
+   * an int to be removed from the set.</p>
    * @throws OptimizerException if any of the parameters are incorrectly set
    * @return Vector Vector&lt;Set&lt;Integer nodeid&gt; &gt;
    */
@@ -288,7 +288,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
    * @param nj Node
    * @param active Set  // Set&lt;Node&gt;
 	 * @param k int
-	 * @param lock boolean // if false then accesses to graph elements will be 
+	 * @param do_rlock boolean // if false then accesses to graph elements will be 
 	 * unsynchronized
    * @return boolean // true iff nj can be added to active
    * @throws ParallelException

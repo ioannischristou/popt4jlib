@@ -37,16 +37,30 @@ public class Lock {
     }
     while (_i!=0) {
       ++_waiting;
-        try {
-          wait();
-        }
-        catch (InterruptedException e) {
-          Thread.currentThread().interrupt();  // recommended behavior
-        }
-        --_waiting;
+      try {
+        wait();
       }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // recommended behavior
+      }
+      --_waiting;
+    }
     _i=1;
   }
+	
+	
+	/**
+	 * get the lock only if it immediately available, with no waiting needed. 
+	 * Method returns immediately.
+	 * @return boolean true if the lock was obtained, false otherwise.
+	 */
+	public synchronized boolean getLockIfAvailable() {
+		if (_i==0 && _waiting==0) {  // don't steal the lock
+			_i=1;
+			return true;
+		}
+		return false;
+	}
 
 
   /**

@@ -24,38 +24,46 @@ public class SolverTester {
    */
   public static void main(String[] args) {
     try {
-      Params p = new Params((double[]) null, -1, -1);
+      Params p = new Params((double[]) null, -1, -1, Params._L2);
       int n = Integer.valueOf(args[0]).intValue();
       int M = Integer.valueOf(args[1]).intValue();
       int step = Integer.valueOf(args[2]).intValue();
       double gapm = Double.valueOf(args[3]).doubleValue();
-      p.readTestData(n, M, step, gapm);  // set up a random problem
+      p.readTestData(n, M, step, gapm);  // set up a (random?) problem
+			double optimal_v;
       // System.out.println("next DP...");
 
       long st = System.currentTimeMillis();
+/*		
+			{
       Solver s2 = new Solver(p);
-      double optimal_v = s2.solveDPMat();
+      optimal_v = s2.solveDPMat();
       long dur = System.currentTimeMillis()-st;
       System.out.println("\nbest value = "+optimal_v+" in "+s2.getNumIters()+" iters.");
       System.out.println("solution="+s2.getSolutionSortedIndices().toString(p));
       System.out.print("solinds=");
-      Vector solinds = s2.getSolutionIndices();
+      List solinds = s2.getSolutionIndices();
       for (int i=0; i<solinds.size(); i++) {
-        Integer ii = (Integer) solinds.elementAt(i);
+        Integer ii = (Integer) solinds.get(i);
         System.out.print(ii+", ");
       }
       System.out.println("total time="+dur+" msecs.");
-/*
+			}
+*/
+// /*
+			{
       // solve again using thread-parallel version
-      s2 = new Solver(p);
+      Solver s2 = new Solver(p);
       st = System.currentTimeMillis();
-      double v = s2.solveDP2ParallelMat(2);  // solve using two threads
-      dur = System.currentTimeMillis()-st;
-      System.out.println("Parallel: best value = "+v);
+      optimal_v = s2.solveDP2ParallelMat(4);  // solve using two threads
+      long dur = System.currentTimeMillis()-st;
+      System.out.println("Parallel: best value = "+optimal_v);
       System.out.println(" solution="+s2.getSolutionSortedIndices().toString(p));
       System.out.println("Parallel: total time="+dur+" msecs.");
-*/
+		  }
+// */
       // finally compare with K-Means algorithm
+/*
       Vector docs = new Vector();
       for (int i=0; i<p.getSequenceLength(); i++) {
         popt4jlib.VectorIntf di = new popt4jlib.DblArray1Vector(new double[1]);
@@ -144,8 +152,9 @@ public class SolverTester {
       }
       System.out.println("Best clustering value over all runs of KMeans="+best_clustering);
       System.out.println("%gap="+((best_clustering-optimal_v)/optimal_v));
-      dur = System.currentTimeMillis() - st;
+      long dur = System.currentTimeMillis() - st;
       System.out.println("Done in "+dur+" msecs.");
+*/
     }
     catch (Exception e) {
       e.printStackTrace();

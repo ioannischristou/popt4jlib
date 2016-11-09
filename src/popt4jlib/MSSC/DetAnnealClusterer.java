@@ -16,12 +16,12 @@ import java.util.*;
  * @version 1.0
  */
 public final class DetAnnealClusterer implements ClustererIntf {
-  private Vector _centers;  // Vector<VectorIntf>, size=k
-  private Vector _docs;  // Vector<VectorIntf>, size=n
+  private List _centers;  // Vector<VectorIntf>, size=k
+  private List _docs;  // Vector<VectorIntf>, size=n
   private HashMap _params;
   private int[] _clusterIndices;
   private KMeansSqrEvaluator _evaluator;
-  private Vector _intermediateClusters;  // Vector<Vector<Integer docid>>
+  private List _intermediateClusters;  // Vector<Vector<Integer docid>>
   //private final DocumentDistIntf _distmetric = new DocumentDistL2Sqr();
   private static double _eps = 1.e-3;
 
@@ -31,7 +31,7 @@ public final class DetAnnealClusterer implements ClustererIntf {
    */
   public DetAnnealClusterer() {
     _evaluator = new KMeansSqrEvaluator();
-    _intermediateClusters = new Vector();
+    _intermediateClusters = new ArrayList();
   }
 
 
@@ -39,9 +39,9 @@ public final class DetAnnealClusterer implements ClustererIntf {
    * return all the intermediate clusters produced by the
    * <CODE>clusterVectors()</CODE> method.
    * @throws ClustererException
-   * @return Vector Vector<Vector<Integer vecid>>
+   * @return List // Vector&lt;Vector&lt;Integer vecid&gt;&gt;
    */
-  public Vector getIntermediateClusters() throws ClustererException {
+  public List getIntermediateClusters() throws ClustererException {
     return _intermediateClusters;
   }
 
@@ -59,20 +59,21 @@ public final class DetAnnealClusterer implements ClustererIntf {
    * the most important method of the class. Some parameters must have been
    * previously passed in the _params map (call setParams(p) to do that).
    * These are:
-   *
-   * <"a",double> the rate of annealing
-   * <"Tmin",double> the Tmin value which when reached, we stop the annealing.
-   * <"lmax",double> the ëmax(Cx) which instead of being computed must be passed in
-   * <"delta",double> the ä perturbation when creating a new VectorIntf center
-   *
+   * <ul>
+   * <li> &lt;"a",Double&gt; the rate of annealing
+   * <li> &lt;"Tmin",Double&gt; the Tmin value which when reached, we stop the annealing.
+   * <li> &lt;"lmax",Double&gt; the ëmax(Cx) which instead of being computed must be passed in
+   * <li> &lt;"delta",Double&gt; the ä perturbation when creating a new VectorIntf center
+   * </ul>
    * Also, before calling the method, the documents to be clustered must have
-   * been added to the class object via addAllVectors(Vector<VectorIntf>) or
-   * via repeated calls to addVector(VectorIntf d)
+   * been added to the class object via 
+	 * <CODE>addAllVectors(List&lt;VectorIntf&gt;)</CODE> or
+   * via repeated calls to <CODE>addVector(VectorIntf d)</CODE>
    *
-   * @throws Exception if at some iteration, one or more clusters becomes empty.
-   * @return Vector
+   * @throws ClustererException if at some iteration, one or more clusters becomes empty.
+   * @return List  // Vector&lt;VectorIntf&gt;
    */
-  public Vector clusterVectors() throws ClustererException {
+  public List clusterVectors() throws ClustererException {
     // 1. init
     final double a = ( (Double) _params.get("a")).doubleValue();
     final double lmax = ( (Double) _params.get("lmax")).doubleValue();
@@ -80,7 +81,7 @@ public final class DetAnnealClusterer implements ClustererIntf {
     final double delta = ( (Double) _params.get("delta")).doubleValue();
     final int n = _docs.size();
     final int k = ((Integer) _params.get("k")).intValue();
-    final int dims = ((VectorIntf) _docs.elementAt(0)).getNumCoords();
+    final int dims = ((VectorIntf) _docs.get(0)).getNumCoords();
     // set a new _eps for deciding when centers have settled
     _eps = _eps > delta/dims ? delta/dims : _eps;
     double[] arr = new double[dims];
@@ -108,13 +109,13 @@ public final class DetAnnealClusterer implements ClustererIntf {
     p_y[0] = 0.5;
     p_y[1] = 0.5;  // duplicate's value
     // put centers in _centers vector
-    _centers.addElement(y1);
-    _centers.addElement(y1_dup);
+    _centers.add(y1);
+    _centers.add(y1_dup);
 
     try {
       // 2. Main Loop: Deterministic Annealing Algorithm
       while (T > 0) {
-        Vector new_centers = new Vector(); // updated centers go here
+        List new_centers = new ArrayList(); // updated centers go here
         int numiter = 0;
         while (true) {
           numiter++;
@@ -122,9 +123,9 @@ public final class DetAnnealClusterer implements ClustererIntf {
           // compute ||x-y||^2 for each x in _docs, y in _centers
           double dists[][] = new double[n][k_cur];
           for (int i = 0; i < n; i++) {
-            VectorIntf x = (VectorIntf) _docs.elementAt(i);
+            VectorIntf x = (VectorIntf) _docs.get(i);
             for (int j = 0; j < k_cur; j++) {
-              VectorIntf y = (VectorIntf) _centers.elementAt(j);
+              VectorIntf y = (VectorIntf) _centers.get(j);
               //dists[i][j] = _distmetric.dist(x, y);
               dists[i][j] = VecUtil.norm2(VecUtil.subtract(x,y));
               dists[i][j] *= dists[i][j];  // square it
@@ -152,7 +153,7 @@ public final class DetAnnealClusterer implements ClustererIntf {
             // update y_i
             DblArray1Vector y_i = new DblArray1Vector(new double[dims]);
             for (int j = 0; j < n; j++) {
-              VectorIntf xj = (VectorIntf) _docs.elementAt(j);
+              VectorIntf xj = (VectorIntf) _docs.get(j);
               double mul = p_yx[i][j] / (n * p_y[i]);
               y_i.addMul(mul, xj);
             }
@@ -178,7 +179,7 @@ public final class DetAnnealClusterer implements ClustererIntf {
         for (int j = 0; j < klim; j += 2) {
           if (k_cur < 2 * k && clusterHasPhaseTransition(j, delta)) {
             utils.Messenger.getInstance().msg("Phase Transition for cluster center j=" + j,0);
-            VectorIntf yj = (VectorIntf) _centers.elementAt(j);
+            VectorIntf yj = (VectorIntf) _centers.get(j);
             // set the duplicate of yj to be the same again
             VectorIntf yj_dup = yj.newInstance();  // yj.newCopy();
             _centers.set(j + 1, yj_dup);
@@ -198,8 +199,8 @@ public final class DetAnnealClusterer implements ClustererIntf {
             catch (parallel.ParallelException e) {  // can never get here
               e.printStackTrace();
             }
-            _centers.addElement(y_new);
-            _centers.addElement(y_new2);
+            _centers.add(y_new);
+            _centers.add(y_new2);
             double t = p_y[j];
             p_y[k_cur] = t / 2.0;
             p_y[k_cur + 1] = t / 2.0;
@@ -227,11 +228,11 @@ public final class DetAnnealClusterer implements ClustererIntf {
     //utils.Messenger.getInstance().msg("final k_cur="+k_cur,1);
     _clusterIndices = new int[n];
     for (int j=0; j<n; j++) {
-      VectorIntf dj = (VectorIntf) _docs.elementAt(j);
+      VectorIntf dj = (VectorIntf) _docs.get(j);
       double mindist = Double.MAX_VALUE;
       int bij = -1;
       for (int i = 0; i < k_cur; i++) {
-        VectorIntf ci = (VectorIntf) _centers.elementAt(i);
+        VectorIntf ci = (VectorIntf) _centers.get(i);
         //double dij = _distmetric.dist(dj,ci);
         double dij = VecUtil.norm2(VecUtil.subtract(dj,ci));
         dij *= dij;  // square it
@@ -248,11 +249,11 @@ public final class DetAnnealClusterer implements ClustererIntf {
     // test for intermediate clusters
     if (_intermediateClusters.size()==0) {
       // put the final clustering in
-      for (int i=0; i<_centers.size(); i++) _intermediateClusters.addElement(new Vector());
+      for (int i=0; i<_centers.size(); i++) _intermediateClusters.add(new ArrayList());
       for (int i=0; i<_clusterIndices.length; i++) {
         int c = _clusterIndices[i];
-        Vector vc = (Vector) _intermediateClusters.elementAt(c);
-        vc.addElement(new Integer(i));
+        List vc = (List) _intermediateClusters.get(c);
+        vc.add(new Integer(i));
         _intermediateClusters.set(c, vc); // ensure addition
       }
     }
@@ -265,41 +266,41 @@ public final class DetAnnealClusterer implements ClustererIntf {
    * @param d VectorIntf
    */
   public void addVector(VectorIntf d) {
-    if (_docs==null) _docs = new Vector();
-    _docs.addElement(d);
+    if (_docs==null) _docs = new ArrayList();
+    _docs.add(d);
   }
 
 
   /**
-   * appends to the end of _docs all Documents in v
-   * Will throw class cast exception if any object in v is not a Document
-   * @param v Vector
+   * appends to the end of _docs all Documents in v.
+   * Will throw class cast exception if any object in v is not a VectorIntf.
+   * @param v List  // Vector&lt;VectorIntf&gt;
    */
-  public void addAllVectors(Vector v) {
+  public void addAllVectors(List v) {
     if (v==null) return;
-    if (_docs==null) _docs = new Vector();
+    if (_docs==null) _docs = new ArrayList();
     for (int i=0; i<v.size(); i++)
-      _docs.addElement((VectorIntf) v.elementAt(i));
+      _docs.add((VectorIntf) v.get(i));
   }
 
 
   /**
-   * set the initial clustering centers
-   * the vector _centers is reconstructed, but the Document objects
+   * set the initial clustering centers.
+   * The vector _centers is reconstructed, but the Document objects
    * that are the cluster centers are simply passed as references.
    * the _centers doesn't own copies of them, but references to the
-   * objects inside the centers vector that is passed in the param. list
-   * @param centers Vector Vector<VectorIntf>
+   * objects inside the centers vector that is passed in the parameter list.
+   * @param centers List // Vector&lt;VectorIntf&gt;
    * @throws ClustererException if argument is null or if any of the contained
    * objects is not a VectorIntf
    */
-  public void setInitialClustering(Vector centers) throws ClustererException {
+  public void setInitialClustering(List centers) throws ClustererException {
     if (centers==null) throw new ClustererException("null initial clusters vector");
-    Vector oldcenters = _centers;
+    List oldcenters = _centers;
     try {
-      _centers = new Vector();
+      _centers = new ArrayList();
       for (int i = 0; i < centers.size(); i++)
-        _centers.addElement( (VectorIntf) centers.elementAt(i));
+        _centers.add( (VectorIntf) centers.get(i));
     }
     catch (ClassCastException e) {
       e.printStackTrace();
@@ -310,18 +311,18 @@ public final class DetAnnealClusterer implements ClustererIntf {
 
   /**
    * returns current centers.
-   * @return Vector
+   * @return List  // Vector&lt;VectorIntf&gt;
    */
-  public Vector getCurrentCenters() {
+  public List getCurrentCenters() {
     return _centers;
   }
 
 
   /**
    * return current set of VectorIntf objects to be clustered.
-   * @return Vector Vector<VectorIntf>
+   * @return List  // Vector&lt;VectorIntf&gt;
    */
-  public Vector getCurrentVectors() {
+  public List getCurrentVectors() {
     return _docs;
   }
 
@@ -404,10 +405,10 @@ public final class DetAnnealClusterer implements ClustererIntf {
   }
 
 
-  private boolean converged(Vector centers, Vector new_centers) throws ClustererException {
+  private boolean converged(List centers, List new_centers) throws ClustererException {
     for (int i=0; i<centers.size(); i++) {
-      VectorIntf c1 = (VectorIntf) centers.elementAt(i);
-      VectorIntf c2 = (VectorIntf) new_centers.elementAt(i);
+      VectorIntf c1 = (VectorIntf) centers.get(i);
+      VectorIntf c2 = (VectorIntf) new_centers.get(i);
       //double dist = _distmetric.dist(c1,c2);
       double dist = VecUtil.norm2(VecUtil.subtract(c1,c2));
       dist *= dist;  // square it
@@ -418,8 +419,8 @@ public final class DetAnnealClusterer implements ClustererIntf {
 
 
   private boolean clusterHasPhaseTransition(int j, double delta) throws ClustererException {
-    VectorIntf dj = (VectorIntf) _centers.elementAt(j);
-    VectorIntf djp1 = (VectorIntf) _centers.elementAt(j+1);
+    VectorIntf dj = (VectorIntf) _centers.get(j);
+    VectorIntf djp1 = (VectorIntf) _centers.get(j+1);
     final int dims = dj.getNumCoords();
     double dist = VecUtil.norm2(VecUtil.subtract(dj,djp1));
     dist *= dist;  // square it

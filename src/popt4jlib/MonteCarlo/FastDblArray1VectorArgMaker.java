@@ -44,7 +44,7 @@ public class FastDblArray1VectorArgMaker implements RandomArgMakerClonableIntf {
 	/**
 	 * creates a new instance that can be used without the need for any
 	 * synchronization when invoked, as different threads own different objects.
-	 * @param p HashMap must contain the following params:
+	 * @param params HashMap must contain the following params:
 	 * <ul>
    * <li> &lt;"mcs.arglength", $integer_value$&gt; mandatory, the length
    * of the argument.

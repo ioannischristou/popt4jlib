@@ -74,7 +74,7 @@ public class SimplePriorityMsgPassingCoordinator {
 	 * @param num int the new maximum size of the queue.
 	 * @throws ParallelException if a call to the <CODE>getInstance()</CODE> 
 	 * methods occurred before this call.
-	 * @throws IllegalArgumentException if the argument is &lte; 0. 
+	 * @throws IllegalArgumentException if the argument is &le; 0. 
 	 */
 	public synchronized static void setMaxSize(int num) throws ParallelException, IllegalArgumentException {
 		if (_instance!=null || _instances.size()>0)

@@ -27,6 +27,7 @@ public class IntVarArray1CMaker implements RandomChromosomeMakerIntf {
    * specifies how to create variable-length random chromosomes that are int[]
    * arrays.
    * @param params HashMap must contain the following pairs:
+	 * <ul>
    * <li> &lt;"dsa.maxchromosomelength", $integer_value$&gt; mandatory, the max.
    * length the chromosome int[] may take.
    * <li> &lt;"dsa.minallelevalue", $integer_value$&gt; mandatory, the minimum
@@ -44,6 +45,7 @@ public class IntVarArray1CMaker implements RandomChromosomeMakerIntf {
    * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
+	 * </ul>
    * @throws OptimizerException
    * @return Object int[] of length up to dsa.maxchromosomelength, chosen
    * randomly from the uniform distribution in {1,n}.

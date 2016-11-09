@@ -1,6 +1,7 @@
 package popt4jlib.GA;
 
 import parallel.*;
+import parallel.distributed.*;
 import utils.*;
 import popt4jlib.*;
 import java.util.*;
@@ -36,12 +37,29 @@ import java.util.*;
  * population new (hopefully better) solutions. The solutions moved back and
  * forth between optimizers have to be moved as function argument objects and
  * not as chromosome objects.</p>
+ * <p> Besides the shared-memory parallelism inherent in the class via which 
+ * each island runs in its own thread of execution, the class allows for the 
+ * distribution of function evaluations in a network of 
+ * <CODE>parallel.distributed.PDBTExecInitedWrk</CODE> workers running in their
+ * own JVMs (as long as the function arguments and parameters are serializable), 
+ * connected to a <CODE>parallel.distributed.PDBTExecInitedSrv</CODE> server 
+ * object, to which the DGA class may also be connected as a client via a
+ * <CODE>parallel.distributed.PDBTExecInitedClt</CODE> object; in such cases,
+ * the client must first submit a <CODE>parallel.distributed.RRObject</CODE> 
+ * that will be the initialization command for the workers (no-op in most cases,
+ * unless the function evaluations require some prior initialization). Of course 
+ * a server must be up and running, and at least one worker must be connected to
+ * this server, for this distribution scheme to work. Also, in case of running
+ * distributed computations, reusing this DGA object to run another optimization 
+ * problem is only allowed as long as there is no need to send another 
+ * initialization command to the network of workers, as workers cannot be 
+ * initialized twice.</p>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class DGA extends GLockingObservableObserverBase implements OptimizerIntf {
   private static int _nextId=0;
@@ -58,7 +76,11 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
   private DGAThread[] _threads=null;
   private int[] _islandsPop;
   private double _lastIncObserved=Double.MAX_VALUE;
+	
+	private RRObject _pdbtInitCmd=null;  // if running in distributed mode, 
+	// this object will be sent first to server as initialization command.
 
+	
   /**
    * public constructor. Provides a unique String id to the object that is
    * "DGA."+getId() which is used e.g. in the Barrier method calls, and
@@ -136,6 +158,8 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
     _params = null;
     _params = new HashMap(p);  // own the params
     _c2amaker = (Chromosome2ArgMakerIntf) _params.get("dga.c2amaker");
+		// set the distributed computing mode init cmd, if any is specified
+		_pdbtInitCmd = (RRObject) _params.get("dga.pdbtexecinitedwrkcmd");
   }
 
 
@@ -146,6 +170,8 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
   public synchronized FunctionIntf getFunction() {
     return _f;
   }
+	
+	
   /**
    * returns the currently best known function argument that  minimizes the _f
    * function. The ObserverIntf objects would need this method to get the
@@ -237,6 +263,14 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
    * </CODE>
 	 * </PRE>
    * series of calls.
+	 * <li>&lt;"dga.pdbtexecinitedwrkcmd", RRObject cmd &gt; optional, the 
+	 * initialization command to send to the network of workers to run function
+	 * evaluation tasks, default is null, indicating no distributed computation.
+	 * <li>&lt;"dga.pdbthost", String pdbtexecinitedhost &gt; optional, the name
+	 * of the server to send function evaluation requests, default is localhost.
+	 * <li>&lt;"dga.pdbtport", Integer port &gt; optional, the port the above 
+	 * server listens to for client requests, default is 7891.
+	 * </ul>
    * <p> This implementation requires that the value of the key "dga.poplimit" 
 	 * multiplied by the value of the key "dga.numthreads" times the value of the
 	 * key "dga.numgens" is less than the value
@@ -244,8 +278,8 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
 	 * currently returns 10000 (otherwise, there is the risk of the method hanging
 	 * up in pathological circumstances when all enough individuals in the 
 	 * population are current incumbents). If this requirement is not met, an 
-	 * OptimizerException will be thrown.
-   * @param FunctionIntf f
+	 * OptimizerException will be thrown. </p>
+   * @param f FunctionIntf
    * @throws OptimizerException if the optimization process fails; also see above
 	 * discussion
    * @return PairObjDouble Pair&lt;Object arg, Double val&gt;
@@ -344,7 +378,7 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
         for (int j=0; j<nt; j++) {
           while (true) {
             DGAIndividual ind = (DGAIndividual)
-                MsgPassingCoordinator.getInstance("dga."+_id).recvData( -1, j);  // itc 2014-31-10: name of MPC used to be "dga" only
+                MsgPassingCoordinator.getInstance("dga."+_id).recvData( -1, j);  // itc 2014-10-31: name of MPC used to be "dga" only
             if (ind != null) setIncumbent(ind);
             else break;  // DGAThread sends null when done sending incumbents
           }
@@ -385,7 +419,7 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
 
   /**
    * compute the id of the island to which the island with id myid should send
-   * any immigrants
+   * any immigrants.
    * @param myid int
    * @return int
    */
@@ -417,7 +451,7 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
 
 
   /**
-   * get the current incumbent value
+   * get the current incumbent value.
    * @return double
    */
   synchronized double getIncValue() {
@@ -426,7 +460,7 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
 
 
   /**
-   * update if we have an incumbent
+   * update if we have an incumbent.
    * @param ind DGAIndividual
    * @throws OptimizerException in case of insanity (may only happen if the
    * function to be minimized is not reentrant and the debug bit
@@ -493,7 +527,7 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
 
 
   /**
-   * get this DGA object's id
+   * get this DGA object's id.
    * @return int
    */
   synchronized int getId() { return _id; }
@@ -592,13 +626,23 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
   /**
    * get the object responsible for converting a chromosome Object to another
    * Object that can be passed in as argument of the function _f being
-   * optimized
+   * optimized.
    * @return Chromosome2ArgMakerIntf
    */
   synchronized Chromosome2ArgMakerIntf getChromosome2ArgMaker() {
     // synchronized to keep FindBugs happy
     return _c2amaker;
   }
+	
+	
+	/**
+	 * get the initialization command for the network of workers to run function
+	 * evaluation requests.
+	 * @return RRObject
+	 */
+	synchronized RRObject getPDBTInitCmd() {
+		return _pdbtInitCmd;
+	}
 
 
   /**
@@ -633,7 +677,7 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
 
 
   /**
-   * auxiliary method incrementing the unique ids for objects of this class
+   * auxiliary method incrementing the unique ids for objects of this class.
    * @return int
    */
   synchronized private static int incrID() {
@@ -695,6 +739,7 @@ class DGAThreadAux {
   private MutationOpIntf _mutationOp=null;
 	private IndComp _indComp = new IndComp();
 
+	private PDBTExecInitedClt _pdbtExecInitedClt = null;
 
   public DGAThreadAux(DGA master, int id) throws OptimizerException {
     _master = master;
@@ -724,6 +769,27 @@ class DGAThreadAux {
       }
     }
     // end creating _funcParams
+		// set-up distributed computing mode
+		try {
+			RRObject init_cmd = _master.getPDBTInitCmd();
+			if (init_cmd!=null) {
+				String host = (String) _p.get("dga.pdbthost");
+				if (host==null) host = "localhost";
+				int port = 7891;
+				try {
+					port = ((Integer) _p.get("dga.pdbtport")).intValue();
+				}
+				catch (ClassCastException e) {
+					Messenger.getInstance().msg("param value for dga.pdbtport is not an Integer",2);
+				}
+				_pdbtExecInitedClt = new PDBTExecInitedClt(host,port);
+				_pdbtExecInitedClt.submitInitCmd(init_cmd);
+			}
+		}
+		catch (Exception e) {
+			Messenger.getInstance().msg("couldn't set distributed computing environment, will run on this machine only", 2);
+			_pdbtExecInitedClt = null;
+		}
 		try {
 			_maxpopnum = ((Integer) _p.get("dga.poplimit")).intValue();
 		}
@@ -831,6 +897,14 @@ class DGAThreadAux {
         e.printStackTrace();  // no-op
       }
     }
+		if (_pdbtExecInitedClt!=null) {  // disconnect from network of workers
+			try {
+				_pdbtExecInitedClt.terminateConnection();
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
     // end: declare finish
     setFinish();
   }
@@ -874,13 +948,41 @@ class DGAThreadAux {
       throw new OptimizerException("DGAThreadAux.initPopulation(): "+
                                    "no RandomChromosomeMakerIntf object "+
                                    "passed in the params");
-    for (int i=0; i<initpopnum; i++) {
-      Object chromosome = amaker.createRandomChromosome(_fp);  // used to be _p
-      DGAIndividual indi = DGAIndividual.newInstance(chromosome, _master, _fp);  // used to be _p
-			indi.incrAge();  // itc 2014-10-26: set each individual's age to 1.
-      //System.out.println("Individual-"+i+"="+indi);
-      _individuals.add(indi);
-    }
+    boolean run_locally = true;
+		if (_pdbtExecInitedClt!=null) {  // function evaluations go distributed
+			TaskObject[] tasks = new TaskObject[initpopnum];
+			Chromosome2ArgMakerIntf c2amaker = _master.getChromosome2ArgMaker();
+			for (int i=0; i<initpopnum; i++) {
+				Object chromosome = amaker.createRandomChromosome(_fp);
+	      Object arg = null;
+	      if (c2amaker == null) arg = chromosome;
+				else arg = c2amaker.getArg(chromosome, _fp);
+				tasks[i] = new FunctionEvaluationTask(_master._f, arg, _fp);
+			}
+			try {
+				Object[] results = _pdbtExecInitedClt.submitWorkFromSameHost(tasks, 1);
+				// results are the same tasks, but with values for the function evaluations
+				for (int i=0; i<initpopnum; i++) {
+					double val = ((FunctionEvaluationTask) results[i]).getObjValue();
+					DGAIndividual indi = DGAIndividual.newInstance(c2amaker, val, 1.0, _master);
+					indi.incrAge();
+					_individuals.add(indi);
+				}
+				run_locally = false;
+			}
+			catch (Exception e) {  // oops, distributed mode failed, go for local
+				run_locally = true;
+			}
+		}
+		if (run_locally) {	// do the function evaluations on this JVM
+			for (int i=0; i<initpopnum; i++) {
+				Object chromosome = amaker.createRandomChromosome(_fp);  // used to be _p
+				DGAIndividual indi = DGAIndividual.newInstance(chromosome, _master, _fp);  // used to be _p
+				indi.incrAge();  // itc 2014-10-26: set each individual's age to 1.
+				//System.out.println("Individual-"+i+"="+indi);
+				_individuals.add(indi);
+			}
+		}
     // now compute fitnesses of each individual
     computeFitness(-1);
     // finally update incumbent
@@ -975,7 +1077,13 @@ class DGAThreadAux {
     }
 		
 		final Random rand = RndUtil.getInstance(_uid).getRandom();  // used to be _id
-
+		boolean compute_val_locally = _master.getPDBTInitCmd()==null;
+		List tasks = null;
+		List nl_children = null;
+		if (!compute_val_locally) {
+			tasks = new ArrayList();
+			nl_children = new ArrayList();
+		}
     for (int i=0; i<popsize; i++) {
       if (poplimit<=_individuals.size()) break;  // no more procreation this generation...
       // Xover probability
@@ -1009,24 +1117,36 @@ class DGAThreadAux {
             //                                       child2.getChromosome(), _p);
             Pair children = _mutationOp.doMutation(offspring.getFirst(),
                                                    offspring.getSecond(), _p);
-            child1 = DGAIndividual.newInstance(children.getFirst(), _master, _fp);  // used to be _p
-            child2 = DGAIndividual.newInstance(children.getSecond(), _master, _fp);  // used to be _p
+            child1 = DGAIndividual.newInstance(children.getFirst(), _master, _fp, compute_val_locally);  // used to be _p
+            child2 = DGAIndividual.newInstance(children.getSecond(), _master, _fp, compute_val_locally);  // used to be _p
           }
           catch (OptimizerException e) {
             e.printStackTrace();
             // no-op: mutation simply not done
 						if (child1!=null) child1.release();  // protect against pool leaks
 						if (child2!=null) child2.release();  // same as above
-            child1 = DGAIndividual.newInstance(offspring.getFirst(), _master, _fp);  // used to be _p
-            child2 = DGAIndividual.newInstance(offspring.getSecond(), _master, _fp);  // used to be _p
+            child1 = DGAIndividual.newInstance(offspring.getFirst(), _master, _fp, compute_val_locally);  // used to be _p
+            child2 = DGAIndividual.newInstance(offspring.getSecond(), _master, _fp, compute_val_locally);  // used to be _p
           }
         }
         else {
-          child1 = DGAIndividual.newInstance(offspring.getFirst(), _master, _fp);  // used to be _p
-          child2 = DGAIndividual.newInstance(offspring.getSecond(), _master, _fp);  // used to be _p
+          child1 = DGAIndividual.newInstance(offspring.getFirst(), _master, _fp, compute_val_locally);  // used to be _p
+          child2 = DGAIndividual.newInstance(offspring.getSecond(), _master, _fp, compute_val_locally);  // used to be _p
         }
         _individuals.add(child1);
         _individuals.add(child2);
+				if (!compute_val_locally) {
+		      Object argi = null;
+			    Chromosome2ArgMakerIntf c2amaker = (Chromosome2ArgMakerIntf) _master.getChromosome2ArgMaker();
+					argi = child1.getChromosome();
+					if (c2amaker!=null) argi = c2amaker.getArg(argi, _fp);
+					tasks.add(argi);
+					nl_children.add(child1);
+					argi = child2.getChromosome();
+					if (c2amaker!=null) argi = c2amaker.getArg(argi, _fp);
+					tasks.add(argi);
+					nl_children.add(child2);
+				}
       }
       catch (OptimizerException e) {
         e.printStackTrace();  // no-op
@@ -1037,6 +1157,27 @@ class DGAThreadAux {
       }
     }
     // values and fitnesses
+		if (!compute_val_locally) {
+			TaskObject[] tasksarr = new TaskObject[tasks.size()];
+			for (int i=0; i<tasksarr.length; i++) 
+				tasksarr[i] = new FunctionEvaluationTask(_master._f, tasks.get(i), _fp);
+			try {
+				Object[] results = _pdbtExecInitedClt.submitWorkFromSameHost(tasksarr, 1);
+				for (int i=0; i<results.length; i++) {
+					DGAIndividual childi = (DGAIndividual) nl_children.get(i);
+					double vali = ((FunctionEvaluationTask) results[i]).getObjValue();
+					childi.setValue(vali);
+				}
+			}
+			catch (Exception e) {
+				// must do the work locally
+				utils.Messenger.getInstance().msg("failed to send function evaluation tasks over the network, will resort to local computations", 2);
+				for (int i=0; i<nl_children.size(); i++) {
+					DGAIndividual childi = (DGAIndividual) nl_children.get(i);
+					childi.setValue(_fp);  // compute the value in the current thread locally
+				}				
+			}
+		}
     double min_val = computeFitness(gen);
 
     // survival of the fittest
@@ -1066,7 +1207,7 @@ class DGAThreadAux {
         // update the global incumbent in thread-order
 				DGAIndividual indj_copy = new DGAIndividual(indj);  // cannot submit to
 				// master the original individual, as it may be managed by this thread.
-				// itc 2014-31-10: change name of MPC from "dga" to "dga."+master_id 
+				// itc 2014-10-31: change name of MPC from "dga" to "dga."+master_id 
 				// to avoid interference issues in case there are two or more threads in
 				// a program running simultaneously the minimize(f) method of different
 				// DGA objects.
@@ -1088,7 +1229,7 @@ class DGAThreadAux {
 				++num_removed;
       }
     }
-		// itc 2014-31-10: change name of MPC from "dga" to "dga."+master_id 
+		// itc 2014-10-31: change name of MPC from "dga" to "dga."+master_id 
 		// to avoid interference issues in case there are two or more threads in
 		// a program running simultaneously the minimize(f) method of different
 		// DGA objects.
@@ -1229,6 +1370,21 @@ class DGAIndividual {
 		}
   }
 
+	
+  public static DGAIndividual newInstance(Object chromosome, DGA master, HashMap funcparams, boolean run_locally) {
+    if (_USE_POOLS)
+			return DGAIndividualPool.getObject(chromosome, master, funcparams, run_locally);
+		else {  // no pools used
+			try {
+				return new DGAIndividual(chromosome, master, funcparams, run_locally);
+			}
+			catch (OptimizerException e) {
+				e.printStackTrace();
+				return null;
+			}
+		}
+  }
+
 
   public static DGAIndividual newInstance(Object chromosome, double val, double fit, DGA master) {
     if (_USE_POOLS) 
@@ -1240,8 +1396,8 @@ class DGAIndividual {
   /**
    * this constructor is to be used only from the DGAIndividualPool for
    * constructing managed objects (re-claimable ones).
-   * @param pool
-   * @param poolpos
+   * @param pool DGAIndividual
+   * @param poolpos int
    */
   DGAIndividual(DGAIndividualPool pool, int poolpos) {
     _pool=pool;
@@ -1286,11 +1442,26 @@ class DGAIndividual {
     */
   }
 
+	
+  DGAIndividual(Object chromosome, DGA master, HashMap funcparams, boolean runlocal)
+      throws OptimizerException {
+    _age = 0;
+    _chromosome = chromosome;
+    // _master = master;
+    _c2amaker = (Chromosome2ArgMakerIntf) master.getChromosome2ArgMaker();
+    _f = master.getFunction();  // was _master._f; which is also safe
+    if (runlocal) computeValue(funcparams);  // may throw OptimizerException
+    _fitness = 0.0;
+		// pool params
+    _pool=null;
+    _poolPos=-1;
+    _isUsed=true;
+  }
+
 
 	void setData(Object chromosome, DGA master, HashMap funcparams) throws OptimizerException {
 		if (!_isUsed) {
-      Integer null_y=null;
-      System.err.println(null_y.intValue());  // force a NullPointerException to debug error
+			throw new IllegalStateException("DGAIndividual.setData() called, but _isUsed is false");
 		}
 		_age = 0;
     _chromosome = chromosome;
@@ -1298,6 +1469,20 @@ class DGAIndividual {
     _c2amaker = (Chromosome2ArgMakerIntf) master.getChromosome2ArgMaker();
     _f = master.getFunction();  // was _master._f; which is also safe
     computeValue(funcparams);  // may throw OptimizerException
+    _fitness = 0.0;
+	}
+
+	
+	void setData(Object chromosome, DGA master, HashMap funcparams, boolean runlocal) throws OptimizerException {
+		if (!_isUsed) {
+			throw new IllegalStateException("DGAIndividual.setData() called, but _isUsed is false");
+		}
+		_age = 0;
+    _chromosome = chromosome;
+    // _master = master;
+    _c2amaker = (Chromosome2ArgMakerIntf) master.getChromosome2ArgMaker();
+    _f = master.getFunction();  // was _master._f; which is also safe
+    if (runlocal) computeValue(funcparams);  // may throw OptimizerException
     _fitness = 0.0;
 	}
 
@@ -1324,8 +1509,7 @@ class DGAIndividual {
 
 	void setData(Object chromosome, double val, double fit, DGA master) {
 		if (!_isUsed) {
-      Integer null_y=null;
-      System.err.println(null_y.intValue());  // force a NullPointerException to debug error
+			throw new IllegalStateException("DGAIndividual.setData() called, but _isUsed is false");
 		}
 		_age = 0;
     _chromosome = chromosome;
@@ -1346,7 +1530,7 @@ class DGAIndividual {
 		_fitness = other._fitness;
 		_c2amaker = other._c2amaker;
 		_f = other._f;
-		// itc 2014-23-10: added below settings
+		// itc 2014-10-23: added below settings
 		// pool params
     _pool=null;
     _poolPos=-1;
@@ -1424,6 +1608,12 @@ class DGAIndividual {
   int getAge() { return _age; }
   void incrAge() { _age++; }
   double getValue() { return _val; }  // enhance the density value differences
+	void setValue(double v) { _val = v; }  // only used by nextGeneration(gen) if 
+	                                       // running function evals distributed
+	void setValue(HashMap params) throws OptimizerException {  // only used by
+		// nextGeneration() if running function evals distributed failed.
+		computeValue(params);
+	}
   double getFitness() { return _fitness; }
   void setFitness(double f) { _fitness = f; }
   private void computeValue(HashMap params) throws OptimizerException {
@@ -1514,9 +1704,9 @@ class DGAIndividualPool {
    * factory object creation method, first tries to return a managed object from
    * the pool, and if it cannot find one, creates a new (unmanaged) one. The
    * returned object, always has its data members (values) correctly set.
-	 * @param chromosome
-	 * @param master
-	 * @param funcparams
+	 * @param chromosome Object 
+	 * @param master DGA
+	 * @param funcparams HashMap
 	 * @return DGAIndividual
 	 */
   static DGAIndividual getObject(Object chromosome, DGA master, HashMap funcparams) {
@@ -1535,15 +1725,42 @@ class DGAIndividualPool {
 		}		
   }
 
+	
+	/**
+   * factory object creation method, first tries to return a managed object from
+   * the pool, and if it cannot find one, creates a new (unmanaged) one. The
+   * returned object, always has its data members (values) correctly set.
+	 * @param chromosome Object 
+	 * @param master DGA
+	 * @param funcparams HashMap
+	 * @param runlocal boolean
+	 * @return DGAIndividual
+	 */
+  static DGAIndividual getObject(Object chromosome, DGA master, HashMap funcparams, boolean runlocal) {
+    DGAIndividualPool pool = DGAIndividualThreadLocalPools.getThreadLocalPool();
+    DGAIndividual p = pool.getObjectFromPool();
+    try {
+			if (p!=null) {  // ok, return managed object
+		    p.setData(chromosome, master, funcparams, runlocal);
+			  return p;
+			} else  // oops, create new unmanaged object
+				return new DGAIndividual(chromosome, master, funcparams, runlocal);
+		}
+		catch (OptimizerException e) {
+			e.printStackTrace();
+			return null;
+		}		
+  }
+
 
 	/**
    * factory object creation method, first tries to return a managed object from
    * the pool, and if it cannot find one, creates a new (unmanaged) one. The
    * returned object, always has its data members (values) correctly set.
-	 * @param chromosome
-	 * @param val
-	 * @param fit
-	 * @param master
+	 * @param chromosome Object
+	 * @param val double
+	 * @param fit double
+	 * @param master DGA
 	 * @return DGAIndividual
 	 */
   static DGAIndividual getObject(Object chromosome, double val, double fit, DGA master) {
@@ -1580,8 +1797,7 @@ class DGAIndividualPool {
       _maxUsedPos++;
       DGAIndividual ind = (DGAIndividual) _pool.get(_maxUsedPos);
 				if (_DO_GET_SANITY_TEST && ind.isUsed()) {
-					Integer yI = null;
-					System.err.println("getObjectFromPool(): right doesn't work: null ref yI="+yI.intValue());  // force NullPointerException
+					throw new IllegalStateException("getObjectFromPool(): right doesn't work");
 				}
       ind.setIsUsed();
 			if (_minUsedPos>_maxUsedPos) _minUsedPos = _maxUsedPos;
@@ -1591,8 +1807,7 @@ class DGAIndividualPool {
 				_minUsedPos--;
 				DGAIndividual ind = (DGAIndividual) _pool.get(_minUsedPos);
 				if (_DO_GET_SANITY_TEST && ind.isUsed()) {
-					Integer yI = null;
-					System.err.println("getObjectFromPool(): left doesn't work: null ref yI="+yI.intValue());  // force NullPointerException
+					throw new IllegalStateException("getObjectFromPool(): left doesn't work");  
 				}
 				ind.setIsUsed();
 				if (_minUsedPos>_maxUsedPos) _maxUsedPos = _minUsedPos;
@@ -1607,16 +1822,14 @@ class DGAIndividualPool {
 		if (_DO_RELEASE_SANITY_TEST) {
 			DGAIndividualPool pool = DGAIndividualThreadLocalPools.getThreadLocalPool();
 			if (pool!=this) {
-				Integer yI = null;
-				System.err.println("null ref yI="+yI.intValue());  // force NullPointerException
+				throw new IllegalStateException("returnObjectToPool: pool!=this");
 			}
 		}
 		// corner case: the returned object was the only one "out-of-the-pool"
 		if (_maxUsedPos==_minUsedPos) {
 			if (_DO_RELEASE_SANITY_TEST) {
 				if (ind.getPoolPos()!=_minUsedPos) {
-					Integer yI = null;
-					System.err.println("null ref yI="+yI.intValue());  // force NullPointerException					
+					throw new IllegalStateException("returnObjectToPool: ind.getPoolPos() != _minUsedPos");					
 				}
 			}
 			_maxUsedPos = -1;

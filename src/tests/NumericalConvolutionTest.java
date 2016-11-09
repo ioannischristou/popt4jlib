@@ -28,7 +28,7 @@ public class NumericalConvolutionTest {
    * invoke as: <CODE>java -cp &lt;classpath&gt; tests.NumericalConvolutionTest
    * &lt;lowerlimit&gt; &lt;upperlimit&gt; &lt; a &gt; &lt; b &gt; &lt; step &gt; &lt; jplotfilename &gt;
    * </CODE>.
-   * Computes the convolution of the two functions x^2 (x<=0) and normpdf
+   * Computes the convolution of the two functions x^2 (x&le;0) and normpdf
    * with respect to the first variable from a to b and creates a jplot file to
    * visualize the convolution function.
    * @param args String[]

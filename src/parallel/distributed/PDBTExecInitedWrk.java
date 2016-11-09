@@ -10,12 +10,12 @@ import java.util.*;
  * network sockets) arrays of TaskObjects and executes them using a
  * <CODE>parallel.distributed.PDBatchTaskExecutor</CODE>. The process connects
  * on a server (hosting the
- * <CODE>parallel.distributed.PDBTExecSingleCltWrkInitSrv</CODE> process) on the
- * dedicated port for worker connections (default 7890) and first listens for an
- * initialization command sent as an <CODE>RRObject</CODE> object, which runs by
- * calling its <CODE>runProtocol(null,null,null)</CODE> method, meaning that 
- * during execution, this method must not engage in any communication with the
- * server object (and will not send any response back; then it starts 
+ * <CODE>parallel.distributed.PDBTExec[SingleCltWrk]Init[~ed]Srv</CODE> process) 
+ * on the dedicated port for worker connections (default 7890) and first listens 
+ * for an initialization command sent as an <CODE>RRObject</CODE> object, which 
+ * runs by calling its <CODE>runProtocol(null,null,null)</CODE> method, meaning 
+ * that during execution, this method must not engage in any communication with 
+ * the server object (and will not send any response back); then it starts 
  * listening in for <CODE>parallel.distributed.TaskObjectsExecutionRequest</CODE> 
  * requests, which it then processes and returns the results wrapped in a
  * <CODE>parallel.distributed.TaskObjectsExecutionResults</CODE> object via the
@@ -124,7 +124,9 @@ public class PDBTExecInitedWrk {
       }
     }
     catch (Exception e) {
-      e.printStackTrace();
+      // e.printStackTrace();
+			mger.msg("PDBTExecInitedWrk.run(): Exception '"+e+
+				       "' was thrown. Will close connection, shutdown executor, and exit. ", 0);
     }
     finally {
       if (ois!=null) ois.close();

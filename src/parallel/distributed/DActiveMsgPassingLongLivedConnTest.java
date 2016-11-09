@@ -19,7 +19,7 @@ public class DActiveMsgPassingLongLivedConnTest {
 
   /**
    * invoke as
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.DMsgPassingLongLivedConnTest &lt;startid&gt; &lte;ndid&gt; [delay(-1)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.DMsgPassingLongLivedConnTest &lt;startid&gt; &lt;ndid&gt; [delay(-1)]</CODE>.
    * The test is set up so that the
    * <CODE>parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv</CODE> must be up and
    * running at the default (host=localhost,port=7895) combination, and there

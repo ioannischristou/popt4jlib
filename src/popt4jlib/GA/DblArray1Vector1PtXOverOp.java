@@ -29,7 +29,7 @@ public class DblArray1Vector1PtXOverOp implements XoverOpIntf {
    * arrays of doubles represented as DblArray1Vector objects
    * @param c1 Object (a DblArray1Vector)
    * @param c2 Object (a DblArray1Vector)
-   * @param params HashMap must contain a pair <"thread.id", $integer_value$>
+   * @param params HashMap must contain a pair &lt;"thread.id", $integer_value$&gt;
    * @throws OptimizerException
    * @return Pair containing two new <CODE>DblArray1Vector</CODE> objects.
    */

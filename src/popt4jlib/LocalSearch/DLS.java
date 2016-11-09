@@ -161,9 +161,9 @@ public class DLS implements OptimizerIntf {
    * null, which results in the chromosome objects being passed "as-is" to the
    * FunctionIntf object being minimized.
    * </ul>
-   * <br>The result is a PairObjDouble object that contains the best function arg.
+   * <p>The result is a PairObjDouble object that contains the best function arg.
    * along with the minimum function value obtained by this argument (or null
-   * if the process fails to find any valid function argument).</br>
+   * if the process fails to find any valid function argument).</p>
    * @param f FunctionIntf the function to optimize locally
    * @throws OptimizerException if another thread is concurrently running the
    * same method of this object or if the optimization process fails

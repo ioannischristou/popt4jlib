@@ -25,7 +25,7 @@ public class UBAUTest {
 	 * Inserts, removes, and then inserts again a number of objects into
 	 * an UnboundedBufferArrayUnsynchronized, then into an ArrayList/ArrayDeque.
 	 * invoke as:
-	 * java -cp <classpath> parallel.UBAUTest [num_objs(1000000)]
+	 * java -cp &lt;classpath&gt; parallel.UBAUTest [num_objs(1000000)]
 	 * @param args
 	 */
 	public static void main(String[] args) {

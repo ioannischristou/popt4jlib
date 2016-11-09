@@ -17,7 +17,7 @@ import popt4jlib.*;
  * population new (hopefully better) solutions. The solutions moved back and
  * forth between optimizers have to be moved as function argument objects and
  * not as chromosome objects. However, the Subject/Observer interactions destroy
- * the otherwise deterministic order & results of the DFA execution due to the
+ * the otherwise deterministic order &amp; results of the DFA execution due to the
  * fact that the order in which DFAThreads call the setIncumbent() method which
  * in turn may call the notifyObservers() method is not deterministically
  * fixed (depends on thread schedules).
@@ -176,7 +176,7 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
 	 * </pre>
    * series of calls.
    * </ul>
-   * @param FunctionIntf f
+   * @param f FunctionIntf 
    * @throws OptimizerException if the process fails
    * @return PairObjDouble // Pair&lt;Object arg, Double val&gt;
    */

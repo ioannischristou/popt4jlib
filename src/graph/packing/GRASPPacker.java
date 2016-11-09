@@ -49,7 +49,7 @@ public final class GRASPPacker {
   /**
    * create a dist-_k packing for Graph _g via a GRASP method and return it
    * as a Set&lt;Node&gt; of the active nodes.
-   * @param Set addfirstfrom // Set&lt;Node&gt; to add from
+   * @param addfirstfrom Set // Set&lt;Node&gt; to add from
    * @throws PackingException
    * @throws ParallelException
    * @return Set  // Set&lt;Node&gt;

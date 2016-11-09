@@ -3,6 +3,8 @@ package popt4jlib.MSSC;
 import popt4jlib.VectorIntf;
 import popt4jlib.GradientDescent.VecUtil;
 import java.util.Vector;
+import java.util.List;
+
 
 /**
  * specifies that a clustering process must stop when two successive calls of
@@ -16,7 +18,7 @@ import java.util.Vector;
  */
 public class ClustererTerminationNoCenterMove implements ClustererTerminationIntf {
   private ClustererIntf _cl;
-  private Vector _oldcenters;
+  private List _oldcenters;
   private int _totIters = 0;
   final static private double _c = 1e-7;
   final static private int _maxIters = 50;
@@ -39,8 +41,8 @@ public class ClustererTerminationNoCenterMove implements ClustererTerminationInt
     try {
       if (_oldcenters != null) {
         for (int i = 0; i < _oldcenters.size() && result; i++) {
-          VectorIntf ci = (VectorIntf) _cl.getCurrentCenters().elementAt(i);
-          VectorIntf oci = (VectorIntf) _oldcenters.elementAt(i);
+          VectorIntf ci = (VectorIntf) _cl.getCurrentCenters().get(i);
+          VectorIntf oci = (VectorIntf) _oldcenters.get(i);
           //double dist = Document.d(ci, oci);
           double dist = VecUtil.norm2(VecUtil.subtract(ci, oci));
           if (dist>_c) result = false;

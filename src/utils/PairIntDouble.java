@@ -78,7 +78,7 @@ public class PairIntDouble implements Comparable, Serializable {
 
   /**
    * comparison is based on the double value <CODE>_val</CODE> of this object;
-   * as well as <CODE>_key<CODE>.
+   * as well as <CODE>_key</CODE>.
    * @param o Object
    * @return boolean
    */

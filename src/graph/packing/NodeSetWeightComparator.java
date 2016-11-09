@@ -2,11 +2,10 @@ package graph.packing;
 
 import java.util.*;
 import graph.*;
-import parallel.*;
 import utils.IntSet;
 
 /**
- * Comparator will sort <CODE><PRE>Set<Node></PRE></CODE> objects according to
+ * Comparator will sort <CODE>Set&lt;Node&gt;</CODE> objects according to
  * their total weight in descending order (heaviest weight first). In case of
  * ties, the set with the smallest node-id will be considered heavier. 
  * <p>Title: popt4jlib</p>

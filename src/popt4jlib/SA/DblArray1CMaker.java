@@ -28,6 +28,7 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
    * in the array, is drawn from the uniform distribution restricted within the
    * boundaries of the element's range specified in the params key-value pairs.
    * @param params HashMap must contain the following params:
+	 * <ul>
    * <li> &lt;"dsa.chromosomelength", $integer_value$&gt; mandatory, the length
    * of the chromosome.
    * <li> &lt;"dsa.minallelevalue", $value$&gt; mandatory, the minimum value
@@ -45,6 +46,7 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
    * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
+	 * </ul>
    * @throws OptimizerException
    * @return Object double[] of length specified in the params.
    */

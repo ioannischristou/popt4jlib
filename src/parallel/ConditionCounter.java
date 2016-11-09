@@ -4,7 +4,7 @@ package parallel;
  * implements a "condition" counter, so that when the object's counter reaches
  * a specified number, it releases a notification for any waiting thread to
  * resume execution. The class is useful in combination with the
- * parallel.ParallelAsynchBatchTaskExecutor class.
+ * <CODE>parallel.ParallelAsynchBatchTaskExecutor</CODE> class.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>

@@ -122,35 +122,39 @@ public class DSA implements OptimizerIntf {
    * of the SA method. Prior to calling this method, a number of parameters must
    * have been passed in the DSA object, either in construction time, or via a
    * call to setParams(p). These are:
-   *
-   * <li> <"dsa.randomchromosomemaker", RandomChromosomeMakerIntf r> mandatory, the
+   * <ul>
+   * <li> &lt;"dsa.randomchromosomemaker", RandomChromosomeMakerIntf r&gt; mandatory, the
    * object responsible for implementing the interface that allows creating
    * random initial chromosome objects.
-   * <li> <"dsa.movemaker", NewChromosomeMakerIntf movemaker> mandatory, the object
+   * <li> &lt;"dsa.movemaker", NewChromosomeMakerIntf movemaker&gt; mandatory, the object
    * responsible for implementing the interface that allows creating new
    * chromosome Objects from an existing one (makes a move).
-   * <li> <"dsa.c2amaker", Chromosome2ArgMakerIntf c2amaker> optional, an object
+   * <li> &lt;"dsa.c2amaker", Chromosome2ArgMakerIntf c2amaker&gt; optional, an object
    * implementing the Chromosome2ArgMakerIntf that transforms chromosome Objects
    * used in the SA process -and manipulated by the Object implementing
    * the NewChromosomeMakerIntf interface- into argument Objects that can be
    * passed into the FunctionIntf object that the process minimizes. Default is
    * null, which results in the chromosome objects being passed "as-is" to the
    * FunctionIntf object being minimized.
-   * <li> <"dsa.numthreads, Integer nt> optional, the number of threads to be run by
+   * <li> &lt;"dsa.numthreads, Integer nt&gt; optional, the number of threads to be run by
    * the process, default is 1.
-   * <li> <"dsa.numouteriters, Integer nglobaliters> optional, the total number of
+   * <li> &lt;"dsa.numouteriters, Integer nglobaliters&gt; optional, the total number of
    * "generations" i.e. outer iterations to run, default is 100.
-   * <li> <"dsa.numtriesperiter, Integer triespiter> optional, the number of
+   * <li> &lt;"dsa.numtriesperiter, Integer triespiter&gt; optional, the number of
    * iterations each thread will run before communicating its incumbent solution
    * to all others, and get the best overall incumbent -among running threads-
    * to continue with, default is 100.
-   * <li> <"dsa.schedule", SAScheduleIntf sched> optional, an object implementing the
-   * SAScheduleIntf that determines the temperature at each "generation" i.e.
-   * outer iteration. Default is LinScaleSchedule, that can be configured by
-   * the following two optional parameters:
-   * <li> <"dsa.T0", Double t0> optional, initial temperature, default is 1000.0
-   * <li> <"dsa.K", Double k> optional, the "Boltzman constant", default is 20.0
-   *
+   * <li> &lt;"dsa.schedule", SAScheduleIntf sched&gt; optional, an object 
+	 * implementing the SAScheduleIntf that determines the temperature at each 
+	 * "generation" i.e. outer iteration. Default is LinScaleSchedule, that can be 
+	 * configured by the following two optional parameters:
+	 * <ul>
+   * <li> &lt;"dsa.T0", Double t0&gt; optional, initial temperature, default is 
+	 * 1000.0.
+   * <li> &lt;"dsa.K", Double k&gt; optional, the "Boltzman constant", default 
+	 * is 20.0.
+	 * </ul>
+   * </ul>
    * The result is a PairObjDouble object that contains the best function arg.
    * along with the minimum function value obtained by this argument (or null
    * if the process fails to find any valid function argument).
@@ -218,11 +222,11 @@ public class DSA implements OptimizerIntf {
 
 
   /**
-   * update if we have an incumbent
+   * update if we have an incumbent.
    * @param ind DSAIndividual
    * @throws OptimizerException in case of insanity (may only happen if the
    * function to be minimized is not reentrant and the debug bit
-   * <CODE>Constants.DSA</CODE> is set in the <CODE>Debug</CODE> class)
+   * <CODE>Constants.DSA</CODE> is set in the Debug class)
    */
   synchronized void setIncumbent(DSAIndividual ind) throws OptimizerException {
     if (ind==null) return;
@@ -309,7 +313,7 @@ public class DSA implements OptimizerIntf {
 
 
 /**
- * auxiliary class not part of the public API
+ * auxiliary class not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>

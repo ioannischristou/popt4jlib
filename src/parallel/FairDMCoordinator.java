@@ -47,13 +47,13 @@ public class FairDMCoordinator {
 
 
   /**
-   * provides, securely, the unique instance of DMCoordinator named <name> that
-   * is used to coordinate readers and writers. The method needs to be
+   * provides, securely, the unique instance of DMCoordinator named &lt;name&gt; 
+   * that is used to coordinate readers and writers. The method needs to be
    * synchronized (at the class level, as it's a static method) so as
    * to avoid the possibility of two different client threads receiving
    * different DMCoordinator objects to coordinate on (which results in no
    * coordination).
-   * @param String name the name of the DMCoordinator object to obtain
+   * @param name String the name of the DMCoordinator object to obtain
    * @return DMCoordinator the object that goes by that name (creates new object
    * if no object goes by that name)
    */

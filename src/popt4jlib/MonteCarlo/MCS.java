@@ -54,8 +54,8 @@ public class MCS implements OptimizerIntf {
   /**
    * set the optimization parameters to the arg passed in.
    * @param params HashMap see the documentation of the method
-	 * <CODE>minimize(f)</CODE> (@see MCS#minimize(FunctionIntf) minimize) for a 
-	 * discussion of the pairs that must be contained in it
+	 * <CODE>minimize(f)</CODE> ((@see MCS#minimize(FunctionIntf) minimize) for a 
+	 * discussion of the pairs that must be contained in it).
    * @throws OptimizerException if another thread is concurrently running
    * <CODE>minimize(f)</CODE> of this object
    */

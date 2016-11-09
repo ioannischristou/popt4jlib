@@ -30,6 +30,7 @@ public class DblArray1RandomVelocityMaker implements RandomVelocityMakerIntf {
    * in the array, is drawn from the uniform distribution restricted within the
    * boundaries of the element's range specified in the params key-value pairs.
    * @param params HashMap must contain the following params:
+	 * <ul>
    * <li> &lt;"dpso.chromosomelength", $integer_value$&gt; mandatory, the length
    * of the chromosome.
    * <li> &lt;"dpso.minallelevalue", $value$&gt; mandatory, the minimum value
@@ -47,6 +48,7 @@ public class DblArray1RandomVelocityMaker implements RandomVelocityMakerIntf {
    * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
+	 * </ul>
    * @throws OptimizerException
    * @return Object double[] of length specified in the params.
    */

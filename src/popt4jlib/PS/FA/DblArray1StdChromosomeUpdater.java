@@ -30,8 +30,8 @@ public class DblArray1StdChromosomeUpdater implements ChromosomeUpdaterIntf {
 
 
   /**
-   * the main method of the class, requires the following params be present in
-   * the params object:
+   * the main method of the class, requires certain params be present in
+   * the params object. The params are as follows:
 	 * <ul>
    * <li> &lt;"dfa.chromosomelength", Integer n&gt; mandatory, the dimension of the
    * double[] chromosomes.
@@ -48,7 +48,7 @@ public class DblArray1StdChromosomeUpdater implements ChromosomeUpdaterIntf {
    * <li> &lt;"dfa.beta", Double v&gt; optional, the value of &beta;;. Default is 1.0.
    * <li> &lt;"dfa.a0", Double v&gt; optional, the value of a_0. Default is 0.01*L.
    * <li> &lt;"dfa.delta", Double v&gt; optional, the value of &delta;. Default is 0.97.
-   *
+   * </ul>
    * @param ci Object // double[]
    * @param cj Object // double[]
    * @param params HashMap

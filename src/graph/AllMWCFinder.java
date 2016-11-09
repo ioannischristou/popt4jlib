@@ -31,9 +31,9 @@ public class AllMWCFinder {
    * The method is iterative: for each node, it constructs all the max.
    * cliques the node participates in.
    * Duplicates are removed as they appear.
-   * It returns the cliques in a Set<Set<NodeId> >
-   * @param double minaccnodecliqueweight
-   * @return Set a Set<Set<Integer nodeId> >
+   * It returns the cliques in a Set&lt;Set&lt;Integer nodeId&gt; &gt;
+   * @param minaccnodecliqueweight double
+   * @return Set // Set&lt;Set&lt;Integer nodeId&gt; &gt;
    */
   public Set getAllMaximalCliques(double minaccnodecliqueweight) {
     try {

@@ -32,9 +32,11 @@ public class WeierstrassFunction implements FunctionIntf {
    * @param arg Object must be a <CODE>double[]</CODE> or
    * <CODE>popt4jlib.VectorIntf</CODE> object.
    * @param params HashMap if not-null may contain the following pairs:
-   * <li> <"a", Double val> the value for the a parameter, default is 0.5
-   * <li> <"b", Double val> the value of the b parameter, default is 3
-   * <li> <"kmax", Integer val> the value of the k_{max} parameter, default is 20
+	 * <ul>
+   * <li> &lt;"a", Double val&gt; the value for the a parameter, default is 0.5
+   * <li> &lt;"b", Double val&gt; the value of the b parameter, default is 3
+   * <li> &lt;"kmax", Integer val&gt; the value of the k_{max} parameter, default is 20
+	 * </ul>
    * @throws IllegalArgumentException if arg does not conform to the specification
    * @return double
    */

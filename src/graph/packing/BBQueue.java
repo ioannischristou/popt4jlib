@@ -58,7 +58,7 @@ final class BBQueue extends Thread {
         container.clear();  // used to be: Vector container = new Vector();
         container.add(best);
         if (runit) BBThreadPool.getPool().executeBatch(container);
-        else best.setDone();  // indidate it was done
+        else best.setDone();  // indicate it was done
       }
       catch (Exception e) {
         e.printStackTrace();

@@ -26,7 +26,7 @@ public class ClusterTestMaker {
    * @param n int the total number of points
    * @param k int the total number of clusters
    * @param s double the standard deviation for each dimension
-   * @param name String the file name where to store the lines
+   * @param filename String the file name where to store the lines
    */
   private void makeparamfile(int d, int n, int k, double s, String filename) throws Exception {
     PrintWriter pw = new PrintWriter(new FileWriter(filename));

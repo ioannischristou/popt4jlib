@@ -82,7 +82,7 @@ public class GMeansMTClustererTest {
       gmclusterer.addAllVectors(docs);
       gmclusterer.setParams(p);
       gmclusterer.setInitialClustering((Vector) init_centers);
-      Vector centers = gmclusterer.clusterVectors();
+      List centers = gmclusterer.clusterVectors();
       long dur = System.currentTimeMillis()-start;
       long dur_compute = System.currentTimeMillis()-start_compute;
 			System.err.println("Done Clustering.");

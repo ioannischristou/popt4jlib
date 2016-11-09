@@ -13,19 +13,28 @@ import java.io.Serializable;
  * or all of the function variables are constrained to assume values from a
  * discrete set (eg when some variables must take on integer values only, or
  * when some variables must take on values that are an integer multiple of
- * some quantity).
+ * some quantity). The algorithm may run in distributed mode submitting its
+ * tasks over a network of <CODE>parallel.distributed.PDBatchTaskExecInitedWrk</CODE>
+ * workers if the appropriate parameters are passed, as specified in the 
+ * documentation of the method <CODE>minimize()</CODE>, however this requires
+ * submitting <CODE>AlternatingVariablesDescent.Opt1DTask</CODE> objects, which
+ * are nested in this class definition, and for this reason, this class also
+ * implements the <CODE>Serializable</CODE> interface.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
-public final class AlternatingVariablesDescent extends GLockingObserverBase implements LocalOptimizerIntf {
+public final class AlternatingVariablesDescent extends GLockingObserverBase implements LocalOptimizerIntf, Serializable {
   private HashMap _params;
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
   private FunctionIntf _f;
+
+	private RRObject _pdbtInitCmd=null;  // if running in distributed mode, 
+	// this object will be sent first to server as initialization command.
 
 
   /**
@@ -46,6 +55,8 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase impl
 		super();
 		try {
       setParams(params);
+		// set the distributed computing mode init cmd, if any is specified
+		_pdbtInitCmd = (RRObject) _params.get("avd.pdbtexecinitedwrkcmd");
     }
     catch (Exception e) {
       // no-op: cannot reach this point
@@ -90,6 +101,7 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase impl
    * the main method of the class. Before it is called, a number of parameters
    * must have been set (via the parameters passed in the constructor, or via
    * a later call to setParams(p)). These are:
+	 * <ul>
    * <li> &lt;"avd.x0", VectorIntf x&gt; optional, the initial starting point. If this
    * pair does not exist, then it becomes mandatory that a pair
    * &lt;"gradientdescent.x0", VectorIntf x&gt; pair with a non-null x is in the
@@ -108,16 +120,16 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase impl
    * the min. step size required for the i-th variable.
    * <li> &lt;"avd.minargval", Double val&gt; optional, a double number that is a lower
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i >= val.doubleValue(), default is -infinity.
+   * must satisfy x_i &ge; val.doubleValue(), default is -infinity.
    * <li> &lt;"avd.maxargval", Double val&gt; optional, a double number that is an upper
    * bound for all variables of the optimization process, i.e. all variables
-   * must satisfy x_i &lte; val.doubleValue(), default is +infinity.
+   * must satisfy x_i &le; val.doubleValue(), default is +infinity.
    * <li> &lt;"avd.minargvals", double[] vals&gt; optional, the lower
    * bounds for each variable of the optimization process, i.e. variable
-   * must satisfy x_i &gte; vals[i], default is none.
+   * must satisfy x_i &ge; vals[i], default is none.
    * <li> &lt;"avd.maxargvals", double[] vals&gt; optional, the upper
    * bounds for each variable of the optimization process, i.e. variable
-   * must satisfy x_i &lte; vals[i], default is none.
+   * must satisfy x_i &le; vals[i], default is none.
    * <li> &lt;"avd.tryorder", int[] order&gt; optional, if present denotes the order
    * in which the variables will be optimized in each major iteration. (It is
    * NOT necessary to be a permutation of the numbers {1,...n} where n is the
@@ -135,7 +147,14 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase impl
    * <li> &lt;"avd.ftol", Double tol&gt; optional, the min. abs. value below which the
    * absolute value of the difference between two function evaluations is
    * considered to be zero. Default is 1.e-8.
-   *
+	 * <li>&lt;"avd.pdbtexecinitedwrkcmd", RRObject cmd &gt; optional, the 
+	 * initialization command to send to the network of workers to run minimization
+	 * tasks, default is null, indicating no distributed computation.
+	 * <li>&lt;"avd.pdbthost", String pdbtexecinitedhost &gt; optional, the name
+	 * of the server to send 1-D minimization requests, default is localhost.
+	 * <li>&lt;"avd.pdbtport", Integer port &gt; optional, the port the above 
+	 * server listens to for client requests, default is 7891.
+   * </ul>
    * @param f FunctionIntf the function to minimize
    * @throws OptimizerException if another thread is currently executing the
    * same method or if the method fails to find a minimizer
@@ -306,59 +325,136 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase impl
       if (tryorder==null) {
         // solve n 1-D problems in parallel
         Messenger.getInstance().msg("AVD.minimize(): minimizing using parallel searches",0);
-        try {
-          PDBatchTaskExecutor pbtexecutor=PDBatchTaskExecutor.
-																				    newPDBatchTaskExecutor(numthreads);
-          boolean cont=true;
-          VectorIntf x = x0.newInstance();  // used to be x0.newCopy();
-          double c = f.eval(x,_params);
-          double fbest = c;
-          List batch = new ArrayList();  // used to be Vector
-          int k;
-          for (k = 0; k < ntries && cont; k++) {
-            cont = false;
-            int n = x0.getNumCoords();
-            batch.clear();
-            for (int i = 0; i < n; i++) {
-              Opt1DTask ti = new Opt1DTask(f, x, _params, i, minstepsizes[i],
-                                           lowerbounds[i], upperbounds[i],
-                                           niterbnd, multfactor, ftol);
-              batch.add(ti);
-            }
-            Vector results = pbtexecutor.executeBatch(batch);  // run in parallel
-            // figure out best f-val and apply change to x
-            int ibest = -1;
-            double xibest = Double.NaN;
-            for (int i=0; i<results.size(); i++) {
-              Double xi = (Double) results.elementAt(i);
-              if (xi.isNaN()) continue;  // no optimization took place
-              double xi_init = x.getCoord(i);
-              x.setCoord(i, xi.doubleValue());
-              double fival = f.eval(x, _params);
-              if (fival < fbest) {
-                fbest = fival;
-                xibest = xi.doubleValue();
-                ibest = i;
-              }
-              x.setCoord(i, xi_init);  // reset coord
-            }
-            if (ibest>=0) {  // found an improving solution
-              x.setCoord(ibest, xibest);
-              Messenger.getInstance().msg("AVD.minimize(x"+ibest+") new incumbent fval="+fbest,0);
-              cont = true;
-            }
-          }
-          utils.Messenger.getInstance().msg("AVD.minimize(): parallel searching yields #outer-iterations="+k,0);
-          _incValue = fbest;
-          _inc = x;
-          p = new PairObjDouble(x, fbest);  // done
-          return p;
+        PDBatchTaskExecutor pbtexecutor=null;
+				PDBTExecInitedClt pdbtclt=null;
+				try {
+					if (_pdbtInitCmd!=null) {  // run distributed
+						String host=(String) _params.get("avd.pdbthost");
+						if (host==null) host = "localhost";
+						int port = 7891;
+						Integer portI = (Integer) _params.get("avd.pdbtport");
+						if (portI!=null) port = portI.intValue();
+						pdbtclt = new PDBTExecInitedClt(host,port);
+						pdbtclt.submitInitCmd(_pdbtInitCmd);
+		        boolean cont=true;
+			      VectorIntf x = x0.newInstance();  // used to be x0.newCopy();
+				    double c = f.eval(x,_params);
+					  double fbest = c;
+			      int n = x0.getNumCoords();
+						Opt1DTask[] batch = new Opt1DTask[n];
+	          int k;
+		        for (k = 0; k < ntries && cont; k++) {
+			        cont = false;
+						  for (int i = 0; i < n; i++) {
+							  Opt1DTask ti = new Opt1DTask(f, x, _params, i, minstepsizes[i],
+								                             lowerbounds[i], upperbounds[i],
+									                           niterbnd, multfactor, ftol);
+	              batch[i] = ti;
+		          }
+			        Object[] results = pdbtclt.submitWorkFromSameHost(batch);  // send the tasks to the server
+				      // figure out best f-val and apply change to x
+					    int ibest = -1;
+						  double xibest = Double.NaN;
+							for (int i=0; i<results.length; i++) {
+								Double xi = (Double) results[i];  // result is only the new xi argument, without the value
+	              if (xi.isNaN()) continue;  // no optimization took place
+		            double xi_init = x.getCoord(i);
+			          x.setCoord(i, xi.doubleValue());
+				        double fival = f.eval(x, _params);  // this is a wasted evaluation...
+					      if (fival < fbest) {
+						      fbest = fival;
+							    xibest = xi.doubleValue();
+								  ibest = i;
+								}
+								x.setCoord(i, xi_init);  // reset coord
+							}
+							if (ibest>=0) {  // found an improving solution
+								x.setCoord(ibest, xibest);
+								Messenger.getInstance().msg("AVD.minimize(x"+ibest+") new incumbent fval="+fbest,0);
+								cont = true;
+							}
+						}
+						utils.Messenger.getInstance().msg("AVD.minimize(): parallel searching yields #outer-iterations="+k,0);
+						_incValue = fbest;
+						_inc = x;
+						p = new PairObjDouble(x, fbest);  // done
+						return p;
+					}  // run distributed mode
+					else {  // run parallel mode
+						Vector results = null;
+						pbtexecutor=PDBatchTaskExecutor.newPDBatchTaskExecutor(numthreads);
+		        boolean cont=true;
+			      VectorIntf x = x0.newInstance();  // used to be x0.newCopy();
+				    double c = f.eval(x,_params);
+					  double fbest = c;
+						List batch = new ArrayList();  // used to be Vector
+	          int k;
+		        for (k = 0; k < ntries && cont; k++) {
+			        cont = false;
+				      int n = x0.getNumCoords();
+					    batch.clear();
+						  for (int i = 0; i < n; i++) {
+							  Opt1DTask ti = new Opt1DTask(f, x, _params, i, minstepsizes[i],
+								                             lowerbounds[i], upperbounds[i],
+									                           niterbnd, multfactor, ftol);
+	              batch.add(ti);
+		          }
+			        results = pbtexecutor.executeBatch(batch);  // run in parallel
+				      // figure out best f-val and apply change to x
+					    int ibest = -1;
+						  double xibest = Double.NaN;
+							for (int i=0; i<results.size(); i++) {
+								Double xi = (Double) results.elementAt(i);  // result is only the new xi argument, not the obj value
+	              if (xi.isNaN()) continue;  // no optimization took place
+		            double xi_init = x.getCoord(i);
+			          x.setCoord(i, xi.doubleValue());
+				        double fival = f.eval(x, _params);  // wasted function evaluation
+					      if (fival < fbest) {
+						      fbest = fival;
+							    xibest = xi.doubleValue();
+								  ibest = i;
+								}
+								x.setCoord(i, xi_init);  // reset coord
+							}
+							if (ibest>=0) {  // found an improving solution
+								x.setCoord(ibest, xibest);
+								Messenger.getInstance().msg("AVD.minimize(x"+ibest+") new incumbent fval="+fbest,0);
+								cont = true;
+							}
+						}
+						utils.Messenger.getInstance().msg("AVD.minimize(): parallel searching yields #outer-iterations="+k,0);
+						_incValue = fbest;
+						_inc = x;
+						p = new PairObjDouble(x, fbest);  // done
+						return p;
+					}
         }
         catch (ParallelException e) {
           e.printStackTrace();
           throw new OptimizerException("ParallelException occured "+
                                        "executing PDBatchTaskExecutor's methods");
         }
+				catch (Exception e) {
+					e.printStackTrace();
+					throw new OptimizerException("Exception occured: e="+e.toString());
+				}
+				finally {
+					if (pbtexecutor!=null) {
+						try {
+							pbtexecutor.shutDown();
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+						}
+					} else if (pdbtclt!=null) {
+						try {
+							pdbtclt.terminateConnection();
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				}
       }
       else {
         // solve a sequence of 1-D problems as defined in the tryorder array

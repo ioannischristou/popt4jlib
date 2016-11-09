@@ -75,6 +75,15 @@ public class EMST {
 }
 
 
+/**
+ * auxiliary class, not part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: parallel optimization library in Java</p>
+ * <p>Copyright: Copyright (c) 2005</p>
+ * <p>Company: AIT</p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
 class LinkComp implements Comparator, java.io.Serializable {
   private final static long serialVersionUID = -1777490695392533986L;
   public int compare(Object x, Object y) {

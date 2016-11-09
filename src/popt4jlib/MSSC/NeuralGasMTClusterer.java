@@ -12,14 +12,17 @@ import java.util.*;
 import java.io.Serializable;
 
 /**
- * parallel implementation of Neural Gas by Martinetz & Schulten for MSSC. The
- * algorithm has many similarities with the Det. Annealing algorithm of Rose
+ * parallel implementation of Neural Gas by Martinetz &amp; Schulten for MSSC. 
+ * The algorithm has many similarities with the Det. Annealing algorithm of Rose
  * (also implemented as a sequential algorithm in this package), but has much
  * greater parallelism potential in its update phase.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
  * <p>Company: </p>
+ * Notes:
+ * 2016-27-01: changed _docs data member from Vector to ArrayList to avoid 
+ * the useless synchronized access of Vector class. 
  * @author Ioannis T. Christou
  * @version 1.0
  */
@@ -28,21 +31,21 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
   /**
    * maintains the reference VectorIntf points to be clustered by the algorithm
    */
-  private Vector _docs;  // Vector<VectorIntf>, size=n
+  private List _docs;  // Vector<VectorIntf>, size=n
   /**
    * maintains the algorithm's parameters
    */
   private HashMap _params;
   private int[] _clusterIndices;
-  private Vector _intermediateClusters;  // Vector<Vector<Integer docid>>
-  private Vector _centers;  // Vector<VectorIntf>, size=k
+  private List _intermediateClusters;  // Vector<Vector<Integer docid>>
+  private List _centers;  // Vector<VectorIntf>, size=k
 
 
   /**
    * sole public constructor.
    */
   public NeuralGasMTClusterer() {
-    _intermediateClusters = new Vector();
+    _intermediateClusters = new ArrayList();
   }
 
 
@@ -51,14 +54,14 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
    * previously passed in the _params map (call <CODE>setParams(p)</CODE> to do
    * that).
    * These are:
-   *
-   * <li> <"neuralgasmt.TerminationCriteria",ClustererTerminationIntf> the
+   * <ul>
+   * <li> &lt;"neuralgasmt.TerminationCriteria",ClustererTerminationIntf&gt; the
    * object that will decide when to stop the iterations. Mandatory. Essentially
    * only the ClustererTerminationNumIters criterion makes sense for this
    * algorithm (the ClustererTerminationNo[Center]Move neither make sense nor
    * will they work correctly if registered with this object).
-   * <li> <"neuralgasmt.numthreads",Integer nt> optional, how many threads will
-   * be used to compute the clustering, default is 1. Note: unless the
+   * <li> &lt;"neuralgasmt.numthreads",Integer nt&gt; optional, how many threads
+   * will be used to compute the clustering, default is 1. Note: unless the
    * dimensionality of the points is high enough, or the ratio
    * num_points/num_clusters is big enough, so that the tasks to be executed in
    * parallel have enough "work" to do so that the overhead associated with
@@ -66,16 +69,18 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
    * <CODE>PDBatchTaskExecutor</CODE> is justified, it will be faster to run
    * using only 1 thread (this criterion applies to most situations where tasks
    * are executed in parallel).
-   * <li> <"neuralgasmt.seed",Long s> optional, if present, the seed for the
+   * <li> &lt;"neuralgasmt.seed",Long s&gt; optional, if present, the seed for the
    * random number generator to be used in shuffling the data vectors for
    * presentation order to the update formula. Default is null, resulting in
    * random seed each time the method is invoked.
+	 * </ul>
    * <p>
    * Also, before calling the method, the vectors to be clustered must have
-   * been added to the class object via addAllVectors(Vector<VectorIntf>) or
-   * via repeated calls to addVector(VectorIntf d), and an initial clustering
-   * must be available via a call to
-   * <CODE>setInitialClustering(Vector<VectorIntf> clusterCenters)</CODE>.
+   * been added to the class object via 
+	 * <CODE>addAllVectors(List&lt;VectorIntf&gt;)</CODE> or
+   * via repeated calls to <CODE>addVector(VectorIntf d)</CODE>, and an initial 
+	 * clustering must be available via a call to
+   * <CODE>setInitialClustering(List&lt;VectorIntf&gt; clusterCenters)</CODE>.
    * <p>
    * The method works by iteratively presenting one of the document vectors each
    * time t to the centers (ordered by distance to the cur. document vector x)
@@ -84,10 +89,10 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
    * where the sequences å(t) and ë(t) are both decreasing sequences tending to
    * zero. In this implementation, ë(t) = 1/sqrt(t) å(t) = 1/t.
    *
-   * @return Vector Vector<VectorIntf> the best centers (aka codebooks) found
-   * that minimize distortion error, ie MSSC.
+   * @return List // Vector&lt;VectorIntf&gt; the best centers (aka codebooks) 
+	 * found that minimize distortion error, ie MSSC.
    */
-  public synchronized Vector clusterVectors() throws ClustererException {
+  public synchronized List clusterVectors() throws ClustererException {
     int nt=1;
     try {
       Integer ntI = (Integer) _params.get("neuralgasmt.numthreads");
@@ -235,9 +240,9 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
    * old and slow method that also implements the Neural-Gas algorithm. This
    * method will soon be deprecated (only exists now for debugging purposes).
    * @throws ClustererException
-   * @return Vector Vector<VectorIntf center>
+   * @return List // Vector&lt;VectorIntf center&gt;
    */
-  public synchronized Vector clusterVectorsOldnSlow() throws ClustererException {
+  public synchronized List clusterVectorsOldnSlow() throws ClustererException {
     int nt=1;
     try {
       Integer ntI = (Integer) _params.get("neuralgasmt.numthreads");
@@ -304,7 +309,7 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
           }
           _centers = executor.executeBatch(uctasks);
           // 5. update _centersA
-          for (int j=0; j<k; j++) _centersA[j] = (VectorIntf) _centers.elementAt(j);
+          for (int j=0; j<k; j++) _centersA[j] = (VectorIntf) _centers.get(j);
         }
       }
       // 6. update clustering indices
@@ -326,23 +331,23 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
 
 
   /**
-   * returns a Vector<Vector<Integer docid> > representing the ids of the
+   * returns a List&lt;List&lt;Integer docid&gt; &gt; representing the ids of the
    * vectors in each cluster.
-   * @return Vector
+   * @return List  // Vector&lt;Vector&lt;Integer docid&gt; &gt;
    */
-  public synchronized Vector getIntermediateClusters() {
+  public synchronized List getIntermediateClusters() {
     // store the final clustering in _intermediateClusters
     int prev_ic_sz = _intermediateClusters.size();
-    for (int i=0; i<_centers.size(); i++) _intermediateClusters.addElement(new Vector());
+    for (int i=0; i<_centers.size(); i++) _intermediateClusters.add(new ArrayList());
     for (int i=0; i<_clusterIndices.length; i++) {
       int c = _clusterIndices[i];
-      Vector vc = (Vector) _intermediateClusters.elementAt(prev_ic_sz+c);
-      vc.addElement(new Integer(i));
+      List vc = (List) _intermediateClusters.get(prev_ic_sz+c);
+      vc.add(new Integer(i));
       _intermediateClusters.set(prev_ic_sz+c, vc);  // ensure addition
     }
     // remove any empty vectors
     for (int i=_intermediateClusters.size()-1; i>=0; i--) {
-      Vector v = (Vector) _intermediateClusters.elementAt(i);
+      List v = (List) _intermediateClusters.get(i);
       if (v==null || v.size()==0) _intermediateClusters.remove(i);
     }
     return _intermediateClusters;
@@ -357,45 +362,46 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
     return _params;
   }
 
+	
   /**
    * appends the argument to the current _docs collection.
    * @param d VectorIntf
    */
   public synchronized void addVector(VectorIntf d) {
-    if (_docs==null) _docs = new Vector();
-    _docs.addElement(d);
+    if (_docs==null) _docs = new ArrayList();
+    _docs.add(d);
   }
 
 
   /**
    * adds to the end of _docs all VectorIntf's in v.
    * Will throw class cast exception if any object in v is not a VectorIntf
-   * @param v Vector Vector<VectorIntf>
+   * @param v List // Vector&lt;VectorIntf&gt;
    */
-  public synchronized void addAllVectors(Vector v) {
+  public synchronized void addAllVectors(List v) {
     if (v==null) return;
-    if (_docs==null) _docs = new Vector();
+    if (_docs==null) _docs = new ArrayList();
     for (int i=0; i<v.size(); i++)
-      _docs.addElement((VectorIntf) v.elementAt(i));
+      _docs.add((VectorIntf) v.get(i));
   }
 
 
   /**
    * set the initial clustering centers. The vector _centers is reconstructed,
    * as well as the centers (ie deep copy is performed).
-   * @param centers Vector Vector<VectorIntf>
+   * @param centers List  // Vector&lt;VectorIntf&gt;
    * @throws ClustererException if any object in centers is not a VectorIntf
    */
-  public synchronized void setInitialClustering(Vector centers) throws ClustererException {
+  public synchronized void setInitialClustering(List centers) throws ClustererException {
     if (centers==null || centers.size()==0)
       throw new ClustererException("null or empty initial clusters vector");
     _centersA = new VectorIntf[centers.size()];
     _centers = null;  // force gc
-    _centers = new Vector();
+    _centers = new ArrayList();
     try {
       for (int i = 0; i < centers.size(); i++) {
-        _centersA[i] = ((VectorIntf) centers.elementAt(i)).newInstance();  // used to be newCopy();
-        _centers.addElement(_centersA[i]);
+        _centersA[i] = ((VectorIntf) centers.get(i)).newInstance();  // used to be newCopy();
+        _centers.add(_centersA[i]);
       }
     }
     catch (ClassCastException e) {
@@ -406,9 +412,9 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
 
   /**
    * returns the current centers.
-   * @return Vector Vector<VectorIntf center>
+   * @return List // Vector&lt;VectorIntf center&gt;
    */
-  public synchronized Vector getCurrentCenters() {
+  public synchronized List getCurrentCenters() {
     return _centers;
   }
 
@@ -416,9 +422,9 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
   /**
    * returns the current VectorIntf objects to be (or that have already been)
    * clustered.
-   * @return Vector Vector<VectorIntf doc>
+   * @return List // Vector&lt;VectorIntf doc&gt;
    */
-  public synchronized Vector getCurrentVectors() {
+  public synchronized List getCurrentVectors() {
     return _docs;
   }
 
@@ -682,7 +688,7 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
       for (int i=_starti; i<=_endi; i++) {
         int bestj = -1;
         double best_dist = Double.MAX_VALUE;
-        VectorIntf di = (VectorIntf) _docs.elementAt(i);
+        VectorIntf di = (VectorIntf) _docs.get(i);
         for (int j = 0; j < k; j++) {
           VectorIntf cj = _centersA[j];
           double dist_ij = VecUtil.getEuclideanDistance(di, cj);
@@ -876,7 +882,7 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
       final int k = _centersA.length;
       int bestj = -1;
       double best_dist = Double.MAX_VALUE;
-      VectorIntf di = (VectorIntf) _docs.elementAt(_i);
+      VectorIntf di = (VectorIntf) _docs.get(_i);
       for (int j=0; j<k; j++) {
         VectorIntf cj = _centersA[j];
         double dist_ij = VecUtil.getEuclideanDistance(di, cj);

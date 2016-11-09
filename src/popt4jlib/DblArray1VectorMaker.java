@@ -23,7 +23,7 @@ public class DblArray1VectorMaker implements Chromosome2ArgMakerIntf {
 
 
   /**
-   * Chromosome->FunctionArgument Map
+   * Chromosome --&gt; FunctionArgument Map.
    * @param chromosome Object must be double[]
    * @param params HashMap
    * @throws OptimizerException

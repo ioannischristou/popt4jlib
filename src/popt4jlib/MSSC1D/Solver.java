@@ -6,7 +6,7 @@ import java.util.*;
  * Solver class implements methods based on Dynamic Programming to solve the
  * problem of clustering a sequence of numbers among k clusters. Both serial and
  * parallel versions are provided. The solveXXXMat() methods are the fastest as
- * they are based on the native matrix represenations of clusters instead of
+ * they are based on the native matrix representations of clusters instead of
  * using Cluster and ClusterSet objects.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -202,8 +202,8 @@ public class Solver {
   /**
    * this method is the same as solveDP2() except we use numthreads threads to
    * run the inner vertical loop for the i=n-2...0 computing the k-th column
-   * values
-   * @param int numthreads
+   * values.
+   * @param numthreads int
    * @throws CException
    * @return double
    */
@@ -288,9 +288,9 @@ public class Solver {
   /**
    * this method is the same as solveDP2Parallel() using numthreads threads to
    * run the inner vertical loop for the i=n-2...0 computing the k-th column
-   * values
-   * It also doesnt' use ClusterSets, and so it's much faster.
-   * @param int numthreads
+   * values.
+   * It also doesn't use ClusterSets, and so it's much faster.
+   * @param numthreads int
    * @throws CException
    * @return double
    */
@@ -463,11 +463,21 @@ public class Solver {
   }
 
 
+	/**
+	 * return the solution cluster indices of the sorted array sequence as a 
+	 * ClusterSet object.
+	 * @return ClusterSet
+	 */
   public ClusterSet getSolutionSortedIndices() {
     return _incumbent;
   }
 
 
+	/**
+	 * return the solution cluster indices of the original array sequence as a
+	 * ClusterSet object.
+	 * @return ClusterSet
+	 */
   public ClusterSet getSolutionWOrigIndices() {
     // modify new indices to original indices
     Vector clusters = _incumbent.getClusters();
@@ -486,15 +496,44 @@ public class Solver {
     return result;
   }
 
+	
+	/**
+	 * for each of the clusters obtained, keep the smallest value in the cluster
+	 * and add them in non-descending order in the result.
+	 * @return double[]
+	 */
+	public double[] getSolutionClusterSmallestValuesSortedAsc() {
+		Vector clusters = _incumbent.getClusters();
+		double[] result = new double[clusters.size()];
+    for (int i=0; i<clusters.size(); i++) {
+      Cluster ci = (Cluster) clusters.elementAt(i);
+      Iterator it = ci.iterator();
+			double ci_minval = Double.MAX_VALUE;
+      while (it.hasNext()) {
+        Integer ii = (Integer) it.next();
+        double vii = _params.getSequenceValueAt(ii.intValue());
+				if (vii<ci_minval) ci_minval = vii;
+      }
+			result[i]=ci_minval;
+    }
+		Arrays.sort(result);
+		return result;
+	}
+	
 
-  public Vector getSolutionIndices() {
+	/**
+	 * return a List&lt;Integer&gt; where result[i] is a number in [1...k] 
+	 * indicating to which cluster the i-th original element belongs to.
+	 * @return List // ArrayList&lt;Integer&gt;
+	 */
+  public List getSolutionIndices() {
     // result vector is Vector<Integer> where
     // result[i] is a number in [1...k] indicating to which cluster the i-th
     // original element belongs to.
     final int n = _params.getSequenceLength();
     ClusterSet cs = getSolutionWOrigIndices();
-    Vector result = new Vector();
-    for (int i=0; i<n; i++) result.addElement(null);  // init.
+    ArrayList result = new ArrayList(n);
+    for (int i=0; i<n; i++) result.add(null);  // init.
     Vector clusters = cs.getClusters();
     for (int i=0; i<clusters.size(); i++) {
       Cluster ci = (Cluster) clusters.elementAt(i);
@@ -508,9 +547,17 @@ public class Solver {
   }
 
 
+	/**
+	 * return the optimal MSSC1D value computed.
+	 * @return double
+	 */
   public double getIncumbentValue() { return _incV; }
 
 
+	/**
+	 * return the total number of iterations.
+	 * @return int
+	 */
   public int getNumIters() { return _numiters; }
 
 
@@ -539,11 +586,19 @@ public class Solver {
 
   /**
    * return the matrix of dimensions n X n where [i,j] denotes the cost of the
-   * cluster containing the contiguous values of indices [i, i+1, ..., j]
+   * cluster containing the contiguous values of indices [i, i+1, ..., j].
+	 * Unfortunately, for the L1 (manhattan) norm, this computation has 
+	 * O(n^3) complexity, but for the L2 (Euclidean) norm, the computation reduces
+	 * to O(n^2) complexity, allowing the overall MSSC1D DP-algorithm based on DP
+	 * to achieve complexity O(kn^2/E) where k is the number of clusters sought
+	 * and E the number of available processing units.
    * @param p Params
    * @return double[][]
    */
   private double[][] makeAllClustersMatrix(Params p) {
+		if (p.getMetric()==Params._L2) {
+			return makeAllClustersMatrix_L2(p);  
+		}
     final int n = p.getSequenceLength();
     // final int M = p.getM();
     double res[][] = new double[n][n];
@@ -561,13 +616,13 @@ public class Solver {
           double ave = sum / (j-i+1.0);
           // now compute sum of distances from ave
           double v = 0.0;
-          for (int k=i; k<=j;k++) {
+          for (int k=i; k<=j; k++) {
             double dk = p.getMetric()==Params._L1 ?
                 Math.abs(p.getSequenceValueAt(k) - ave) :
                 (p.getSequenceValueAt(k) - ave)*(p.getSequenceValueAt(k) - ave);
             v += dk;
           }
-          if (p.getMetric()==Params._L2) v = Math.sqrt(v);
+          //if (p.getMetric()==Params._L2) v = Math.sqrt(v);
           if (v > p.getP()) res[i][j] = Double.POSITIVE_INFINITY;
           else res[i][j] = v;
         }
@@ -575,5 +630,125 @@ public class Solver {
     }
     return res;
   }
+	
+	
+  /**
+   * return the matrix of dimensions n X n where [i,j] denotes the cost of the
+   * cluster containing the contiguous values of indices [i, i+1, ..., j] 
+	 * computed for L2 norm, only, allowing the overall MSSC1D DP-algorithm based 
+	 * on DP to achieve complexity O(kn^2/E) where k is the number of clusters 
+	 * sought and E the number of available processing units.
+   * @param p Params
+   * @return double[][]
+   */
+  private double[][] makeAllClustersMatrix_L2(Params p) {
+    final int n = p.getSequenceLength();
+    // first, compute some auxiliary matrices: s_{i,j}, sbar_{i,j}, shat_{i,j}
+		double s[][] = new double[n][n];
+		double sbar[][] = new double[n][n];
+		double shat[][] = new double[n][n];
+		for (int i=0; i<n; i++) { // i=rowindex
+			double vi = p.getSequenceValueAt(i);
+			s[i][i] = vi;
+			shat[i][i] = vi*vi;
+			sbar[i][i] = vi;
+			for (int j=i+1; j<n; j++) {  // j=colindex
+				s[i][j] = s[i][j-1] + p.getSequenceValueAt(j);
+				shat[i][j] = shat[i][j-1] + p.getSequenceValueAt(j)*p.getSequenceValueAt(j);
+				sbar[i][j] = (sbar[i][j-1]*(j-i) + p.getSequenceValueAt(j))/(double)(j-i+1.0);
+			}
+		}
+		// now compute c[i][j] in terms of c[i][j-1]
+    double res[][] = new double[n][n];
+    for (int i=0; i<n; i++) {  // i = row index
+      for (int j=0; j<n; j++) {  // j= col index
+        if (j<i) {
+          res[i][j] = Double.POSITIVE_INFINITY;
+        }
+				else if (j==i) {
+					res[i][j] = 0;
+				}
+        else {
+					if (Double.compare(res[i][j-1],Double.POSITIVE_INFINITY)==0) {
+						res[i][j]=Double.POSITIVE_INFINITY;
+						continue;
+					}
+					// ok, do the work
+					double aj = p.getSequenceValueAt(j);
+					double j_i = (double)(j-i);  // j-i
+					double j_i2 = j_i*j_i;  // (j-i)^2
+					double j_ip1 = (double)(j-i+1.0);  // j-i+1
+					double j_ip12 = j_ip1*j_ip1;  // (j-i+1)^2
+					double t1 = j_i2*res[i][j-1]/j_ip12; // j_i2*res[i][j-1]*res[i][j-1]/j_ip12;
+					double t2 = 2*j_i*aj*s[i][j-1]/j_ip12;
+					double t3 = 2*j_i*shat[i][j-1]/j_ip12;
+					double t4 = 2*aj*sbar[i][j-1]*j_i2/j_ip12;
+					double t5 = 2*sbar[i][j-1]*j_i*s[i][j-1]/j_ip12;
+					double t6 = (shat[i][j-1]-2*aj*s[i][j-1]+j_i*aj*aj)/j_ip12;
+					double t7 = (aj-sbar[i][j])*(aj-sbar[i][j]);
+					res[i][j] = t1 - t2 + t3 + t4 - t5 + t6 + t7;
+					/*
+					res[i][j] = Math.sqrt(
+						            t1 
+						            - t2 + t3
+						            + t4 - t5
+						            + t6
+						            + t7);
+					*/
+					if (res[i][j]>p.getP()) res[i][j]=Double.POSITIVE_INFINITY;
+        }
+      }
+    }
+    return res;
+  }
+	
+	
+	/**
+	 * test the cost-matrix creation for the L2 norm. 
+	 * Invoke as <CODE>java -cp &lt;classpath&gt; popt4jlib.MSSC1D.Solver &lt;file_name&gt; &lt;n&gt;</CODE>.
+	 * @param args String[]
+	 */
+	public static void main(String[] args) {
+		double[] arr;
+		try {
+			int n = Integer.parseInt(args[1]);
+			java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(args[0]));
+	    arr = new double[n];  // all elems init to zero
+			int i=0;
+			while (true) {
+				String line = br.readLine();
+				if (line==null) break;  // EOF
+				StringTokenizer st = new StringTokenizer(line);
+				while (st.hasMoreTokens()) {
+					double v = Double.parseDouble(st.nextToken());
+					if (i<n) arr[i] = v;
+					++i;
+				}
+			}
+			System.err.println("read total of "+i+" numbers, stored "+n+" in array.");
+			Params p = new Params(arr, Double.MAX_VALUE, 1, -1);
+			Solver s = new Solver(p);
+			long st = System.nanoTime();
+			double[][] mat1 = s.makeAllClustersMatrix(p);
+			long dur = System.nanoTime()-st;
+			System.err.println("s.makeAllClustersMatrix(p) took "+dur+" nanosecs");
+			st = System.nanoTime();
+			double[][] matF = s.makeAllClustersMatrix_L2(p);
+			dur = System.nanoTime()-st;
+			System.err.println("s.makeAllClustersMatrix_L2(p) took "+dur+" nanosecs");			
+			for (i=0; i<n; i++) {
+				for (int j=i; j<n; j++) {
+					double dij = mat1[i][j]-matF[i][j];
+					if (dij*dij>1.e-9) {
+						System.err.println("d["+i+","+j+"]="+dij);
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 }
 

@@ -7,7 +7,7 @@ import java.util.*;
 import java.io.Serializable;
 
 /**
- * computes a Fixed-Point of a contraction mapping f:R^n -> R^n, using multiple
+ * computes a Fixed-Point of a contraction mapping f:R^n --&gt; R^n, using multiple
  * threads. The use of multiple threads makes more sense when n is large, and/or
  * the function components are hard to compute. The contraction mapping must be
  * implemented as a thread-safe class (its evalCoord() method must be reentrant).
@@ -25,7 +25,7 @@ public class FixedPointApproximatorMT {
   /**
    * single constructor.
    * @param numthreads int
-   * @throws ParallelException if numthreads &lte; 0
+   * @throws ParallelException if numthreads &le; 0
    */
   public FixedPointApproximatorMT(int numthreads) throws ParallelException {
     _numThreads = numthreads;

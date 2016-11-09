@@ -11,7 +11,7 @@ import java.util.TreeSet;
 import parallel.ParallelException;
 
 /**
- * represents a node in the B&B tree of the hybrid B&B - GASP scheme for
+ * represents a node in the B&amp;B tree of the hybrid B&amp;B - GASP scheme for
  * packing problems. It implements the Comparable interface as
  * <CODE>BBNode[1,2]</CODE> objects enter a priority queue (<CODE>BBQueue</CODE>)
  * from which nodes are selected for processing (passing them to the
@@ -29,8 +29,8 @@ import parallel.ParallelException;
 abstract class BBNodeBase implements Comparable, Runnable {
   private Set _nodes = null;  // TreeSet<Node node> set of active nodes in current soln.
   private int _numChildren;
-  private BBNodeBase _parent;  // node's parent
-  private BBTree _master;  // pointer to book-keeping structure
+  final private BBNodeBase _parent;  // node's parent
+  final private BBTree _master;  // pointer to book-keeping structure
   private boolean _isDone;  // indicates if node is fathomed
   private int _id;
   protected double _bound=-1.0;  // needs to be protected instead of private
@@ -40,11 +40,11 @@ abstract class BBNodeBase implements Comparable, Runnable {
   /**
    * Sole constructor of a BBNodeBase object. Clients are not expected to
    * create such objects which are instead created dynamically through the
-   * B&ampB process.
+   * B&amp;B process.
    * @param master BBTree the master BBTree object of which this is a node.
    * @param r Set // Set&lt;Node&gt; the set of (graph) nodes to be added to the 
 	 * nodes of the parent to represent a new partial solution.
-   * @param parent BBNodeBase the parent BB-node in the B&ampB tree construction process.
+   * @param parent BBNodeBase the parent BB-node in the B&amp;B tree construction process.
    * @throws PackingException if the second argument is non-null but the third
    * argument is null.
    */
@@ -142,7 +142,7 @@ abstract class BBNodeBase implements Comparable, Runnable {
 	/**
 	 * recursive method, only invoked from the setDone*() methods of this class.
 	 * Its purpose is to eventually notify the <CODE>BBQueue</CODE> thread that
-	 * the B&ampB tree construction process has finished, so as to exit its run-
+	 * the B&amp;B tree construction process has finished, so as to exit its run-
 	 * loop.
 	 */
   final protected void notifyDone() {

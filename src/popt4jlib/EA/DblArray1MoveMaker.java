@@ -29,9 +29,9 @@ public class DblArray1MoveMaker implements NewChromosomeMakerIntf {
    * random "move" from the current chromosome argument passed in as first
    * argument. The parameters passed in the second argument are as follows:
 	 * <ul>
-   * <li> &lt;"dea.movesigma", Double v&gt; optional, the &delta value to use as &sigma when
+   * <li> &lt;"dea.movesigma", Double v&gt; optional, the &delta; value to use as &sigma; when
    * determining the distance to move in each dimension. Default is 1.0.
-   * <li> &lt;"dea.movesigma$i$", Double v&gt; optional, the &delta value to use as &sigma when
+   * <li> &lt;"dea.movesigma$i$", Double v&gt; optional, the &delta; value to use as &sigma; when
    * determining the distance to move in the i-th dimension. Default is null.
    * <li> &lt;"dea.minallelevalue", Double v&gt; optional, the min. value that any
    * component of the returned vector may assume.
@@ -42,16 +42,16 @@ public class DblArray1MoveMaker implements NewChromosomeMakerIntf {
    * <li> &lt;"dea.maxallelevalue"+$i$, Double v&gt; optional, the max. value that the
    * i-th comp. of the returned vector may assume (i={0,1,...nd.intValue()-1})
    * </ul>
-	 * <br>The "local" constraints can only impose more strict constraints on the
+	 * <p>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
-   * the domain of the variable wider.</br>
-	 * <p>Notice that the &sigma values are used in determining the variance of 
+   * the domain of the variable wider.</p>
+	 * <p>Notice that the &sigma; values are used in determining the variance of 
 	 * the Gaussian distribution from which the random distance measures are
 	 * computed along each dimension.</p>
    * @param chromosome Object must be a double[].
    * @param params HashMap see discussion above
    * @throws OptimizerException
-   * @return Object a double[]
+   * @return Object double[]
    */
   public Object createNewChromosome(Object chromosome, HashMap params) throws OptimizerException {
     double[] arg = (double[]) chromosome;  // chromosome is a double[] array

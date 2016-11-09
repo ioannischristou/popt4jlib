@@ -25,10 +25,12 @@ public class RastriginFunctionGrad implements VecFunctionIntf {
    * evaluates the Rastrigin function gradient at the specified point x.
    * @param x VectorIntf
    * @param p HashMap must contain the following parameters:
-   * <li> <"A", Double val> the value of the parameter A in the defn of the
-   * Rastrigin Function (<CODE>tests.RastriginFunction</CODE>
-   * <li> <"w", Double val> the value of the parameter w in the defn of the
-   * Rastrigin Function (<CODE>tests.RastriginFunction</CODE>
+	 * <ul>
+   * <li> &lt;"A", Double val&gt; the value of the parameter A in the defn of the
+   * Rastrigin Function (<CODE>tests.RastriginFunction</CODE>)
+   * <li> &lt;"w", Double val&gt; the value of the parameter w in the defn of the
+   * Rastrigin Function (<CODE>tests.RastriginFunction</CODE>)
+	 * </ul>
    * @return VectorIntf
    * @throws IllegalArgumentException if any of the arguments does not adhere
    * to the specifications.

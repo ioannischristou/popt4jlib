@@ -25,8 +25,9 @@ public class GradApproximatorTest {
 
 
   /**
-   * invoke as <CODE>java -cp &lt;classpath&gt; tests.GradApproximatorTest &lt;params_file&gt; &lt;x_1&gt; ... &lt;x_n&gt;
+   * invoke as <CODE>java -cp &lt;classpath&gt; tests.GradApproximatorTest &lt;params_file&gt; &lt;x_1&gt; ... &lt;x_n&gt;</CODE>
    * where the params_file must contain the following:
+	 * <ul>
    * <li> class,test.function, &lt;fullclassname&gt; the name of the function whose
    * gradient is to be approximated (implementing the <CODE>popt4jlib.FunctionIntf</CODE>)
    * interface.
@@ -40,6 +41,7 @@ public class GradApproximatorTest {
    * The rest of the parameters are the values for each of the variables at the
    * point in $$R^n$$ at which the gradient (and its approximation via the
    * <CODE>analysis.GradApproximator</CODE> class) will be computed.
+	 * </ul>
    * @param args String[]
    */
   public static void main(String[] args) {

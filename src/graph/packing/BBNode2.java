@@ -8,7 +8,7 @@ import popt4jlib.LocalSearch.*;
 import java.util.*;
 
 /**
- * represents a node in the B&B tree of the hybrid B&B - GASP scheme for the
+ * represents a node in the B&amp;B tree of the hybrid B&amp;B - GASP scheme for the
  * 2-packing problem. It implements the Comparable interface as
  * <CODE>BBNode2</CODE> objects enter a priority queue (<CODE>BBQueue</CODE>)
  * from which nodes are selected for processing (passing them to the
@@ -28,11 +28,11 @@ class BBNode2 extends BBNodeBase {
   /**
    * Sole constructor of a BBNode2 object. Clients are not expected to
    * create such objects which are instead created dynamically through the
-   * B&B process.
+   * B&amp;B process.
    * @param master BBTree the master BBTree object of which this is a node.
-   * @param r Set Set<Node> the set of (graph) nodes to be added to the nodes
+   * @param r Set Set&lt;Node&gt; the set of (graph) nodes to be added to the nodes
    * of the parent to represent a new partial solution.
-   * @param parent BBNode2 the parent BB-node in the B&B tree construction process.
+   * @param parent BBNode2 the parent BB-node in the B&amp;B tree construction process.
    * @throws PackingException if the second argument is non-null but the third
    * argument is null.
    */
@@ -415,9 +415,10 @@ class BBNode2 extends BBNodeBase {
 
 
   /**
-   * return Set<Set<Node> > of all maximal nodesets that can be added together
-   * to the current active _nodes set.
+   * return Set&lt;Set&lt;Node&gt; &gt; of all maximal nodesets that can be added 
+	 * together to the current active _nodes set.
    * @return Set
+	 * @throws ParallelException
    */
   private Set getBestNodeSets2Add() throws ParallelException {
     int kmax = getMaster().getMaxAllowedItersInGBNS2A();
@@ -515,9 +516,10 @@ class BBNode2 extends BBNodeBase {
 
 
   /**
-   * return the Set<Node> that are the best node(s) to add given the current
+   * return the Set&lt;Node&gt; that are the best node(s) to add given the current
    * active _nodes set. This is the set of nodes that are free to cover and
    * has the least number of "free" NNBors().
+	 * @throws ParallelException
    * @return Set
    */
   private Set getBestNodes2Add() throws ParallelException {
@@ -584,7 +586,8 @@ class BBNode2 extends BBNodeBase {
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
-   * @param active Set  // Set<Node>
+   * @param active Set  // Set&lt;Node&gt;
+	 * @throws ParallelException
    * @return boolean // true iff nj can be added to active
    */
   private boolean isFree2Cover(Node nj, Set active) throws ParallelException {
