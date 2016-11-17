@@ -351,16 +351,17 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase impl
 									                           niterbnd, multfactor, ftol);
 	              batch[i] = ti;
 		          }
-			        Object[] results = pdbtclt.submitWorkFromSameHost(batch);  // send the tasks to the server
+			        Object[] results = pdbtclt.submitWorkFromSameHost(batch,1);  // send the tasks to the server
 				      // figure out best f-val and apply change to x
 					    int ibest = -1;
 						  double xibest = Double.NaN;
 							for (int i=0; i<results.length; i++) {
-								Double xi = (Double) results[i];  // result is only the new xi argument, without the value
+								PairSer pi = (PairSer) results[i];
+								Double xi = (Double) pi.getFirst();
 	              if (xi.isNaN()) continue;  // no optimization took place
 		            double xi_init = x.getCoord(i);
 			          x.setCoord(i, xi.doubleValue());
-				        double fival = f.eval(x, _params);  // this is a wasted evaluation...
+				        double fival = ((Double) pi.getSecond()).doubleValue();  // used to be f.eval(x, _params);  
 					      if (fival < fbest) {
 						      fbest = fival;
 							    xibest = xi.doubleValue();
@@ -404,11 +405,12 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase impl
 					    int ibest = -1;
 						  double xibest = Double.NaN;
 							for (int i=0; i<results.size(); i++) {
-								Double xi = (Double) results.elementAt(i);  // result is only the new xi argument, not the obj value
+								PairSer pi = (PairSer) results.get(i);
+								Double xi = (Double) pi.getFirst();
 	              if (xi.isNaN()) continue;  // no optimization took place
 		            double xi_init = x.getCoord(i);
 			          x.setCoord(i, xi.doubleValue());
-				        double fival = f.eval(x, _params);  // wasted function evaluation
+				        double fival = ((Double) pi.getSecond()).doubleValue();  // used to be f.eval(x, _params);
 					      if (fival < fbest) {
 						      fbest = fival;
 							    xibest = xi.doubleValue();
@@ -470,11 +472,15 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase impl
             if (j==-1)  // try some random index to optimize
               j = RndUtil.getInstance().getRandom().nextInt(x0.getNumCoords());
             try {
-              double xj_opt = onedopt.argmin(f, x, _params, j, minstepsizes[j],
+              PairSer result = onedopt.argmin(f, x, _params, j, minstepsizes[j],
                                              lowerbounds[j], upperbounds[j],
                                              niterbnd, multfactor, ftol);
+							double xj_opt = ((Double)result.getFirst()).doubleValue();
               x.setCoord(j, xj_opt);
-              double fx = f.eval(x, _params);
+              // double fx = f.eval(x, _params);
+							// itc 20161116: no need to evaluate function again, as the result
+							// is already available in the result pair!
+							double fx = ((Double) result.getSecond()).doubleValue();
               if (fx < _incValue) {
                 _inc = x.newInstance();  // used to be x.newCopy();
                 _incValue = fx;
@@ -591,15 +597,16 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase impl
     /**
      * execute the OneDStepQuantumOptimizer.argmin() method and return the arg
      * min for the given variable whose index was specified in the constructor.
-     * @return Serializable a Double object (or null if it fails)
+     * @return Serializable a PairSer object holding the argument and the 
+		 * objective value found (or null if it fails)
      */
     public Serializable run() {
       try {
-        double xjopt = _opter.argmin(_f, _x0, _params, _j, _stepsize,
+        PairSer result = _opter.argmin(_f, _x0, _params, _j, _stepsize,
                                      _lowerbound, _upperbound, _niterbnd,
                                      _multfactor, _ftol);
-        if (_opter.getDir()==-2) return new Double(Double.NaN);
-        else return new Double(xjopt);
+        if (_opter.getDir()==-2) return new PairSer(new Double(Double.NaN), new Double(Double.NaN));
+        else return result;
       }
       catch (Exception e) {
         e.printStackTrace();

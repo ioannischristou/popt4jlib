@@ -22,7 +22,8 @@ import java.io.*;
  */
 class DBBNode1 implements Comparable, TaskObject {
 	
-  private Set _nodes = null;  // TreeSet<Node node> set of active nodes in current soln.
+  //private Set _nodes = null;  // TreeSet<Node> set of active nodes in current soln.
+	private Set _nodeids = null;  // HashSet<Integer> set of active node ids in current soln.
 	private int _lvl;  // node's current level
 	private int _startLvl;  // the starting level from which to start counting 
 	                        // to see if current level implies distributing children
@@ -36,7 +37,7 @@ class DBBNode1 implements Comparable, TaskObject {
 	/**
 	 * defines a multiplicative fudge factor by which the "best cost" of
 	 * graph-nodes is allowed to be "over" so as to still be considered "best" for
-	 * inclusion in the <CODE>getBestNodes2Add(BBNode1)</CODE> method and further
+	 * inclusion in the <CODE>getBestNodes2Add(DBBNode1)</CODE> method and further
 	 * consideration. This value is allowed to change until a call to
 	 * <CODE>disallowFFChanges()</CODE> is made by any thread.
 	 */
@@ -60,14 +61,15 @@ class DBBNode1 implements Comparable, TaskObject {
    * Sole constructor of a DBBNode1 object. Clients are not expected to
    * create such objects which are instead created dynamically through the
    * B&amp;B process.
-   * @param r Set // Set&lt;Node&gt; the set of (graph) nodes to be added to the
-	 * nodes of the parent to represent a new partial solution
+   * @param r Set // Set&lt;Integer&gt; the set of (graph) node ids to be added 
+	 * to the nodes of the parent to represent a new partial solution
 	 * @param lvl int the depth of the node (level) in the tree
 	 * @param startlvl int the level of the tree at which execution on current 
 	 * thread started
    */
   DBBNode1(Set r, int lvl, int startlvl) {
-		_nodes = r;
+		// _nodes = r;
+		_nodeids = r;
 		_lvl = lvl;
 		_startLvl = startlvl;
   }
@@ -110,7 +112,8 @@ class DBBNode1 implements Comparable, TaskObject {
       while (true) {
         candidates = getBestNodeSets2Add();
         if (candidates != null && candidates.size() == 1) {
-          _nodes.addAll( (Set) candidates.iterator().next());
+          //_nodes.addAll( (Set) candidates.iterator().next());
+					_nodeids.addAll( (Set) candidates.iterator().next());
         }
         else break;
       }
@@ -196,13 +199,16 @@ class DBBNode1 implements Comparable, TaskObject {
 						long start_time = System.currentTimeMillis();
             try {
               // convert s to Set<Integer>
-              Set nodeids = new IntSet();
+              /*
+							Set nodeids = new IntSet();
               Iterator iter = _nodes.iterator();
               while (iter.hasNext()) {
                 Node n = (Node) iter.next();
                 Integer nid = new Integer(n.getId());
                 nodeids.add(nid);
               }
+							*/
+							Set nodeids = new IntSet(_nodeids);
 							_master.incrNumDLSPerformed();
               // now do the local search
               DLS dls = new DLS();
@@ -230,13 +236,17 @@ class DBBNode1 implements Comparable, TaskObject {
               PairObjDouble pod = dls.minimize(f);
               Set sn = (Set) pod.getArg();
               if (sn != null && -pod.getDouble() > getCost()) {
-                _nodes.clear();
+                /*
+								_nodes.clear();
                 Iterator sniter = sn.iterator();
                 while (sniter.hasNext()) {
                   Integer id = (Integer) sniter.next();
                   Node n = _master.getGraph().getNodeUnsynchronized(id.intValue());
                   _nodes.add(n);
                 }
+								*/
+								_nodeids.clear();
+								_nodeids.addAll(sn);
                 // record new incumbent
                 _master.setIncumbent(this);
 								_master.incrementTotLeafNodes();
@@ -271,8 +281,9 @@ class DBBNode1 implements Comparable, TaskObject {
   }
 
 	
-	final Set getNodes() {
-		return _nodes;
+	final Set getNodeIds() {
+		//return _nodes;
+		return _nodeids;
 	}
 	
 
@@ -329,8 +340,9 @@ class DBBNode1 implements Comparable, TaskObject {
    */
   public int hashCode() {
     // return _id;
-    return getNodes().size();
-  }
+    //return getNodes().size();
+		return getNodeIds().size();
+	}
 
 
 	/**
@@ -339,9 +351,12 @@ class DBBNode1 implements Comparable, TaskObject {
 	 */
 	double getCost() {
 		double res = 0.0;
-		Iterator it = getNodes().iterator();
+		Iterator it = getNodeIds().iterator();
+		Graph g = DBBTree.getInstance().getGraph();
 		while (it.hasNext()) {
-			Node ni = (Node) it.next();
+			//Node ni = (Node) it.next();
+			Integer nid = (Integer) it.next();
+			Node ni = g.getNode(nid.intValue());
 			Double niwD = ni.getWeightValueUnsynchronized("value");  // used to be ni.getWeightValue("value");
 			double niw = niwD==null ? 1.0 : niwD.doubleValue();
 			res += niw;
@@ -356,10 +371,15 @@ class DBBNode1 implements Comparable, TaskObject {
 	 * @return Set // Set&lt;Node&gt;
 	 */
   private Set getForbiddenNodes() {
-    Set forbidden = new HashSet(getNodes());
-    Iterator it = getNodes().iterator();
-    while (it.hasNext()) {
-      Node n = (Node) it.next();
+		Graph g = DBBTree.getInstance().getGraph();
+    Set forbidden = new HashSet();
+    //Iterator it = getNodes().iterator();
+		Iterator it = getNodeIds().iterator();
+		while (it.hasNext()) {
+      Integer nid = (Integer) it.next();
+			Node n = g.getNodeUnsynchronized(nid.intValue());
+			forbidden.add(n);
+			//Node n = (Node) it.next();
       Set nnbors = n.getNborsUnsynchronized();  // used to be synchronized
       forbidden.addAll(nnbors);
     }
@@ -374,10 +394,14 @@ class DBBNode1 implements Comparable, TaskObject {
    */
   protected double getBound() {
     if (_bound>=0) return _bound;  // cache
-		Iterator nodesit = getNodes().iterator();
+		Graph g = DBBTree.getInstance().getGraph();
+		//Iterator nodesit = getNodes().iterator();
+		Iterator nodesit = getNodeIds().iterator();
 		double res = 0.0;
 		while (nodesit.hasNext()) {
-			Node ni = (Node) nodesit.next();
+			//Node ni = (Node) nodesit.next();
+			Integer nid = (Integer) nodesit.next();
+			Node ni = g.getNodeUnsynchronized(nid);
 			Double niw = ni.getWeightValueUnsynchronized("value");  // used to be synchronized
 			if (niw==null) res += 1.0;  // nodes without weights have weight value 1
 			                            // as in the max. independent set problem.
@@ -390,7 +414,7 @@ class DBBNode1 implements Comparable, TaskObject {
 		// of the Double-Check Locking idiom ("Single-Time Locking per thread" idiom)
 		// was implemented; for this reason Graph implements no such unsynch. version
 		DBBTree master = DBBTree.getInstance();
-		Double max_node_weightD = master.getGraph().getMaxNodeWeight("value",forbidden);
+		Double max_node_weightD = g.getMaxNodeWeight("value",forbidden);
 		double mnw = max_node_weightD==null ? 1.0 : max_node_weightD.doubleValue();
     res += (master.getGraphSize()-forbidden.size())*mnw/2.0;  // itc 2015-02-11: added the division by 2
     _bound = res;
@@ -400,7 +424,7 @@ class DBBNode1 implements Comparable, TaskObject {
 
 	/**
 	 * disallow changes to <CODE>_ff</CODE>. Called only from the
-	 * <CODE>BBGASPAcker</CODE> class.
+	 * <CODE>DBBGASPAcker</CODE> class.
 	 */
 	static synchronized void disallowFFChanges() {
 		_ffAllowed2Change = false;
@@ -409,7 +433,7 @@ class DBBNode1 implements Comparable, TaskObject {
 
 	/**
 	 * set the value of <CODE>_ff</CODE> field. Called only from the
-	 * <CODE>BBGASPPacker</CODE> class, before any BBNode1 objects are constructed
+	 * <CODE>DBBGASPPacker</CODE> class, before any DBBNode1 objects are constructed
 	 * or executed on threads.
 	 * @param val double
 	 */
@@ -420,7 +444,7 @@ class DBBNode1 implements Comparable, TaskObject {
 
   /**
    * return Set&lt;Set&lt;Node&gt; &gt; of all maximal nodesets that can be added
-	 * together to the current active <CODE>_nodes</CODE> set.
+	 * together to the current active <CODE>_nodeIds</CODE> set.
 	 * Note:
 	 * <br>2014-07-22 modified Vector store to ArrayList store to enhance
 	 * multi-threading speed.
@@ -698,8 +722,16 @@ class DBBNode1 implements Comparable, TaskObject {
 	 * @return boolean true iff nodes can be added to the current solution
 	 */
   private boolean isFeas(Set nodes) {
-    Set allnodes = new HashSet(getNodes());
-    Iterator it = nodes.iterator();
+    //Set allnodes = new HashSet(getNodes());
+    Set allnodes = new HashSet();
+		Iterator itids = _nodeids.iterator();
+		Graph g = DBBTree.getInstance().getGraph();
+		while (itids.hasNext()) {
+			Integer nid = (Integer) itids.next();
+			Node ni = g.getNodeUnsynchronized(nid.intValue());
+			allnodes.add(ni);
+		}
+		Iterator it = nodes.iterator();
     while (it.hasNext()) {
       Node n = (Node) it.next();
       if (isFree2Cover(n, allnodes))
@@ -739,13 +771,20 @@ class DBBNode1 implements Comparable, TaskObject {
   /* debug routine */
   private String printNodes() {
     String res = "[";
-    Iterator it = getNodes().iterator();
+    /*Iterator it = getNodes().iterator();
     while (it.hasNext()) {
       Node n = (Node) it.next();
       res += n.getId();
       if (it.hasNext()) res+= ", ";
     }
-    res += "]";
+		*/
+		Iterator it = getNodeIds().iterator();
+    while (it.hasNext()) {
+      Integer nid = (Integer) it.next();
+			res += nid.toString();
+      if (it.hasNext()) res+= ", ";
+    }
+		res += "]";
     return res;
   }
 }

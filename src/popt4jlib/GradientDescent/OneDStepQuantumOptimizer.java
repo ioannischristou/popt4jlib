@@ -3,22 +3,25 @@ package popt4jlib.GradientDescent;
 
 import popt4jlib.*;
 import parallel.ParallelException;
+import utils.PairSer;
 import java.util.HashMap;
 
 /**
  * the class implements a minimization method for a function alone one of its
  * variables, using an initial starting point x0, and a quantum step-size that
- * the variable must be constrained to take values on multiples of.
+ * the variable must be constrained to take values on multiples of. The class
+ * is not thread-safe (reentrant).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
 public final class OneDStepQuantumOptimizer {
   private int _dir=0;
-
+	private double _val=Double.NaN;
+	
   /**
    * public no-arg no-op constructor.
    */
@@ -34,6 +37,15 @@ public final class OneDStepQuantumOptimizer {
   public int getDir() {
     return _dir;
   }
+	
+	
+	/**
+	 * the best objective value found.
+	 * @return double
+	 */
+	public double getVal() {
+		return _val;
+	}
 
 
   /**
@@ -41,10 +53,10 @@ public final class OneDStepQuantumOptimizer {
    * variable, under the box-constraints lowerbound &le; x_j &le; upperbound, and
    * also under the constraint that x_j = x0_j + k*stepquantum where k is an
    * integer quantity.
-   * @param f FunctionIntf
-   * @param x0 VectorIntf
-   * @param fparams HashMap
-   * @param varindex int
+   * @param f FunctionIntf the function to optimize
+   * @param x0 VectorIntf the initial point
+   * @param fparams HashMap the function params
+   * @param varindex int the dimension along which to minimize (range in [0,...n))
    * @param stepquantum double
    * @param lowerbound double
    * @param upperbound double
@@ -56,9 +68,9 @@ public final class OneDStepQuantumOptimizer {
    * are considered the same
    * @throws OptimizerException
    * @throws ParallelException
-   * @return double
+   * @return PairSer  // PairSer&lt;Double arg, Double val&gt;
    */
-  public double argmin(FunctionIntf f, VectorIntf x0, HashMap fparams,
+  public PairSer argmin(FunctionIntf f, VectorIntf x0, HashMap fparams,
                            int varindex, double stepquantum,
                            double lowerbound, double upperbound,
                            int niterbnd, int multfactor, double ftol) throws OptimizerException, ParallelException {
@@ -86,10 +98,13 @@ public final class OneDStepQuantumOptimizer {
       if (_dir>0) {
         if (news>=upperbound) {  // return closest feasible point to upperbound
           long k = (long) Math.floor((upperbound-x0.getCoord(varindex))/stepquantum);
-          if (x instanceof PoolableObjectIntf) {
+          double xvarindex = x0.getCoord(varindex) + k*stepquantum;
+					x.setCoord(varindex, xvarindex);
+					_val = f.eval(x, fparams);
+					if (x instanceof PoolableObjectIntf) {
 						((PoolableObjectIntf) x).release();
 					}
-					return x0.getCoord(varindex) + k*stepquantum;
+					return new PairSer(new Double(xvarindex),new Double(_val));
         }
         s += step;
         if (prevdir<0 && step>stepquantum) {
@@ -100,10 +115,13 @@ public final class OneDStepQuantumOptimizer {
       else {  // _dir<0
         if (news<=lowerbound) {  // return closest feasible point to lowerbound
           long k = (long) Math.ceil((x0.getCoord(varindex)-lowerbound)/stepquantum);
+					double xvarindex = x0.getCoord(varindex) - k*stepquantum;
+					x.setCoord(varindex, xvarindex);
+					_val = f.eval(x, fparams);
           if (x instanceof PoolableObjectIntf) {
 						((PoolableObjectIntf) x).release();
 					}
-          return x0.getCoord(varindex) - k*stepquantum;
+          return new PairSer(new Double(xvarindex), new Double(_val));
         }
         s -= step;
         if (prevdir>0 && step>stepquantum) {
@@ -114,10 +132,14 @@ public final class OneDStepQuantumOptimizer {
       prevdir = _dir;
     }  // while true
     if (Math.abs(sqt-x0.getCoord(varindex))<=ftol) _dir = -2;  // indicate no change
-    if (x instanceof PoolableObjectIntf) {
+    if (Double.isNaN(_val)) {  // must evaluate at sqt
+			x.setCoord(varindex, sqt);
+			_val = f.eval(x, fparams);
+		}
+		if (x instanceof PoolableObjectIntf) {
 			((PoolableObjectIntf) x).release();
 		}
-    return sqt;
+    return new PairSer(sqt,_val);
   }
 
 
@@ -147,7 +169,8 @@ public final class OneDStepQuantumOptimizer {
       double cup = f.eval(x, params);
       if (c > cup + ftol) {
         _dir = 1;
-        return s;
+				_val = cup;
+        return s + eps;  // itc 20161116: used to be return s;
       }
       else if (Math.abs(c - cup) <= ftol) { // Double.compare(c,cup)==0
         double s2 = s;
@@ -162,17 +185,19 @@ public final class OneDStepQuantumOptimizer {
         }
         if (cnew < c - ftol) {
           _dir = 1;
+					_val = cnew;
           return s2;
         }
-        else { // cnew > c - ftol OR s2 >= ub
+        else { // cnew >= c - ftol OR s2 >= ub
           if (s2 >= ub) { // irrespective of "trend to decrease further or not"
             _dir = 0;
+						_val = Double.NaN;  // not specified at this point
             return ub;
           }
-          // ok, cnew > c - ftol, so to the starting point, and go left
+          // ok, cnew >= c - ftol, so to the starting point, and go left
           s2 = s;
           x.setCoord(j, s2);
-          cnew = f.eval(x, params);
+          cnew = c;  // itc 20161116: used to be cnew = f.eval(x, params);
           while (Math.abs(c - cnew) <= ftol && s2 > lb) { // Double.compare(cnew,c)==0
             s2 -= eps;
             x.setCoord(j, s2);
@@ -181,12 +206,16 @@ public final class OneDStepQuantumOptimizer {
           }
           if (cnew < c - ftol) {
             _dir = -1;
+						_val = cnew;
             return s2;
           }
-          else { // cnew > c + ftol OR s2 <= lb
+          else { // cnew >= c + ftol OR s2 <= lb
             _dir = 0;
-            if (s2 <= lb)
-              return lb;
+            if (s2 <= lb) {
+              _val = Double.NaN;  // value unspecified 
+							return lb;
+						}
+						_val = c;
             return s;
           }
         }
@@ -196,7 +225,8 @@ public final class OneDStepQuantumOptimizer {
       double cdown = f.eval(x, params);
       if (c > cdown + ftol) {
         _dir = -1;
-        return s;
+				_val = cdown;
+        return s - eps;  // itc 20161116: used to be return s;
       }
       else if (Math.abs(c - cdown) <= ftol) { // Double.compare(c,cdown)==0
         double s2 = s;
@@ -211,17 +241,19 @@ public final class OneDStepQuantumOptimizer {
         }
         if (cnew < c - ftol) {
           _dir = -1;
+					_val = cnew;
           return s2;
         }
         else { // cnew > c - ftol OR s2<=lb
           if (s2 <= lb) { // irrespective of "trend to decrease further or not"
             _dir = 0;
+						_val = Double.NaN;
             return lb;
           }
           // ok, cnew > c - ftol, so to the starting point, and go right
           s2 = s;
           x.setCoord(j, s2);
-          cnew = f.eval(x, params);
+          cnew = c; // itc 20161116: used to be cnew = f.eval(x, params);
           while (Math.abs(cnew - c) <= ftol && s2 < ub) { // Double.compare(cnew,c)==0
             s2 += eps;
             x.setCoord(j, s2);
@@ -231,18 +263,23 @@ public final class OneDStepQuantumOptimizer {
           }
           if (cnew < c - ftol) {
             _dir = 1;
+						_val = cnew;
             return s2;
           }
           else { // cnew > c
             _dir = 0;
-            if (s2 >= ub)
-              return ub;
+            if (s2 >= ub) {
+              _val = Double.NaN;
+							return ub;
+						}
+						_val = c;
             return s;
           }
         }
       }
       // if we reach here, we're optimal
       _dir = 0;
+			_val = c;
       return s;
     }
     finally {

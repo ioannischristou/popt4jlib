@@ -494,8 +494,8 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 		
 		/**
 		 * no need to synchronize any block in this method, as it is already 
-		 * synchronized on _srv since it's only called by the 
-		 * <CODE>_srv.addNewWorkerConnection(s)</CODE> method.
+		 * synchronized on _srv since it's only called by the enclosing server's 
+		 * <CODE>addNewWorkerConnection(s)</CODE> method.
 		 * @throws IOException 
 		 */
 		private void init() throws IOException {

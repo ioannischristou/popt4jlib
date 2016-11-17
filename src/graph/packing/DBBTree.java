@@ -24,7 +24,6 @@ final class DBBTree {
   private int _gsz;  // cache
   private int _maxnndeg;  // cache
   private Set _incumbent;
-  private boolean _cutNodes=false;
 	private boolean _sortBestCandsInGBNS2A = false;
   private boolean _localSearch = false;
 	private AllChromosomeMakerClonableIntf _localSearchMovesMaker = null;
@@ -35,7 +34,6 @@ final class DBBTree {
   private int _counter=0;
   private int _parLvl;
   private boolean _useMaxSubsets=true;
-  private int _recentMaxLen=-1;
   private int _tightenUpperBoundLvl=Integer.MAX_VALUE;  // obtain a tighter upper bound after this level
   private int _maxChildrenNodesAllowed=Integer.MAX_VALUE;
   private int _maxItersInGBNS2A=100000;
@@ -72,6 +70,66 @@ final class DBBTree {
 				String ccname = "DCondCntCoord_"+cchost+"_"+ccport;
 				DAccumulatorClt.setHostPort(acchost, accport);
 				_instance._condCounterClt = new DConditionCounterLLCClt(cchost, ccport, ccname);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				System.exit(-1);
+			}
+		}
+	}
+
+	
+	public static synchronized void init(Graph g, double initbound, 
+		                                   String pdahost, int pdaport, 
+																			 String cchost, int ccport,
+																			 String acchost, int accport,
+																			 boolean localsearch,
+																			 AllChromosomeMakerClonableIntf localsearchtype,
+																			 double ff,
+																			 int tightenboundlevel,
+																			 boolean usemaxsubsets,
+																			 int maxitersinGBNS2A,
+																			 boolean sortmaxsubsets,
+																			 double avgpercextranodes2add,
+																			 boolean useGWMIN2criterion,
+																			 double expandlocalsearchfactor,
+																			 double minknownbound,
+																			 int maxnodechildren,
+																			 DBBNodeComparatorIntf dbbnodecomparator) {
+		if (_instance==null) {
+			_instance = new DBBTree(g, initbound);
+			try {
+				// set-up the distributed components clients
+				PDAsynchBatchTaskExecutorClt.setHostPort(pdahost, pdaport);
+				// send the pda init-cmd
+				PDAsynchBatchTaskExecutorClt.getInstance().sendInitCmd(
+					new PDAInitDBBTreeCmd(g,initbound,
+						                    pdahost,pdaport,cchost,ccport,acchost,accport,
+				                        localsearch, localsearchtype,
+																ff, tightenboundlevel, usemaxsubsets,
+																maxitersinGBNS2A, sortmaxsubsets,
+																avgpercextranodes2add, useGWMIN2criterion,
+															  expandlocalsearchfactor, minknownbound,
+																maxnodechildren, dbbnodecomparator));
+				String ccname = "DCondCntCoord_"+cchost+"_"+ccport;
+				DAccumulatorClt.setHostPort(acchost, accport);
+				_instance._condCounterClt = new DConditionCounterLLCClt(cchost, ccport, ccname);
+				_instance.setLocalSearch(localsearch);
+				_instance.setLocalSearchType(localsearchtype);
+				if (!Double.isNaN(ff)) {
+					DBBNode1.setFF(ff);
+					DBBNode1.disallowFFChanges();
+				}
+				_instance.setTightenUpperBoundLvl(tightenboundlevel);
+				_instance.setUseMaxSubsets(usemaxsubsets);
+				_instance.setMaxAllowedItersInGBNS2A(maxitersinGBNS2A);
+				_instance.setSortBestCandsInGBNS2A(sortmaxsubsets);
+				_instance.setAvgPercExtraNodes2Add(avgpercextranodes2add);
+				_instance.setUseGWMIN24BestNodes2Add(useGWMIN2criterion);
+				_instance.setLocalSearchExpandFactor(expandlocalsearchfactor);
+				_instance.setMinKnownBound(minknownbound);
+				_instance.setMaxChildrenNodesAllowed(maxnodechildren);
+				_instance.setDBBNodeComparator(dbbnodecomparator);
 			}
 			catch (Exception e) {
 				e.printStackTrace();
@@ -169,9 +227,6 @@ final class DBBTree {
   void setUseMaxSubsets(boolean v) { _useMaxSubsets=v; }
   boolean getUseMaxSubsets() { return _useMaxSubsets; }
 
-  void setRecentMaxLen(int len) { _recentMaxLen=len; }
-  int getRecentMaxLen() { return _recentMaxLen; }
-
   void setMaxAllowedItersInGBNS2A(int iters) { _maxItersInGBNS2A=iters; }
   int getMaxAllowedItersInGBNS2A() { return _maxItersInGBNS2A; }
 
@@ -194,8 +249,6 @@ final class DBBTree {
     if (_tightenUpperBoundLvl>2 && _tightenUpperBoundLvl!=Integer.MAX_VALUE)
       _tightenUpperBoundLvl = (int) (_tightenUpperBoundLvl*0.8);
   }
-  void setCutNodes(boolean v) { _cutNodes = v; }
-  boolean getCutNodes() { return _cutNodes; }
 	
   void setLocalSearch(boolean v) { _localSearch = v; }
   boolean getLocalSearch() { return _localSearch; }
@@ -227,15 +280,11 @@ final class DBBTree {
 		double ncost = n.getCost();
     if (ncost>_bound) {
       //_incumbent = n;
-      _incumbent = new HashSet(n.getNodes());
+      _incumbent = new HashSet(n.getNodeIds());
       _bound = ncost;
       System.err.println("new soln found w/ val=" + _bound);
 			// send solution to accumulator
-			IntSet sol = new IntSet();
-			Iterator it = _incumbent.iterator();
-			while (it.hasNext()) {
-				sol.add(new Integer(((Node) it.next()).getId()));
-			}
+			IntSet sol = new IntSet(_incumbent);
 			try {
 				DAccumulatorClt.addArgDblPair(sol, ncost);
 			}

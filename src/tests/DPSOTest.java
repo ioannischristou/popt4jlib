@@ -11,7 +11,7 @@ import utils.RndUtil;
  * algorithm.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -26,8 +26,8 @@ public class DPSOTest {
 
 
   /**
-   * invoke as <CODE>java -&lt;classpath&gt; tests.DPSOTest &lt;params_file&gt; [random_seed]</CODE>
-   * where the params_file must contain the following lines:
+   * invoke as <CODE>java -&lt;classpath&gt; tests.DPSOTest &lt;params_file&gt; [random_seed] [max_num_function_evaluations]</CODE>.
+   * The params_file must contain the following lines:
 	 * <ul>
    * <li> class,dpso.function, &lt; fullclassname &gt; mandatory, specifies full
    * java class name of the function to be optimized (implementing the
@@ -60,8 +60,8 @@ public class DPSOTest {
    * seed to use for each of the $num2$ threads to use (the value num2 must
    * equal the number given for the dpso.numthreads, or 1 if no such line is
    * present). The value of num should be a positive integer.
-   * <li> class,dpso.c2amaker,&lt;fullclassname&gt;, optional, if present the full
-   * class name of the class implementing the
+   * <li> class,dpso.c2amaker,&lt;fullclassname&gt;, optional, if present the 
+	 * full class name of the class implementing the
    * <CODE>popt4jlib.Chromosome2ArgMakerIntf</CODE> interface that is
    * responsible for tranforming a chromosome Object to a function argument
    * Object. If not present, the default identity transformation is assumed.
@@ -84,6 +84,15 @@ public class DPSOTest {
    * distance from the left or the right of a given particle within which the
    * best (guiding) particle position will be sought for the computation of the
    * next position of the given particle, default is 1.
+	 * <li> class,dpso.pdbtexecinitedwrkcmd,&lt;fullclassname&gt;[args] optional, 
+	 * if present, the full class name of the initialization command to send to 
+	 * the network of workers to run function evaluation tasks, followed by the 
+	 * constructor's arguments if any; default is null, indicating no distributed 
+	 * computation.
+	 * <li> dpso.pdbthost, &lt;hostname&gt; optional, the name
+	 * of the server to send function evaluation requests, default is localhost.
+	 * <li> dpso.pdbtport, $num$ optional, the port the above server listens to 
+	 * for client requests, default is 7891.
 	 * </ul>
    * <p> Additionally, the params_file must contain any parameters required for
    * the function optimized, as well as any parameters for any of the objects

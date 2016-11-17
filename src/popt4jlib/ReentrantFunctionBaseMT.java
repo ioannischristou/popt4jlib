@@ -10,7 +10,7 @@ import java.util.*;
  * for function evaluation to execute using a different FunctionIntf object,
  * so that no calls from different threads execute on the same FunctionIntf
  * object (this way, if the eval() call modifies only NON-static data members
- * of the FunctionIntf object, there is no data race danger.)
+ * of the FunctionIntf object, there is no data race danger).
  * <p>Notice that the underlying FunctionIntf object must have a no-arg
  * constructor otherwise an exception will be thrown as no such constructor will
  * be found in order to populate the array of FunctionIntf objects that this

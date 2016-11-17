@@ -5,7 +5,7 @@ import java.util.*;
 
 /**
  * interface for local-optimization methods (methods seeking a local minimum
- * in the neighborhood of a "starting point" solution.)
+ * in the neighborhood of a "starting point" solution).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>

@@ -140,6 +140,8 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
       return null;
     }
   }
+	
+	
   /**
    * returns the current function that is being minimized (may be null)
    * @return FunctionIntf
@@ -189,6 +191,12 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
 	 * the maximum distance from the left or the right of a given particle within 
 	 * which the best (guiding) particle position will be sought for the 
 	 * computation of the next position of the given particle, default is 1.
+	 * <li> &lt;"dpso.topologyselector", ChromosomeSelectorIntf topological_selector&gt;
+	 * optional, if present defines among which of the island's sub-population 
+	 * the best (guiding) solution will be sought for the computation of the 
+	 * next position of each particle; default is the ring topology mentioned 
+	 * above (which is built-in in the private method 
+	 * <CODE>DPSOThreadAux.getBestInSubSwarm(i)</CODE>).
    * <li> &lt;"ensemblename", String name&gt; optional, the name of the 
 	 * synchronized optimization ensemble in which this DPSO object will 
 	 * participate. In case this value is non-null, then a higher-level ensemble 
@@ -680,10 +688,11 @@ class DPSOThreadAux {
       }
       //System.err.println("Island-Thread id=" + _id + " running gen=" + gen +
       //                   " popsize=" + _individuals.size());
+			if (_id==0 && gen % 10 == 0) utils.Messenger.getInstance().msg("DPSOThreadAux.runTask(): running gen=" + gen, 2);
       recvInds();
       if (_individuals.size()>0) {
         try {
-          nextGeneration();
+          nextGeneration(gen);
         }
         catch (Exception e) {
           e.printStackTrace();  // no-op
@@ -869,20 +878,25 @@ class DPSOThreadAux {
   }
 
 
-  private void nextGeneration() throws OptimizerException {
+  private void nextGeneration(int gen) throws OptimizerException {
     // 0. update each individual's velocity & position (chromosome)
     NewVelocityMakerIntf vmaker = (NewVelocityMakerIntf) _p.get("dpso.vmover");
     ChromosomeVelocityAdderIntf c2vadder = (ChromosomeVelocityAdderIntf) _p.get("dpso.c2vadder");		
 		boolean compute_val_locally = _master.getPDBTInitCmd()==null;
 		Pair[] tasks = null; 
-		if (!compute_val_locally) {
+		ChromosomeSelectorIntf topological_selector = (ChromosomeSelectorIntf) 
+			_p.get("dpso.topologyselector");
+		if (!compute_val_locally) {  // function evaluations go run distributed!
 			tasks = new Pair[_individuals.size()];
-		}
-		if (!compute_val_locally) {
 			for (int i=0; i<_individuals.size(); i++) {
 				DPSOIndividual indi = (DPSOIndividual) _individuals.get(i);
 				try {
-					Object g = getBestInSubSwarm(i);
+					Object g;
+					if (topological_selector!=null) {
+						DPSOIndividual best = topological_selector.getBestIndividual(_individuals, i, gen, _p);
+						g = best.getBestChromosome();
+					}
+					else g = getBestInSubSwarm(i);
 					Object newveli = vmaker.createNewVelocity(indi.getChromosome(),
 						                                        indi.getVelocity(),
 							                                      indi.getBestChromosome(),
@@ -922,7 +936,12 @@ class DPSOThreadAux {
 			for (int i=0; i<_individuals.size(); i++) {
 				DPSOIndividual indi = (DPSOIndividual) _individuals.get(i);
 				try {
-					Object g = getBestInSubSwarm(i);
+					Object g;
+					if (topological_selector!=null) {
+						DPSOIndividual best = topological_selector.getBestIndividual(_individuals, i, gen, _p);
+						g = best.getBestChromosome();
+					}
+					else g = getBestInSubSwarm(i);
 					Object newveli = vmaker.createNewVelocity(indi.getChromosome(),
 						                                        indi.getVelocity(),
 							                                      indi.getBestChromosome(),

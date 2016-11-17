@@ -26,8 +26,8 @@ public class DGATest {
 
 
   /**
-   * run as <CODE> java -cp &lt;classpath&gt; tests.DGATest &lt;params_file&gt; [random_seed] [maxfuncevalslimit]</CODE>
-   * where the params_file must contain lines of the following form:
+   * run as <CODE> java -cp &lt;classpath&gt; tests.DGATest &lt;params_file&gt; [random_seed] [maxfuncevalslimit]</CODE>.
+   * The params_file must contain lines of the following form:
 	 * <ul>
    * <li> class,dga.function, &lt;fullclassnameoffunction&gt; mandatory, the name
    * of the java class defining the function to be optimized
@@ -97,7 +97,15 @@ public class DGATest {
    * removed, default is 0.9.
    * <li> maxfuncevalslimit, $num$ optional, the max. number of function
    * evaluations allowed in the process.
-   *
+	 * <li> class,dga.pdbtexecinitedwrkcmd,&lt;fullclassname&gt;[args] optional, 
+	 * if present, the full class name of the initialization command to send to 
+	 * the network of workers to run function evaluation tasks, followed by the 
+	 * constructor's arguments if any; default is null, indicating no distributed 
+	 * computation.
+	 * <li> dga.pdbthost, &lt;hostname&gt; optional, the name
+	 * of the server to send function evaluation requests, default is localhost.
+	 * <li> dga.pdbtport, $num$ optional, the port the above server listens to 
+	 * for client requests, default is 7891.
    * <li> In addition, the various operators (xover, mutation, a2cmaker,
    * c2amaker, randomchromosomemaker etc.) may require additional parameters as
    * they are defined and documented in their respective class file definitions.

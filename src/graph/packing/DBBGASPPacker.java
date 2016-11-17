@@ -111,7 +111,7 @@ public final class DBBGASPPacker {
 	 * MWIS problem) where it makes much more sense to have a "fudge factor" by
 	 * which to multiply the best cost in order to determine if a node is "close
 	 * enough" to the best cost to be included in the best-candidate-nodes list.
-	 * Default value is <CODE>BBNode1._ff</CODE>  (currently set to 0.85). The
+	 * Default value is <CODE>DBBNode1._ff</CODE>  (currently set to 0.85). The
 	 * smaller this value, the longer it will take for the search to complete,
 	 * with potentially better solutions found.
 	 * <li> minknownbound, $num$ optional, a known bound to the problem at hand,
@@ -216,51 +216,75 @@ public final class DBBGASPPacker {
 				if (params.containsKey("acchost")) acchost = (String) params.get("acchost");
 				int accport = 7900;
 				if (params.containsKey("accport")) accport = ((Integer) params.get("accport")).intValue();
-        DBBTree.init(g, bound, pdahost, pdaport, cchost, ccport, acchost, accport);
-        DBBTree t = DBBTree.getInstance();
-        Boolean cutNodesB = (Boolean) params.get("cutnodes");
-        if (cutNodesB != null) t.setCutNodes(cutNodesB.booleanValue());
+        //DBBTree.init(g, bound, pdahost, pdaport, cchost, ccport, acchost, accport);
+        //DBBTree t = DBBTree.getInstance();
         Boolean localSearchB = (Boolean) params.get("localsearch");
-        if (localSearchB != null) t.setLocalSearch(localSearchB.booleanValue());
+        //if (localSearchB != null) t.setLocalSearch(localSearchB.booleanValue());
+				boolean localsearch = false;
+				if (localSearchB!=null) localsearch = localSearchB.booleanValue();
 				AllChromosomeMakerClonableIntf maker = (AllChromosomeMakerClonableIntf) params.get("localsearchtype");
-				if (maker!=null) t.setLocalSearchType(maker);
+				//if (maker!=null) t.setLocalSearchType(maker);
 				Double ffD = (Double) params.get("ff");
+				/*
 				if (ffD!=null) {
 					DBBNode1.setFF(ffD.doubleValue());
 					DBBNode1.disallowFFChanges();
 				}
-        Integer tlvl = (Integer) params.get("tightenboundlevel");
-        if (tlvl != null && tlvl.intValue() >= 1) t.setTightenUpperBoundLvl(
-					tlvl.intValue());
-        Boolean usemaxsubsetsB = (Boolean) params.get("usemaxsubsets");
-        if (usemaxsubsetsB != null)
-          t.setUseMaxSubsets(usemaxsubsetsB.booleanValue());
-        Integer kmaxI = (Integer) params.get("maxitersinGBNS2A");
+				*/
+				double ff = 0.85;
+				if (ffD!=null) ff = ffD.doubleValue();
+        Integer tlvlI = (Integer) params.get("tightenboundlevel");
+        /*
+				if (tlvlI != null && tlvlI.intValue() >= 1) t.setTightenUpperBoundLvl(
+					tlvlI.intValue());
+        */
+				int tlvl = Integer.MAX_VALUE;
+				if (tlvlI!=null && tlvlI.intValue()>=1) tlvl = tlvlI.intValue();
+				Boolean usemaxsubsetsB = (Boolean) params.get("usemaxsubsets");
+        boolean usemaxsubsets = true;
+				if (usemaxsubsetsB != null)
+          //t.setUseMaxSubsets(usemaxsubsetsB.booleanValue());
+					usemaxsubsets = usemaxsubsetsB.booleanValue();
+        int kmax = Integer.MAX_VALUE;
+				Integer kmaxI = (Integer) params.get("maxitersinGBNS2A");
         if (kmaxI!=null && kmaxI.intValue()>0)
-          t.setMaxAllowedItersInGBNS2A(kmaxI.intValue());
+          //t.setMaxAllowedItersInGBNS2A(kmaxI.intValue());
+					kmax = kmaxI.intValue();
 				Boolean sortmaxsubsetsB = (Boolean) params.get("sortmaxsubsets");
+				boolean sortmaxsubsets = false;
 				if (sortmaxsubsetsB!=null)
-					t.setSortBestCandsInGBNS2A(sortmaxsubsetsB.booleanValue());
+					//t.setSortBestCandsInGBNS2A(sortmaxsubsetsB.booleanValue());
+					sortmaxsubsets = sortmaxsubsetsB.booleanValue();
         Double avgpercextranodes2addD = (Double) params.get("avgpercextranodes2add");
+				double apen2a = 0.0;
         if (avgpercextranodes2addD!=null)
-          t.setAvgPercExtraNodes2Add(avgpercextranodes2addD.doubleValue());
+          //t.setAvgPercExtraNodes2Add(avgpercextranodes2addD.doubleValue());
+					apen2a = avgpercextranodes2addD.doubleValue();
 				Boolean useGWMIN24BN2AB = (Boolean) params.get("useGWMIN2criterion");
+				boolean ugwm2 = false;
 				if (useGWMIN24BN2AB!=null)
-					t.setUseGWMIN24BestNodes2Add(useGWMIN24BN2AB.booleanValue());
+					//t.setUseGWMIN24BestNodes2Add(useGWMIN24BN2AB.booleanValue());
+					ugwm2 = useGWMIN24BN2AB.booleanValue();
 				Double expandlocalsearchfactorD = (Double) params.get("expandlocalsearchfactor");
+				double elsf = 1.0;
 				if (expandlocalsearchfactorD!=null)
-					t.setLocalSearchExpandFactor(expandlocalsearchfactorD.doubleValue());
+					//t.setLocalSearchExpandFactor(expandlocalsearchfactorD.doubleValue());
+					elsf = expandlocalsearchfactorD.doubleValue();
+				double mkb = Double.NEGATIVE_INFINITY;
 				Double minknownboundD = (Double) params.get("minknownbound");
-				if (minknownboundD!=null) t.setMinKnownBound(minknownboundD.doubleValue());
-        Integer recentI = (Integer) params.get("recentqueuesize");
-        if (recentI != null && recentI.intValue() > 0
-            && t.getUseMaxSubsets()==false)
-          t.setRecentMaxLen(recentI.intValue());
+				if (minknownboundD!=null) //t.setMinKnownBound(minknownboundD.doubleValue());
+					mkb = minknownboundD.doubleValue();
+				int maxchildren = Integer.MAX_VALUE;
         Integer maxchildrenI = (Integer) params.get("maxnodechildren");
         if (maxchildrenI != null && maxchildrenI.intValue() > 0)
-          t.setMaxChildrenNodesAllowed(maxchildrenI.intValue());
+          //t.setMaxChildrenNodesAllowed(maxchildrenI.intValue());
+					maxchildren = maxchildrenI.intValue();
         DBBNodeComparatorIntf bbcomp = (DBBNodeComparatorIntf) params.get("dbbnodecomparator");
-        if (bbcomp!=null) t.setDBBNodeComparator(bbcomp);
+        //if (bbcomp!=null) t.setDBBNodeComparator(bbcomp);
+				DBBTree.init(g, bound, pdahost, pdaport, cchost, ccport, acchost, accport,
+					           localsearch, maker, ff, tlvl, usemaxsubsets, kmax, 
+										 sortmaxsubsets, apen2a, ugwm2, elsf, mkb, maxchildren, bbcomp);
+				DBBTree t = DBBTree.getInstance();
         t.run();
         int orsoln[] = t.getSolution();
         int tan=0;

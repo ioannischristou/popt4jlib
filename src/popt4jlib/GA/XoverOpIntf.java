@@ -4,7 +4,17 @@ import popt4jlib.OptimizerException;
 import utils.*;
 import java.util.*;
 
-interface XoverOpIntf {
+/**
+ * public interface for cross-over operators.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+
+public interface XoverOpIntf {
   /**
    * the operation accepts 2 chromosomes (not DGAIndividual objects, not
    * FunctionIntf() arguments), and combines them so as to produce two new

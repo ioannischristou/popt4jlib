@@ -281,6 +281,19 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
     return x;
   }
 
+	
+	/**
+	 * package-protected method returns directly the underlying array of data.
+	 * The method is obviously not part of the public API, and is only used by
+	 * wrapper functions that allow algorithms that work with 
+	 * <CODE>DblArray1Vector</CODE> objects, to minimize functions that expect
+	 * <CODE>double[]</CODE> arguments only.
+	 * @return double[] the underlying <CODE>_x</CODE> data member.
+	 */
+	double[] get_x() {
+		return _x;
+	}
+	
 	// PoolableObjectIntf methods below
 
 	/**

@@ -12,7 +12,7 @@ import java.util.*;
  * functions also).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -64,6 +64,15 @@ public class AVDTest {
    * step-size. Default is 5.
    * <li> avd.multfactor, $n$ optional, the multiplication factor when
    * changing the inner step-size length. Default is 2.
+	 * <li> class,avd.pdbtexecinitedwrkcmd,&lt;fullclassname&gt;[args] optional, 
+	 * if present, the full class name of the initialization command to send to 
+	 * the network of workers to run function evaluation tasks, followed by the 
+	 * constructor's arguments if any; default is null, indicating no distributed 
+	 * computation.
+	 * <li> avd.pdbthost, &lt;hostname&gt; optional, the name
+	 * of the server to send function evaluation requests, default is localhost.
+	 * <li> avd.pdbtport, $num$ optional, the port the above server listens to 
+	 * for client requests, default is 7891.
    * </ul>
    * <p> if the second optional argument is passed in, it overrides the random
    * seed specified in the params_file.</p>

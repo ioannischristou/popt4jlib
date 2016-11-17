@@ -117,7 +117,7 @@ public class DataMgr {
 							if (st.hasMoreTokens()) ctrargs+=",";
             }
             try {
-              if (ctrargs != null && ctrargs.length() > 0) {
+              if (ctrargs.length() > 0) {
                 Class cl = Class.forName(classname);
                 Pair p = getArgTypesAndObjs(ctrargs, props);
                 Class[] argtypes = (Class[]) p.getFirst();

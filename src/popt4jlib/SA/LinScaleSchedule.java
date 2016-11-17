@@ -17,7 +17,7 @@ import java.util.*;
 public final class LinScaleSchedule implements SAScheduleIntf {
 
   /**
-   * sole constructor (no-op body)
+   * sole constructor (no-op body).
    */
   public LinScaleSchedule() {
 

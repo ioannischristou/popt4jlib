@@ -7,12 +7,12 @@ import java.util.HashMap;
  * specifies how to create new velocity objects.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-interface NewVelocityMakerIntf {
+public interface NewVelocityMakerIntf {
   /**
    *
    * @param x Object the current individual's chromosome (i.e. particle position)

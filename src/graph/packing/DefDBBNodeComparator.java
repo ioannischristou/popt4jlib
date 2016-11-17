@@ -3,6 +3,7 @@ package graph.packing;
 import java.util.*;
 import parallel.*;
 import graph.*;
+import utils.IntSet;
 
 /**
  * an implementation of the DBBNodeComparatorIntf.
@@ -18,8 +19,8 @@ public class DefDBBNodeComparator implements DBBNodeComparatorIntf {
   }
 
   public int compare(DBBNode1 o1, DBBNode1 o2) {
-    double sct = o1.getNodes().size();
-    double osct = o2.getNodes().size();
+    double sct = o1.getNodeIds().size();
+    double osct = o2.getNodeIds().size();
     double bd = o1.getBound();
     double obd = o2.getBound();
     double ct = bd / sct + sct - 1.0;
@@ -29,6 +30,7 @@ public class DefDBBNodeComparator implements DBBNodeComparatorIntf {
     int ct_oct_comp = Double.compare(oct, ct);
     if (ct_oct_comp<0) return -1;
     else if (ct_oct_comp==0) {
+			/*
       Set to = o2.getNodes();
       Iterator it = o1.getNodes().iterator();
       Iterator oit = to.iterator();
@@ -43,6 +45,10 @@ public class DefDBBNodeComparator implements DBBNodeComparatorIntf {
       }
       if (oit.hasNext())return -1;
       else return 0;
+			*/
+			IntSet to1 = new IntSet(o1.getNodeIds());
+			IntSet to2 = new IntSet(o2.getNodeIds());
+			return to1.compareTo(to2);
     }
     else return 1;
   }
