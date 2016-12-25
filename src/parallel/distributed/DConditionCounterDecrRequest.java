@@ -15,13 +15,24 @@ import java.io.*;
  */
 public class DConditionCounterDecrRequest implements DMsgIntf {
   // private final static long serialVersionUID = -5265604222839083451L;
+	private int _num;
 
 
   /**
-   * single constructor.
+   * no-arg constructor implies decrement by 1.
    */
   public DConditionCounterDecrRequest() {
+		_num=1;
   }
+	
+	
+	/**
+	 * constructor sets the size of the decrement request.
+	 * @param num int
+	 */
+	public DConditionCounterDecrRequest(int num) {
+		_num = num;
+	}
 
 
   /**
@@ -32,14 +43,15 @@ public class DConditionCounterDecrRequest implements DMsgIntf {
    * @throws IOException
    */
   public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
-    DConditionCounter.getInstance().decrement();
+    DConditionCounter.getInstance().decrement(_num);
     // ok, handling thread on server decreased the associated unique CondCounter
     oos.writeObject(new OKReply());
     oos.flush();
   }
 
+	
   public String toString() {
-    return "DConditionCounterDecrRequest()";
+    return "DConditionCounterDecrRequest():_num="+_num;
   }
 
 }

@@ -2,7 +2,7 @@ package parallel;
 
 
 /**
- * tests the FairDMCoordinator class methods.
+ * tests the <CODE>FIFOLock</CODE> class methods.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -13,9 +13,10 @@ package parallel;
 public class FIFOLockTest {
 
   /**
-   * invoke as <CODE>java -cp &lt;classpath&gt; parallel.FIFOLockTest [num_threads] </CODE>
-   * The program will spawn 1000 threads by default, and each thread will sleep for
-   * 1000/(thread_id+1) msecs. After its sleep time every thread will exit.
+   * invoke as 
+	 * <CODE>java -cp &lt;classpath&gt; parallel.FIFOLockTest [num_threads]</CODE>.
+   * The program will spawn 1000 threads by default, and each thread will sleep
+   * for 1000/(thread_id+1) msecs. After its sleep time every thread will exit.
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -47,31 +48,34 @@ public class FIFOLockTest {
     long dur = System.currentTimeMillis() - now;
     System.out.println("total duration (msecs): "+dur);
   }
+
+	
+	/**
+	 * auxiliary inner-class, not part of the public API.
+	 */
+	static class FIFOLockThread extends Thread {
+		private int _i;
+		Lock _lock;
+		public FIFOLockThread(int i, Lock lock) {
+			super("T"+i);
+			_i = i;
+			_lock = lock;
+		}
+
+		public void run() {
+			try {
+				System.out.println("Thread-" + _i + " getting lock");
+				_lock.getLock();
+				System.out.println("Thread-" + _i + " got lock");
+				Thread.sleep((long) (1000/(_i+1)));
+				System.out.println("Thread-" + _i + " releasing lock");
+				_lock.releaseLock();
+				System.out.println("Thread-" + _i + " released lock");
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 }
-
-
-class FIFOLockThread extends Thread {
-  private int _i;
-  Lock _lock;
-  public FIFOLockThread(int i, Lock lock) {
-    super("T"+i);
-    _i = i;
-    _lock = lock;
-  }
-
-  public void run() {
-    try {
-      System.out.println("Thread-" + _i + " getting lock");
-      _lock.getLock();
-      System.out.println("Thread-" + _i + " got lock");
-      Thread.sleep((long) (1000/(_i+1)));
-      System.out.println("Thread-" + _i + " releasing lock");
-      _lock.releaseLock();
-      System.out.println("Thread-" + _i + " released lock");
-    }
-    catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-}
-

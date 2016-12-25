@@ -21,6 +21,11 @@ import java.io.ObjectOutputStream;
  */
 public class PDAsynchNoOpInitCmd extends PDAsynchInitCmd {
 	
+	public void applyOnServer() {
+		// no-op
+	}
+	
+	
   public void runProtocol(PDBatchTaskExecutorSrv srv,
                                    ObjectInputStream ois,
                                    ObjectOutputStream oos) {

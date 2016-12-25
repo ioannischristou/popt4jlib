@@ -21,7 +21,7 @@ import java.util.HashMap;
 public final class OneDStepQuantumOptimizer {
   private int _dir=0;
 	private double _val=Double.NaN;
-	
+
   /**
    * public no-arg no-op constructor.
    */
@@ -37,8 +37,8 @@ public final class OneDStepQuantumOptimizer {
   public int getDir() {
     return _dir;
   }
-	
-	
+
+
 	/**
 	 * the best objective value found.
 	 * @return double
@@ -139,7 +139,7 @@ public final class OneDStepQuantumOptimizer {
 		if (x instanceof PoolableObjectIntf) {
 			((PoolableObjectIntf) x).release();
 		}
-    return new PairSer(sqt,_val);
+    return new PairSer(new Double(sqt), new Double(_val));
   }
 
 
@@ -212,7 +212,7 @@ public final class OneDStepQuantumOptimizer {
           else { // cnew >= c + ftol OR s2 <= lb
             _dir = 0;
             if (s2 <= lb) {
-              _val = Double.NaN;  // value unspecified 
+              _val = Double.NaN;  // value unspecified
 							return lb;
 						}
 						_val = c;
@@ -237,7 +237,7 @@ public final class OneDStepQuantumOptimizer {
           x.setCoord(j, s2);
           cnew = f.eval(x, params);
           //utils.Messenger.getInstance().msg("ODSQO.detdir(): f(x" + j + "=" +
-          //                                  s2 + ")=" + cnew+" eps="+eps, 0); 
+          //                                  s2 + ")=" + cnew+" eps="+eps, 0);
         }
         if (cnew < c - ftol) {
           _dir = -1;

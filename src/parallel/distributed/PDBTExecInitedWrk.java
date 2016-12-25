@@ -68,20 +68,20 @@ public class PDBTExecInitedWrk {
     PDBatchTaskExecutor executor=null;
 		utils.Messenger mger = utils.Messenger.getInstance();
     try {
-      mger.msg("Wrk: About to Connect to Srv at address(host,port)=("+_host+","+_port+")",1);
+      mger.msg("Wrk: About to Connect to Srv at address(host,port)=("+_host+","+_port+")",0);
       _s = new Socket(_host, _port);
-      mger.msg("Wrk: socket created",1);
+      mger.msg("Wrk: socket created",0);
 			mger.msg("Wrk: if not first worker to connect to server, "+
 				       "will have to wait until client sends init_cmd to server...", 2);
       oos = new ObjectOutputStream(_s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(_s.getInputStream());
-      mger.msg("Wrk: Connected to Srv at address(host,port)=("+_host+","+_port+")",1);
+      mger.msg("Wrk: Connected to Srv at address(host,port)=("+_host+","+_port+")",0);
 			// first, read and execute the initialization command
-			mger.msg("Wrk: Waiting to read initialization command...",1);
+			mger.msg("Wrk: Waiting to read initialization command...",0);
 			RRObject init_cmd = (RRObject) ois.readObject();
 			init_cmd.runProtocol(null, null, null);
-			mger.msg("Wrk: Executed the initialization command received",1);
+			mger.msg("Wrk: Executed the initialization command received",0);
 			// next, continue as usual
       executor = PDBatchTaskExecutor.newPDBatchTaskExecutor(_numthreads);
       while (true) {
@@ -147,14 +147,14 @@ public class PDBTExecInitedWrk {
 
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBTExecInitedWrk [numthreads(10)] [host(localhost)] [port(7890)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBTExecInitedWrk [numthreads(10)] [host(localhost)] [port(7890)] [dbglvl(0)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
     int numthreads = 10;
     String host = "localhost";
     int port = 7890;
-
+		int lvl = 0;
     // register handle to close socket if we stop the program via ctrl-c
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
@@ -178,12 +178,16 @@ public class PDBTExecInitedWrk {
         if (args.length>2) {
           port = Integer.parseInt(args[2]);
         }
+				if (args.length>3) {
+					lvl = Integer.parseInt(args[3]);
+				}
       }
       catch (Exception e) {
         usage();
         System.exit(-1);
       }
     }
+		utils.Messenger.getInstance().setDebugLevel(lvl);
     PDBTExecInitedWrk worker = new PDBTExecInitedWrk(numthreads, host, port);
     try {
       worker.run();
@@ -196,7 +200,7 @@ public class PDBTExecInitedWrk {
 
 
   private static void usage() {
-    System.err.println("usage: java -cp <classpath> parallel.distributed.PDBTExecInitedWrk [numthreads(10)] [host(localhost)] [port(7890)]");
+    System.err.println("usage: java -cp <classpath> parallel.distributed.PDBTExecInitedWrk [numthreads(10)] [host(localhost)] [port(7890)] [dbglvl(0)]");
   }
 
 }

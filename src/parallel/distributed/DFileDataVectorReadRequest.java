@@ -6,7 +6,7 @@
 
 package parallel.distributed;
 
-import parallel.ParallelException;
+//import parallel.ParallelException;
 import utils.DataMgr;
 import java.io.*;
 import java.util.Vector;

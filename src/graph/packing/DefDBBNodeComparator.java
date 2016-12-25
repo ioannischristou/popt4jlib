@@ -1,23 +1,34 @@
 package graph.packing;
 
-import java.util.*;
-import parallel.*;
-import graph.*;
 import utils.IntSet;
+import java.util.*;
 
 /**
- * an implementation of the DBBNodeComparatorIntf.
+ * Default implementation of the DBBNodeComparatorIntf uses the bound of the 
+ * solution, &amp; breaks ties according to the node-ids of the solutions 
+ * compared.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2016</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
 public class DefDBBNodeComparator implements DBBNodeComparatorIntf {
+	/**
+	 * sole public constructor.
+	 */
   public DefDBBNodeComparator() {
   }
 
+	/**
+	 * compares two DBBNode1 objects according to the bound of the solutions they
+	 * represent, and break ties (which should be a rare condition) according to
+	 * the ids of the nodes contained in each solution.
+	 * @param o1 DBBNode1
+	 * @param o2 DBBNode1
+	 * @return int // -1, 0 or +1
+	 */
   public int compare(DBBNode1 o1, DBBNode1 o2) {
     double sct = o1.getNodeIds().size();
     double osct = o2.getNodeIds().size();
@@ -30,25 +41,25 @@ public class DefDBBNodeComparator implements DBBNodeComparatorIntf {
     int ct_oct_comp = Double.compare(oct, ct);
     if (ct_oct_comp<0) return -1;
     else if (ct_oct_comp==0) {
-			/*
-      Set to = o2.getNodes();
-      Iterator it = o1.getNodes().iterator();
+      Set to = o2.getNodeIds();
+      Iterator it = o1.getNodeIds().iterator();
       Iterator oit = to.iterator();
       while (it.hasNext()) {
-        Node mi = (Node) it.next();
+        Integer mi = (Integer) it.next();
         if (oit.hasNext()) {
-          Node oi = (Node) oit.next();
-          if (mi.getId() < oi.getId())return -1;
-          else if (mi.getId() > oi.getId())return 1;
+          Integer oi = (Integer) oit.next();
+          if (mi.intValue() < oi.intValue())return -1;
+          else if (mi.intValue() > oi.intValue())return 1;
         }
         else return 1;
       }
       if (oit.hasNext())return -1;
       else return 0;
-			*/
+			/*  below code is waste
 			IntSet to1 = new IntSet(o1.getNodeIds());
 			IntSet to2 = new IntSet(o2.getNodeIds());
 			return to1.compareTo(to2);
+			*/
     }
     else return 1;
   }

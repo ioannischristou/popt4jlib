@@ -5,8 +5,7 @@ import java.io.Serializable;
 
 
 /**
- * <p>Title: Thread Coordination Management System</p>
- * <p>Description: Class providing proper synchronization between
+ * Class providing proper synchronization between
  * readers and writers. Many readers may concurrently execute, but
  * there can be only one writer thread at a time, and while a writer has
  * control, no reader thread may gain access (except the writer itself).
@@ -22,8 +21,9 @@ import java.io.Serializable;
  * It is the responsibility of the clients
  * to ensure that these methods must always be called in pairs (every getXXX
  * must be followed by a releaseXXX).
- * </p>
- * <p>Copyright: Copyright (c) 2003</p>
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0

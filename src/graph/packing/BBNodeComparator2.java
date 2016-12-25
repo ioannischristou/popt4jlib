@@ -16,9 +16,23 @@ import parallel.*;
  * @version 1.0
  */
 public class BBNodeComparator2 implements BBNodeComparatorIntf {
+	
+	/**
+	 * sole public constructor.
+	 */
   public BBNodeComparator2() {
   }
 
+	
+	/**
+	 * compares two BBNodeBase objects according to the sum of the solution's 
+	 * size and log(bound) (bigger is better). In the rare event that the two are 
+	 * equal, then the method compares the two according to the ids of the nodes 
+	 * contained in each solution.
+	 * @param o1 BBNodeBase
+	 * @param o2 BBNodeBase
+	 * @return int  // -1, 0 or +1
+	 */
   public int compare(BBNodeBase o1, BBNodeBase o2) {
     try {
       double sct = o1.getNodes().size();

@@ -21,6 +21,10 @@ public final class ReduceOperatorMaxDbl extends ReduceOperator {
 	private final static ReduceOperatorMaxDbl _instance = new ReduceOperatorMaxDbl();  // singleton design pattern
 	
 	
+	/**
+	 * singleton design pattern method.
+	 * @return ReduceOperatorMaxDbl
+	 */	
 	public static ReduceOperatorMaxDbl getInstance() {
 		return _instance;
 	}

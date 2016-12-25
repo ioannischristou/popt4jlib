@@ -9,7 +9,12 @@ package parallel;
 /**
  * interface indicates that a specific Runnable must be run on a thread with the
  * specified thread-id (or any thread, or any thread except a specific one).
- * @author itc
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2014-2016</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
  */
 public interface ThreadSpecificTaskObject extends Runnable {
 	/**

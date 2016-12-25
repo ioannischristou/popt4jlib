@@ -1,17 +1,27 @@
 package parallel.distributed;
 
 import parallel.*;
+import popt4jlib.ObserverIntf;
+import popt4jlib.SubjectIntf;
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
+
 
 /**
- * class implementing clients for sending accumulating numbers between threads 
- * living in distributed JVMs (or for asking the current min/max/sum value among 
- * the received numbers). A thread wishing to send a number(s) invokes the 
+ * class implementing clients for sending accumulating numbers between threads
+ * living in distributed JVMs (or for asking the current min/max/sum value among
+ * the received numbers). A thread wishing to send a number(s) invokes the
  * <CODE>addNumber[s](data)</CODE> method of the client. A client wishing to
  * receive the minimum value currently stored on the accumulating server, calls
- * the <CODE>getMinValue()</CODE>. The client is thread-safe (essentially 
- * serialized).
+ * the <CODE>getMinValue()</CODE>. Clients may also register their interest in
+ * receiving updates on new min or max values accumulated in the server by 
+ * calling the method 
+ * <CODE>registerListener(popt4jlib.ObserverIntf obs, int not_type)</CODE>;
+ * in such a case, the obs object's <CODE>notifyChange(SubjectIntf)</CODE> method will
+ * be invoked whenever a new min or max value is accumulated on the server, with
+ * parameter the updating thread of this client.
+ * The client is thread-safe (essentially serialized).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2016</p>
@@ -22,18 +32,35 @@ import java.net.*;
 public class DAccumulatorClt {
   private static String _host="localhost";
   private static int _port = 7900;
+	private static int _notificationsPort = 9900;
+	private static AsynchUpdateThread _updaterThread=null;
 
 
   /**
-   * method specifies the host and port where the accumulator server lives.
+   * method specifies the host and ports where the accumulator server lives.
    * @param host String
    * @param port int
+	 * @param notificationsport int if &lt; 0, the client does not register an 
+	 * interest in notifications, otherwise, if &lt; 1024 the default port is 
+	 * used.
    * @throws UnknownHostException
    */
-  public synchronized static void setHostPort(String host, int port) throws UnknownHostException {
+  public synchronized static void setHostPort(String host, int port, int notificationsport) throws UnknownHostException {
     _host = InetAddress.getByName(host).getHostAddress();
     _port = port;
+		if (notificationsport>=1024 || notificationsport<0)
+			_notificationsPort = notificationsport;
   }
+	
+	
+	public static synchronized void registerListener(ObserverIntf observer, int notification_type) {
+		if (_updaterThread!=null) {
+			throw new IllegalStateException("DAccumulatorClt.registerListener(): method already called.");
+		}
+		_updaterThread = new AsynchUpdateThread(observer, notification_type);
+		_updaterThread.setDaemon(true);
+		_updaterThread.start();
+	}
 
 
 	/**
@@ -41,9 +68,9 @@ public class DAccumulatorClt {
 	 * @param num double
 	 * @throws IOException
 	 * @throws ClassNotFoundException
-	 * @throws ParallelException 
+	 * @throws ParallelException
 	 */
-  public static synchronized void addNumber(double num) 
+  public static synchronized void addNumber(double num)
 		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
@@ -69,15 +96,15 @@ public class DAccumulatorClt {
     }
   }
 
-	
+
 	/**
 	 * sends the numbers in the argument array to be accumulated to the server.
 	 * @param nums double[]
 	 * @throws IOException
 	 * @throws ClassNotFoundException
-	 * @throws ParallelException 
+	 * @throws ParallelException
 	 */
-  public static synchronized void addNumbers(double[] nums) 
+  public static synchronized void addNumbers(double[] nums)
 		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
@@ -103,16 +130,16 @@ public class DAccumulatorClt {
     }
   }
 
-	
+
 	/**
 	 * sends the arguments to be accumulated to the server.
 	 * @param arg Serializable
 	 * @param num double
 	 * @throws IOException
 	 * @throws ClassNotFoundException
-	 * @throws ParallelException 
+	 * @throws ParallelException
 	 */
-  public static synchronized void addArgDblPair(Serializable arg, double num) 
+  public static synchronized void addArgDblPair(Serializable arg, double num)
 		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
@@ -138,15 +165,15 @@ public class DAccumulatorClt {
     }
   }
 
-	
+
 	/**
 	 * gets back the minimum number accumulated so far in the server.
 	 * @return double
 	 * @throws IOException
 	 * @throws ClassNotFoundException
-	 * @throws ParallelException 
+	 * @throws ParallelException
 	 */
-	public static synchronized double getMinNumber() 
+	public static synchronized double getMinNumber()
 		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
@@ -170,18 +197,18 @@ public class DAccumulatorClt {
       if (ois!=null) ois.close();
       s.close();
     }
-		
+
 	}
 
-	
+
 	/**
 	 * gets back the maximum number accumulated so far in the server.
 	 * @return double
 	 * @throws IOException
 	 * @throws ClassNotFoundException
-	 * @throws ParallelException 
+	 * @throws ParallelException
 	 */
-	public static synchronized double getMaxNumber() 
+	public static synchronized double getMaxNumber()
 		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
@@ -206,16 +233,16 @@ public class DAccumulatorClt {
       s.close();
     }
 	}
-	
-	
+
+
 	/**
 	 * gets back the sum of numbers accumulated so far in the server.
 	 * @return double
 	 * @throws IOException
 	 * @throws ClassNotFoundException
-	 * @throws ParallelException 
+	 * @throws ParallelException
 	 */
-	public static synchronized double getSumNumber() 
+	public static synchronized double getSumNumber()
 		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
@@ -241,15 +268,15 @@ public class DAccumulatorClt {
     }
 	}
 
-	
+
 	/**
 	 * gets back the arg-min object accumulated so far in the server.
 	 * @return Serializable
 	 * @throws IOException
 	 * @throws ClassNotFoundException
-	 * @throws ParallelException 
+	 * @throws ParallelException
 	 */
-	public static synchronized Serializable getArgMin() 
+	public static synchronized Serializable getArgMin()
 		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
@@ -262,7 +289,7 @@ public class DAccumulatorClt {
       oos.flush();
       Object reply = ois.readObject();
       if (reply instanceof OKReplyData) {
-        return ((Double) ((OKReplyData) reply).getData()).doubleValue();
+        return (Double) ((OKReplyData) reply).getData();
       }
       else {
         throw new ParallelException("getArgMin() failed");
@@ -272,18 +299,18 @@ public class DAccumulatorClt {
       if (oos!=null) oos.close();
       if (ois!=null) ois.close();
       s.close();
-    }		
+    }
 	}
-	
-	
+
+
 	/**
 	 * gets back the arg-max object accumulated so far in the server.
 	 * @return Serializable
 	 * @throws IOException
 	 * @throws ClassNotFoundException
-	 * @throws ParallelException 
+	 * @throws ParallelException
 	 */
-	public static synchronized Serializable getArgMax() 
+	public static synchronized Serializable getArgMax()
 		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
@@ -296,7 +323,7 @@ public class DAccumulatorClt {
       oos.flush();
       Object reply = ois.readObject();
       if (reply instanceof OKReplyData) {
-        return ((Double) ((OKReplyData) reply).getData()).doubleValue();
+        return ((OKReplyData) reply).getData();
       }
       else {
         throw new ParallelException("getArgMax() failed");
@@ -306,17 +333,38 @@ public class DAccumulatorClt {
       if (oos!=null) oos.close();
       if (ois!=null) ois.close();
       s.close();
-    }		
+    }
+	}
+	
+	
+	public static synchronized void disconnect() {
+		if (_updaterThread!=null) {
+			utils.Messenger.getInstance().msg("DAccumulatorClt.disconnect(): enter", 0);
+			_updaterThread.setCont(false);
+			try {
+				if (_updaterThread._s!=null) {
+					_updaterThread._s.shutdownInput();
+					_updaterThread._s.close();
+				}
+			}
+			catch (IOException e) {
+				utils.Messenger.getInstance().msg("DAccumulatorClt.disconnect(): disconnected notification-updates Thread", 0);
+			}
+			finally {
+				_updaterThread=null;
+				utils.Messenger.getInstance().msg("DAccumulatorClt.disconnect(): done", 0);
+			}
+		}
 	}
 
-	
+
 	/**
 	 * sends a shut-down request to the server.
 	 * @throws IOException
 	 * @throws ClassNotFoundException
-	 * @throws ParallelException 
+	 * @throws ParallelException
 	 */
-  public static synchronized void shutDownSrv() 
+  public static synchronized void shutDownSrv()
 		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
@@ -342,5 +390,113 @@ public class DAccumulatorClt {
     }
   }
 	
+	
+	/**
+	 * auxiliary thread class is responsible for opening a connection to the 
+	 * DAccumulatorSrv's notification-port, and listening for incoming numbers 
+	 * representing new (min or max) incumbents. Whenever such a new incumbent 
+	 * arrives, the thread calls its unique observer's notifyChange(this) method.
+	 * Not part of the public API.
+	 */
+	static class AsynchUpdateThread extends Thread implements SubjectIntf {
+		private final int _type;
+		private final ObserverIntf _observer;
+		private Double _inc = Double.NaN;
+		private Socket _s = null;
+		private boolean _cont = true;
+		
+		
+		/**
+		 * sole constructor.
+		 * @param observer ObserverIntf
+		 * @param type int must only be one of DAccumulatorNotificationType.[_MIN|_MAX]
+		 */
+		AsynchUpdateThread(ObserverIntf observer, int type) {
+			_type = type;
+			_observer = observer;
+		}
+		
+		
+		/**
+		 * opens a socket to the accumulator's server notifications-port (default 
+		 * 9990) and then enters an infinite loop listening for Double objects which 
+		 * are new incumbents (min or max, according to constructor's 2nd argument).
+		 */
+		public void run() {
+			try {
+				synchronized (DAccumulatorClt.class) {
+					_s = new Socket(_host, _notificationsPort);
+				}
+				ObjectOutputStream oos = new ObjectOutputStream(_s.getOutputStream());
+				oos.flush();
+				ObjectInputStream ois = new ObjectInputStream(_s.getInputStream());
+				oos.writeObject(new DAccumulatorNotificationType(_type));
+				oos.flush();
+				while (getCont()) {
+					Double valD = (Double) ois.readObject();
+					synchronized (this) {
+						_inc = valD;
+					}
+					notifyObservers();
+				}
+			}
+			catch (Exception e) {
+				utils.Messenger mger = utils.Messenger.getInstance();
+				mger.msg("DAccumulatorClt.AsynchUpdateThread.run(): received exception '"+
+					       e+"': thread exits.", 0);
+			}
+		}
+			
+		
+		/**
+		 * get the best Double object found so far.
+		 * @return Object  // Double 
+		 */
+	  public synchronized Object getIncumbent() {
+			return _inc;
+		}
+		
+		
+		/**
+		 * calls the associated observer's <CODE>notifyChange(this)</CODE> method.
+		 */
+		public void notifyObservers() {
+			try {
+				_observer.notifyChange(this);
+			}
+			catch (Exception e) {
+				e.printStackTrace();  // ignore for now
+			}
+		}
+
+		
+		// below methods are so that AsynchUpdateThread implements the SubjectIntf
+		// interface; they all throw UnsupportedOperationException exception.
+		
+		public boolean registerObserver(ObserverIntf o) {
+			throw new UnsupportedOperationException("registerObserver() not supported");
+		}
+		public boolean removeObserver(ObserverIntf o) {
+			throw new UnsupportedOperationException("removeObserver() not supported");
+		}
+		public popt4jlib.FunctionIntf getFunction() {
+			throw new UnsupportedOperationException("getFunction() not supported");
+		}
+		public HashMap getParams() {
+			throw new UnsupportedOperationException("getParams() not supported");			
+		}
+		public void addIncumbent(ObserverIntf obs, Object soln) {
+			throw new UnsupportedOperationException("addIncumbent() not supported");						
+		}
+		
+		synchronized boolean getCont() {
+			return _cont;
+		}
+		synchronized void setCont(boolean c) {
+			_cont = c;
+		}
+
+	}
+
 }
 

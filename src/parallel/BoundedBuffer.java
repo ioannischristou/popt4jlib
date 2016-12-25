@@ -106,20 +106,24 @@ public class BoundedBuffer {
     if (_head._pos<=_tail._pos) return _tail._pos - _head._pos + 1;
     else return _maxLen - (_head._pos - _tail._pos) + 1;
   }
-}
 
+	
+	/**
+	 * auxiliary inner-class, not part of the public API.
+	 */
+	class DLCListNode {
+		DLCListNode _next;
+		DLCListNode _prev;
+		int _pos;
+		Object _data;
 
-class DLCListNode {
-  DLCListNode _next;
-  DLCListNode _prev;
-  int _pos;
-  Object _data;
+		public DLCListNode(Object data, DLCListNode next, DLCListNode previous, int i) {
+			_data = data;
+			_next = next;
+			_prev = previous;
+			_pos = i;
+		}
+	}
 
-  public DLCListNode(Object data, DLCListNode next, DLCListNode previous, int i) {
-    _data = data;
-    _next = next;
-    _prev = previous;
-    _pos = i;
-  }
 }
 

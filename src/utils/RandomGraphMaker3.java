@@ -108,7 +108,7 @@ public class RandomGraphMaker3 {
                                                     Double.parseDouble(args[1]),
                                                     wvar, seed);
       Graph g = maker.buildRandomGraph();
-      //System.err.println("Graph has "+g.getNumComponents()+" components");
+      System.err.println("Graph has "+g.getNumComponents()+" components");
       DataMgr.writeGraphToFile2(g, args[2]);
       long duration = System.currentTimeMillis()-start_time;
       System.out.println("total time (msecs): "+duration);

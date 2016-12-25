@@ -34,6 +34,11 @@ import java.util.HashMap;
  * @version 1.0
  */
 public class MsgPassingCoordinator {
+	/**
+	 * the maximum size of the queue that holds messages for this coordinator.
+	 * Can be set only prior to any normal use by a call to the static method
+	 * <CODE>setMaxSize(num)</CODE>. Default is 10000.
+	 */
   private static int _maxSize=10000;
   /**
    * maintains the RegisteredParcel objects to be exchanged between threads

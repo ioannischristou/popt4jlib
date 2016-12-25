@@ -35,79 +35,90 @@ public class DMsgPassingTest {
       if (args.length>=3) delay = Long.parseLong(args[2]);
       DMsgPassingCoordinatorClt coordclt = new DMsgPassingCoordinatorClt();  // use localhost as server
       for (int i = startid; i <= endid; i++) {
-        DMPThread ti = new DMPThread(i, coordclt);
+        DMsgPassingTest.DMPThread ti = new DMsgPassingTest.DMPThread(i, coordclt);
         if (delay>0) Thread.sleep(delay);  // enter a delay
         ti.start();
       }
       if (startid==0) {
-        coordclt.sendData( -1, 0, new SerObject()); // bootstrap the recv->send cycle
+        coordclt.sendData( -1, 0, new DMsgPassingTestSerObject()); // bootstrap the recv->send cycle
         System.out.println("Thread--1(main) sent data to TId=0");
         System.out.flush();
       }
     }
     catch (Exception e) { e.printStackTrace(); }
   }
+
+
+	/**
+	 * auxiliary inner-class, not part of the public API.
+	 */
+	static class DMPThread extends Thread {
+		private DMsgPassingCoordinatorClt _coordclt;
+		private int _id;
+
+
+		public DMPThread(int i, DMsgPassingCoordinatorClt coord) {
+			_id = i;
+			_coordclt = coord;
+		}
+
+
+		public void run() {
+			// DMsgPassingCoordinatorClt coordclt = null;
+			try {
+				// coordclt = new DMsgPassingCoordinatorClt(); // use localhost as server
+				int sendTo = _id + 1;
+				if (sendTo >= 20) sendTo = 0; // there will be two JVMs running DMsgPassingTest
+				// the first will start with args 0 9 and the second will start with args
+				// 10 19
+				for (int i = 0; i < 100; i++) {
+					System.out.println("Thread-" + _id + " doing iter " + i +
+														 " waiting to recv any data");
+					boolean done=false;
+					while (!done) {
+						try {
+							_coordclt.recvData(_id);
+							done = true;
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+							Thread.sleep(100);
+						}
+					}
+					System.out.println("Thread-" + _id + " doing iter " + i +
+										 " sending data to TId=" + sendTo);
+					done=false;
+					while (!done) {
+						try {
+							_coordclt.sendData(_id, sendTo, new DMsgPassingTestSerObject());
+							done=true;
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+							Thread.sleep(100);
+						}
+
+					}
+				}
+				if (_id==0) _coordclt.recvData(_id);  // consume the last datum sent
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}	
+	}
+
+	
+	/**
+	 * trivial auxiliary inner-class. Not part of the public API.
+	 */
+	static class DMsgPassingTestSerObject implements Serializable {
+		private static final long serialVersionUID = -5945228657833526999L;
+	}
+
 }
 
 
-class DMPThread extends Thread {
-  private DMsgPassingCoordinatorClt _coordclt;
-  private int _id;
 
 
-  public DMPThread(int i, DMsgPassingCoordinatorClt coord) {
-    _id = i;
-    _coordclt = coord;
-  }
-
-
-  public void run() {
-    // DMsgPassingCoordinatorClt coordclt = null;
-    try {
-      // coordclt = new DMsgPassingCoordinatorClt(); // use localhost as server
-      int sendTo = _id + 1;
-      if (sendTo >= 20) sendTo = 0; // there will be two JVMs running DMsgPassingTest
-      // the first will start with args 0 9 and the second will start with args
-      // 10 19
-      for (int i = 0; i < 100; i++) {
-        System.out.println("Thread-" + _id + " doing iter " + i +
-                           " waiting to recv any data");
-        boolean done=false;
-        while (!done) {
-          try {
-            _coordclt.recvData(_id);
-            done = true;
-          }
-          catch (Exception e) {
-            e.printStackTrace();
-            Thread.sleep(100);
-          }
-        }
-        System.out.println("Thread-" + _id + " doing iter " + i +
-                   " sending data to TId=" + sendTo);
-        done=false;
-        while (!done) {
-          try {
-            _coordclt.sendData(_id, sendTo, new SerObject());
-            done=true;
-          }
-          catch (Exception e) {
-            e.printStackTrace();
-            Thread.sleep(100);
-          }
-
-        }
-      }
-      if (_id==0) _coordclt.recvData(_id);  // consume the last datum sent
-    }
-    catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-}
-
-
-class SerObject implements Serializable {
-  private static final long serialVersionUID = -5945228657833526999L;
-}
 

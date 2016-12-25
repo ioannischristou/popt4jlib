@@ -20,7 +20,11 @@ import java.util.*;
 public final class ReduceOperatorMinDbl extends ReduceOperator {
 	private final static ReduceOperatorMinDbl _instance = new ReduceOperatorMinDbl();  // singleton design pattern
 	
-	
+
+	/**
+	 * singleton design pattern method.
+	 * @return ReduceOperatorMinDbl
+	 */
 	public static ReduceOperatorMinDbl getInstance() {
 		return _instance;
 	}

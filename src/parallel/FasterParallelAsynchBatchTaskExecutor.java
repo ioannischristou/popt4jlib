@@ -1,6 +1,7 @@
 package parallel;
 
 import java.util.*;
+import popt4jlib.IdentifiableIntf;
 
 /**
  * A faster class that implements thread-pooling to allow its users to execute
@@ -36,23 +37,24 @@ public final class FasterParallelAsynchBatchTaskExecutor {
 	
 
   /**
-   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
 	 * @return FasterParallelAsynchBatchTaskExecutor properly initialized
    * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created.
    */	
 	public static FasterParallelAsynchBatchTaskExecutor 
-				newFasterParallelAsynchBatchTaskExecutor(int numthreads) 
-								throws ParallelException {
-		FasterParallelAsynchBatchTaskExecutor ex = new FasterParallelAsynchBatchTaskExecutor(numthreads);
+			newFasterParallelAsynchBatchTaskExecutor(int numthreads) 
+		throws ParallelException {
+		FasterParallelAsynchBatchTaskExecutor ex = 
+			new FasterParallelAsynchBatchTaskExecutor(numthreads);
 		ex.initialize();
 		return ex;
 	}
 
 				
   /**
-   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor constructing a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full.
@@ -61,8 +63,27 @@ public final class FasterParallelAsynchBatchTaskExecutor {
    * asked to be created.
    */					
 	public static FasterParallelAsynchBatchTaskExecutor 
-				newFasterParallelAsynchBatchTaskExecutor(int numthreads, boolean runoncurrent) 
-								throws ParallelException {
+			newFasterParallelAsynchBatchTaskExecutor(int numthreads, boolean runoncurrent) 
+		throws ParallelException {
+		FasterParallelAsynchBatchTaskExecutor ex = 
+			new FasterParallelAsynchBatchTaskExecutor(numthreads, runoncurrent);
+		ex.initialize();
+		return ex;
+	}
+
+	/**
+	 * same as other factory constructors, but also allows to set the size of the 
+	 * queue of the executor.
+	 * @param numthreads int
+	 * @param runoncurrent boolean
+	 * @param maxQueueSz int
+	 * @return FasterParallelAsynchBatchTaskExecutor properly initialized
+	 * @throws ParallelException for same reasons as the other factory methods.
+	 */		
+	public static FasterParallelAsynchBatchTaskExecutor 
+			newFasterParallelAsynchBatchTaskExecutor(int numthreads, boolean runoncurrent, int maxQueueSz) 
+		throws ParallelException {
+		SimpleFasterMsgPassingCoordinator.setMaxSize(maxQueueSz);  // set the size of the queue
 		FasterParallelAsynchBatchTaskExecutor ex = 
 			new FasterParallelAsynchBatchTaskExecutor(numthreads, runoncurrent);
 		ex.initialize();
@@ -82,15 +103,6 @@ public final class FasterParallelAsynchBatchTaskExecutor {
       throw new ParallelException("cannot construct so many threads");
     _id = getNextObjId();
     _threads = new FPABTEThread[numthreads];
-		/* itc 2015-15-01: moved to initialize() method
-    for (int i=0; i<numthreads; i++) {
-      _threads[i] = new FPABTEThread(this, -(i+1));
-      _threads[i].setDaemon(true);  // thread will end when main thread ends
-      _threads[i].start();
-    }
-    _isRunning = true;
-    _sfmpc = SimpleFasterMsgPassingCoordinator.getInstance("FasterParallelAsynchBatchTaskExecutor"+_id); 
-		*/
   }
 
 
@@ -115,7 +127,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
 	private void initialize() {
 		final int numthreads = _threads.length;
     for (int i=0; i<numthreads; i++) {
-      _threads[i] = new FPABTEThread(this, -(i+1));
+      _threads[i] = new FPABTEThread(-(i+1));
       _threads[i].setDaemon(true);  // thread will end when main thread ends
       _threads[i].start();
     }
@@ -176,9 +188,9 @@ public final class FasterParallelAsynchBatchTaskExecutor {
       throw new ParallelException("thread-pool is not running");
     while (it.hasNext()) {
       Object task = it.next();
-      if ( (!_runOnCurrent && existsRoom()) || 
-						existsIdleThread() || 
-						task instanceof PoissonPill) {  // ok
+      if ((!_runOnCurrent && existsRoom()) || 
+					 existsIdleThread() || 
+					 task instanceof PoissonPill) {  // ok
         _sfmpc.sendDataBlocking(_id, task);
       }
       else {
@@ -221,6 +233,18 @@ public final class FasterParallelAsynchBatchTaskExecutor {
 	}
 
 
+	/**
+	 * check whether submitting another batch of specified size is allowed or 
+	 * if it would otherwise cause a throw.
+	 * @param num the batch size to check
+	 * @return boolean false if submitting a batch of specified size would throw.
+	 */
+	public boolean isBatchSubmissionOK(int num) {
+		return _runOnCurrent || 
+			     _sfmpc.getNumTasksInQueue() + num < SimpleFasterMsgPassingCoordinator.getMaxSize();
+	}
+
+	
   /**
    * shut-down all the threads in this executor's thread-pool. It is the
    * caller's responsibility to ensure that after this method has been called
@@ -252,11 +276,18 @@ public final class FasterParallelAsynchBatchTaskExecutor {
 	/**
 	 * invokes the <CODE>shutDown()</CODE> method and waits until all threads have
 	 * finished their execution.
-	 * @throws ParallelException
 	 * @throws ParallelExceptionUnsubmittedTasks 
 	 */
-	public void shutDownAndWait4Threads2Finish() throws ParallelException, ParallelExceptionUnsubmittedTasks {
-		shutDown();
+	public void shutDownAndWait4Threads2Finish() throws ParallelExceptionUnsubmittedTasks {
+		utils.Messenger mger = utils.Messenger.getInstance();
+		try {
+			shutDown();
+		}
+		catch (ParallelException e) {
+			mger.msg("FPABTExecutor.shutDownAndWait4Threads2Finish(): "+
+				       "shutDown() already invoked", 1);
+		}
+		mger.msg("FPABTExecutor: waiting for the pool threads to join", 1);
 		for (int i=0; i<_threads.length; i++) {
 			try {
 				_threads[i].join();
@@ -265,6 +296,7 @@ public final class FasterParallelAsynchBatchTaskExecutor {
 				Thread.currentThread().interrupt();
 			}
 		}
+		mger.msg("FPABTExecutor.shutDownAndWait4Threads2Finish(): Done.",1);
 	}
 
 
@@ -316,77 +348,92 @@ public final class FasterParallelAsynchBatchTaskExecutor {
 
 	
   private synchronized static int getNextObjId() { return ++_nextId; }
-}
+
+	
+	/**
+	 * inner helper class for FasterParallelAsynchBatchTaskExecutor. Not part of 
+	 * the public API.
+	 * <p>Title: popt4jlib</p>
+	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+	 * <p>Copyright: Copyright (c) 2011</p>
+	 * <p>Company: </p>
+	 * @author Ioannis T. Christou
+	 * @version 1.0
+	 */
+	class FPABTEThread extends Thread implements IdentifiableIntf {
+		private static final boolean _DO_CORRECT_COUNTING_BUSY_THREADS = false;
+		private int _id;
+		private boolean _isIdle=true;
+
+		/**
+		 * public constructor. The id argument is a negative integer.
+		 * @param id int
+		 */
+		public FPABTEThread(int id) {
+			_id = id;
+		}
 
 
-/**
- * helper class for FasterParallelAsynchBatchTaskExecutor.
- * <p>Title: popt4jlib</p>
- * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
- * <p>Company: </p>
- * @author Ioannis T. Christou
- * @version 1.0
- */
-class FPABTEThread extends Thread {
-  private static final boolean _DO_CORRECT_COUNTING_BUSY_THREADS = false;
-	private FasterParallelAsynchBatchTaskExecutor _e;
-  private int _id;
-  private boolean _isIdle=true;
-
-  /**
-   * public constructor. The id argument is a negative integer.
-   * @param e ParallelAsynchBatchTaskExecutor
-   * @param id int
-   */
-  public FPABTEThread(FasterParallelAsynchBatchTaskExecutor e, int id) {
-    _e = e;
-    _id = id;
-  }
+		/**
+		 * implements the <CODE>getId()</CODE> method of the IdentifiableIntf.
+		 * @return long  // int in reality
+		 */
+		public long getId() {
+			return _id;
+		}
 
 
-  /**
-   * the run() method of the thread, loops continuously, waiting for a task
-   * to arrive via the SimpleFasterMsgPassingCoordinator class and executes it.
-   * Any exceptions the task throws are caught &amp; ignored. In case the data that
-   * arrives is a PoissonPill, the thread exits its run() loop.
-   */
-  public void run() {
-    final int fpbteid = _e.getObjId();
-    final SimpleFasterMsgPassingCoordinator sfmpc =
-        SimpleFasterMsgPassingCoordinator.getInstance("FasterParallelAsynchBatchTaskExecutor"+fpbteid);
-    boolean do_run = true;
-    while (do_run) {
-      Object data = sfmpc.recvData(_id);
-      setIdle(false);
-      try {
-        if (data instanceof TaskObject) ( (TaskObject) data).run();
-        else if (data instanceof Runnable) ( (Runnable) data).run();
-        else if (data instanceof PoissonPill) {
-          do_run = false; // done
-          break;
-        }
-        else throw new ParallelException("data object cannot be run");
-      }
-      catch (Exception e) {
-        e.printStackTrace();  // task threw an exception, ignore and continue
-      }
-			if (_DO_CORRECT_COUNTING_BUSY_THREADS) {
-				while (_e.countingBusyThreadsOpUnderway()) {
-					// loop never executes: countingBusyThreadsOpUnderway() is 
-					// synchronized so the thread will wait to get the lock, which 
-					// the getNumBusyThreads() method will release only after it's
-					// checked all threads, and reset its _countingBusyThreadsOpUnderway
-					// field.
-					// no-op
-					throw new Error("_countingBusyThreadsOpUnderway==true???");  // sanity check 
+		/**
+		 * the run() method of the thread, loops continuously, waiting for a task
+		 * to arrive via the SimpleFasterMsgPassingCoordinator class and executes it.
+		 * Any exceptions the task throws are caught &amp; ignored. In case the data 
+		 * that arrives is a PoissonPill, the thread exits its run() loop.
+		 */
+		public void run() {
+			final int fpbteid = getObjId();
+			final SimpleFasterMsgPassingCoordinator sfmpc =
+					SimpleFasterMsgPassingCoordinator.getInstance("FasterParallelAsynchBatchTaskExecutor"+fpbteid);
+			boolean do_run = true;
+			while (do_run) {
+				Object data = sfmpc.recvData(_id);
+				setIdle(false);
+				try {
+					if (data instanceof TaskObject) ( (TaskObject) data).run();
+					else if (data instanceof Runnable) ( (Runnable) data).run();
+					else if (data instanceof PoissonPill) {
+						do_run = false; // done
+						break;
+					}
+					else throw new ParallelException("data object cannot be run");
 				}
+				catch (Exception e) {
+					e.printStackTrace();  // task threw an exception, ignore and continue
+				}
+				if (_DO_CORRECT_COUNTING_BUSY_THREADS) {
+					while (countingBusyThreadsOpUnderway()) {
+						// loop never executes: countingBusyThreadsOpUnderway() is 
+						// synchronized so the thread will wait to get the lock, which 
+						// the getNumBusyThreads() method will release only after it's
+						// checked all threads, and reset its _countingBusyThreadsOpUnderway
+						// field.
+						// no-op
+						throw new Error("_countingBusyThreadsOpUnderway==true???");  // sanity check 
+					}
+				}
+				setIdle(true);
 			}
-      setIdle(true);
-    }
-  }
+		}
 
-  synchronized void setIdle(boolean v) { _isIdle = v; }
-  synchronized boolean isIdle() { return _isIdle; }
+		synchronized void setIdle(boolean v) { _isIdle = v; }
+		synchronized boolean isIdle() { return _isIdle; }
+	}
+
+	
+	/**
+	 * auxiliary inner-class, not part of the public API.
+	 */
+	class PoissonPill {
+		// denotes end of computations for receiving thread
+	}
+
 }
-

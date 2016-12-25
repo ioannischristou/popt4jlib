@@ -103,102 +103,108 @@ public class LimitedTimeTaskExecutor {
       return false;
     }
   }
+
+	
+	/**
+	 * auxiliary inner-class, not part of the public API.
+	 */
+	class ExecutorThread extends Thread {
+		private SingleQueue _q;
+		private boolean _isRunning;
+		private long _currentTaskStartTime;
+		private long _lastFactor=0;
+
+		public ExecutorThread() {
+			setDaemon(true);  // all threads are deamon and will end when the main
+												// thread ends
+			_q = new SingleQueue();
+			_isRunning=false;
+			// _lte = lte;
+		}
+		public void run() {
+			while (true) {
+				TaskObject o = _q.getTaskObject();
+				setIsRunning(true);
+				try {
+					o.run();
+				}
+				catch (Exception e) {  // TaskObject threw an exception: ignore & continue
+					e.printStackTrace();  // no-op
+				}
+				setIsRunning(false);
+				synchronized (o) {
+					o.notifyAll();
+				}
+			}
+		}
+		synchronized void updatePriority(long msecs) {
+			if (msecs<=0) return;
+			if (_currentTaskStartTime>0) {
+				long now = System.currentTimeMillis();
+				long div = (now-_currentTaskStartTime)/msecs;
+				if (div>_lastFactor) {
+					_lastFactor = div;
+					int prior = getPriority()-1;
+					if (prior > Thread.MIN_PRIORITY) setPriority(prior);  // lower priority
+				}
+			}
+			else _lastFactor = 0;
+		}
+
+		protected synchronized boolean isAvailable() {
+			boolean res =  !_isRunning && _q.isEmpty();
+			return res;
+		}
+		protected void runTask(TaskObject to) {
+			_q.putTaskObject(to);
+		}
+
+		private synchronized void setIsRunning(boolean v) {
+			_isRunning = v;
+			if (v) _currentTaskStartTime = System.currentTimeMillis();
+			else _currentTaskStartTime=-1;
+			_lastFactor = 0;
+			setPriority(Thread.NORM_PRIORITY);  // reset thread priority
+		}
+	}
+
+
+	/**
+	 * auxiliary inner-class, not part of the public API.
+	 */
+	class SingleQueue {
+		private TaskObject _taskObj;
+
+		SingleQueue() {
+			// no-op
+		}
+		synchronized TaskObject getTaskObject() {
+			while (_taskObj==null) {
+				try {
+					wait();
+				}
+				catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+			TaskObject res = _taskObj;
+			_taskObj=null;
+			notifyAll();
+			return res;
+		}
+		synchronized void putTaskObject(TaskObject to) {
+			while (_taskObj!=null) {
+				try {
+					wait();
+				}
+				catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+			_taskObj = to;
+			notifyAll();
+		}
+		synchronized boolean isEmpty() { return _taskObj==null; }
+	}
+	
 }
-
-
-class ExecutorThread extends Thread {
-  private SingleQueue _q;
-  private boolean _isRunning;
-  private long _currentTaskStartTime;
-  private long _lastFactor=0;
-
-  public ExecutorThread() {
-    setDaemon(true);  // all threads are deamon and will end when the main
-                      // thread ends
-    _q = new SingleQueue();
-    _isRunning=false;
-    // _lte = lte;
-  }
-  public void run() {
-    while (true) {
-      TaskObject o = _q.getTaskObject();
-      setIsRunning(true);
-      try {
-        o.run();
-      }
-      catch (Exception e) {  // TaskObject threw an exception: ignore & continue
-        e.printStackTrace();  // no-op
-      }
-      setIsRunning(false);
-      synchronized (o) {
-        o.notifyAll();
-      }
-    }
-  }
-  synchronized void updatePriority(long msecs) {
-    if (msecs<=0) return;
-    if (_currentTaskStartTime>0) {
-      long now = System.currentTimeMillis();
-      long div = (now-_currentTaskStartTime)/msecs;
-      if (div>_lastFactor) {
-        _lastFactor = div;
-        int prior = getPriority()-1;
-        if (prior > Thread.MIN_PRIORITY) setPriority(prior);  // lower priority
-      }
-    }
-    else _lastFactor = 0;
-  }
-
-  protected synchronized boolean isAvailable() {
-    boolean res =  !_isRunning && _q.isEmpty();
-    return res;
-  }
-  protected void runTask(TaskObject to) {
-    _q.putTaskObject(to);
-  }
-
-  private synchronized void setIsRunning(boolean v) {
-    _isRunning = v;
-    if (v) _currentTaskStartTime = System.currentTimeMillis();
-    else _currentTaskStartTime=-1;
-    _lastFactor = 0;
-    setPriority(Thread.NORM_PRIORITY);  // reset thread priority
-  }
-}
-
-
-class SingleQueue {
-  private TaskObject _taskObj;
-
-  SingleQueue() {
-    // no-op
-  }
-  synchronized TaskObject getTaskObject() {
-    while (_taskObj==null) {
-      try {
-        wait();
-      }
-      catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-    TaskObject res = _taskObj;
-    _taskObj=null;
-    notifyAll();
-    return res;
-  }
-  synchronized void putTaskObject(TaskObject to) {
-    while (_taskObj!=null) {
-      try {
-        wait();
-      }
-      catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-    _taskObj = to;
-    notifyAll();
-  }
-  synchronized boolean isEmpty() { return _taskObj==null; }
-}
-

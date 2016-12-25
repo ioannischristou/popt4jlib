@@ -68,12 +68,13 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBTExecInitedSrv [workers_port(7890)] [clients_port(7891)] </CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBTExecInitedSrv [workers_port(7890)] [clients_port(7891)] [debuglvl(0)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
     int wport = 7890;  // default port
     int cport = 7891;
+		int dbglvl = 0;
     if (args.length>0) {
       try {
         wport = Integer.parseInt(args[0]);
@@ -92,8 +93,19 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
           usage();
           System.exit(-1);
         }
+	      if (args.length>2) {
+		      try {
+			      dbglvl = Integer.parseInt(args[2]);
+				  }
+					catch (Exception e) {
+						e.printStackTrace();
+						usage();
+						System.exit(-1);
+					}
+				}
       }
     }
+		utils.Messenger.getInstance().setDebugLevel(dbglvl);
     PDBTExecInitedSrv server = new PDBTExecInitedSrv(wport, cport);
     try {
       server.run();
@@ -114,7 +126,7 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 
 	
   TaskObjectsExecutionResults submitWork(Vector originating_clients, TaskObject[] tasks) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
-    Set workers2rm = new HashSet();  // Set<PDBTEW2Listener>
+    Set workers2rm = new HashSet();  // Set<Socket s> for (Socket s, PDBTEW2Listener t) pair
     PDBTEW2Listener t = null;
 		utils.Messenger mger = utils.Messenger.getInstance();
     mger.msg("PDBTExecInitedSrv.submitWork(clts,tasks): "+
@@ -139,7 +151,7 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
             break;
           }
           else {
-            if (t.isConnectionLost()) workers2rm.add(t);
+            if (t.isConnectionLost()) workers2rm.add(s);  // used to be add(t)
             t = null;  // reset to null
           }
         }
@@ -239,7 +251,7 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 
 
   private static void usage() {
-    System.err.println("usage: java -cp <classpath> parallel.distributed.PDBTExecInitedSrv [workersport] [clientsport]");
+    System.err.println("usage: java -cp <classpath> parallel.distributed.PDBTExecInitedSrv [workersport(7890)] [clientsport(7891)] [debuglvl(0)]");
   }
 
 
@@ -269,27 +281,28 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 		 * <CODE>addNewWorkerConnection(s)</CODE> method.
 		 */
     public void run() {
+			utils.Messenger mger = utils.Messenger.getInstance();
       try {
         ServerSocket ss = new ServerSocket(_port);
-        System.out.println("Srv: Now Accepting Worker Connections");
+        mger.msg("Srv: Now Accepting Worker Connections",0);
         while (true) {
           try {
             Socket s = ss.accept();
-            System.out.println("Srv: Incoming New Worker Connection to the Network");
-						System.out.println("Srv: Thread may have to wait if an init_cmd has not yet arrived from the client");
+            mger.msg("Srv: Incoming New Worker Connection to the Network",1);
+						mger.msg("Srv: Thread may have to wait if an init_cmd has not yet arrived from the client",1);
             addNewWorkerConnection(s);
-            System.out.println("Srv: finished adding new worker connection to the _workers");
+            mger.msg("Srv: finished adding new worker connection to the _workers",1);
           }
           catch (Exception e) {
-						utils.Messenger.getInstance().msg("PDBTExecInitedSrv.W2Thread.run(): "+
-							                                "An error occured while adding new worker connection", 2);
+						mger.msg("PDBTExecInitedSrv.W2Thread.run(): "+
+							                                "An error occured while adding new worker connection", 0);
             // e.printStackTrace();
           }
         }
       }
       catch (IOException e) {
         // e.printStackTrace();
-				utils.Messenger.getInstance().msg("PDBTExecInitedSrv.W2Thread.run(): "+
+				mger.msg("PDBTExecInitedSrv.W2Thread.run(): "+
 					                                "Failed to create Server Socket, Server exiting.", 0);
 				System.exit(-1);
       }
@@ -322,25 +335,26 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 		 * method of the enclosing server.
 		 */
     public void run() {
+			utils.Messenger mger = utils.Messenger.getInstance();
       try {
         ServerSocket ss = new ServerSocket(_port);
-        System.out.println("Srv: Now Accepting Client Connections");
+        mger.msg("Srv: Now Accepting Client Connections",0);
         while (true) {
           try {
             Socket s = ss.accept();
-            System.out.println("Srv: Client Added to the Network");
+            mger.msg("Srv: Client Added to the Network",1);
             addNewClientConnection(s);
-            System.out.println("Srv: finished adding client connection");
+            mger.msg("Srv: finished adding client connection",1);
           }
           catch (Exception e) {
             // e.printStackTrace();
-						System.err.println("Srv: Client Connection failed...");
+						mger.msg("Srv: Client Connection failed...",0);
           }
         }
       }
       catch (IOException e) {
         // e.printStackTrace();
-				utils.Messenger.getInstance().msg("PDBTExecInitedSrv.C2Thread.run(): "+
+				mger.msg("PDBTExecInitedSrv.C2Thread.run(): "+
 					                                "Failed to create Server Socket, Server exiting.", 0);
 				System.exit(-1);
       }
@@ -365,9 +379,9 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 
     private PDBTEC2ListenerThread(Socket s) throws IOException {
       _s = s;
-      _ois = new ObjectInputStream(_s.getInputStream());
       _oos = new ObjectOutputStream(_s.getOutputStream());
       _oos.flush();
+      _ois = new ObjectInputStream(_s.getInputStream());
     }
 
 
@@ -486,9 +500,9 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 
     private PDBTEW2Listener(Socket s) throws IOException {
       _s = s;
-      _ois = new ObjectInputStream(_s.getInputStream());
       _oos = new ObjectOutputStream(_s.getOutputStream());
       _oos.flush();
+      _ois = new ObjectInputStream(_s.getInputStream());
     }
 
 		
@@ -504,7 +518,7 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 				try {
 					utils.Messenger.getInstance().msg(
 						"PDBTExecInitedSrv.PDBTEW2Listener.init(): "+
-						"W2Thread waiting on server to obtain init_cmd from client...", 1);
+						"W2Thread waiting on server to obtain init_cmd from client...", 0);
 					PDBTExecInitedSrv.this.wait();  // the thread calling this method is already synchronized on _srv.
 				}
 				catch (InterruptedException e) {
@@ -515,7 +529,7 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 			_oos.writeObject(_initCmd);
 			_oos.flush();
 			utils.Messenger.getInstance().msg(
-						"PDBTExecInitedSrv.PDBTEW2Listener.init(): done.", 1);
+						"PDBTExecInitedSrv.PDBTEW2Listener.init(): done.", 0);
 		}
 
 		

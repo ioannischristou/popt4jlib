@@ -4,25 +4,28 @@ import java.util.*;
 
 /**
  * A class that implements thread-pooling to allow its users to execute
- * concurrently a batch of tasks implementing the TaskObject, or more
- * simply, the Runnable interface. The run() method of each task must clearly
- * be thread-safe!, and also, after calling executeBatch(tasks), no thread
- * should be able to manipulate in any way the submitted tasks or their
- * container (the Collection argument to the call). Unfortunately, there is no
- * mechanism in the java programming language to enforce this constraint; the
- * user of the library has to enforce this (mild) constraint in their code.
+ * concurrently a batch of tasks implementing the <CODE>TaskObject</CODE>, or 
+ * more simply, the <CODE>Runnable</CODE> interface. The <CODE>run()</CODE> 
+ * method of each task must clearly be thread-safe!, and also, after calling 
+ * <CODE>executeBatch(tasks)</CODE>, no thread should be able to manipulate in 
+ * any way the submitted tasks or their container (the <CODE>Collection</CODE> 
+ * argument to the call). Unfortunately, there is no mechanism in the java 
+ * programming language to enforce this constraint; the user of the library has 
+ * to enforce this (mild) constraint in their code.
  * The class utilizes the Message-Passing mechanism implemented in the
- * MsgPassingCoordinator class of this package. The class itself is thread-safe
- * meaning that there can exist multiple ParallelBatchTaskExecutor objects, and
- * multiple concurrent threads may call the public methods of the class on the
- * same or different objects as long as the above mentioned constraints are
- * satisfied. Also, notice that due to the synchronized nature of the
- * executeBatch() method, despite the fact that the tasks in the bath execute
- * concurrently, two concurrent calls of the executeBatch() method from two
- * different threads will execute serially. For this reason, there is no need
- * for this executor to implement dynamic thread management (such as starting
- * more threads upon higher loads, or modifying threads' priorities etc. as is
- * done in the LimitedTimeTaskExecutor class).
+ * <CODE>MsgPassingCoordinator</CODE> class of this package. The class itself is 
+ * thread-safe meaning that there can exist multiple 
+ * <CODE>ParallelBatchTaskExecutor</CODE> objects, and multiple concurrent 
+ * threads may call the public methods of the class on the same or different 
+ * objects as long as the above mentioned constraints are satisfied. Also, 
+ * notice that due to the synchronized nature of the
+ * <CODE>executeBatch()</CODE> method, despite the fact that the tasks in the 
+ * batch execute concurrently, two concurrent calls of the 
+ * <CODE>executeBatch()</CODE> method from two different threads will execute 
+ * serially. For this reason, there is no need for this executor to implement 
+ * dynamic thread management (such as starting more threads upon higher loads, 
+ * or modifying threads' priorities etc. as is done in the 
+ * <CODE>LimitedTimeTaskExecutor</CODE> class).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -36,13 +39,14 @@ public final class ParallelBatchTaskExecutor {
   private int _curId=0;
   private PBTEThread[] _threads;
   private boolean _isRunning;
-  private int _batchSize;
-  private MsgPassingCoordinator _mpcFwd=null;
-  private MsgPassingCoordinator _mpcBak=null;
+  private int _batchSize = MsgPassingCoordinator.getMaxSize()/2;
+  private MsgPassingCoordinator _mpcFwd=null;  // send msgs to thread-pool
+  private MsgPassingCoordinator _mpcBak=null;  // recv msgs from thread-pool
 
 	
   /**
-   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructing a thread-pool of numthreads 
+	 * threads.
    * @param numthreads int the number of threads in the thread-pool
 	 * @return ParallelBatchTaskExecutor properly initialized
    * @throws ParallelException if numthreads &le; 0.
@@ -80,18 +84,6 @@ public final class ParallelBatchTaskExecutor {
     if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
     _id = getNextObjId();
     _threads = new PBTEThread[numthreads];
-		/* itc 2015-01-15: moved code below to initialize() method
-    for (int i=0; i<numthreads; i++) {
-      _threads[i] = new PBTEThread(this);
-      _threads[i].setDaemon(true);  // thread will end when main thread ends
-      _threads[i].start();
-    }
-    _isRunning = true;
-    _batchSize = MsgPassingCoordinator.getMaxSize()/2;
-    // get refs to MsgPassingCoordinator's
-    _mpcFwd = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+_id);
-    _mpcBak = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+_id); 
-		*/
   }
 
 
@@ -116,7 +108,9 @@ public final class ParallelBatchTaskExecutor {
 	 */
 	private void initialize() {
     _isRunning = true;
-    _batchSize = MsgPassingCoordinator.getMaxSize()/2;
+    //_batchSize = MsgPassingCoordinator.getMaxSize()/2; 
+		// setting the _batchSize above, would undo any explicit specification done
+		// by the 2-argument newParallelBatchTaskExecutor() method.
     // get refs to MsgPassingCoordinator's
     _mpcFwd = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+_id);
     _mpcBak = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+_id); 		
@@ -149,7 +143,7 @@ public final class ParallelBatchTaskExecutor {
     if (_isRunning==false)
       throw new ParallelException("thread-pool is not running");
     int runtasks = 0;
-    int failedtasks = 0;
+		int failedtasks=0;
     // submit the tasks in batches
     int batch_counter = 0;
     Iterator it = tasks.iterator();
@@ -233,81 +227,116 @@ public final class ParallelBatchTaskExecutor {
   private synchronized static int getNextObjId() { return ++_nextId; }
   private synchronized int getNextId() { return ++_curId; }
 
-}
+
+	/**
+	 * auxiliary inner-class, not part of the public API.
+	 */
+	class PoissonPill {
+		// denotes end of computations for receiving thread
+	}
 
 
-class PBTEThread extends Thread {
-  private static HashMap _ids = new HashMap();  // map<PBTE e, Integer curId>
-  private ParallelBatchTaskExecutor _e;
-  private boolean _doRun=true;
-
-  public PBTEThread(ParallelBatchTaskExecutor e) {
-    synchronized (PBTEThread.class) {
-      if (_ids.get(e)==null)
-        _ids.put(e, new Integer(0));
-    }
-    _e = e;
-  }
-
-
-  public void run() {
-    final int pbteid = _e.getObjId();
-    final MsgPassingCoordinator _mpcFwd = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+pbteid);
-    final MsgPassingCoordinator _mpcBak = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+pbteid);
-    while (isRunning()) {
-      // get the "sender" id
-      int id = getNextId(_e);
-      try {
-        // threads all use the same receiver id
-        // Object data = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+pbteid).
-        Object data = _mpcFwd.recvData(0, id);
-        try {
-          if (data instanceof TaskObject) ( (TaskObject) data).run();
-          else if (data instanceof Runnable) ( (Runnable) data).run();
-          else if (data instanceof PoissonPill) break;  // done
-          else if (data instanceof OldPill) stopRunning();  // done
-          else throw new ParallelException("data object cannot be run");
-        }
-        catch (Exception e) {
-          e.printStackTrace();  // task threw an exception, ignore and continue
-        }
-        // send back the data object as acknowledgement on the "back-channel"
-        // any results may be written in the data object itself
-        // MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+pbteid).
-        _mpcBak.sendDataBlocking(id, -1, data);
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();  // no-op
-      }
-    }
-  }
-
-
-  synchronized void stopRunning() { _doRun=false; }
-
-
-  private synchronized boolean isRunning() { return _doRun; }
-
-
-  private static synchronized int getNextId(ParallelBatchTaskExecutor e) {
-    // this method must be the same as the one in ParallelBatchTaskExecutor
-    // return ++_curId;
-    Integer curId = (Integer) _ids.get(e);
-    int nextid = curId.intValue()+1;
-    _ids.put(e, new Integer(nextid));
-    return nextid;
-  }
+	/**
+	 * auxiliary inner-class for testing old shutdown() method only; not part of 
+	 * the public API.
+	 */
+	class OldPill {
+		// denotes end of computations for receiving thread
+	}
 
 }
 
 
-class PoissonPill {
-  // denotes end of computations for receiving thread
+/**
+ * auxiliary class implementing the threads of the thread-pool of the class
+ * <CODE>ParallelBatchTaskExecutor</CODE> class, not part of the public API.
+ */
+final class PBTEThread extends Thread {
+	private static HashMap _ids = new HashMap();  // map<PBTE e, Integer curId>
+	private ParallelBatchTaskExecutor _e;
+	private boolean _doRun=true;
+
+	
+	/**
+	 * sole constructor.
+	 * @param e ParallelBatchTaskExecutor
+	 */
+	public PBTEThread(ParallelBatchTaskExecutor e) {
+		synchronized (PBTEThread.class) {
+			if (_ids.get(e)==null)
+				_ids.put(e, new Integer(0));
+		}
+		_e = e;
+	}
+
+
+	/**
+	 * while the thread is running, it waits to receive data from the "forward"
+	 * channel "ParallelBatchTaskExecutor$pbteid$" where $pbteid$ is the unique id
+	 * of the executor object that spawned this thread, and if the data received 
+	 * is Runnable or TaskObject, it calls their <CODE>run()</CODE> method, else
+	 * if the data is a <CODE>ParallelBatchTaskExecutor.PoissonPill</CODE>, the 
+	 * method returns, and the thread halts. Any other kind of data, the thread
+	 * simply prints a message that it can't execute the object received, and 
+	 * continues with the loop, which sends the data object to the "back" channel
+	 * "ParallelBatchTaskExecutor_ack$pbteid$".
+	 */
+	public void run() {
+		final int pbteid = _e.getObjId();
+		final MsgPassingCoordinator _mpcFwd = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+pbteid);
+		final MsgPassingCoordinator _mpcBak = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+pbteid);
+		while (isRunning()) {
+			// get the "sender" id: notice that it is not sufficient for each thread
+			// to simply increment a local id variable, as this would cause every 
+			// thread to wait to receive the same message sent, and starvation would
+			// ensue: the first thread to receive the message would proceed, but all
+			// the rest would get stuck waiting for a message that will never arrive.
+			int id = getNextId(_e);
+			try {
+				// threads all use the same receiver id
+				// Object data = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+pbteid).
+				Object data = _mpcFwd.recvData(0, id);
+				try {
+					if (data instanceof TaskObject) ( (TaskObject) data).run();
+					else if (data instanceof Runnable) ( (Runnable) data).run();
+					else if (data instanceof ParallelBatchTaskExecutor.PoissonPill) break;  // done
+					else if (data instanceof ParallelBatchTaskExecutor.OldPill) stopRunning();  // done
+					else throw new ParallelException("data object cannot be run");
+				}
+				catch (Exception e) {
+					e.printStackTrace();  // task threw an exception, ignore and continue
+				}
+				// send back the data object as acknowledgement on the "back-channel"
+				// any results may be written in the data object itself
+				// MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+pbteid).
+				_mpcBak.sendDataBlocking(id, -1, data);
+			}
+			catch (ParallelException e) {
+				e.printStackTrace();  // no-op
+			}
+		}
+	}
+
+	
+	synchronized void stopRunning() { _doRun=false; }
+
+	
+	private synchronized boolean isRunning() { return _doRun; }
+
+	
+	/**
+	 * implements a synchronized counter for each executor e, starting from 0, and
+	 * incrementing by 1 each time it is called.
+	 * @param e ParallelBatchTaskExecutor
+	 * @return int
+	 */
+	private static synchronized int getNextId(ParallelBatchTaskExecutor e) {
+		// this method must start, and then increment numbers in the same way the
+		// ParallelBatchTaskExecutor.getNextId() method does. 
+		Integer curId = (Integer) _ids.get(e);
+		int nextid = curId.intValue()+1;
+		_ids.put(e, new Integer(nextid));
+		return nextid;
+	}
+	
 }
-
-
-// for testing old shutdown() method only
-class OldPill {
-  // denots end of computations for receiving thread
-}
-

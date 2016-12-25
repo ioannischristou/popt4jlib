@@ -9,10 +9,21 @@ package parallel;
 import java.util.Random;
 
 /**
- *
- * @author itc
+ * test-driver for <CODE>BoundedBufferArray</CODE> class.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
  */
 public class BoundedBufferArrayTest {
+	
+	/**
+	 * invoke as:
+	 * <CODE>java -cp &lt;classpath&gt; parallel.BoundedBufferArrayTest</CODE>.
+	 * @param args 
+	 */
 	public static void main(String[] args) {
 		try {
 			BoundedBufferArray buf = new BoundedBufferArray(1000);

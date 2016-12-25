@@ -80,15 +80,6 @@ public final class ParallelAsynchBatchTaskExecutor {
       throw new ParallelException("cannot construct so many threads");
     _id = getNextObjId();
     _threads = new PABTEThread[numthreads];
-		/* itc 2015-15-01: moved to initialize() method
-    for (int i=0; i<numthreads; i++) {
-      _threads[i] = new PABTEThread(this, -(i+1));
-      _threads[i].setDaemon(true);  // thread will end when main thread ends
-      _threads[i].start();
-    }
-    _isRunning = true;
-    _mpc = MsgPassingCoordinator.getInstance("ParallelAsynchBatchTaskExecutor"+_id);
-		*/
   }
 
 
@@ -111,7 +102,7 @@ public final class ParallelAsynchBatchTaskExecutor {
 	private void initialize() {
 		final int numthreads = _threads.length;
     for (int i=0; i<numthreads; i++) {
-      _threads[i] = new PABTEThread(this, -(i+1));
+      _threads[i] = new PABTEThread(-(i+1));
       _threads[i].setDaemon(true);  // thread will end when main thread ends
       _threads[i].start();
     }
@@ -127,56 +118,6 @@ public final class ParallelAsynchBatchTaskExecutor {
   public int getNumTasksInQueue() {
     return _mpc.getNumTasksInQueue();
   }
-
-
-  /*
-   * deprecated method.
-   *
-  public void executeBatchOld(Collection tasks) throws ParallelException {
-    if (tasks==null) return;
-    Iterator it = tasks.iterator();
-    Object task=null;
-    if (mustLock()) {
-      synchronized (this) {  // the synchronization is needed only when the
-                             // application will also call the shutDown() method.
-        if (_isRunning == false)
-          throw new ParallelException("thread-pool is not running");
-        while (it.hasNext()) {
-          task = it.next();
-          if ((!_runOnCurrent && existsRoom()) || existsIdleThread()) { // ok
-            MsgPassingCoordinator.getInstance("ParallelAsynchBatchTaskExecutor" +
-                                              _id).
-                sendDataBlocking(_id, task);
-            task = null;
-          }
-          else break;
-        }
-      }
-    }
-    else {
-      if (_isRunning == false)
-        throw new ParallelException("thread-pool is not running");
-      while (it.hasNext()) {
-        task = it.next();
-        if ((!_runOnCurrent && existsRoom()) || existsIdleThread()) { // ok
-          MsgPassingCoordinator.getInstance("ParallelAsynchBatchTaskExecutor" +
-                                            _id).
-              sendDataBlocking(_id, task);
-          task = null;
-        }
-        else break;
-      }
-    }
-    // no available thread, execute remaining tasks in current thread
-    while (task!=null) {
-      if (task instanceof TaskObject) ((TaskObject) task).run();
-      else if (task instanceof Runnable) ((Runnable) task).run();
-      if (it.hasNext()) task = it.next();
-      else task=null;
-    }
-    return;
-  }
-  */
 
 
   /**
@@ -328,70 +269,74 @@ public final class ParallelAsynchBatchTaskExecutor {
 
   private synchronized static int getNextObjId() { return ++_nextId; }
 
+	
+	/**
+	 * helper class for ParallelAsynchBatchTaskExecutor. Not part of the public API.
+	 * <p>Title: popt4jlib</p>
+	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+	 * <p>Copyright: Copyright (c) 2011</p>
+	 * <p>Company: </p>
+	 * @author Ioannis T. Christou
+	 * @version 1.0
+	 */
+	class PABTEThread extends Thread {
+		private int _id;
+		private boolean _isIdle=true;
+
+
+		/**
+		 * public constructor. The id argument is a negative integer.
+		 * @param id int
+		 */
+		public PABTEThread(int id) {
+			_id = id;
+		}
+
+
+		/**
+		 * the run() method of the thread, loops continuously, waiting for a task
+		 * to arrive via the MsgPassingCoordinator class and it executes it. Any
+		 * exceptions the task throws are caught and ignored. In case the data that
+		 * arrives is a PoissonPill, the thread exits its run() loop.
+		 */
+		public void run() {
+			final int pbteid = getObjId();
+			final MsgPassingCoordinator pabtetmpc = MsgPassingCoordinator.getInstance("ParallelAsynchBatchTaskExecutor"+pbteid);
+			boolean do_run = true;
+			while (do_run) {
+				try {
+					Object data = pabtetmpc.recvData(_id, pbteid);
+					setIdle(false);
+					try {
+						if (data instanceof TaskObject) ( (TaskObject) data).run();
+						else if (data instanceof Runnable) ( (Runnable) data).run();
+						else if (data instanceof PoissonPill) {
+							do_run = false; // done
+							break;
+						}
+						else throw new ParallelException("data object cannot be run");
+					}
+					catch (Exception e) {
+						e.printStackTrace();  // task threw an exception, ignore and continue
+					}
+					setIdle(true);
+				}
+				catch (ParallelException e) {
+					e.printStackTrace();  // no-op
+				}
+			}
+		}
+
+		synchronized void setIdle(boolean v) { _isIdle = v; }
+		synchronized boolean isIdle() { return _isIdle; }
+	}
+
+	
+	/**
+	 * auxiliary inner-class, not part of the public API.
+	 */
+	class PoissonPill {
+		// denotes end of computations for receiving thread
+	}
+
 }
-
-
-/**
- * helper class for ParallelAsynchBatchTaskExecutor.
- * <p>Title: popt4jlib</p>
- * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
- * <p>Company: </p>
- * @author Ioannis T. Christou
- * @version 1.0
- */
-class PABTEThread extends Thread {
-  private ParallelAsynchBatchTaskExecutor _e;
-  private int _id;
-  private boolean _isIdle=true;
-
-
-  /**
-   * public constructor. The id argument is a negative integer.
-   * @param e ParallelAsynchBatchTaskExecutor
-   * @param id int
-   */
-  public PABTEThread(ParallelAsynchBatchTaskExecutor e, int id) {
-    _e = e;
-    _id = id;
-  }
-
-
-  /**
-   * the run() method of the thread, loops continuously, waiting for a task
-   * to arrive via the MsgPassingCoordinator class and it executes it. Any
-   * exceptions the task throws are caught and ignored. In case the data that
-   * arrives is a PoissonPill, the thread exits its run() loop.
-   */
-  public void run() {
-    final int pbteid = _e.getObjId();
-    final MsgPassingCoordinator pabtetmpc = MsgPassingCoordinator.getInstance("ParallelAsynchBatchTaskExecutor"+pbteid);
-    boolean do_run = true;
-    while (do_run) {
-      try {
-        Object data = pabtetmpc.recvData(_id, pbteid);
-        setIdle(false);
-        try {
-          if (data instanceof TaskObject) ( (TaskObject) data).run();
-          else if (data instanceof Runnable) ( (Runnable) data).run();
-          else if (data instanceof PoissonPill) {
-            do_run = false; // done
-            break;
-          }
-          else throw new ParallelException("data object cannot be run");
-        }
-        catch (Exception e) {
-          e.printStackTrace();  // task threw an exception, ignore and continue
-        }
-        setIdle(true);
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();  // no-op
-      }
-    }
-  }
-
-  synchronized void setIdle(boolean v) { _isIdle = v; }
-  synchronized boolean isIdle() { return _isIdle; }
-}
-

@@ -4,19 +4,18 @@ import java.util.HashMap;
 
 
 /**
- *
- * <p>Title: popt4jlib</p>
- * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * The class guarantees that if threads are synchronized via the OrderedBarrier
- * class, any tasks given as args to the orderedBarrier(task) call, will execute
- * in the order with which the threads executing them were first registered with
- * the barrier (via the addThread(thread) call). Any such tasks must not be
- * manipulated by other threads after they have been submitted for execution by
- * the orderedBarrier(task) call.
+ * OrderedBarrier guarantees that if threads are synchronized via this class, 
+ * any tasks given as args to the <CODE>orderedBarrier(task)</CODE> call, will 
+ * execute in the order with which the threads executing them were first 
+ * registered with the barrier (via the <CODE>addThread(thread)</CODE> call). 
+ * Any such tasks must not be manipulated by other threads after they have been 
+ * submitted for execution by the <CODE>orderedBarrier(task)</CODE> call.
  * Behavior is undefined if after some threads have started using the
  * orderedBarrier() call, another thread calls the addThread() method, unless a
  * call to reset() is preceded at a time when all threads have finished waiting
  * at their last barrier point.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou

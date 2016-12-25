@@ -464,7 +464,7 @@ public class Solver {
 
 
 	/**
-	 * return the solution cluster indices of the sorted array sequence as a 
+	 * return the solution cluster indices of the sorted array sequence as a
 	 * ClusterSet object.
 	 * @return ClusterSet
 	 */
@@ -496,7 +496,7 @@ public class Solver {
     return result;
   }
 
-	
+
 	/**
 	 * for each of the clusters obtained, keep the smallest value in the cluster
 	 * and add them in non-descending order in the result.
@@ -519,10 +519,10 @@ public class Solver {
 		Arrays.sort(result);
 		return result;
 	}
-	
+
 
 	/**
-	 * return a List&lt;Integer&gt; where result[i] is a number in [1...k] 
+	 * return a List&lt;Integer&gt; where result[i] is a number in [1...k]
 	 * indicating to which cluster the i-th original element belongs to.
 	 * @return List // ArrayList&lt;Integer&gt;
 	 */
@@ -587,7 +587,7 @@ public class Solver {
   /**
    * return the matrix of dimensions n X n where [i,j] denotes the cost of the
    * cluster containing the contiguous values of indices [i, i+1, ..., j].
-	 * Unfortunately, for the L1 (manhattan) norm, this computation has 
+	 * Unfortunately, for the L1 (manhattan) norm, this computation has
 	 * O(n^3) complexity, but for the L2 (Euclidean) norm, the computation reduces
 	 * to O(n^2) complexity, allowing the overall MSSC1D DP-algorithm based on DP
 	 * to achieve complexity O(kn^2/E) where k is the number of clusters sought
@@ -597,7 +597,7 @@ public class Solver {
    */
   private double[][] makeAllClustersMatrix(Params p) {
 		if (p.getMetric()==Params._L2) {
-			return makeAllClustersMatrix_L2(p);  
+			return makeAllClustersMatrix_L2(p);
 		}
     final int n = p.getSequenceLength();
     // final int M = p.getM();
@@ -630,13 +630,13 @@ public class Solver {
     }
     return res;
   }
-	
-	
+
+
   /**
    * return the matrix of dimensions n X n where [i,j] denotes the cost of the
-   * cluster containing the contiguous values of indices [i, i+1, ..., j] 
-	 * computed for L2 norm, only, allowing the overall MSSC1D DP-algorithm based 
-	 * on DP to achieve complexity O(kn^2/E) where k is the number of clusters 
+   * cluster containing the contiguous values of indices [i, i+1, ..., j]
+	 * computed for L2 norm, only, allowing the overall MSSC1D DP-algorithm based
+	 * on DP to achieve complexity O(kn^2/E) where k is the number of clusters
 	 * sought and E the number of available processing units.
    * @param p Params
    * @return double[][]
@@ -689,7 +689,7 @@ public class Solver {
 					res[i][j] = t1 - t2 + t3 + t4 - t5 + t6 + t7;
 					/*
 					res[i][j] = Math.sqrt(
-						            t1 
+						            t1
 						            - t2 + t3
 						            + t4 - t5
 						            + t6
@@ -701,10 +701,10 @@ public class Solver {
     }
     return res;
   }
-	
-	
+
+
 	/**
-	 * test the cost-matrix creation for the L2 norm. 
+	 * test the cost-matrix creation for the L2 norm.
 	 * Invoke as <CODE>java -cp &lt;classpath&gt; popt4jlib.MSSC1D.Solver &lt;file_name&gt; &lt;n&gt;</CODE>.
 	 * @param args String[]
 	 */
@@ -728,14 +728,14 @@ public class Solver {
 			System.err.println("read total of "+i+" numbers, stored "+n+" in array.");
 			Params p = new Params(arr, Double.MAX_VALUE, 1, -1);
 			Solver s = new Solver(p);
-			long st = System.nanoTime();
+			//long st = System.nanoTime();
 			double[][] mat1 = s.makeAllClustersMatrix(p);
-			long dur = System.nanoTime()-st;
-			System.err.println("s.makeAllClustersMatrix(p) took "+dur+" nanosecs");
-			st = System.nanoTime();
+			//long dur = System.nanoTime()-st;
+			//System.err.println("s.makeAllClustersMatrix(p) took "+dur+" nanosecs");
+			//st = System.nanoTime();
 			double[][] matF = s.makeAllClustersMatrix_L2(p);
-			dur = System.nanoTime()-st;
-			System.err.println("s.makeAllClustersMatrix_L2(p) took "+dur+" nanosecs");			
+			//dur = System.nanoTime()-st;
+			//System.err.println("s.makeAllClustersMatrix_L2(p) took "+dur+" nanosecs");
 			for (i=0; i<n; i++) {
 				for (int j=i; j<n; j++) {
 					double dij = mat1[i][j]-matF[i][j];

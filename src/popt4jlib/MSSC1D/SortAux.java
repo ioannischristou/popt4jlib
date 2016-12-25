@@ -43,7 +43,12 @@ class SortAux implements Comparable {
     // this == c => return 0
     // this > c => return 1
     int v = Double.compare(_v, c._v);
-		if (v!=0) return v;
-		else return Integer.compare(_i, c._i);
+    if (v!=0) return v;
+    // else return Integer.compare(_i, c._i);
+    else {
+      if (_i < c._i) return -1;
+      else if (_i == c._i) return 0;
+      else return 1;
+    }
   }
 }

@@ -23,7 +23,9 @@ public abstract class RRObject implements Serializable {
 
 
 /**
- * auxiliary class wrapping a request for processing TaskObjects.
+ * auxiliary class wrapping a request for processing TaskObjects in networks of
+ * <CODE>PDBatchTaskExecutor[Clt|Srv|Wrk]</CODE> objects. Not part of the public 
+ * API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -33,8 +35,8 @@ public abstract class RRObject implements Serializable {
  */
 class TaskObjectsExecutionRequest extends RRObject {
   private final static long serialVersionUID = 5801899648236803371L;
-  TaskObject[] _tasks;
-  Vector _originatingClients;  // Vector<String>  ordered by event time
+  protected TaskObject[] _tasks;
+  protected Vector _originatingClients;  // Vector<String>  ordered by event time
 
 
   /**
@@ -81,7 +83,7 @@ class TaskObjectsExecutionRequest extends RRObject {
 			results = srv.submitWork(_originatingClients, _tasks);
 		}
 		catch (IOException e) {  // worker disconnected, try one last time
-			utils.Messenger.getInstance().msg("worker connection lost, will try one last time", 1);
+			utils.Messenger.getInstance().msg("worker connection lost, will try one last time", 2);
 			results = srv.submitWork(_originatingClients, _tasks);
 		}
 		// 2. send back the results to the requestor
@@ -93,7 +95,9 @@ class TaskObjectsExecutionRequest extends RRObject {
 
 
 /**
- * auxiliary class wrapping a request for processing asynchronously TaskObjects.
+ * auxiliary class wrapping a request for processing asynchronously TaskObjects,
+ * in networks of <CODE>PDAsynchBatchTaskExecutor[Clt|Srv|Wrk]</CODE> objects.
+ * Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2016</p>
@@ -103,12 +107,19 @@ class TaskObjectsExecutionRequest extends RRObject {
  */
 class TaskObjectsAsynchExecutionRequest extends RRObject {
   //private final static long serialVersionUID = 5801899648236803371L;
-  TaskObject[] _tasks;
-  Vector _originatingClients;  // Vector<String>  ordered by event time
+  TaskObject[] _tasks;  // need package access so they can be accessed from Wrk
+  protected Vector _originatingClients;  // Vector<String>  ordered by event time
 
+	/**
+	 * public (empty) no-arg constructor, only needed for sub-classes.
+	 */
+	public TaskObjectsAsynchExecutionRequest() {
+		// no-op.
+	}
+	
 
   /**
-   * sole public constructor.
+   * public constructor specifies originator host and tasks.
    * @param originator String the name of the originating client
    * @param tasks TaskObject[]
    */
@@ -151,7 +162,7 @@ class TaskObjectsAsynchExecutionRequest extends RRObject {
 			srv.submitWork(_originatingClients, _tasks);
 		}
 		catch (IOException e) {  // worker disconnected, try one last time
-			utils.Messenger.getInstance().msg("worker connection lost, will try one last time", 1);
+			utils.Messenger.getInstance().msg("TAOER.runProtocol(): Wrk connection lost, will try one last time", 2);
 			srv.submitWork(_originatingClients, _tasks);
 		}
 		// 2. send back OKReply to requestor
@@ -177,7 +188,188 @@ class TaskObjectsAsynchExecutionRequest extends RRObject {
 
 
 /**
- * auxiliary class wrapping a request for asking for worker availability.
+ * auxiliary class wrapping a request for processing asynchronously TaskObjects,
+ * in networks of <CODE>PDAsynchBatchTaskExecutor[Clt|Srv|Wrk]</CODE> objects,
+ * breaking them up in smaller chunks if needed. Not part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2016</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class TaskObjectsAsynchParallelExecutionRequest extends TaskObjectsAsynchExecutionRequest {
+  //private final static long serialVersionUID = 5801899648236803371L;
+	private UnboundedBufferArrayUnsynchronized _taskChunksList=null;  // FIFOList<TaskObject[]>
+	private int _maxChunkSize=8;  // default max chunk size represents the number
+	                              // of CPU cores in most current machines.
+	
+
+  /**
+   * public constructor specifies originator host and tasks.
+   * @param originator String the name of the originating client
+   * @param tasks TaskObject[]
+   */
+  public TaskObjectsAsynchParallelExecutionRequest(String originator, TaskObject[] tasks) {
+		super(originator, tasks);
+  }
+
+	
+  /**
+   * public constructor specifies originator host and tasks, plus the maximum
+	 * chunk (batch) size to send to the workers at once.
+   * @param originator String the name of the originating client
+   * @param tasks TaskObject[]
+	 * @param max_chunk_size int
+	 * @throws IllegalArgumentException if max_chunk_size &lt; 1
+   */
+  public TaskObjectsAsynchParallelExecutionRequest(String originator, 
+		                                               TaskObject[] tasks, 
+																									 int max_chunk_size) {
+		this(originator, tasks);
+		if (max_chunk_size<1) 
+			throw new IllegalArgumentException("TaskObjectsAsynchParallelExecutionRequest: max_chunk_size="+max_chunk_size);
+		_maxChunkSize = max_chunk_size;
+  }
+
+
+  /**
+   * constructor used only by servers that have a client connection to
+   * other servers.
+   * @param originators Vector  // Vector&lt;String&gt;
+   * @param tasks TaskObject[]
+   */
+  TaskObjectsAsynchParallelExecutionRequest(Vector originators, TaskObject[] tasks) {
+		super(originators, tasks);
+  }
+
+
+  /**
+   * finds a free worker and submits the tasks for processing (in chunks if 
+	 * needed), then sends <CODE>OKReply</CODE> back to the (client) requestor. In 
+	 * case no worker is available, sends back the tasks, wrapped in a 
+	 * <CODE>NoWorkerAvailableResponse</CODE> object.
+	 * Notice that in this implementation, state is kept of those tasks that have
+	 * been successfully submitted, so that in case of some workers failing,
+	 * when this object's <CODE>runProtocol()</CODE> method runs again, it will
+	 * only submit those tasks that have not yet been successfully submitted.
+	 * Though the submission loop is a serial for-loop, the tasks are still 
+	 * sent in parallel, since each submission is an "asynchronous" submission in
+	 * that there is no blocking for the tasks to complete before sending the 
+	 * next chunk of results.
+   * @param srv PDAsynchBatchTaskExecutorSrv
+   * @param ois ObjectInputStream
+   * @param oos ObjectOutputStream
+   * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws PDAsynchBatchTaskExecutorException
+   */
+  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) 
+		throws IOException, ClassNotFoundException, PDAsynchBatchTaskExecutorException {
+    if (_tasks==null || _tasks.length==0)
+      throw new PDAsynchBatchTaskExecutorException(
+				"TaskObjectsAsynchParallelExecutionRequest.runProtocol(): null or empty _tasks?");
+  	if (_taskChunksList==null) {
+			int num_chunks = _tasks.length / _maxChunkSize;
+			if (_maxChunkSize*num_chunks < _tasks.length) ++num_chunks;
+			_taskChunksList = new UnboundedBufferArrayUnsynchronized(num_chunks);
+			// create and put the chunks of up to _maxChunkSize tasks in TaskObject[] 
+			// objects in the list
+			int cur_batch_length = _tasks.length > _maxChunkSize ? _maxChunkSize : _tasks.length;
+			TaskObject[] cur_batch = new TaskObject[cur_batch_length];
+			int j=0;
+			for (int i=0; i<_tasks.length; i++) {
+				cur_batch[j++] = _tasks[i];
+				if (j==cur_batch.length) {  // current batch full, store it in buffer, and proceed
+					_taskChunksList.addElement(cur_batch);
+					int num_rem_tasks = _tasks.length - (i+1);
+					cur_batch_length = num_rem_tasks > _maxChunkSize ? _maxChunkSize : num_rem_tasks;
+					cur_batch = new TaskObject[cur_batch_length];
+					j=0;
+				}
+			}
+		}
+		for (int i=0; i<_taskChunksList.size(); i++) {
+			// 0. the tasks to send are always at the beginning
+			TaskObject[] tasks = (TaskObject[]) _taskChunksList.elementAt(0);
+			try {
+				// 1. find an available worker on the net, submit work
+				srv.submitWork(_originatingClients, tasks);
+				// 2. remove this successfully sent chunk from list
+				_taskChunksList.remove();
+			}
+			catch (IOException e) {  // worker disconnected, try one last time
+				utils.Messenger.getInstance().msg("TOAPER.runProtocol(): connection to Wrk was lost, will try one last time", 2);
+				// 3. try again
+				srv.submitWork(_originatingClients, tasks);
+				// 4. remove this successfully sent chunk from list
+				_taskChunksList.remove();
+			}
+		}
+		// finally, send back OKReply to requestor
+		oos.writeObject(new OKReply());
+		oos.flush();
+		// return;
+  }
+	
+	
+	/**
+	 * unsupported method always throws PDAsynchBatchTaskExecutorException.
+	 * @param srv PDBatchTaskExecutorSrv
+	 * @param ois ObjectInputStream
+	 * @param oos ObjectOutputStream
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws PDAsynchBatchTaskExecutorException 
+	 */
+  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+		throw new PDAsynchBatchTaskExecutorException("Unsupported method");
+	}
+}
+
+
+/**
+ * auxiliary class wrapping a request so that 
+ * <CODE>PDAsynchBatchTaskExecutorClt</CODE> client objects may await server's 
+ * workers. Not part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2016</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class PDAsynchBatchTaskExecutorSrvAwaitWrksRequest extends TaskObjectsAsynchExecutionRequest {
+		
+  /**
+   * sole public constructor.
+   */
+  public PDAsynchBatchTaskExecutorSrvAwaitWrksRequest() {
+		super();
+  }
+
+
+  /**
+	 * awaits until there is at least one worker available to the server, and
+	 * then sends OKReply back to the client.
+   * @param srv PDAsynchBatchTaskExecutorSrv
+   * @param ois ObjectInputStream
+   * @param oos ObjectOutputStream
+	 * @throws IOException
+   */
+  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) 
+		throws IOException {
+		srv.awaitWorkers();
+		oos.writeObject(new OKReply());
+		oos.flush();
+  }
+}
+
+
+/**
+ * auxiliary class wrapping a request (from 
+ * <CODE>PDAsynchBatchTaskExecutorSrv</CODE> objects) asking for worker 
+ * availability. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2016</p>
@@ -224,7 +416,71 @@ class PDAsynchBatchTaskExecutorWrkAvailabilityRequest extends RRObject {
 
 
 /**
- * auxiliary class wrapping a request for processing in parallel TaskObjects.
+ * auxiliary class wrapping a request (from 
+ * <CODE>PDAsynchBatchTaskExecutorSrv</CODE> objects) asking for worker capacity 
+ * (in terms of their msg-passing queue) to accept request for asynch task 
+ * execution without throwing <CODE>ParallelException</CODE>. Not part of the 
+ * public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2016</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class PDAsynchBatchTaskExecutorWrkCapacityRequest extends RRObject {
+  //private final static long serialVersionUID = 5801899648236803371L;
+	private int _size;
+
+
+  /**
+   * sole public constructor.
+	 * @param size int the request batch size
+   */
+  public PDAsynchBatchTaskExecutorWrkCapacityRequest(int size) {
+		_size = size;
+  }
+	
+	
+	/**
+	 * get the requested batch size.
+	 * @return int
+	 */
+	public int getSize() {
+		return _size;
+	}
+
+
+  /**
+	 * unsupported operation always throws.
+   * @param srv PDAsynchBatchTaskExecutorSrv
+   * @param ois ObjectInputStream
+   * @param oos ObjectOutputStream
+	 * @throws PDAsynchBatchTaskExecutorException
+   */
+  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) 
+		throws PDAsynchBatchTaskExecutorException {
+    throw new PDAsynchBatchTaskExecutorException("Unsupported method");
+  }
+	
+	
+	/**
+	 * unsupported method always throws PDAsynchBatchTaskExecutorException.
+	 * @param srv PDBatchTaskExecutorSrv
+	 * @param ois ObjectInputStream
+	 * @param oos ObjectOutputStream
+	 * @throws PDAsynchBatchTaskExecutorException 
+	 */
+  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws PDAsynchBatchTaskExecutorException {
+		throw new PDAsynchBatchTaskExecutorException("Unsupported method");
+	}
+}
+
+
+/**
+ * auxiliary class wrapping a request for processing in parallel TaskObjects, 
+ * used with <CODE>PDBatchTaskExecutor[Srv|Wrk|Clt]</CODE> networks of 
+ * synchronous execution requests. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2015</p>
@@ -244,7 +500,7 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
 	// known to the system, and each batch independently submitted to the server,
 	// and so on.
 	private int _grainSize=-1;  // if positive, use this size as grain-size
-
+	private utils.Messenger _mger = utils.Messenger.getInstance();
 
   /**
    * sole public constructor.
@@ -344,8 +600,8 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
 		batches.add(batch);
 		// batches are ready
 		if (num_threads>batches.size()) num_threads = batches.size();
-		utils.Messenger.getInstance().msg("TaskObjectsParallelExecutionRequest.runProtocol(): created "+
-			                                batches.size()+" batches to be ran by "+num_threads+" threads", 1);
+		_mger.msg("TaskObjectsParallelExecutionRequest.runProtocol(): created "+
+			                                batches.size()+" batches to be ran by "+num_threads+" threads", 2);
 		WrkSubmissionThread[] threads = new WrkSubmissionThread[num_threads];
 		for (int i=0; i<num_threads; i++) {
 			threads[i] = new WrkSubmissionThread(srv, (TaskObject[]) batches.get(i), _originatingClients);
@@ -378,71 +634,75 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
     oos.flush();
     return;
   }
-}
-
-
-/**
- * auxiliary class for parallel processing of a TaskObject[].
- * <p>Title: popt4jlib</p>
- * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
- * <p>Company: </p>
- * @author Ioannis T. Christou
- * @version 1.0
- */
-class WrkSubmissionThread extends Thread {
-	private TaskObject[] _tasks;
-	private Vector _originatingClients;
-	private PDBatchTaskExecutorSrv _srv;
-	private TaskObjectsExecutionResults _results;
-	
-	public WrkSubmissionThread(PDBatchTaskExecutorSrv srv, TaskObject[] tasks, Vector originatingClients) {
-		_srv = srv;
-		_tasks = tasks;
-		_originatingClients = originatingClients;
-		System.err.println("WrkSubmissionThread(srv,tasks,clts): creating thread for "+tasks.length+" tasks");  // itc: HERE rm asap
-	}
 
 	
-	public void run() {
-		try {
-			// find an available worker on the net, submit work, wait for results
-			_results = _srv.submitWork(_originatingClients, _tasks);
+	/**
+	 * auxiliary inner-class for submitting in parallel chunks of a TaskObject[]
+	 * to different workers connected to the same 
+	 * <CODE>PDBatchTaskExecutorSrv</CODE> server. Not part of the public API.
+	 * <p>Title: popt4jlib</p>
+	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+	 * <p>Copyright: Copyright (c) 2011-2016</p>
+	 * <p>Company: </p>
+	 * @author Ioannis T. Christou
+	 * @version 1.0
+	 */
+	class WrkSubmissionThread extends Thread {
+		private TaskObject[] _tasks;
+		private Vector _originatingClients;
+		private PDBatchTaskExecutorSrv _srv;
+		private TaskObjectsExecutionResults _results;
+
+		public WrkSubmissionThread(PDBatchTaskExecutorSrv srv, TaskObject[] tasks, Vector originatingClients) {
+			_srv = srv;
+			_tasks = tasks;
+			_originatingClients = originatingClients;
+			_mger.msg("WrkSubmissionThread(srv,tasks,clts): creating thread for "+tasks.length+" tasks",2);
 		}
-		catch (IOException e) {  // worker closed connection, try one more time
-			utils.Messenger.getInstance().msg("WrkSubmissionThread.run(): current "+
-				"worker closed connection, will retry one more time", 1);
+
+
+		public void run() {
 			try {
+				// find an available worker on the net, submit work, wait for results
 				_results = _srv.submitWork(_originatingClients, _tasks);
 			}
-			catch (Exception e2) {
-				// e2.printStackTrace();
-				System.err.println("WrkSubmissionThread.run(): _srv.submitWork(_originatingClients,"+
-					                 _tasks.length+" tasks) threw exception '"+e+
-					                 "'. Exiting with _results set to null");  // itc: HERE rm asap
+			catch (IOException e) {  // worker closed connection, try one more time
+				_mger.msg("WrkSubmissionThread.run(): current "+
+					"worker closed connection, will retry one more time", 2);
+				try {
+					_results = _srv.submitWork(_originatingClients, _tasks);
+				}
+				catch (Exception e2) {
+					// e2.printStackTrace();
+					_mger.msg("WrkSubmissionThread.run(): _srv.submitWork(_originatingClients,"+
+							  		_tasks.length+" tasks) threw exception '"+e+
+										"'. Exiting with _results set to null",2); 
+					_results = null;
+				}
+			}
+			catch (Exception e) {
+				// e.printStackTrace();
+				_mger.msg("WrkSubmissionThread.run(): _srv.submitWork(_originatingClients,"+
+									_tasks.length+" tasks) threw exception '"+e+
+									"'. Exiting with _results set to null",2);
 				_results = null;
 			}
 		}
-		catch (Exception e) {
-			// e.printStackTrace();
-			System.err.println("WrkSubmissionThread.run(): _srv.submitWork(_originatingClients,"+
-				                 _tasks.length+" tasks) threw exception '"+e+
-				                 "'. Exiting with _results set to null");  // itc: HERE rm asap
-			_results = null;
+
+
+		Object[] getResults() {
+			if (_results!=null) return _results._results;
+			else return null;
 		}
+
 	}
-	
-	
-	Object[] getResults() {
-		if (_results!=null) return _results._results;
-		else return null;
-	}
-	
+
 }
 
 
 /**
- * auxiliary class wrapping the results of processing a TaskObject[].
+ * auxiliary class wrapping the results of processing a TaskObject[]. Not part
+ * of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -475,7 +735,7 @@ class TaskObjectsExecutionResults extends RRObject {
       throw new PDBatchTaskExecutorException("TaskObjectsExecutionResults.runProtocol(): null or empty _results?");
     oos.writeObject(this);
     oos.flush();
-    return;
+    //return;
   }
 }
 

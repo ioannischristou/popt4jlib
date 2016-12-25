@@ -9,10 +9,20 @@ package parallel;
 /**
  * test driver class for the <CODE>BoundedBufferArrayUnsynchronized</CODE> class
  * and in particular its <CODE>remove(Object,int)</CODE> method.
- * @author itc
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
  */
 public class BBAUTest {
 	
+	/**
+	 * invoke as:
+	 * <CODE>java -cp &lt;classpath&gt; parallel.BBAUTest</CODE>.
+	 * @param args 
+	 */
 	public static void main(String[] args) {
 		int len = 1000;
 		// 1. create

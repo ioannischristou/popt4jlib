@@ -3,7 +3,7 @@ package parallel;
 /**
  * This is an auxiliary helper class for the *MsgPassingCoordinator classes.
  * It is not intended to be used outside this package, nor to form part of the
- * API of this libary.
+ * public API of this libary.
  * <p> The class implements the Thread-Local Object Pool mechanism that greatly
  * reduces new object allocations (especially useful in multi-threaded
  * contexts.) With appropriately large array threshold size, the pool will never

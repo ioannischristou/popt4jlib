@@ -275,7 +275,8 @@ public final class DynamicAsynchTaskExecutor {
 
 
   /**
-   * nested helper class for DynamicAsynchTaskExecutor.
+   * nested helper class for DynamicAsynchTaskExecutor. Not part of the public
+	 * API.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
    * <p>Copyright: Copyright (c) 2011</p>
@@ -335,7 +336,8 @@ public final class DynamicAsynchTaskExecutor {
 
 
   /**
-   * nested helper class indicates shut-down of thread-pool
+   * nested helper class indicates shut-down of thread-pool. Not part of the
+	 * public API.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
    * <p>Copyright: Copyright (c) 2011</p>

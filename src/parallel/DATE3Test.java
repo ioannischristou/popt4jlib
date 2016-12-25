@@ -16,7 +16,7 @@ import popt4jlib.IdentifiableIntf;
  * utilizing the <CODE>Fib</CODE> task: computing recursively in parallel the
  * Fibonacci sequence using essentially a Fork-Join pattern (originally proposed
  * for java by Doug Lea in his util.concurrent java package, based on the Cilk
- * framework.)
+ * framework).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -66,6 +66,10 @@ public class DATE3Test {
 	}
 	
 	
+	/**
+	 * auxiliary inner-class implements the fork-join style of recursive 
+	 * computation of Fibonacci numbers, not part of the public API.
+	 */
   static class Fib implements Runnable {
     private static int _threshold = 20;
     private boolean _isDone;  // false
@@ -187,6 +191,11 @@ public class DATE3Test {
         
 	}
 	
+
+	/**
+	 * auxiliary inner-class extends the Fib class, and specifies the thread on
+	 * which it must be executed, not part of the public API.
+	 */
 	static class TSFib extends Fib implements ThreadSpecificTaskObject {
 		TSFib(Fib f) {
 			super(f._n);
@@ -203,4 +212,3 @@ public class DATE3Test {
 	}
 
 }
-

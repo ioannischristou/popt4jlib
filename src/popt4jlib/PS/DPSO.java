@@ -22,6 +22,13 @@ import popt4jlib.*;
  * fact that the order in which DPSOThreads call the setIncumbent() method which
  * in turn may call the notifyObservers() method is not deterministically
  * fixed (depends on thread schedules).
+ * <p> This implementation features an island model of computation where there
+ * exist multiple sub-populations each running in its own thread of computation;
+ * migration between sub-populations by default implements a counter-clock-wise
+ * unidirectional ring topology; this topology can be over-ridden by passing in
+ * the parameters a <CODE>popt4jlib.ImmigrationIslandOpIntf</CODE> object that
+ * will decide how the routes are to be defined. In any case, up to 2 particles
+ * from each island may move in each generation.</p>
  * <p> Besides the shared-memory parallelism inherent in the class via which 
  * each island runs in its own thread of execution, the class allows for the 
  * distribution of function evaluations in a network of 
@@ -57,13 +64,16 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
   private DPSOThread[] _threads=null;
   private int[] _islandsPop;
 
+	// this object, if present, dictates the immigration routes between islands.
+	private ImmigrationIslandOpIntf _immigrationTopologySelector=null;
+	
 	private RRObject _pdbtInitCmd=null;  // if running in distributed mode, 
 	// this object will be sent first to server as initialization command.
 
 
 
   /**
-   * public no-arg constructor
+   * public no-arg constructor.
    */
   public DPSO() {
 		super();
@@ -73,7 +83,7 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
 
   /**
    * public constructor accepting the optimization parameters (making a local
-   * copy of them)
+   * copy of them).
    * @param params HashMap
    */
   public DPSO(HashMap params) {
@@ -197,6 +207,10 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
 	 * next position of each particle; default is the ring topology mentioned 
 	 * above (which is built-in in the private method 
 	 * <CODE>DPSOThreadAux.getBestInSubSwarm(i)</CODE>).
+	 * <li> &lt;"dpso.immigrationrouteselector", popt4jlib.ImmigrationIslandOpIntf route_selector&gt;
+	 * optional, if present defines the routes of immigration from island to 
+	 * island; default is null, which forces the built-in unidirectional ring 
+	 * routing topology.
    * <li> &lt;"ensemblename", String name&gt; optional, the name of the 
 	 * synchronized optimization ensemble in which this DPSO object will 
 	 * participate. In case this value is non-null, then a higher-level ensemble 
@@ -245,11 +259,23 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
       if (_params.get("dpso.function") == null)
         _params.put("dpso.function", f);
       int nt = 1;
-      Integer ntI = (Integer) _params.get("dpso.numthreads");
-      if (ntI != null) nt = ntI.intValue();
+			try {
+				Integer ntI = (Integer) _params.get("dpso.numthreads");
+				if (ntI != null) nt = ntI.intValue();
+			}
+			catch (ClassCastException e) {
+				throw new OptimizerException("DPSO.minimize(): dpso.numthreads not an integer in params");
+			}
       if (nt < 1)throw new OptimizerException(
           "DPSO.minimize(): invalid number of threads specified");
       RndUtil.addExtraInstances(nt);  // not needed
+			// set immigration topology router if it exists
+			try {
+				_immigrationTopologySelector = (ImmigrationIslandOpIntf) _params.get("dpso.immigrationrouteselector");
+			}
+			catch (ClassCastException e) {
+				throw new OptimizerException("DPSO.minimize(): invalid ImmigrationIslandOpIntf object specified in params");
+			}
       // check if this object will participate in an ensemble
       String ensemble_name = (String) _params.get("ensemblename");
       _threads = new DPSOThread[nt];
@@ -339,11 +365,22 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
 
   /**
    * return the immigration island where the island with id myid must send its
-   * individuals.
-   * @param myid int
-   * @return int
+   * individuals. By default, unless there is a seriously under-populated 
+	 * island compared to the one with id=myid, it implements a uni-directional 
+	 * ring migration topology, with a counter-clock-wise direction. This default 
+	 * may be over-ridden by including in the parameters passed in, an object 
+	 * implementing the <CODE>popt4jlib.ImmigrationIslandOpIntf</CODE> that will
+	 * decide to which island migration from island with id=myid should occur 
+	 * using knowledge of the current population distribution, as well as the 
+	 * current generation number, gen.
+   * @param myid int my island id
+	 * @param gen int the current generation number
+   * @return int if -1 indicates no migration
    */
-  synchronized int getImmigrationIsland(int myid) {
+  synchronized int getImmigrationIsland(int myid, int gen) {
+		if (_immigrationTopologySelector!=null) {  // migration topology selector exists, use it.
+			return _immigrationTopologySelector.getImmigrationIsland(myid, gen, _islandsPop, _params);
+		}
     for (int i=0; i<_islandsPop.length; i++)
       if (myid!=i && (_islandsPop[i]==0 || _islandsPop[myid]>2.5*_islandsPop[i])) return i;
     // populations are more or less the same size, so immigration will occur
@@ -698,7 +735,7 @@ class DPSOThreadAux {
           e.printStackTrace();  // no-op
         }
       }
-      sendInds();
+      sendInds(gen);
       _master.setIslandPop(_id, _individuals.size());
       Barrier.getInstance("dpso."+_master.getId()).barrier();  // synchronize with other threads
     }
@@ -844,8 +881,8 @@ class DPSOThreadAux {
   }
 
 
-  private void sendInds() {
-    int sendTo = _master.getImmigrationIsland(_id);
+  private void sendInds(int gen) {
+    int sendTo = _master.getImmigrationIsland(_id, gen);
     if (sendTo>=0) {
       Vector immigrants = getImmigrants();
       DPSOThreadAux receiverThreadAux = _master.getDPSOThread(sendTo).getDPSOThreadAux();

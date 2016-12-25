@@ -9,16 +9,15 @@ import java.io.*;
  * <CODE>ComparableTaskObject</CODE> interface (or the extending interface,
  * <CODE>ThreadSpecificComparableTaskObject</CODE> encapsulating the requirement
  * that the task be run on a thread with a particular thread-id).
- * The run() method of each task must clearly
- * be thread-safe!, and also, after calling executeBatch(tasks), no thread
- * (including the one in which the call originated) should manipulate in any
- * way the submitted tasks or their container (the Collection argument to the
- * call). Unfortunately, there is no mechanism in the language to enforce this
- * constraint; the user of the library has to enforce this (mild) constraint in
- * their code.
+ * The run() method of each task must clearly be thread-safe!, and also, after 
+ * calling <CODE>executeBatch(tasks)</CODE>, no thread (including the one in 
+ * which the call originated) should manipulate in any way the submitted tasks 
+ * or their container (the Collection argument to the call). Unfortunately, 
+ * there is no mechanism in the language to enforce this constraint; the user of 
+ * the library has to enforce this (mild) constraint in their code.
  * The class utilizes the (faster) Message-Passing mechanism implemented in the
- * SimplePriorityMsgPassingCoordinator class of this package. The class itself
- * is thread-safe meaning that there can exist multiple
+ * <CODE>SimplePriorityMsgPassingCoordinator</CODE> class of this package. The 
+ * class itself is thread-safe meaning that there can exist multiple
  * <CODE>FasterParallelAsynchBatchPriorityTaskExecutor</CODE> objects, multiple
  * concurrent threads may call the public methods of the class on the same or
  * different objects as long as the constraints mentioned above are satisfied.
@@ -113,7 +112,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
 	private void initialize() {
 		final int numthreads = _threads.length;
 		for (int i=0; i<numthreads; i++) {
-      _threads[i] = new FPABPTEThread(this, -(i+1));
+      _threads[i] = new FPABPTEThread(-(i+1));
       _threads[i].setDaemon(true);  // thread will end when main thread ends
       _threads[i].start();
     }
@@ -163,7 +162,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * @throws ParallelExceptionUnsubmittedTasks if this object does not allow
    * running tasks in the current thread and some tasks could not be sent to
    * the thread-pool due to a full <CODE>SimplePriorityMsgPassingCoordinator</CODE>
-   * msg-queue; in this case the unsubmitted tasks are returned inside the
+   * msg-queue; in this case the un-submitted tasks are returned inside the
    * exception object, along with any object in the <CODE>tasks</CODE> argument
 	 * that does not implement the <CODE>ComparableTaskObject</CODE> interface (if 
 	 * there is even a single such object, this exception will be thrown as well,
@@ -315,7 +314,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
 
 
   /**
-   * if true, then a task can be "sent" (submittted) to the thread-pool for
+   * if true, then a task can be "sent" (submitted) to the thread-pool for
    * processing without causing any waiting on the executeBatch() method.
    * @return boolean
    */
@@ -343,104 +342,104 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
 
 
   private synchronized static int getNextObjId() { return ++_nextId; }
-}
 
-
-/**
- * helper class for FasterParallelAsynchBatchPriorityTaskExecutor.
- * <p>Title: popt4jlib</p>
- * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
- * <p>Company: </p>
- * @author Ioannis T. Christou
- * @version 1.0
- */
-class FPABPTEThread extends Thread implements popt4jlib.IdentifiableIntf {
-  private FasterParallelAsynchBatchPriorityTaskExecutor _e;
-  private int _id;
-  private boolean _isIdle=true;
-
-  /**
-   * public constructor. The id argument is a negative integer.
-   * @param e ParallelAsynchBatchPriorityTaskExecutor
-   * @param id int
-   */
-  public FPABPTEThread(FasterParallelAsynchBatchPriorityTaskExecutor e, int id) {
-    _e = e;
-    _id = id;
-  }
-
-
-  /**
-   * the run() method of the thread, loops continuously, waiting for a task
-   * to arrive via the <CODE>SimplePriorityMsgPassingCoordinator</CODE> class 
-	 * and executes it.
-   * Any exceptions the task throws are caught &amp; ignored. In case the data that
-   * arrives is a <CODE>ComparablePoissonPill</CODE>, the thread exits its 
-	 * <CODE>run()</CODE> loop.
-   */
-  public void run() {
-    final int fpbteid = _e.getObjId();
-    final SimplePriorityMsgPassingCoordinator fpabptetmpc =
-        SimplePriorityMsgPassingCoordinator.getInstance("FasterParallelAsynchBatchPriorityTaskExecutor"+fpbteid);
-    boolean do_run = true;
-    while (do_run) {
-      Object data = fpabptetmpc.recvData(_id);  // used to be recvData();
-      setIdle(false);
-      try {
-        if (data instanceof ComparableTaskObject) ( (ComparableTaskObject) data).run();
-        else if (data instanceof ComparablePoissonPill) {
-          do_run = false; // done
-          break;
-        }
-        else throw new ParallelException("data object cannot be run");
-      }
-      catch (Exception e) {
-        e.printStackTrace();  // task threw an exception, ignore and continue
-      }
-      setIdle(true);
-    }
-  }
-
-	// IdentifiableIntf method below
-	/**
-	 * This implementation returns the id this object gets in construction time.
-	 * Therefore, if there exist more than one 
-	 * <CODE>FasterParallelAsynchBatchPriorityTaskExecutor</CODE> objects in a JVM
-	 * there will be more than one <CODE>FPABPTEThread</CODE> objects with the 
-	 * same id. However, if the id is always only used with the same executor,
-	 * there is no problem as there will never be two threads created by the same
-	 * executor, both (threads) having the same id.
-	 * @return long _id
-	 */
-	public long getId() { return _id; }
 	
-  synchronized void setIdle(boolean v) { _isIdle = v; }
-  synchronized boolean isIdle() { return _isIdle; }
-}
+	/**
+	 * helper inner class for FasterParallelAsynchBatchPriorityTaskExecutor, not 
+	 * part of the public API.
+	 * <p>Title: popt4jlib</p>
+	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+	 * <p>Copyright: Copyright (c) 2011</p>
+	 * <p>Company: </p>
+	 * @author Ioannis T. Christou
+	 * @version 1.0
+	 */
+	class FPABPTEThread extends Thread implements popt4jlib.IdentifiableIntf {
+		private int _id;
+		private boolean _isIdle=true;
+
+		/**
+		 * public constructor.
+		 * @param id int a negative integer.
+		 */
+		public FPABPTEThread(int id) {
+			_id = id;
+		}
 
 
-/**
- * auxiliary class.
- * <p>Title: popt4jlib</p>
- * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
- * <p>Company: </p>
- * @author Ioannis T. Christou
- * @version 1.0
- */
-class ComparablePoissonPill implements ComparableTaskObject {
-  public Serializable run() {
-    return null;
-  }
-  public boolean isDone() {
-    return true;
-  }
-  public void copyFrom(TaskObject t) throws IllegalArgumentException {
-    throw new IllegalArgumentException("unsupported");
-  }
-  public int compareTo(Object other) {
-    return 0;
-  }
+		/**
+		 * the run() method of the thread, loops continuously, waiting for a task
+		 * to arrive via the <CODE>SimplePriorityMsgPassingCoordinator</CODE> class 
+		 * and executes it.
+		 * Any exceptions the task throws are caught &amp; ignored. In case the data that
+		 * arrives is a <CODE>ComparablePoissonPill</CODE>, the thread exits its 
+		 * <CODE>run()</CODE> loop.
+		 */
+		public void run() {
+			final int fpbteid = getObjId(); // _e.getObjId();
+			final SimplePriorityMsgPassingCoordinator fpabptetmpc =
+					SimplePriorityMsgPassingCoordinator.getInstance("FasterParallelAsynchBatchPriorityTaskExecutor"+fpbteid);
+			boolean do_run = true;
+			while (do_run) {
+				Object data = fpabptetmpc.recvData(_id);  // used to be recvData();
+				setIdle(false);
+				try {
+					if (data instanceof ComparableTaskObject) ( (ComparableTaskObject) data).run();
+					else if (data instanceof ComparablePoissonPill) {
+						do_run = false; // done
+						break;
+					}
+					else throw new ParallelException("data object cannot be run");
+				}
+				catch (Exception e) {
+					e.printStackTrace();  // task threw an exception, ignore and continue
+				}
+				setIdle(true);
+			}
+		}
+
+		
+		// IdentifiableIntf method below
+		/**
+		 * This implementation returns the id this object gets in construction time.
+		 * Therefore, if there exist more than one 
+		 * <CODE>FasterParallelAsynchBatchPriorityTaskExecutor</CODE> objects in a JVM
+		 * there will be more than one <CODE>FPABPTEThread</CODE> objects with the 
+		 * same id. However, if the id is always only used with the same executor,
+		 * there is no problem as there will never be two threads created by the same
+		 * executor, both (threads) having the same id.
+		 * @return long _id
+		 */
+		public long getId() { return _id; }
+
+		synchronized void setIdle(boolean v) { _isIdle = v; }
+		synchronized boolean isIdle() { return _isIdle; }
+	}
+
+
+	/**
+	 * auxiliary class.
+	 * <p>Title: popt4jlib</p>
+	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+	 * <p>Copyright: Copyright (c) 2011</p>
+	 * <p>Company: </p>
+	 * @author Ioannis T. Christou
+	 * @version 1.0
+	 */
+	class ComparablePoissonPill implements ComparableTaskObject {
+		public Serializable run() {
+			return null;
+		}
+		public boolean isDone() {
+			return true;
+		}
+		public void copyFrom(TaskObject t) throws IllegalArgumentException {
+			throw new IllegalArgumentException("unsupported");
+		}
+		public int compareTo(Object other) {
+			return 0;
+		}
+	}
+	
 }
 

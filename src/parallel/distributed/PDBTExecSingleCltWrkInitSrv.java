@@ -109,7 +109,7 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
 
 	
   TaskObjectsExecutionResults submitWork(Vector originating_clients, TaskObject[] tasks) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
-    Set workers2rm = new HashSet();  // Set<PDBTEW2Listener>
+    Set workers2rm = new HashSet();  // Set<Socket s> for (Socket s, PDBTEW2Listener t) pair
     PDBTEW2Listener t = null;
     utils.Messenger.getInstance().msg("PDBTExecSingleCltWrkInitSrv.submitWork(clts,tasks): "+
 			                                "finding an available worker connection among "+
@@ -133,7 +133,7 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
             break;
           }
           else {
-            if (t.isConnectionLost()) workers2rm.add(t);
+            if (t.isConnectionLost()) workers2rm.add(s);  // used to be add(t)
             t = null;  // reset to null
           }
         }
@@ -260,28 +260,29 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
 		 * <CODE>addNewWorkerConnection(s)</CODE> method.
 		 */
     public void run() {
+			utils.Messenger mger = utils.Messenger.getInstance();
       try {
         ServerSocket ss = new ServerSocket(_port);
-        System.out.println("Srv: Now Accepting Worker Connections");
+        mger.msg("Srv: Now Accepting Worker Connections",0);
         while (true) {
           try {
             Socket s = ss.accept();
-            System.out.println("Srv: Incoming New Worker Connection to the Network");
-						System.out.println("Srv: Thread may have to wait if an init_cmd has not yet arrived from the client");
+            mger.msg("Srv: Incoming New Worker Connection to the Network",0);
+						mger.msg("Srv: Thread may have to wait if an init_cmd has not yet arrived from the client",0);
             addNewWorkerConnection(s);
-            System.out.println("Srv: finished adding new worker connection to the _workers");
+            mger.msg("Srv: finished adding new worker connection to the _workers",0);
           }
           catch (Exception e) {
-						utils.Messenger.getInstance().msg("PDBTExecSingleCltWrkInitSrv.W2Thread.run(): "+
-							                                "An error occured while adding new worker connection", 2);
+						mger.msg("PDBTExecSingleCltWrkInitSrv.W2Thread.run(): "+
+							       "An error (exception '"+e+"') occured while adding new worker connection", 2);
             // e.printStackTrace();
           }
         }
       }
       catch (IOException e) {
         // e.printStackTrace();
-				utils.Messenger.getInstance().msg("PDBTExecSingleCltWrkInitSrv.W2Thread.run(): "+
-					                                "Failed to create Server Socket, Server exiting.", 0);
+				mger.msg("PDBTExecSingleCltWrkInitSrv.W2Thread.run(): "+
+					       "Failed to create Server Socket, Server exiting.", 0);
 				System.exit(-1);
       }
     }
@@ -313,27 +314,28 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
 		 * method of the enclosing server, and then the thread exits.
 		 */
     public void run() {
+			utils.Messenger mger = utils.Messenger.getInstance();
       try {
         ServerSocket ss = new ServerSocket(_port);
-        System.out.println("Srv: Now Accepting Single Client Connection");
+        mger.msg("Srv: Now Accepting Single Client Connection",0);
         //while (true) {
           try {
             Socket s = ss.accept();
-            System.out.println("Srv: Client Added to the Network");
+            mger.msg("Srv: Client Added to the Network",0);
             addNewClientConnection(s);
-            System.out.println("Srv: finished adding client connection");
+            mger.msg("Srv: finished adding client connection",0);
           }
           catch (Exception e) {
             // e.printStackTrace();
-						System.err.println("Client Connection failed, exiting...");
+						mger.msg("Client Connection failed (exception: '"+e+"'), exiting...",0);
 						System.exit(-1);
           }
         //}
       }
       catch (IOException e) {
         // e.printStackTrace();
-				utils.Messenger.getInstance().msg("PDBTExecSingleCltWrkInitSrv.C2Thread.run(): "+
-					                                "Failed to create Server Socket, Server exiting.", 0);
+				mger.msg("PDBTExecSingleCltWrkInitSrv.C2Thread.run(): "+
+					       "Failed to create Server Socket, Server exiting.", 0);
 				System.exit(-1);
       }
     }
@@ -359,9 +361,9 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
     private PDBTEC2ListenerThread(PDBTExecSingleCltWrkInitSrv srv, Socket s) throws IOException {
       _srv = srv;
       _s = s;
-      _ois = new ObjectInputStream(_s.getInputStream());
       _oos = new ObjectOutputStream(_s.getOutputStream());
       _oos.flush();
+      _ois = new ObjectInputStream(_s.getInputStream());
     }
 
 
@@ -483,9 +485,9 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
     private PDBTEW2Listener(PDBTExecSingleCltWrkInitSrv srv, Socket s) throws IOException {
       _srv = srv;
       _s = s;
-      _ois = new ObjectInputStream(_s.getInputStream());
       _oos = new ObjectOutputStream(_s.getOutputStream());
       _oos.flush();
+      _ois = new ObjectInputStream(_s.getInputStream());
     }
 
 		

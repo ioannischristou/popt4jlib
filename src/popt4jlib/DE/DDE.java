@@ -8,7 +8,7 @@ import popt4jlib.*;
 import popt4jlib.GradientDescent.VecUtil;
 
 /**
- * A parallel/distributed! implementation of the Differential Evolution algorithm. 
+ * A parallel/distributed implementation of the Differential Evolution algorithm. 
  * The distribution of effort among threads is such so that each thread updates
  * its own portion of the population. Implements both the DE/rand/1/bin and
  * DE/best/1/bin variants. Also implements the island model of distributed
@@ -19,7 +19,7 @@ import popt4jlib.GradientDescent.VecUtil;
  * with other domains.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -466,6 +466,14 @@ class DDEThread extends Thread {
 	private List _maxargvali;
 	
 
+	/**
+	 * sole public constructor.
+	 * @param id int
+	 * @param from int
+	 * @param to int
+	 * @param numtries int
+	 * @param master DDE  // redundant if class were to become inner-class of DDE
+	 */
   public DDEThread(int id, int from, int to, int numtries, DDE master) {
     _id = id;
     _uid = (int) DataMgr.getUniqueId();
@@ -504,6 +512,12 @@ class DDEThread extends Thread {
   }
 
 	
+	/**
+	 * the main method of the thread class. Initializes the part of the population
+	 * that is this thread's responsibility, and runs for a number of generations 
+	 * the DE algorithm, and handles migrations among populations living in 
+	 * different DDE processes (in different JVMs).
+	 */
   public void run() {
     HashMap p = _master.getParams();  // returns a copy
     p.put("thread.localid", new Integer(_id));
@@ -610,6 +624,14 @@ class DDEThread extends Thread {
   }
 
 
+	/**
+	 * implements the DE algorithm on the part of the population managed by this 
+	 * thread.
+	 * @param f FunctionIntf
+	 * @param p HashMap
+	 * @return PairObjDouble  // Pair&lt;VectorIntf, Double&gt;
+	 * @throws OptimizerException 
+	 */
   private PairObjDouble min(FunctionIntf f, HashMap p) throws OptimizerException {
     final int popsize = _master._sols.length;  // no problem with unsynced access
                                                // as the _master._sols array
@@ -738,6 +760,15 @@ class DDEThread extends Thread {
   }
 
 
+	/**
+	 * projects the value val of the j-th variable according to any box 
+	 * constraints described in the params passed in.
+	 * @param val double
+	 * @param j int
+	 * @param params HashMap
+	 * @return double
+	 * @throws OptimizerException 
+	 */
   private double bound(double val, int j, HashMap params) throws OptimizerException {
     if (!_cacheOn) {
 			_minargvali = new ArrayList();
@@ -774,6 +805,11 @@ class DDEThread extends Thread {
   }
 	
 	
+	/**
+	 * implements a migration model based on the island migration topology 
+	 * specified by the next-process-id's in the parameters passed in.
+	 * @param gen int
+	 */
 	private void doMigration(int gen) {
 		// first send my data: choose randomly some vectors, put them in a vector
 		// and ship them wherever they have to go

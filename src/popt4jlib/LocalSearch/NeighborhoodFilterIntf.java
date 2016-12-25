@@ -27,6 +27,6 @@ public interface NeighborhoodFilterIntf {
    * @throws LocalSearchException
    * @return List
    */
-  List filter(Object x, Object arg, HashMap params) throws LocalSearchException;
+  public List filter(Object x, Object arg, HashMap params) throws LocalSearchException;
 }
 

@@ -3,7 +3,7 @@ package graph.packing;
 import java.util.*;
 
 /**
- * BoundedQueue: This class maintains a queue of BBNode's of finite length.
+ * Class maintains a queue of <CODE>BBNodeBase</CODE> objects of finite length.
  * In particular, the queue allows of up to _maxLen BBNode's containing any
  * particular size of graph nodes to be maintained in the data structure.
  * When a BBNode n must be inserted and there is not enough space in the queue,
@@ -13,13 +13,13 @@ import java.util.*;
  * as well as speeding up look-ups in the "contains()" method. Not part of the
  * public API.
  * <p>Title: popt4jlib</p>
- * <p>Description: Optimizing Capacity in MANET graphs</p>
- * <p>Copyright: Copyright (c) 2011</p>
- * <p>Company: AIT</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
+ * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
-class BoundedQueue {
+final class BoundedQueue {
   private HashMap _pqueues;  // map<int BBNodeSize, DLCList<BBNodeBase> >
   private TreeSet _cnodes;  // TreeSet<BBNodeBase>
   private int _maxLen=0;
@@ -72,68 +72,71 @@ class BoundedQueue {
     _pqueues.clear();
     _cnodes.clear();
   }
+	
+	/**
+	 * auxiliary class for the <CODE>BoundedQueue</CODE> class. Not part of the 
+	 * public API.
+	 * <p>Title: popt4jlib</p>
+	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+	 * <p>Copyright: Copyright (c) 2011-2016</p>
+	 * <p>Company: </p>
+	 * @author Ioannis T. Christou
+	 * @version 2.0
+	 */
+	final class DLCList {
+		private DLCListNode _head;
+		private int _maxLen;
+
+		DLCList(int maxlen) {
+			_maxLen = maxlen;
+			_head = new DLCListNode(null, null, null);
+			_head._prev = _head;
+			_head._next = _head;
+			DLCListNode prev = _head;
+			DLCListNode next = _head;
+			for (int i=1; i<_maxLen; i++) {
+				next = new DLCListNode(null, null, prev);
+				prev._next=next;
+				prev = next;
+			}
+			_head._prev = next;
+			next._next = _head;
+		}
+
+		synchronized Object insert(BBNodeBase n) {
+			DLCListNode oldest = _head._prev;
+			Object pdata = oldest._data;
+			oldest._data = n;
+			_head = oldest;
+			return pdata;
+		}
+
+		
+		/**
+		 * auxiliary inner class for the <CODE>DLCList</CODE> class represents nodes 
+		 * in the list container class. Not part of the public API.
+		 * <p>Title: popt4jlib</p>
+		 * <p>Description: Optimizing Capacity in MANET graphs</p>
+		 * <p>Copyright: Copyright (c) 2011-2016</p>
+		 * <p>Company: </p>
+		 * @author Ioannis T. Christou
+		 * @version 2.0
+		 */
+		final class DLCListNode {
+			DLCListNode _next;
+			DLCListNode _prev;
+			Object _data;
+
+			DLCListNode(Object data, DLCListNode next, DLCListNode previous) {
+				_data = data;
+				_next = next;
+				_prev = previous;
+			}
+		}
+
+	}
+
 }
 
 
-/**
- * auxiliary class for the <CODE>BoundedQueue</CODE> class. Not part of the 
- * public API.
- * <p>Title: popt4jlib</p>
- * <p>Description: Optimizing Capacity in MANET graphs</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
- * <p>Company: AIT</p>
- * @author Ioannis T. Christou
- * @version 1.0
- */
-class DLCList {
-  private DLCListNode _head;
-  private int _maxLen;
-
-  DLCList(int maxlen) {
-    _maxLen = maxlen;
-    _head = new DLCListNode(null, null, null);
-    _head._prev = _head;
-    _head._next = _head;
-    DLCListNode prev = _head;
-    DLCListNode next = _head;
-    for (int i=1; i<_maxLen; i++) {
-      next = new DLCListNode(null, null, prev);
-      prev._next=next;
-      prev = next;
-    }
-    _head._prev = next;
-    next._next = _head;
-  }
-
-  synchronized Object insert(BBNodeBase n) {
-    DLCListNode oldest = _head._prev;
-    Object pdata = oldest._data;
-    oldest._data = n;
-    _head = oldest;
-    return pdata;
-  }
-}
-
-
-/**
- * auxiliary class for the <CODE>DLCList</CODE> class represents nodes in the 
- * list container class. Not part of the public API.
- * <p>Title: popt4jlib</p>
- * <p>Description: Optimizing Capacity in MANET graphs</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
- * <p>Company: AIT</p>
- * @author Ioannis T. Christou
- * @version 1.0
- */
-class DLCListNode {
-  DLCListNode _next;
-  DLCListNode _prev;
-  Object _data;
-
-  DLCListNode(Object data, DLCListNode next, DLCListNode previous) {
-    _data = data;
-    _next = next;
-    _prev = previous;
-  }
-}
 

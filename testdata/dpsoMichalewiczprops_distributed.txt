@@ -3,7 +3,7 @@ m,10.0
 dpso.chromosomelength,100
 dpso.maxallelevalue,3.141592653589793
 dpso.minallelevalue,0.0
-dpso.numgens,5000
+dpso.numgens,50
 dpso.numinitpop,50
 rndgen,7,5
 dpso.numthreads,5
@@ -18,3 +18,4 @@ class,dpso.c2vadder,popt4jlib.PS.DblArray1ChromosomeVelocityAdder
 class,dpso.pdbtexecinitedwrkcmd,parallel.distributed.PDBTExecInitNoOpCmd
 dpso.pdbthost,localhost
 dpso.pdbtport,7891
+dbglvl,1

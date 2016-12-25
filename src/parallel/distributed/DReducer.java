@@ -33,7 +33,7 @@ public class DReducer {
    * <li> host="localhost"
    * <li> port=7901
    * <li> reducer/coord name = "DReduceCoord_localhost_7901"
-	 * </ul>
+	 * </ul>.
    * The constructor will actually register the current thread with the reducer
    * object of the server, so that later invocations of the <CODE>reduce(.,.)</CODE>
    * method of this object will synchronize the current thread with all other

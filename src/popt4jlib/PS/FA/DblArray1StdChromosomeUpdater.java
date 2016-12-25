@@ -45,10 +45,15 @@ public class DblArray1StdChromosomeUpdater implements ChromosomeUpdaterIntf {
    * element in the double[] chromosomes position can take. Default is +Infinity.
    * <li> &lt;"dfa.minallelevalue$i$", Double v&gt; optional, the min. value the i-th
    * element in the double[] chromosomes position can take. Default is -Infinity.
-   * <li> &lt;"dfa.beta", Double v&gt; optional, the value of &beta;;. Default is 1.0.
+   * <li> &lt;"dfa.beta", Double v&gt; optional, the value of &beta;. Default is 1.0.
    * <li> &lt;"dfa.a0", Double v&gt; optional, the value of a_0. Default is 0.01*L.
-   * <li> &lt;"dfa.delta", Double v&gt; optional, the value of &delta;. Default is 0.97.
+   * <li> &lt;"dfa.delta", Double v&gt; optional, the value of &delta; which is
+	 * the basis in the formula for the evolution of a_t, defined according to
+	 * a_t = a_0*&delta;^t. Default is 0.97.
    * </ul>
+	 * <p>Notice that in this implementation, the parameter &gamma; is defined as
+	 * &gamma; = 1/sqrt(L) where L is the average of the range of values each 
+	 * variable can take on.</p>
    * @param ci Object // double[]
    * @param cj Object // double[]
    * @param params HashMap

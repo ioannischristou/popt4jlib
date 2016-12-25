@@ -169,7 +169,17 @@ public final class SSNode {
 }
 
 
-class SSNodeData {
+/**
+ * auxiliary class that holds the data for the <CODE>SSNode</CODE> class, not
+ * part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+final class SSNodeData {
   int _pv;
   int _pv2;
   int _bv;

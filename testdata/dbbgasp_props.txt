@@ -1,0 +1,12 @@
+acchost,localhost
+accport,7900
+accnotificationsport,9900
+cchost,localhost
+ccport,7899
+pdahost,localhost
+pdaport,7981
+maxnodechildren,10
+maxitersinGBNS2A,5000
+maxnodesallowed,1000000
+dbglvl,1
+k,1

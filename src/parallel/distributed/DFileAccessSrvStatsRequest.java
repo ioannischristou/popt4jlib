@@ -6,10 +6,10 @@
 
 package parallel.distributed;
 
-import parallel.ParallelException;
-import utils.DataMgr;
+//import parallel.ParallelException;
+//import utils.DataMgr;
 import java.io.*;
-import java.util.Vector;
+//import java.util.Vector;
 
 
 /**
@@ -25,9 +25,10 @@ import java.util.Vector;
  */
 public class DFileAccessSrvStatsRequest implements DMsgIntf {
 	// private static final long serialVersionUID = ...L;
-	private String _filename;
+	private final String _filename;
 	private String _answer="N/A";
 
+	
 	/**
 	 * public constructor.
 	 * @param filename String the name of the file to read from

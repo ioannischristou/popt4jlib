@@ -9,14 +9,28 @@ import java.util.*;
  * The class methods are all thread-safe (i.e. reentrant)
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class Messenger {
+	/**
+	 * _os is the <CODE>PrintStream</CODE> on which this <CODE>Messenger</CODE> 
+	 * object sends its messages.
+	 */
   private PrintStream _os=null;
-  private int _dbgLvl=Integer.MAX_VALUE;  // default: print all
+	/**
+	 * _dbgLvl declared volatile in a manner that is consistent even for JDK1.4
+	 * memory model. Default value is <CODE>Integer.MAX_VALUE</CODE> for printing
+	 * all messages of any debug level.
+	 */
+  private volatile int _dbgLvl=Integer.MAX_VALUE;  // default: print all
+	/**
+	 * all <CODE>Messenger</CODE> objects "live" in this map, which holds them by
+	 * name. Default messenger is named "default", and goes to 
+	 * <CODE>System.err</CODE> (stderr) print stream.
+	 */
   private static HashMap _instances=new HashMap();  // map<String name, Messenger m>
 
 
@@ -95,26 +109,43 @@ public class Messenger {
 
   /**
    * set a "debug level" to be later used for printing out messages according
-   * to the debug level of the message
+   * to the debug level of the message. Not synchronized since 
+	 * <CODE>_dbgLvl</CODE> is volatile, and is only read/written, not incremented
+	 * or modified in other ways.
    * @param lvl int
    */
-  public synchronized void setDebugLevel(int lvl) {
+  public void setDebugLevel(int lvl) {
     _dbgLvl = lvl;
   }
+	
 
+	/**
+	 * get the current "debug level" of this Messenger object.
+	 * @return int
+	 */
+	public int getDebugLvl() {
+		return _dbgLvl;
+	}
+	
 
   /**
    * sends the msg to the PrintStream of this Messenger iff the debug level lvl
    * is less than or equal to the debug level set by a prior call to
-   * <CODE>setDebugLevel(dlvl)</CODE>
+   * <CODE>setDebugLevel(dlvl)</CODE>. When the debug-level argument is not 
+	 * enough to get printed, the method does not synchronize (though the access
+	 * to _dbgLvl is essentially a "memory barrier".)
    * @param msg String
    * @param lvl int
    */
-  public synchronized void msg(String msg, int lvl) {
-    if (lvl <= _dbgLvl && _os!=null) {
-      _os.println(msg);
-      _os.flush();
-    }
+  public void msg(String msg, int lvl) {
+    if (lvl <= _dbgLvl) {
+			synchronized (this) {
+				if (_os!=null) {
+		      _os.println(msg);
+				  _os.flush();
+				}
+			}
+		}
   }
 }
 

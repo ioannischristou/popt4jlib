@@ -64,9 +64,9 @@ public final class FwdSrv {
 		_port2Fwd = Integer.parseInt(st.nextToken());
 		try {
 			_forwardSocket = new Socket(_host2Fwd, _port2Fwd);
-			_forwardOIS = new ObjectInputStream(_forwardSocket.getInputStream());
 			_forwardOOS = new ObjectOutputStream(_forwardSocket.getOutputStream());
 			_forwardOOS.flush();
+			_forwardOIS = new ObjectInputStream(_forwardSocket.getInputStream());
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -185,9 +185,9 @@ public final class FwdSrv {
 		// OK, now create a new socket and return it
 		try {
 			Socket s = new Socket(_host2Fwd,_port2Fwd);
-			ObjectInputStream fis = new ObjectInputStream(s.getInputStream());
 			ObjectOutputStream fos = new ObjectOutputStream(s.getOutputStream());
 			fos.flush();
+			ObjectInputStream fis = new ObjectInputStream(s.getInputStream());
 			SocketIOS sios = new SocketIOS(s,fis,fos);
 			return sios;
 		}
@@ -245,9 +245,9 @@ public final class FwdSrv {
 		 */
 		SLConnRunnable(Socket s) throws IOException {
 			_s = s;
-			_ois = new ObjectInputStream(_s.getInputStream());
 			_oos = new ObjectOutputStream(_s.getOutputStream());
 			_oos.flush();
+			_ois = new ObjectInputStream(_s.getInputStream());
 		}
 
 		
@@ -322,9 +322,9 @@ public final class FwdSrv {
 		 */
 		LLConnThread(Socket s) throws IOException {
 			_s = s;
-			_ois = new ObjectInputStream(_s.getInputStream());
 			_oos = new ObjectOutputStream(_s.getOutputStream());
 			_oos.flush();
+			_ois = new ObjectInputStream(_s.getInputStream());
 		}
 
 		
@@ -347,8 +347,9 @@ public final class FwdSrv {
 						}
 						try {
 							_forwardSocket = new Socket(_host2Fwd,_port2Fwd);
-							_forwardOIS = new ObjectInputStream(_forwardSocket.getInputStream());
 							_forwardOOS = new ObjectOutputStream(_forwardSocket.getOutputStream());
+							_forwardOOS.flush();
+							_forwardOIS = new ObjectInputStream(_forwardSocket.getInputStream());
 						}
 						catch (Exception e) {
 							System.err.println("FwdSrv: long-lived connection to fwd-server lost and cannot be re-established"+

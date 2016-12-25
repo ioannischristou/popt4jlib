@@ -8,9 +8,10 @@ import java.util.HashMap;
  * The BlockingMsgPassingCoordinator class is yet another Singleton class that
  * implements the rendevouz mechanism in parallel programming.
  * Threads can call the method sendData(myid, t-id, data) to store some data in
- * a queue that only the thread with thread-id can retrieve (in a FIFO fashion
- * only), and waits until the datum is received by the receiver thread.
- * The data Objects that are stored are not copies
+ * a queue that only the thread with thread-id &quot;t-id&quot; can retrieve (in 
+ * a FIFO fashion only: threads receive the messages sent to them in the same
+ * order they entered the queue), and waits until the datum is received by the 
+ * receiver thread. The data Objects that are stored are not copies
  * of the original objects, but rather references to them and so should not
  * be changed in any way after they are stored via a call to sendData... or
  * more appropriately, the sender thread should make sure it sends to the
@@ -34,8 +35,15 @@ import java.util.HashMap;
  * @version 1.0
  */
 public class BlockingMsgPassingCoordinator {
-  private static final int _maxSize=10000;  // The max. size of the _data Vector
-  private BoundedBufferArrayUnsynchronized _data;  // used to be Vector<RegisteredParcel> 
+  /**
+	 * the maximum size of the <CODE>_data</CODE> array.
+	 */
+	private static final int _maxSize=10000;
+	/**
+	 * the bounded array holding <CODE>RegisteredParcel</CODE> objects that
+	 * represent the messages passed around together with the data they contain.
+	 */
+  private BoundedBufferArrayUnsynchronized _data; 
   private static BlockingMsgPassingCoordinator _instance=null;
   private static HashMap _instances=new HashMap();  // map<String name, BMPC instance>
 

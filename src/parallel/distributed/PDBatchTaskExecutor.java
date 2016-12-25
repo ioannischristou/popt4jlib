@@ -303,92 +303,106 @@ public final class PDBatchTaskExecutor {
   private synchronized static int getNextObjId() { return ++_nextId; }
   private synchronized int getNextId() { return ++_curId; }
 
+
+	/**
+	 * auxiliary class for PDBatchTaskExecutor, implementing the threads in the
+	 * executor's thread-pool. Not part of the public API.
+	 * <p>Title: popt4jlib</p>
+	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+	 * <p>Copyright: Copyright (c) 2011</p>
+	 * <p>Company: </p>
+	 * @author Ioannis T. Christou
+	 * @version 1.0
+	 */
+	static class PDBTEThread extends Thread {
+		private static HashMap _ids = new HashMap();  // map<PDBTE e, Integer curId>
+		private PDBatchTaskExecutor _e;
+		private boolean _doRun=true;
+
+		PDBTEThread(PDBatchTaskExecutor e) {
+			synchronized (PDBTEThread.class) {
+				if (_ids.get(e)==null)
+					_ids.put(e, new Integer(0));
+			}
+			_e = e;
+		}
+
+
+		/**
+		 * waits for <CODE>TaskObject</CODE> objects to execute from the related
+		 * "PDBatchTaskExecutor$id$ message-passing queue, executes them, and sends
+		 * the same task object on the "back-channel" as acknowledgement of 
+		 * execution. If it encounters a <CODE>PoissonPill</CODE> object, the method
+		 * returns.
+		 */
+		public void run() {
+			final int pdbteid = _e.getObjId();
+			final MsgPassingCoordinator mpc_fwd =
+					MsgPassingCoordinator.getInstance("PDBatchTaskExecutor"+pdbteid);
+			final MsgPassingCoordinator mpc_bak =
+					MsgPassingCoordinator.getInstance("PDBatchTaskExecutor_ack"+pdbteid);
+			while (isRunning()) {
+				// get the "sender" id
+				int id = getNextId(_e);
+				try {
+					// threads all use the same receiver id
+					Object data = mpc_fwd.recvData(0, id);
+					try {
+						if (data instanceof TaskObject) {
+							Serializable result = ( (TaskObject) data).run();
+							// Results are expected in the returned object
+							mpc_bak.sendDataBlocking(id, -1, result);
+						}
+						else if (data instanceof PoissonPill) break;  // done
+						else throw new ParallelException("data object cannot be run");
+					}
+					catch (Exception e) {
+						e.printStackTrace();  // task threw an exception, ignore and continue
+						// send back the data object as acknowledgement on the "back-channel"
+						mpc_bak.sendDataBlocking(id, -1, data);
+					}
+				}
+				catch (ParallelException e) {
+					e.printStackTrace();  // no-op
+				}
+			}
+		}
+
+
+		synchronized void stopRunning() { _doRun=false; }
+
+
+		private synchronized boolean isRunning() { return _doRun; }
+
+
+		private static synchronized int getNextId(PDBatchTaskExecutor e) {
+			// this method must be the same as the one in PDBatchTaskExecutor
+			// return ++_curId;
+			Integer curId = (Integer) _ids.get(e);
+			int nextid = curId.intValue()+1;
+			_ids.put(e, new Integer(nextid));
+			return nextid;
+		}
+
+	}
+
+	
+	/**
+	 * empty inner-class represents command for ending the threads in the 
+	 * thread-pool. Not part of the public API.
+	 */
+	class PoissonPill {
+		// denotes end of computations for receiving thread
+	}
+
+
+	/**
+	 * empty inner-class represents response is an indication of a failed 
+	 * execution. Not part of the public API.
+	 */
+	class FailedExecutionResult implements Serializable {
+		// private static final long serialVersionUID = 5361446529275021760L;
+		// denotes a failed execution of a task
+	}
+
 }
-
-
-/**
- * auxiliary class for PDBatchTaskExecutor, implementing the threads in the
- * executor's thread-pool.
- * <p>Title: popt4jlib</p>
- * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
- * <p>Company: </p>
- * @author Ioannis T. Christou
- * @version 1.0
- */
-class PDBTEThread extends Thread {
-  private static HashMap _ids = new HashMap();  // map<PDBTE e, Integer curId>
-  private PDBatchTaskExecutor _e;
-  private boolean _doRun=true;
-
-  PDBTEThread(PDBatchTaskExecutor e) {
-    synchronized (PDBTEThread.class) {
-      if (_ids.get(e)==null)
-        _ids.put(e, new Integer(0));
-    }
-    _e = e;
-  }
-
-
-  public void run() {
-    final int pdbteid = _e.getObjId();
-    final MsgPassingCoordinator mpc_fwd =
-        MsgPassingCoordinator.getInstance("PDBatchTaskExecutor"+pdbteid);
-    final MsgPassingCoordinator mpc_bak =
-        MsgPassingCoordinator.getInstance("PDBatchTaskExecutor_ack"+pdbteid);
-    while (isRunning()) {
-      // get the "sender" id
-      int id = getNextId(_e);
-      try {
-        // threads all use the same receiver id
-        Object data = mpc_fwd.recvData(0, id);
-        try {
-          if (data instanceof TaskObject) {
-            Serializable result = ( (TaskObject) data).run();
-            // Results are expected in the returned object
-            mpc_bak.sendDataBlocking(id, -1, result);
-          }
-          else if (data instanceof PoissonPill) break;  // done
-          else throw new ParallelException("data object cannot be run");
-        }
-        catch (Exception e) {
-          e.printStackTrace();  // task threw an exception, ignore and continue
-          // send back the data object as acknowledgement on the "back-channel"
-          mpc_bak.sendDataBlocking(id, -1, data);
-        }
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();  // no-op
-      }
-    }
-  }
-
-
-  synchronized void stopRunning() { _doRun=false; }
-
-
-  private synchronized boolean isRunning() { return _doRun; }
-
-
-  private static synchronized int getNextId(PDBatchTaskExecutor e) {
-    // this method must be the same as the one in PDBatchTaskExecutor
-    // return ++_curId;
-    Integer curId = (Integer) _ids.get(e);
-    int nextid = curId.intValue()+1;
-    _ids.put(e, new Integer(nextid));
-    return nextid;
-  }
-
-}
-
-
-class PoissonPill {
-  // denotes end of computations for receiving thread
-}
-
-
-class FailedExecutionResult implements Serializable {
-  private static final long serialVersionUID = 5361446529275021760L;
-  // denotes a failed execution of a task
-}
-

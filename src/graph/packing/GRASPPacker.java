@@ -543,7 +543,17 @@ public final class GRASPPacker {
 }
 
 
-class NodeComparator2 implements Comparator, Serializable {
+/**
+ * auxiliary class comparing <CODE>graph.Node</CODE> objects, for use with the 
+ * <CODE>graph.packing.GRASPPacker</CODE> class, not part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+final class NodeComparator2 implements Comparator, Serializable {
   private final static long serialVersionUID = 42828339182837662L;
 
   public int compare(Object o1, Object o2) {
@@ -577,7 +587,17 @@ class NodeComparator2 implements Comparator, Serializable {
 }
 
 
-class NodeComparator3 implements Comparator, Serializable {
+/**
+ * auxiliary class comparing <CODE>graph.Node</CODE> objects, for use with the 
+ * <CODE>graph.packing.GRASPPacker</CODE> class, not part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+final class NodeComparator3 implements Comparator, Serializable {
   private static final long serialVersionUID = 359797557701624091L;
 
   public int compare(Object o1, Object o2) {
@@ -605,7 +625,17 @@ class NodeComparator3 implements Comparator, Serializable {
 }
 
 
-class NodeComparator4 implements Comparator, Serializable {
+/**
+ * auxiliary class comparing <CODE>graph.Node</CODE> objects, for use with the 
+ * <CODE>graph.packing.GRASPPacker</CODE> class, not part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+final class NodeComparator4 implements Comparator, Serializable {
   // private static final long serialVersionUID = ...L;
 
   public int compare(Object o1, Object o2) {

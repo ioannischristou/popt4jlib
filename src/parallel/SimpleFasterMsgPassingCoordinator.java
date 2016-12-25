@@ -22,10 +22,14 @@ import java.util.HashMap;
  */
 public class SimpleFasterMsgPassingCoordinator {
 	/**
-	 * compile-time constant, forces class to act as a synchronizer between 
+	 * can be set only once, forces class to act as a synchronizer between 
 	 * producers and consumers
 	 */
-	private static final int _maxSize=10000;
+	private static int _maxSize=10000;
+	private static boolean _setSizeAllowed=true;  // setting size is allowed only
+	                                              // before any object has been
+	                                              // created.
+	
   /**
    * maintains RegisteredParcel objects to be exchanged between threads
    */
@@ -38,6 +42,9 @@ public class SimpleFasterMsgPassingCoordinator {
    * private constructor in accordance with the Singleton Design Pattern
    */
   private SimpleFasterMsgPassingCoordinator() {
+		synchronized (SimpleFasterMsgPassingCoordinator.class) {
+			_setSizeAllowed=false;
+		}
     _data = new BoundedBufferArrayUnsynchronized(_maxSize);
   }
 
@@ -73,7 +80,20 @@ public class SimpleFasterMsgPassingCoordinator {
    * return the constant _maxSize data member
    * @return int
    */
-  public static int getMaxSize() { return _maxSize; }
+  public synchronized static int getMaxSize() { return _maxSize; }
+	
+	
+	/**
+	 * set the size of the queue. Only allowed once, before any object of this
+	 * class has been constructed.
+	 * @param size int
+	 * @throws IllegalStateException if the condition described above don't hold 
+	 */
+	public synchronized static void setMaxSize(int size) throws IllegalStateException {
+		if (!_setSizeAllowed) throw new IllegalStateException("setMaxSize("+size+"): not allowed any more");
+		_maxSize = size;
+		_setSizeAllowed=false;
+	}
 
 
   /**

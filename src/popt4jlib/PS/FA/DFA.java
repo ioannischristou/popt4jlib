@@ -2,6 +2,7 @@ package popt4jlib.PS.FA;
 
 import java.util.*;
 import parallel.*;
+import parallel.distributed.*;
 import utils.*;
 import popt4jlib.*;
 
@@ -10,24 +11,45 @@ import popt4jlib.*;
  * function optimization, implementing also the SubjectIntf and ObserverIntf
  * objects by extending GLockingObservableObserverBase so that it
  * may be combined with other optimization processes and produce better results.
- * By implementing the SubjectIntf of the well-known Observer Design Pattern,
- * the class allows any observer objects implementing the ObserverIntf to be
- * notified whenever a new incumbent is found and then to enrich the class's
- * population (in island thread with id=0) by adding back into the first island'
- * population new (hopefully better) solutions. The solutions moved back and
- * forth between optimizers have to be moved as function argument objects and
- * not as chromosome objects. However, the Subject/Observer interactions destroy
- * the otherwise deterministic order &amp; results of the DFA execution due to the
- * fact that the order in which DFAThreads call the setIncumbent() method which
- * in turn may call the notifyObservers() method is not deterministically
- * fixed (depends on thread schedules).
- *
+ * The implementation is heavily modeled after class 
+ * <CODE>popt4jlib.PS.DPSO</CODE>, as should be expected since the Firefly
+ * Algorithm is a variant of PSO, and for this reason it is implemented in a
+ * sub-package of popt4jlib.PS. For more details therefore, on 
+ * SubjectIntf/ObserverIntf interactions as well as the island model of 
+ * computation implemented, read the documentation of the DPSO class.
+ * <p> As with the DPSO class, besides the shared-memory parallelism inherent in 
+ * the class via which each island runs in its own thread of execution, the 
+ * class allows for the distribution of function evaluations in a network of 
+ * <CODE>parallel.distributed.PDBTExecInitedWrk</CODE> workers running in their
+ * own JVMs (as long as the function arguments and parameters are serializable), 
+ * connected to a <CODE>parallel.distributed.PDBTExecInitedSrv</CODE> server 
+ * object, to which the DFA class may also be connected as a client via a
+ * <CODE>parallel.distributed.PDBTExecInitedClt</CODE> object; in such cases,
+ * the client must first submit a <CODE>parallel.distributed.RRObject</CODE> 
+ * that will be the initialization command for the workers (no-op in most cases,
+ * unless the function evaluations require some prior initialization). Of course 
+ * a server must be up and running, and at least one worker must be connected to
+ * this server, for this distribution scheme to work. Also, in case of running
+ * distributed computations reusing this DFA object to run another optimization 
+ * problem is only allowed as long as there is no need to send another 
+ * initialization command to the network of workers, as workers cannot be 
+ * initialized twice. Notice that in case of distributed function evaluation 
+ * mode, the results are likely to be different from non-distributed mode, 
+ * because in the inner-loop of fire-fly update positions, in the local 
+ * computation mode, immediately after the i-th individual produces a new 
+ * position, if the position is better than the j-th individual with which it is 
+ * compared, the updated individual replaces the i-th individual inline, 
+ * whereas in distributed computation, the same i-th individual is compared 
+ * against all other individuals and then the best update is applied to this 
+ * i-th individual. For more information, see the details of method 
+ * <CODE>DFAThreadAux.nextGeneration()</CODE>.
+ * </p>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2014</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 final public class DFA extends GLockingObservableObserverBase implements OptimizerIntf {
   private static int _nextId=0;
@@ -40,9 +62,15 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
   private DFAThread[] _threads=null;
   private int[] _islandsPop;
 
+	private RRObject _pdbtInitCmd=null;  // if running in distributed mode, 
+	// this object will be sent first to server as initialization command.
 
+	// this object, if present, dictates the immigration routes between islands.
+	private ImmigrationIslandOpIntf _immigrationTopologySelector=null;
+	
+		
   /**
-   * public no-arg constructor
+   * public no-arg constructor.
    */
   public DFA() {
 		super();
@@ -87,6 +115,8 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     _params = null;
     _params = new HashMap(p);  // own the params
+		// set the distributed computing mode init cmd, if any is specified
+		_pdbtInitCmd = (RRObject) _params.get("dfa.pdbtexecinitedwrkcmd");
   }
 
 
@@ -155,6 +185,10 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
    * sub-population, default is 0.01
    * <li> &lt;"dfa.numinitpop",Integer ip&gt; optional, the initial population number for
    * each island, default is 10.
+	 * <li> &lt;"dfa.immigrationrouteselector", popt4jlib.ImmigrationIslandOpIntf route_selector&gt;
+	 * optional, if present defines the routes of immigration from island to 
+	 * island; default is null, which forces the built-in unidirectional ring 
+	 * routing topology.
    * <li> &lt;"ensemblename", String name&gt; optional, the name of the synchronized
    * optimization ensemble in which this DFA object will participate. In case
    * this value is non-null, then a higher-level ensemble optimizer must have
@@ -175,6 +209,13 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
    * </CODE>
 	 * </pre>
    * series of calls.
+	 * <li>&lt;"dfa.pdbtexecinitedwrkcmd", RRObject cmd &gt; optional, the 
+	 * initialization command to send to the network of workers to run function
+	 * evaluation tasks, default is null, indicating no distributed computation.
+	 * <li>&lt;"dfa.pdbthost", String pdbtexecinitedhost &gt; optional, the name
+	 * of the server to send function evaluation requests, default is localhost.
+	 * <li>&lt;"dfa.pdbtport", Integer port &gt; optional, the port the above 
+	 * server listens to for client requests, default is 7891.
    * </ul>
    * @param f FunctionIntf 
    * @throws OptimizerException if the process fails
@@ -196,11 +237,23 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
       if (_params.get("dfa.function") == null)
         _params.put("dfa.function", f);
       int nt = 1;
-      Integer ntI = (Integer) _params.get("dfa.numthreads");
-      if (ntI != null) nt = ntI.intValue();
+			try {
+				Integer ntI = (Integer) _params.get("dfa.numthreads");
+				if (ntI != null) nt = ntI.intValue();
+			}
+			catch (ClassCastException e) {
+				throw new OptimizerException("DFA.minimize(): dfa.numthreads not an integer in params");
+			}			
       if (nt < 1)throw new OptimizerException(
           "DFA.minimize(): invalid number of threads specified");
       RndUtil.addExtraInstances(nt);  // not needed
+			// set immigration topology router if it exists
+			try {
+				_immigrationTopologySelector = (ImmigrationIslandOpIntf) _params.get("dfa.immigrationrouteselector");
+			}
+			catch (ClassCastException e) {
+				throw new OptimizerException("DFA.minimize(): invalid ImmigrationIslandOpIntf object specified in params");
+			}
       // check if this object will participate in an ensemble
       String ensemble_name = (String) _params.get("ensemblename");
       _threads = new DFAThread[nt];
@@ -290,11 +343,22 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
 
   /**
    * return the immigration island where the island with id myid must send its
-   * individuals.
-   * @param myid int
-   * @return int
+   * individuals. By default, unless there is a seriously under-populated 
+	 * island compared to the one with id=myid, it implements a uni-directional 
+	 * ring migration topology, with a counter-clock-wise direction. This default 
+	 * may be over-ridden by including in the parameters passed in, an object 
+	 * implementing the <CODE>popt4jlib.ImmigrationIslandOpIntf</CODE> that will
+	 * decide to which island migration from island with id=myid should occur 
+	 * using knowledge of the current population distribution, as well as the 
+	 * current generation number, gen.
+   * @param myid int my island id
+	 * @param gen int the current generation number
+   * @return int if -1 indicates no migration
    */
-  synchronized int getImmigrationIsland(int myid) {
+  synchronized int getImmigrationIsland(int myid, int gen) {
+		if (_immigrationTopologySelector!=null) {  // migration topology selector exists, use it.
+			return _immigrationTopologySelector.getImmigrationIsland(myid, gen, _islandsPop, _params);
+		}
     for (int i=0; i<_islandsPop.length; i++)
       if (myid!=i && (_islandsPop[i]==0 || _islandsPop[myid]>2.5*_islandsPop[i])) return i;
     // populations are more or less the same size, so immigration will occur
@@ -404,13 +468,13 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
 
   /**
    * moves all chromosomes that the observers and subjects have added so far to
-   * _individuals Vector&lt;DFAIndividual&gt; of the DFAThread with id 0, and clears
+   * _individuals List&lt;DFAIndividual&gt; of the DFAThread with id 0, and clears
    * the solutions from the _observers and _subjects map.
-   * @param tinds Vector
+   * @param tinds List  // List&lt;DFAIndividual&gt;
    * @param params HashMap the optimization params
    * @param funcParams the function parameters
    */
-  synchronized void transferSolutionsTo(Vector tinds, HashMap params, HashMap funcParams) {
+  synchronized void transferSolutionsTo(List tinds, HashMap params, HashMap funcParams) {
     // 1. observers
     int ocnt = 0;
     Iterator it = getObservers().keySet().iterator();
@@ -426,7 +490,7 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
             chromosomei = a2cmaker.getChromosome(sols.elementAt(i), params);
           else chromosomei = sols.elementAt(i); // assume chromosome and arg are the same
           DFAIndividual indi = new DFAIndividual(chromosomei, this, params, funcParams);
-          tinds.addElement(indi);
+          tinds.add(indi);
           ++ocnt;
         }
         catch (OptimizerException e) {
@@ -451,7 +515,7 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
             chromosomei = a2cmaker.getChromosome(sols.elementAt(i), params);
           else chromosomei = sols.elementAt(i); // assume chromosome and arg are the same
           DFAIndividual indi = new DFAIndividual(chromosomei, this, params, funcParams);
-          tinds.addElement(indi);
+          tinds.add(indi);
           ++scnt;
         }
         catch (OptimizerException e) {
@@ -465,6 +529,16 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
                                 ocnt+" sols from observers and "+
                                 scnt+" sols from subjects transferred",2);
   }
+
+	
+	/**
+	 * get the initialization command for the network of workers to run function
+	 * evaluation requests.
+	 * @return RRObject
+	 */
+	synchronized RRObject getPDBTInitCmd() {
+		return _pdbtInitCmd;
+	}
 
 
   /**
@@ -521,10 +595,10 @@ class DFAThread extends Thread {
  * auxiliary class not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2014</p>
+ * <p>Copyright: Copyright (c) 2011-2016</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 class DFAThreadAux {
   private int _id;
@@ -533,10 +607,13 @@ class DFAThreadAux {
   private HashMap _p;
   private HashMap _fp;
   private boolean _finish = false;
-  private Vector _individuals;  // Vector<Individual>
+  private List _individuals;  // ArrayList<DFAIndividual>
+	// itc 20161124: changed _individuals from Vector to List to avoid penalties
   private Vector _immigrantsPool;  // Vector<Individual>
   private double _inc=Double.MAX_VALUE;  // best island value
   private Object _incarg=null;  // the best position for the island-swarm
+
+	private PDBTExecInitedClt _pdbtExecInitedClt = null;
 
 
   public DFAThreadAux(DFA master, int id) throws OptimizerException {
@@ -567,6 +644,27 @@ class DFAThreadAux {
       }
     }
     // end creating _funcParams
+		// set-up distributed computing mode
+		try {
+			RRObject init_cmd = _master.getPDBTInitCmd();
+			if (init_cmd!=null) {
+				String host = (String) _p.get("dfa.pdbthost");
+				if (host==null) host = "localhost";
+				int port = 7891;
+				try {
+					port = ((Integer) _p.get("dfa.pdbtport")).intValue();
+				}
+				catch (ClassCastException e) {
+					Messenger.getInstance().msg("param value for dpso.pdbtport is not an Integer",2);
+				}
+				_pdbtExecInitedClt = new PDBTExecInitedClt(host,port);
+				_pdbtExecInitedClt.submitInitCmd(init_cmd);
+			}
+		}
+		catch (Exception e) {
+			Messenger.getInstance().msg("couldn't set distributed computing environment, will run on this machine only", 2);
+			_pdbtExecInitedClt = null;
+		}
     _immigrantsPool = new Vector();
   }
 
@@ -598,8 +696,10 @@ class DFAThreadAux {
       catch (ParallelException e) {
         e.printStackTrace();  // no-op
       }
-      //System.err.println("Island-Thread id=" + _id + " running gen=" + gen +
-      //                   " popsize=" + _individuals.size());
+			if (gen % 10 == 0 && _id==0) {
+				utils.Messenger.getInstance().msg("Island-Thread id zero running gen=" + gen +
+												                  " popsize=" + _individuals.size(), 1);
+			}
       recvInds();
       if (_individuals.size()>0) {
         try {
@@ -609,7 +709,7 @@ class DFAThreadAux {
           e.printStackTrace();  // no-op
         }
       }
-      sendInds();
+      sendInds(gen);
       _master.setIslandPop(_id, _individuals.size());
       Barrier.getInstance("dfa."+_master.getId()).barrier();  // synchronize with other threads
       if (_id==0) cupdater.incrementGeneration();  // the 1st thread increases the generation count in the updater object
@@ -622,6 +722,14 @@ class DFAThreadAux {
         e.printStackTrace();  // no-op
       }
     }
+		if (_pdbtExecInitedClt!=null) {  // disconnect from network of workers
+			try {
+				_pdbtExecInitedClt.terminateConnection();
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
     // end: declare finish
     setFinish();
   }
@@ -661,19 +769,51 @@ class DFAThreadAux {
     int initpopnum = 10;
     Integer initpopnumI = ((Integer) _p.get("dfa.numinitpop"));
     if (initpopnumI!=null) initpopnum = initpopnumI.intValue();
-    _individuals = new Vector();  // Vector<DPSOIndividual>
+    _individuals = new ArrayList();  // List<DPSOIndividual>
     RandomChromosomeMakerIntf amaker = (RandomChromosomeMakerIntf) _p.get("dfa.randomfireflymaker");
-    // if no such makers are provided, can only throw exception
-    for (int i=0; i<initpopnum; i++) {
-      Object chromosome = amaker.createRandomChromosome(_p);
-      DFAIndividual indi = new DFAIndividual(chromosome, _master, _p, _fp);
-      //System.out.println("Individual-"+i+"="+indi);
-      _individuals.addElement(indi);
-    }
+    // if no such maker is provided, can only throw exception
+		if (amaker==null) throw new OptimizerException("value object for key 'dfa.randomfireflymaker' does not exist in params");
+    boolean run_locally = true;
+		if (_pdbtExecInitedClt!=null) {  // function evaluations go distributed
+			TaskObject[] tasks = new TaskObject[initpopnum];
+      Chromosome2ArgMakerIntf c2amaker =
+          (Chromosome2ArgMakerIntf) _p.get("dfa.c2amaker");
+			Object[] chromosomes = new Object[initpopnum];
+			for (int i=0; i<initpopnum; i++) {
+				Object chromosome = amaker.createRandomChromosome(_p);
+				chromosomes[i] = chromosome;
+	      Object arg = chromosome;
+	      if (c2amaker != null) arg = c2amaker.getArg(chromosome, _p);
+				tasks[i] = new FunctionEvaluationTask(_master._f, arg, _fp);
+			}
+			try {
+				Object[] results = _pdbtExecInitedClt.submitWorkFromSameHost(tasks, 1);
+				// results are the same tasks, but with values for the function evaluations
+				for (int i=0; i<initpopnum; i++) {
+					double val = ((FunctionEvaluationTask) results[i]).getObjValue();
+					Object chromosome = chromosomes[i];
+					DFAIndividual indi = new DFAIndividual(chromosome, val, _master, _p, _fp);
+					_individuals.add(indi);
+				}
+				run_locally = false;
+			}
+			catch (Exception e) {  // oops, distributed mode failed, go for local
+				e.printStackTrace();
+				run_locally = true;
+			}
+		}		
+		if (run_locally) {		
+			for (int i=0; i<initpopnum; i++) {
+				Object chromosome = amaker.createRandomChromosome(_p);
+				DFAIndividual indi = new DFAIndividual(chromosome, _master, _p, _fp);
+				//System.out.println("Individual-"+i+"="+indi);
+				_individuals.add(indi);
+			}
+		}
     // finally update island's incumbent
     DFAIndividual best = null;
     for (int i=0; i<_individuals.size(); i++) {
-      DFAIndividual indi = (DFAIndividual) _individuals.elementAt(i);
+      DFAIndividual indi = (DFAIndividual) _individuals.get(i);
       double vi = indi.getValue();
       if (vi<_inc) {
         _incarg = indi;
@@ -712,8 +852,8 @@ class DFAThreadAux {
   }
 
 
-  private void sendInds() {
-    int sendTo = _master.getImmigrationIsland(_id);
+  private void sendInds(int gen) {
+    int sendTo = _master.getImmigrationIsland(_id, gen);
     if (sendTo>=0) {
       Vector immigrants = getImmigrants();
       DFAThreadAux receiverThreadAux = _master.getDFAThread(sendTo).getDFAThreadAux();
@@ -748,37 +888,99 @@ class DFAThreadAux {
 
   /**
    * the essence of the class. This method specifies how the next generation of
-   * individuals is built from the current generation.
+   * individuals is built from the current generation. Notice that in case of
+	 * distributed function evaluation mode, the results are likely to be 
+	 * different from non-distributed mode, because in the inner-loop of 
+	 * fire-fly update positions, in the local computation mode, immediately 
+	 * after the i-th individual produces a new position, if the position is 
+	 * better than the j-th individual with which it is compared, the updated
+	 * individual replaces the i-th individual inline, whereas in distributed
+	 * computation, the same i-th individual is compared against all other 
+	 * individuals and then the best update is applied to this i-th individual.
    * @throws OptimizerException
    */
   private void nextGeneration() throws OptimizerException {
     // update individuals' position (chromosome)
     ChromosomeUpdaterIntf cupdater = (ChromosomeUpdaterIntf) _p.get("dfa.cupdater");
-    for (int i=0; i<_individuals.size(); i++) {
-      DFAIndividual indi = (DFAIndividual) _individuals.elementAt(i);
-      double fi = indi.getValue();
-      for (int j = i+1; j < _individuals.size(); j++) {
-        DFAIndividual indj = (DFAIndividual) _individuals.elementAt(j);
-        double fj = indj.getValue();
-        if (fj < fi) { // move firefly-i towards firefly-j
-          Object newchromosomei = cupdater.update(indi.getChromosome(),
-                                                  indj.getChromosome(),
-                                                  _p);
-          try {
-            indi.setValues(newchromosomei, _p, _fp);
-            // update island and total best
-            if (indi.getValue() < _inc) {
-              _inc = indi.getValue();
-              _incarg = indi.getChromosome();
-              _master.setIncumbent(indi);
-            }
-          }
-          catch (Exception e) {
-            e.printStackTrace(); // no-op
-          }
-        }
-      }
-    }
+    Chromosome2ArgMakerIntf c2amaker =(Chromosome2ArgMakerIntf) _p.get("dfa.c2amaker");
+		if (cupdater==null) throw new OptimizerException("object value for key 'dfa.cupdater' does not exist in params");
+		boolean compute_val_locally = _master.getPDBTInitCmd()==null;		
+		if (!compute_val_locally) {  // function evaluations go run distributed!
+			List feval_tasks = new ArrayList();
+			List chromosomes = new ArrayList();
+			for (int i=0; i<_individuals.size(); i++) {
+				DFAIndividual indi = (DFAIndividual) _individuals.get(i);
+	      double fi = indi.getValue();
+		    for (int j = 0; j < _individuals.size(); j++) {  // itc 20161125: used to be for j=i+1 to numpop
+					// however, for parallel/distributed computation, it's better to 
+					// have the same (more-or-less) function evaluation tasks in each i-loop
+					if (j==i) continue;
+			    DFAIndividual indj = (DFAIndividual) _individuals.get(j);
+				  double fj = indj.getValue();
+					if (fj < fi) { // move firefly-i towards firefly-j
+						Object newchromosomei = cupdater.update(indi.getChromosome(),
+							                                      indj.getChromosome(),
+								                                    _p);
+						chromosomes.add(newchromosomei);
+						Object argi = newchromosomei;
+						if (c2amaker!=null) argi = c2amaker.getArg(newchromosomei, _p);
+						feval_tasks.add(new FunctionEvaluationTask(_master._f, argi, _fp));
+					}
+				}		
+				TaskObject[] tasksarr = new TaskObject[feval_tasks.size()];
+				for (int k=0; k<tasksarr.length; k++) 
+					tasksarr[k] = (FunctionEvaluationTask) feval_tasks.get(k);
+				try {
+					if (tasksarr.length>0) {  // run if we have work to do
+						Object[] results = _pdbtExecInitedClt.submitWorkFromSameHost(tasksarr, 1);
+						for (int k=0; k<results.length; k++) {
+							double valk = ((FunctionEvaluationTask) results[k]).getObjValue();
+							indi.setValues(chromosomes.get(k), valk, _p, _fp);
+							// update island and total best
+							if (indi.getValue()<_inc) {
+								_inc = indi.getValue();
+								_incarg = indi.getChromosome();
+								_master.setIncumbent(indi);
+							}
+						}
+					}
+				}
+				catch (Exception e) {
+					// must do the work locally
+					utils.Messenger.getInstance().msg("failed to send function evaluation tasks over the network, will resort to local computations", 2);
+					compute_val_locally = true;
+					break;
+				}			
+			}
+		}
+		if (compute_val_locally) {
+			for (int i=0; i<_individuals.size(); i++) {
+				DFAIndividual indi = (DFAIndividual) _individuals.get(i);
+				double fi = indi.getValue();
+				for (int j = 0; j < _individuals.size(); j++) {  // itc 20161125: used to be for j=i+1 to numpop
+					if (j==i) continue;
+					DFAIndividual indj = (DFAIndividual) _individuals.get(j);
+					double fj = indj.getValue();
+					if (fj < fi) { // move firefly-i towards firefly-j
+						Object newchromosomei = cupdater.update(indi.getChromosome(),
+							                                      indj.getChromosome(),
+								                                    _p);
+						try {
+							indi.setValues(newchromosomei, _p, _fp);
+							// update island and total best
+							if (indi.getValue() < _inc) {
+								_inc = indi.getValue();
+								_incarg = indi.getChromosome();
+								_master.setIncumbent(indi);
+							}
+						}
+						catch (Exception e) {
+							e.printStackTrace(); // no-op
+						}
+					}
+				}
+			}
+		}
   }
 
 
@@ -789,7 +991,7 @@ class DFAThreadAux {
     double best_val = Double.MAX_VALUE;
     int best_ind = -1;
     for (int i=0; i<_individuals.size(); i++) {
-      DFAIndividual indi = (DFAIndividual) _individuals.elementAt(i);
+      DFAIndividual indi = (DFAIndividual) _individuals.get(i);
       double ival = indi.getValue();
       if (ival<best_val) {
         best_ind = i;
@@ -797,7 +999,7 @@ class DFAThreadAux {
       }
     }
     if (best_ind>=0) {
-      imms.add(_individuals.elementAt(best_ind));
+      imms.add(_individuals.get(best_ind));
       _individuals.remove(best_ind);
     }
     // repeat for second guy, only if there is someone to leave behind in this island
@@ -805,14 +1007,14 @@ class DFAThreadAux {
       best_val = Double.MAX_VALUE;
       best_ind = -1;
       for (int i = 0; i < _individuals.size(); i++) {
-        DFAIndividual indi = (DFAIndividual) _individuals.elementAt(i);
+        DFAIndividual indi = (DFAIndividual) _individuals.get(i);
         double ival = indi.getValue();
         if (ival < best_val) {
           best_ind = i;
           best_val = ival;
         }
       }
-      imms.add(_individuals.elementAt(best_ind));
+      imms.add(_individuals.get(best_ind));
       _individuals.remove(best_ind);
     }
     return imms;
@@ -849,6 +1051,18 @@ class DFAIndividual {
     computeValue(params, funcparams);  // may throw OptimizerException
     _pbval = _val;
   }
+	
+
+  public DFAIndividual(Object chromosome, double val, 
+		                    DFA master, HashMap params, HashMap funcparams)
+      throws OptimizerException {
+    _x = chromosome;
+    _pb = _x;  // initial best position
+    _master = master;
+    _f = _master.getFunction();
+		_val = val;
+    _pbval = _val;
+  }
 
 
   public String toString() {
@@ -872,6 +1086,16 @@ class DFAIndividual {
     if (c2amaker == null) arg = _x;
     else arg = c2amaker.getArg(_x, params);
     _val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+    // update _pb & _pbval
+    if (_val < _pbval) {
+      _pb = chromosome;
+      _pbval = _val;
+    }
+  }
+  void setValues(Object chromosome, double val, HashMap params, HashMap funcParams)
+    throws OptimizerException {
+    _x = chromosome;
+		_val = val;
     // update _pb & _pbval
     if (_val < _pbval) {
       _pb = chromosome;

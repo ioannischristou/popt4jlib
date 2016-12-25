@@ -42,10 +42,10 @@ public class Barrier {
 
 
   /**
-   * method has the same purpose as the setNumThreads(n) call, except that it
-   * creates a separate Barrier instance that can be referenced by the
-   * getInstance(name) call, so that several Barrier objects can co-exist in the
-   * same program.
+   * method has the same purpose as the <CODE>setNumThreads(n)</CODE> call, 
+	 * except that it creates a separate Barrier instance that can be referenced 
+	 * by the <CODE>getInstance(name)</CODE> call, so that several 
+	 * <CODE>Barrier</CODE> objects can co-exist in the same program.
    * @param name String the name with which the Barrier object can be later got
    * @param n int the number of threads that will be coordinated on this Barrier
    * @throws ParallelException if there has been a prior call with the same name
@@ -62,8 +62,10 @@ public class Barrier {
 
 
   /**
-   * returns the instance that was created by a prior call to setNumThreads(n)
-   * @return Barrier
+   * returns the instance that was created by a prior call to 
+	 * <CODE>setNumThreads(n)</CODE>.
+   * @return Barrier null if the required call to set the number of threads has
+	 * not yet occurred
    */
   public synchronized static Barrier getInstance() {
     return _instance;
@@ -72,9 +74,9 @@ public class Barrier {
 
   /**
    * returns the instance that was created by a prior call to
-   * Barrier.setNumThreads(name,n)
+   * <CODE>Barrier.setNumThreads(name,n)</CODE>.
    * @param name String
-   * @return Barrier
+   * @return Barrier null if no instance by this name exists
    */
   public synchronized static Barrier getInstance(String name) {
     return (Barrier) _instances.get(name);
@@ -89,8 +91,8 @@ public class Barrier {
    * on the barrier, and the remaining threads will never be able to call the
    * barrier() method again unless they maintained a local reference to it).
    * @param name String
-   * @throws ParallelException if there was no such Barrier instance in the
-   * data-base of Barrier instances.
+   * @throws ParallelException if there was no such <CODE>Barrier</CODE> 
+	 * instance in the data-base of Barrier instances.
    */
   public synchronized static void removeInstance(String name) throws ParallelException {
     Barrier b = (Barrier) _instances.remove(name);

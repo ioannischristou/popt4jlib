@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package parallel;
 
 import java.util.HashMap;
@@ -105,6 +99,13 @@ public class RegisteredParcelPoolFailTest {
 		return;
 	}
 	
+	
+	/**
+	 * auxiliary inner-class part of the setup for showing that the 
+	 * RegisteredParcelPool design pattern is generally broken for message
+	 * passing coordinators (except for the BlockingFasterMsgPassingCoordinator); 
+	 * not part of the public API.
+	 */
 	static class RPFailTestThread extends Thread {
 		private SFMPCOld _coord;
 		private int _id;
@@ -134,6 +135,20 @@ public class RegisteredParcelPoolFailTest {
 }
 
 
+/**
+ * helper class for <CODE>RegisteredParcelPoolFailTest</CODE> class. This class 
+ * is essentially a copy of the <CODE>SimpleFasterMsgPassingCoordinator</CODE>
+ * class, only it uses the unsafe methods from the RegisteredParcel* family of 
+ * classes; it only exists to show-case the flaw in using thread-local pools for 
+ * RegisteredParcel objects in any other than the 
+ * <CODE>BlockingFasterMsgPassingCoordinator</CODE> class.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0 
+ */
 class SFMPCOld {
   private static final int _maxSize=10000;
   //private Vector _data;  // Vector<RegisteredParcel>

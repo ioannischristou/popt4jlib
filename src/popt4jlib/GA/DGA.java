@@ -20,7 +20,11 @@ import java.util.*;
  * measured either on absolute numbers (0) or in relative numbers (less than
  * the population of another island divided by 2.5), then the "near-empty"
  * island becomes a host for migrating individuals (which shall be the "best"
- * from their respective islands).
+ * from their respective islands). This migration model routes may be overridden
+ * by implementing the <CODE>popt4jlib.ImmigrationIslandOpIntf</CODE> and 
+ * passing it as parameter with key "dga.immigrationrouteselector". In any case,
+ * regardless of the route selector used, only up to 2 individuals may migrate 
+ * from each island in each generation.
  * <li>2. an aging mechanism via which individuals are removed from the population
  * once they reach their (randomly drawn from a Gaussian distribution) generation
  * limit.
@@ -79,7 +83,10 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
 	
 	private RRObject _pdbtInitCmd=null;  // if running in distributed mode, 
 	// this object will be sent first to server as initialization command.
-
+	
+	// this object, if present, dictates the immigration routes between islands.
+	private ImmigrationIslandOpIntf _immigrationTopologySelector=null;	
+	
 	
   /**
    * public constructor. Provides a unique String id to the object that is
@@ -243,6 +250,10 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
    * <li>&lt;"dga.varage", Double varage&gt; optional, the variance in the number of
    * generations an individual will remain in the population before being
    * removed, default is 0.9.
+	 * <li> &lt;"dga.immigrationrouteselector", popt4jlib.ImmigrationIslandOpIntf route_selector&gt;
+	 * optional, if present defines the routes of immigration from island to 
+	 * island; default is null, which forces the built-in unidirectional ring 
+	 * routing topology.
    * <li>&lt;"ensemblename", String name&gt; optional, the name of the synchronized
    * optimization ensemble in which this DGA object will participate. In case
    * this value is non-null, then a higher-level ensemble optimizer must have
@@ -302,8 +313,13 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
       if (_params.get("dga.function") == null)
         _params.put("dga.function", f);
       int nt = 1;
-      Integer ntI = (Integer) _params.get("dga.numthreads");
-      if (ntI != null) nt = ntI.intValue();
+      try {
+				Integer ntI = (Integer) _params.get("dga.numthreads");
+		    if (ntI != null) nt = ntI.intValue();
+			}
+			catch (ClassCastException e) {
+				throw new OptimizerException("DGA.minimize(): dga.numthreads not an integer in params");
+			}
       if (nt < 1)throw new OptimizerException(
           "DGA.minimize(): invalid number of threads specified");
 			// sanity check: num_gens*num_threads*poplimit < MsgPassingCoordinator.getMaxSize()
@@ -328,6 +344,13 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
 				throw new OptimizerException("DGA.minimize(): poplimit x numthreads x numgens "+
 								                     "must be less than MsgPassingCoordinator.getMaxSize() (="+mpcms+")");
 			// end sanity check assertion
+			// set immigration topology router if it exists
+			try {
+				_immigrationTopologySelector = (ImmigrationIslandOpIntf) _params.get("dga.immigrationrouteselector");
+			}
+			catch (ClassCastException e) {
+				throw new OptimizerException("DPSO.minimize(): invalid ImmigrationIslandOpIntf object specified in params");
+			}			
       RndUtil.addExtraInstances(nt);  // not needed
       // check if this object will participate in an ensemble
       String ensemble_name = (String) _params.get("ensemblename");
@@ -419,11 +442,23 @@ public class DGA extends GLockingObservableObserverBase implements OptimizerIntf
 
   /**
    * compute the id of the island to which the island with id myid should send
-   * any immigrants.
-   * @param myid int
-   * @return int
+   * any immigrants. By default, implements a simple search for any island that
+	 * is either devoid of population or else has less than 0.4 times the size of
+	 * the population of the island with id=myid. This default may be 
+	 * over-ridden by including in the parameters passed in, an object 
+	 * implementing the <CODE>popt4jlib.ImmigrationIslandOpIntf</CODE> that will
+	 * decide to which island migration from island with id=myid should occur 
+	 * using knowledge of the current population distribution, as well as the 
+	 * current generation number, gen.
+   * @param myid int my island id
+	 * @param gen int the current generation number
+   * @return int if -1 indicates no migration
    */
-  synchronized int getImmigrationIsland(int myid) {
+  synchronized int getImmigrationIsland(int myid, int gen) {
+		if (_immigrationTopologySelector!=null) {  // migration topology selector exists, use it.
+			return _immigrationTopologySelector.getImmigrationIsland(myid, gen, _islandsPop, _params);
+		}		
+		// default implementation kicks in.
     for (int i=0; i<_islandsPop.length; i++)
       if (myid!=i && (_islandsPop[i]==0 || _islandsPop[myid]>2.5*_islandsPop[i])) return i;
     return -1;
@@ -885,7 +920,7 @@ class DGAThreadAux {
 				// DGA objects.
 				MsgPassingCoordinator.getInstance("dga."+master_id).sendDataBlocking(_id, null);  // signal end of incumbents
       }
-      sendInds();
+      sendInds(gen);
       _master.setIslandPop(_id, _individuals.size());
       Barrier.getInstance("dga."+_master.getId()).barrier();  // synchronize with other threads
     }
@@ -1012,8 +1047,8 @@ class DGAThreadAux {
   }
 
 
-  private void sendInds() {
-    int sendTo = _master.getImmigrationIsland(_id);
+  private void sendInds(int gen) {
+    int sendTo = _master.getImmigrationIsland(_id, gen);
     if (sendTo>=0 && _individuals.size()>0) {  // send immigrants only if population>0
 			List immigrants = getImmigrants();
       DGAThreadAux receiverThreadAux = _master.getDGAThread(sendTo).getDGAThreadAux();

@@ -491,7 +491,8 @@ public final class DynamicAsynchTaskExecutor3 {
 
 
   /**
-   * nested helper class indicates shut-down of thread-pool
+   * nested helper class indicates shut-down of thread-pool. Not part of the 
+	 * public API.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
    * <p>Copyright: Copyright (c) 2015</p>
@@ -508,7 +509,8 @@ public final class DynamicAsynchTaskExecutor3 {
 	
   /**
    * nested helper class indicates some thread found no work to do and went 
-	 * blocking waiting for some data on the global pool.
+	 * blocking waiting for some data on the global pool. Not part of the public
+	 * API.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
    * <p>Copyright: Copyright (c) 2015</p>

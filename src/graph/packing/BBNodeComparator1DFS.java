@@ -2,7 +2,6 @@ package graph.packing;
 
 import java.util.*;
 import graph.*;
-import parallel.*;
 
 /**
  * Depth-First Search for the Max Weighted Independent Set problem (MWIS).
@@ -16,9 +15,21 @@ import parallel.*;
  * @version 1.0
  */
 public class BBNodeComparator1DFS implements BBNodeComparatorIntf {
-  public BBNodeComparator1DFS() {
+  
+	/**
+	 * sole public constructor.
+	 */
+	public BBNodeComparator1DFS() {
   }
 
+	
+	/**
+	 * compares two BBNodeBase objects according to the total weight each solution
+	 * represents (bigger is better).
+	 * @param o1  BBNodeBase
+	 * @param o2 BBNodeBase
+	 * @return int // -1, 0 or +1
+	 */
   public int compare(BBNodeBase o1, BBNodeBase o2) {
     try {
       double sct = o1.getCost();  // used to be o1.getNodes().size();

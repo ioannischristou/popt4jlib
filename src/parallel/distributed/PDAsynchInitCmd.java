@@ -17,5 +17,9 @@ package parallel.distributed;
  * @version 1.0
  */
 public abstract class PDAsynchInitCmd extends RRObject {
-	// no further class methods needed.
+	/**
+	 * method specifies how, if anything, is to apply on the server before 
+	 * sending to workers. Standard example is to set debug-level.
+	 */
+	public abstract void applyOnServer();
 }

@@ -21,6 +21,10 @@ public final class ReduceOperatorSumDbl extends ReduceOperator {
 	private final static ReduceOperatorSumDbl _instance = new ReduceOperatorSumDbl();  // singleton design pattern
 	
 	
+	/**
+	 * singleton design pattern method.
+	 * @return ReduceOperatorSumDbl
+	 */
 	public static ReduceOperatorSumDbl getInstance() {
 		return _instance;
 	}

@@ -1,7 +1,6 @@
 package parallel.distributed;
 
 import parallel.*;
-import java.net.*;
 import java.io.*;
 
 /**
@@ -37,7 +36,7 @@ public class DConditionCounterClt {
 	 * <ul>
    * <li> host="localhost"
    * <li> port=7899
-	 * </ul>
+	 * </ul>.
    */
   public DConditionCounterClt() {
 		// no-op
@@ -93,6 +92,20 @@ public class DConditionCounterClt {
 	public void decrement() throws IOException, ClassNotFoundException, ParallelException {
 		DMsgPassingCoordinatorClt coordclt = new DMsgPassingCoordinatorClt(_host,_port,_coordname);
 		coordclt.sendData(new DConditionCounterDecrRequest());
+	}
+
+	
+	/**
+	 * decrements the associated distributed condition counter by the given 
+	 * argument.
+	 * @param num int
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws ParallelException 
+	 */
+	public void decrement(int num) throws IOException, ClassNotFoundException, ParallelException {
+		DMsgPassingCoordinatorClt coordclt = new DMsgPassingCoordinatorClt(_host,_port,_coordname);
+		coordclt.sendData(new DConditionCounterDecrRequest(num));
 	}
 
 	

@@ -7,21 +7,21 @@ import java.util.HashMap;
  * The BlockingFasterMsgPassingCoordinator class is yet another class
  * that implements the rendevouz mechanism in parallel programming.
  * Threads can call the method sendData(myid, t-id, data) to store some data in
- * a queue that only the thread with thread-id can retrieve (in a FIFO fashion
- * only), and waits until the datum is received by the receiver thread.
+ * a queue that only the thread with thread-id "t-id" can retrieve (in a FIFO 
+ * fashion only: threads receive messages in the same order they were added to 
+ * the queue), and waits until the datum is received by the receiver thread.
  * Only non-null data can be "passed" from sender to receiver.
- * The data Objects that are stored are not copies
- * of the original objects, but rather references to them and so should not
- * be changed in any way after they are stored via a call to sendData... or
- * more appropriately, the sender thread should make sure it sends to the
- * receiver thread a copy of the data it intends to send. Unfortunately, the
- * latter strategy cannot be effectively enforced as Object.clone() is a
- * protected method, and it cannot be called on the parameter passed in the
- * send method from this code. Also, if we require that the objects to be sent
- * implement some interface (say, Clonable, as opposed to the Java built-in
- * (empty) Cloneable interface), then the objects that we are most likely
- * interested in sending/receiving, which are Java built-in data types including
- * arrays, will not be passable per se...
+ * The data Objects that are stored are not copies of the original objects, but 
+ * rather references to them and so should not be changed in any way after they 
+ * are stored via a call to sendData... or more appropriately, the sender thread 
+ * should make sure it sends to the receiver thread a copy of the data it 
+ * intends to send. Unfortunately, the latter strategy cannot be effectively 
+ * enforced as Object.clone() is a protected method, and it cannot be called on 
+ * the parameter passed in the send method from this code. Also, if we require 
+ * that the objects to be sent implement some interface (say, Clonable, as 
+ * opposed to the Java built-in (empty) Cloneable interface), then the objects 
+ * that we are most likely interested in sending/receiving, which are Java 
+ * built-in data types including arrays, will not be passable per se...
  * This implementation treats senders and receivers equivalently, so that when
  * a thread wants to send data or retrieve data, it follows the same procedure:
  * it checks to see if a receiver (sender) is already waiting to match with it,
@@ -47,12 +47,19 @@ import java.util.HashMap;
  * @version 1.0
  */
 public class BlockingFasterMsgPassingCoordinator {
-  private static final int _maxSize=10000;  // the max. data size in the _data
-                                            // queue
+  /**
+	 * the maximum data size in the <CODE>_data</CODE> queue.
+	 */
+	private static final int _maxSize=10000;
+	/**
+	 * queue holding <CODE>RegisteredParcel</CODE> objects representing messages
+	 * holding the data to be passed around.
+	 */
   private BoundedBufferArrayUnsynchronized _data;  // used to be Vector<RegisteredParcel>
   private static BlockingFasterMsgPassingCoordinator _instance=null;
   private static HashMap _instances=new HashMap();  // map<String name, BFMPC instance>
 
+	
   /**
    * private constructor in agreement with the Singleton(s) Design Pattern
    */

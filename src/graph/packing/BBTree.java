@@ -6,7 +6,8 @@ import java.util.*;
 import popt4jlib.AllChromosomeMakerClonableIntf;
 
 /**
- * represents the Branch&amp;Bound Tree of the method.
+ * represents the Branch&amp;Bound Tree of the method. Not part of the public
+ * API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>

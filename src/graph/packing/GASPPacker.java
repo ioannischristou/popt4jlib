@@ -192,7 +192,17 @@ public final class GASPPacker {
 }
 
 
-class NodeComparator implements Comparator, Serializable {
+/**
+ * auxiliary class comparing <CODE>graph.Node</CODE> objects, for use with the 
+ * <CODE>graph.packing.GASPPacker</CODE> class, not part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+final class NodeComparator implements Comparator, Serializable {
   private static final long serialVersionUID = 7055686458579383108L;
 
   public int compare(Object o1, Object o2) {

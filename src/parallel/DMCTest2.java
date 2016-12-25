@@ -20,10 +20,18 @@ public class DMCTest2 {
   private HashMap _items = null;
   private DMCT2LThread _thread = null;
 
+	/**
+	 * sole constructor.
+	 */
   public DMCTest2() {
   }
 
 
+	/**
+	 * the main method of the class.
+	 * @throws ParallelException
+	 * @throws InterruptedException 
+	 */
   public void run() throws ParallelException, InterruptedException {
     while (true) {
       DMCoordinator.getInstance("DMCTest2").getReadAccess();
@@ -35,6 +43,11 @@ public class DMCTest2 {
   }
 
 
+	/**
+	 * invoke as:
+	 * <CODE>java -cp &lt;classpath&gt; parallel.DMCTest2</CODE>.
+	 * @param args 
+	 */
   public static void main(String[] args) {
     DMCTest2 t = new DMCTest2();
     try {
@@ -106,36 +119,40 @@ public class DMCTest2 {
     }
     return (_items==null || _lastLoadingTime < _lastFetchedUpdateTime);
   }
-}
 
+	
+	/**
+	 * auxiliary inner-class not part of the public API.
+	 */
+	class DMCT2LThread extends Thread {
+		private DMCTest2 _testObj;
 
-class DMCT2LThread extends Thread {
-  private DMCTest2 _testObj;
+		public DMCT2LThread(DMCTest2 t) {
+			_testObj = t;
+		}
 
-  public DMCT2LThread(DMCTest2 t) {
-    _testObj = t;
-  }
+		public void run() {
+			try {
+				DMCoordinator.getInstance("DMCTest2").getWriteAccess();
+				System.out.print("DMCT2LThread.run(): creating items...");
+				Thread.sleep(1000*utils.RndUtil.getInstance().getRandom().nextInt(10));  // sleep for at most 9 seconds
+				System.out.println("Done!");
+				_testObj.setItems(new HashMap());
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+			finally {
+				try {
+					_testObj.setLoaderThreadNull();
+					DMCoordinator.getInstance("DMCTest2").releaseWriteAccess();
+				}
+				catch (ParallelException e) {
+					e.printStackTrace();  // can never get here
+				}
+			}
+		}
+	}
 
-  public void run() {
-    try {
-      DMCoordinator.getInstance("DMCTest2").getWriteAccess();
-      System.out.print("DMCT2LThread.run(): creating items...");
-      Thread.sleep(1000*utils.RndUtil.getInstance().getRandom().nextInt(10));  // sleep for at most 9 seconds
-      System.out.println("Done!");
-      _testObj.setItems(new HashMap());
-    }
-    catch (Exception e) {
-      e.printStackTrace();
-    }
-    finally {
-      try {
-        _testObj.setLoaderThreadNull();
-        DMCoordinator.getInstance("DMCTest2").releaseWriteAccess();
-      }
-      catch (ParallelException e) {
-        e.printStackTrace();  // can never get here
-      }
-    }
-  }
 }
 

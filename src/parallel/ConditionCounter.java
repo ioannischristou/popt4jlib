@@ -100,6 +100,24 @@ public class ConditionCounter {
     }
   }
 
+	
+	/**
+	 * get the current count value. Useful for debugging.
+	 * @return long
+	 */
+	public synchronized long getCount() {
+		return _count;
+	}
+	
+	
+	/**
+	 * get the target value of this counter. Useful for debugging.
+	 * @return long
+	 */
+	public synchronized long getTarget() {
+		return _target;
+	}
+	
 
   /**
    * resets this object's counter to zero, and sets the object's

@@ -24,6 +24,7 @@ import parallel.ConditionCounter;
 public class DConditionCounter {
 	private final static DConditionCounter _instance = new DConditionCounter();
 	private final ConditionCounter _counter;
+	private final utils.Messenger mger = utils.Messenger.getInstance();
 	
 	
 	public static DConditionCounter getInstance() {
@@ -33,16 +34,25 @@ public class DConditionCounter {
 	
 	public void increment() {
 		_counter.increment();
+		mger.msg("DConditionCounter.increment(): count="+_counter.getCount(), 1);
 	}
 	
 	
 	public void increment(int num) {
 		_counter.add(num);
+		mger.msg("DConditionCounter.increment("+num+"): count="+_counter.getCount(), 1);
 	}
 	
 	
 	public void decrement() {
 		_counter.decrement();
+		mger.msg("DConditionCounter.decrement(): count="+_counter.getCount(), 1);
+	}
+	
+	
+	public void decrement(int num) {
+		_counter.subtract(num);
+		mger.msg("DConditionCounter.decrement("+num+"): count="+_counter.getCount(), 1);		
 	}
 	
 	

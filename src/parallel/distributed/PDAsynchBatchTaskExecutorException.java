@@ -12,7 +12,7 @@ package parallel.distributed;
  */
 public class PDAsynchBatchTaskExecutorException extends PDBatchTaskExecutorException {
   public PDAsynchBatchTaskExecutorException(String msg) {
-    super(msg);
-    System.err.println(msg);
+    super("PDAsynchBatchTaskExecutorException:"+msg);
+    //System.err.println(msg);
   }
 }

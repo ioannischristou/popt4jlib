@@ -3,7 +3,8 @@ package graph.packing;
 import java.util.*;
 
 /**
- * Holds BBNodeBase objects to execute (to submit to the BBThreadPool).
+ * Holds BBNodeBase objects to execute (to submit to the BBThreadPool). Not part
+ * of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>

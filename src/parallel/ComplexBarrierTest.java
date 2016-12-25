@@ -1,9 +1,26 @@
 package parallel;
 
+/**
+ * test-driver for the <CODE>ComplexBarrier</CODE> class.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
 public class ComplexBarrierTest {
+	/**
+	 * sole constructor.
+	 */
   public ComplexBarrierTest() {
   }
 
+	/**
+	 * invoke as:
+	 * <CODE>java -cp &lt;classpath&gt; parallel.ComplexBarrierTest</CODE>.
+	 * @param args 
+	 */
   public static void main(String[] args) {
     try {
       // create
@@ -27,32 +44,41 @@ public class ComplexBarrierTest {
       e.printStackTrace();
     }
   }
+
+	
+	/**
+	 * auxiliary inner class not part of the public API.
+	 */
+	static class CBThread extends Thread {
+		private int _id;
+		/**
+		 * sole constructor.
+		 * @param id int
+		 */
+		public CBThread(int id) { _id = id; }
+		/**
+		 * all threads perform barrier 50 times, but the threads with _id &ge; 100
+		 * exit the barrier after this number.
+		 */
+		public void run() {
+			for (int i=0; i<100; i++) {
+				try {
+					if (i<50 || _id<100) {
+						System.out.println("t-id="+_id+" i="+i);
+						System.out.flush();
+						ComplexBarrier.getInstance().barrier();
+					}
+					else if (_id>=100) {
+						ComplexBarrier.removeCurrentThread();
+						break;
+					}
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
 }
 
-
-class CBThread extends Thread {
-  private int _id;
-  public CBThread(int id) { _id = id; }
-  /**
-   * all threads perform barrier 50 times, but the threads with _id &ge; 100
-   * exit the barrier after this number.
-   */
-  public void run() {
-    for (int i=0; i<100; i++) {
-      try {
-        if (i<50 || _id<100) {
-          System.out.println("t-id="+_id+" i="+i);
-          System.out.flush();
-          ComplexBarrier.getInstance().barrier();
-        }
-        else if (_id>=100) {
-          ComplexBarrier.removeCurrentThread();
-          break;
-        }
-      }
-      catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
-  }
-}

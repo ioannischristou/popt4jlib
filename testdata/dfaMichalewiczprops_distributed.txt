@@ -1,0 +1,15 @@
+class,dfa.function,tests.MichalewiczFunction
+m,10.0
+chromosomelength,100
+maxallelevalue,3.141592653589793
+minallelevalue,0.0
+dfa.numgens,10
+dfa.numinitpop,50
+rndgen,7,5
+dfa.numthreads,5
+class,dfa.randomfireflymaker,popt4jlib.PS.DblArray1CMaker
+class,dfa.cupdater,popt4jlib.PS.FA.DblArray1StdChromosomeUpdater
+class,dfa.pdbtexecinitedwrkcmd,parallel.distributed.PDBTExecInitNoOpCmd
+dfa.pdbthost,localhost
+dfa.pdbtport,7891
+dbglvl,1

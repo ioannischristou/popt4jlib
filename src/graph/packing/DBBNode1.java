@@ -10,9 +10,9 @@ import java.util.*;
 import java.io.*;
 
 /**
- * represents a node in the distributed B &amp; B tree of the hybrid 
- * B &amp; B - GASP scheme for the 1-packing problem (max weighted independent 
- * set problem). 
+ * represents a node in the distributed B &amp; B tree of the hybrid
+ * B &amp; B - GASP scheme for the 1-packing problem (max weighted independent
+ * set problem). Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2016</p>
@@ -21,18 +21,19 @@ import java.io.*;
  * @version 1.0
  */
 class DBBNode1 implements Comparable, TaskObject {
-	
-  //private Set _nodes = null;  // TreeSet<Node> set of active nodes in current soln.
-	private Set _nodeids = null;  // HashSet<Integer> set of active node ids in current soln.
-	private int _lvl;  // node's current level
-	private int _startLvl;  // the starting level from which to start counting 
-	                        // to see if current level implies distributing children
-	private static final int _NUM_LVLS_2_RUN_ON_CURRENT = 4;  // how many levels to 
-	                        // run on the current thread before submitting children
-	                        // to run in other distributed JVMs
-	
-	private double _bound = Double.NEGATIVE_INFINITY;
-	
+
+	private static final long _MIN_REQ_ELAPSED_TIME_4_DISTRIBUTION = 10000L;  // 10 seconds
+	private boolean _immigrant = false;  // set when sent for distributed exec.
+	protected Set _nodeids = null;  // HashSet<Integer> set of active node ids in current soln.
+	protected int _lvl;
+	protected double _bound = Double.NEGATIVE_INFINITY;
+
+  private static ThreadLocal _lastDistributionTimes = new ThreadLocal() {
+    protected Object initialValue() {
+      return null;
+    }
+  };
+
 	
 	/**
 	 * defines a multiplicative fudge factor by which the "best cost" of
@@ -61,49 +62,48 @@ class DBBNode1 implements Comparable, TaskObject {
    * Sole constructor of a DBBNode1 object. Clients are not expected to
    * create such objects which are instead created dynamically through the
    * B&amp;B process.
-   * @param r Set // Set&lt;Integer&gt; the set of (graph) node ids to be added 
+   * @param r Set // Set&lt;Integer&gt; the set of (graph) node ids to be added
 	 * to the nodes of the parent to represent a new partial solution
-	 * @param lvl int the depth of the node (level) in the tree
-	 * @param startlvl int the level of the tree at which execution on current 
-	 * thread started
+	 * @param lvl int  // the level at which this DBBNode1 object is
    */
-  DBBNode1(Set r, int lvl, int startlvl) {
-		// _nodes = r;
+  DBBNode1(Set r, int lvl) {
 		_nodeids = r;
 		_lvl = lvl;
-		_startLvl = startlvl;
+		if (_lvl==0) _immigrant=true;  // root node is an immigrant too
   }
 
 
   /**
    * the main method of the class, that processes the partial solution
-   * represented by this object, and spawning and pushing into the
-   * <CODE>BBQueue</CODE> queue new BB-node children if needed.
-	 * Note:
-	 * <br>2015-02-09 modified children nodes cutting-off behavior to be turned
-	 * off if this BBNode is the root node, in accordance with the change to
-	 * let the root node return immediately all possible best graph-nodes as
-	 * independent starting singleton sets (equivalent to having kmax=0 for the
-	 * root node) which should result in better parallel processing throughput.
-	 * <br>2015-02-10 improved performance of the isFeas() and isFree2Cover()
-	 * methods - now also avoid unnecessary HashMap objects creation.
+   * represented by this object. This method is heavily based on the 
+	 * <CODE>BBNode1</CODE> class, adapted for distributed cluster parallel
+	 * computing.
    */
   public Serializable run() {
+			
     DConditionCounterLLCClt cond_counter=null;
+		utils.Messenger mger = utils.Messenger.getInstance();
 		try {
       boolean foundincumbent = false;
 			DBBTree _master = DBBTree.getInstance();
 			cond_counter = _master.getDConditionCounterClt();
+			// step 0.
+			// see if worker we're working in, is in a closing state
+			boolean wrk_is_closing = PDAsynchBatchTaskExecutorWrk.isClosing();
+			if (wrk_is_closing) {  // stop computations here
+				return null;  
+			}
       // step 1.
       // see if limit has been reached
-      if (_master.getCounter() > _master.getMaxNodesAllowed()) {
+			int cur_counter = _master.incrementCounter();  // increment this process's #DBBNode1 objects
+			mger.msg("#DBBNode1 objects created by this process="+cur_counter, 2);
+			if (cur_counter > _master.getMaxNodesAllowed()) {
 				return null; // stop computations
       }
       // step 2.
       // check for pruning
       double bnd = getBound();
       if (bnd <= _master.getBound() || bnd < _master.getMinKnownBound()) {
-        // if (getBestNodeSets2Add().size()==0) _master.incrementTotLeafNodes();
         return null; // node is fathomed
       }
       // step 3.
@@ -113,7 +113,12 @@ class DBBNode1 implements Comparable, TaskObject {
         candidates = getBestNodeSets2Add();
         if (candidates != null && candidates.size() == 1) {
           //_nodes.addAll( (Set) candidates.iterator().next());
-					_nodeids.addAll( (Set) candidates.iterator().next());
+					Set next_cand = (Set) candidates.iterator().next();  // Set<Node>
+					Iterator it = next_cand.iterator();
+					while (it.hasNext()) {
+						Node n = (Node) it.next();
+						_nodeids.add(new Integer(n.getId()));
+					}
         }
         else break;
       }
@@ -133,7 +138,7 @@ class DBBNode1 implements Comparable, TaskObject {
         foundincumbent = true;
       }
       // branch?
-      if (candidates != null && candidates.size()!=0) {
+      if (candidates != null && candidates.size()!=0) {  // candidates.size() is in fact > 1
         try {
           List children = new ArrayList();
           Iterator it = candidates.iterator();
@@ -142,11 +147,16 @@ class DBBNode1 implements Comparable, TaskObject {
             if (cnt_children++ > _master.getMaxChildrenNodesAllowed())
 							break;
             Set ns = (Set) it.next();
-            DBBNode1 child = new DBBNode1(ns, _lvl+1, _startLvl);
+						Set ns2 = new HashSet(_nodeids);
+						Iterator it2 = ns.iterator();
+						while (it2.hasNext()) {
+							ns2.add(new Integer(((Node) it2.next()).getId()));
+						}
+						DBBNode1 child = new DBBNode1(ns2, _lvl+1);
             // check if child's bound is better than incumbent
             double childbound = child.getBound();
             if (childbound <= _master.getBound() ||
-								childbound < _master.getMinKnownBound())  // we know child cannot make it
+								childbound < _master.getMinKnownBound())  // not good enough
               continue;
             // speed up processing:
             // record new child incumbent if it exists (may be a partial soln
@@ -160,17 +170,24 @@ class DBBNode1 implements Comparable, TaskObject {
           int sz = children.size();
           if (sz == 0) {
             if (foundincumbent) _master.reduceTightenUpperBoundLvl();
-            return null; // no children
+						return null; // no children
           }
-					// send the children to be executed elsewhere, only if current lvl
-					// says so.
-					if (_lvl<_startLvl+_NUM_LVLS_2_RUN_ON_CURRENT) {
+					// send the children to be executed elsewhere, only if it's time
+					if (mustKeepLocally()) {  // keep them locally
+						// run children
 						for (int i=0; i<sz; i++) {
 							DBBNode1 ci = (DBBNode1) children.get(i);
 							ci.run();
 						}
-					} 
-					else {  // send them elsewhere for execution
+					}
+					else {  // send (all of them) them elsewhere for execution
+						TaskObject[] tasks = new TaskObject[sz];
+						for (int i=0; i<sz; i++) {
+							DBBNode1 ci = (DBBNode1) children.get(i);
+							ci._immigrant = true;
+							tasks[i] = ci;
+						}
+						children.clear();
 						try {
 							cond_counter.increment(sz);  // notify condition-counter
 						}
@@ -178,18 +195,22 @@ class DBBNode1 implements Comparable, TaskObject {
 							e.printStackTrace();
 							System.exit(-1);
 						}
-						TaskObject[] tasks = new TaskObject[sz];
-						for (int i=0; i<sz; i++) {
-							DBBNode1 ci = (DBBNode1) children.get(i);
-							ci._startLvl = _lvl;  // set its start level
-							tasks[i] = ci;
+						try {
+							PDAsynchBatchTaskExecutorClt.getInstance().submitWorkFromSameHost(tasks);
 						}
-						PDAsynchBatchTaskExecutorClt.getInstance().submitWorkFromSameHost(tasks);
+						catch (PDAsynchBatchTaskExecutorNWAException e) {  // execute the tasks locally
+							mger.msg("DBBNode1.run(): got children back due to workers' UNAVAILABILITY, will run them locally", 1);
+							for (int i=0; i<tasks.length; i++) {
+								// first seriously increment how many levels to keep descendants locally
+								// run each child
+								tasks[i].run();
+							}
+						}
 					}
         }
-        catch (Exception e) {
+        catch (Exception e) {  // insanity
           e.printStackTrace();
-          //System.exit( -1);
+          System.exit( -1);
         }
       }
       else {  // no branching occurs
@@ -198,16 +219,6 @@ class DBBNode1 implements Comparable, TaskObject {
           if (_master.getLocalSearch()) {  // perform a local search
 						long start_time = System.currentTimeMillis();
             try {
-              // convert s to Set<Integer>
-              /*
-							Set nodeids = new IntSet();
-              Iterator iter = _nodes.iterator();
-              while (iter.hasNext()) {
-                Node n = (Node) iter.next();
-                Integer nid = new Integer(n.getId());
-                nodeids.add(nid);
-              }
-							*/
 							Set nodeids = new IntSet(_nodeids);
 							_master.incrNumDLSPerformed();
               // now do the local search
@@ -236,15 +247,6 @@ class DBBNode1 implements Comparable, TaskObject {
               PairObjDouble pod = dls.minimize(f);
               Set sn = (Set) pod.getArg();
               if (sn != null && -pod.getDouble() > getCost()) {
-                /*
-								_nodes.clear();
-                Iterator sniter = sn.iterator();
-                while (sniter.hasNext()) {
-                  Integer id = (Integer) sniter.next();
-                  Node n = _master.getGraph().getNodeUnsynchronized(id.intValue());
-                  _nodes.add(n);
-                }
-								*/
 								_nodeids.clear();
 								_nodeids.addAll(sn);
                 // record new incumbent
@@ -268,7 +270,10 @@ class DBBNode1 implements Comparable, TaskObject {
 			return null;
     }
 		finally {
-			if (_lvl==_startLvl && cond_counter!=null) {
+			//mger.msg("Done with node "+
+			//	       " on lvl="+_lvl+" _startLvl="+_startLvl+
+			//	       " _NUM_LVLS_2_RUN_ON_CURRENT="+_NUM_LVLS_2_RUN_ON_CURRENT, 1);
+			if (_immigrant && cond_counter!=null) {
 				try {
 					cond_counter.decrement();
 				}
@@ -276,16 +281,20 @@ class DBBNode1 implements Comparable, TaskObject {
 					e.printStackTrace();
 					System.exit(-1);
 				}
+			} 
+			else if (_immigrant) {  // insanity
+				System.err.println("null cond_counter???");
+				System.exit(-1);
 			}
 		}
   }
 
-	
+
 	final Set getNodeIds() {
 		//return _nodes;
 		return _nodeids;
 	}
-	
+
 
  /**
   * compares this BB-node with another BB-node, via the master BBTree's
@@ -298,10 +307,10 @@ class DBBNode1 implements Comparable, TaskObject {
     return DBBTree.getInstance().getDBBNodeComparator().compare(this, o);
   }
 
- 
+
 	/**
 	 * always returns false.
-	 * @return 
+	 * @return
 	 */
   public boolean isDone() {
     return false;
@@ -311,36 +320,29 @@ class DBBNode1 implements Comparable, TaskObject {
 	/**
 	 * unsupported operation, always throws.
 	 * @param obj TaskObject
-	 * @throws IllegalArgumentException 
+	 * @throws IllegalArgumentException
 	 */
   public void copyFrom(TaskObject obj) throws IllegalArgumentException {
 		throw new IllegalArgumentException("not supported");
   }
-	
+
 
   /**
    * compares for equality using the object's <CODE>compareTo()</CODE> method.
-   * @param other Object expected another BBNode1 object
+   * @param other Object expected another BBBNode1 object
    * @return boolean return true iff the compareTo(other) method return 0.
    */
   public boolean equals(Object other) {
-    /*
-    BBNode1 o = (BBNode1) other;
-    if (_id==o._id) return true;
-    else return false;
-    */
     int ct = compareTo(other);
     return (ct==0);
   }
 
 
   /**
-   * returns the size of the nodes of this BB-node.
+   * returns the size of the nodes of this DBBNode1.
    * @return int
    */
   public int hashCode() {
-    // return _id;
-    //return getNodes().size();
 		return getNodeIds().size();
 	}
 
@@ -370,17 +372,15 @@ class DBBNode1 implements Comparable, TaskObject {
 	 * nodes themselves.
 	 * @return Set // Set&lt;Node&gt;
 	 */
-  private Set getForbiddenNodes() {
+  protected Set getForbiddenNodes() {
 		Graph g = DBBTree.getInstance().getGraph();
     Set forbidden = new HashSet();
-    //Iterator it = getNodes().iterator();
 		Iterator it = getNodeIds().iterator();
 		while (it.hasNext()) {
       Integer nid = (Integer) it.next();
 			Node n = g.getNodeUnsynchronized(nid.intValue());
 			forbidden.add(n);
-			//Node n = (Node) it.next();
-      Set nnbors = n.getNborsUnsynchronized();  // used to be synchronized
+      Set nnbors = n.getNborsUnsynchronized();
       forbidden.addAll(nnbors);
     }
     return forbidden;
@@ -401,8 +401,8 @@ class DBBNode1 implements Comparable, TaskObject {
 		while (nodesit.hasNext()) {
 			//Node ni = (Node) nodesit.next();
 			Integer nid = (Integer) nodesit.next();
-			Node ni = g.getNodeUnsynchronized(nid);
-			Double niw = ni.getWeightValueUnsynchronized("value");  // used to be synchronized
+			Node ni = g.getNodeUnsynchronized(nid.intValue());
+			Double niw = ni.getWeightValueUnsynchronized("value");
 			if (niw==null) res += 1.0;  // nodes without weights have weight value 1
 			                            // as in the max. independent set problem.
 			else res += niw.doubleValue();
@@ -445,26 +445,15 @@ class DBBNode1 implements Comparable, TaskObject {
   /**
    * return Set&lt;Set&lt;Node&gt; &gt; of all maximal nodesets that can be added
 	 * together to the current active <CODE>_nodeIds</CODE> set.
-	 * Note:
-	 * <br>2014-07-22 modified Vector store to ArrayList store to enhance
-	 * multi-threading speed.
-	 * <br>2015-02-09 root node returns immediately with collection of singleton
-	 * free nodes as sets to enhance multi-threading speed.
    * @return Set // Set&lt;Set&lt;Node&gt; &gt;
    */
-  private Set getBestNodeSets2Add() throws ParallelException {
+  protected Set getBestNodeSets2Add() throws ParallelException {
 		DBBTree master = DBBTree.getInstance();
     final int kmax = master.getMaxAllowedItersInGBNS2A();
     final Set ccands = getBestNodes2Add(_lvl==0);
-    /* following code compiles under JDK5 but not under JDK 1.4
-    Set result = getMaster().getSortBestCandsInGBNS2A() ?
-						new TreeSet(_nscomtor) :
-						new HashSet();  // Set<Set<Node> >
-    */
     Set result;
     if (master.getSortBestCandsInGBNS2A()) result = new TreeSet(_nscomtor);
     else result = new HashSet();  // Set<Set<Node> >
-
     List store = new ArrayList();
     Stack temp = new Stack();
     Iterator cands_it = ccands.iterator();
@@ -474,7 +463,7 @@ class DBBNode1 implements Comparable, TaskObject {
       ci.add(n);
       temp.push(ci);
     }
-    if (master.getUseMaxSubsets()==false || _lvl==0) {
+    if (_lvl==0) {
 			// if root, return collection of each available node as singleton sets
 			// this should speed up parallel processing
       // correct GASP behavior
@@ -483,12 +472,12 @@ class DBBNode1 implements Comparable, TaskObject {
     }
     // figure out all the maximal subsets of ccands that are not conflicting
     // as it is, this routine does not guarantee that the nodes are being added
-    // in a GASP fashion, as when one node of a set ci is added to _nodes, the
+    // in a GASP fashion, as when one node of a set ci is added to _nodeids, the
     // other nodes in ci may no longer be the "optimal" in GASP sense to add to
-    // _nodes.
+    // _nodeids.
     int cnt=0;  // this counter is used to stop the max. subsets creation process from going wild
     while (temp.isEmpty()==false) {
-      if (++cnt==kmax) break;
+      if (++cnt>=kmax) break;
       Set t = (Set) temp.pop();
       cands_it = ccands.iterator();
       boolean expanded_t=false;
@@ -543,11 +532,28 @@ class DBBNode1 implements Comparable, TaskObject {
     result.addAll(store);
     return result;
   }
+	
+	
+	/**
+	 * check whether children nodes must be sent for distribution or not, based
+	 * on when the current thread sent children before. If it returns false, it 
+	 * also updates the time of the last distribution to now.
+	 * @return 
+	 */
+	private static boolean mustKeepLocally() {
+		long now = System.currentTimeMillis();
+		long last_time = getLastDistributionTime();
+		if (now - last_time > _MIN_REQ_ELAPSED_TIME_4_DISTRIBUTION) {
+			setLastDistributionTimeNow();
+			return false;
+		}
+		return true;
+	}
 
 
   /**
    * return the Set&lt;Node&gt; that are the best node(s) to add given the current
-   * active <CODE>_nodes</CODE> set. This is the set of nodes that are free to
+   * active <CODE>_nodeids</CODE> set. This is the set of nodes that are free to
 	 * cover, have max. weight (within the fudge factor <CODE>_ff</CODE>), and
 	 * have the least weight of "free" NBors() (again within the same fudge factor).
 	 * Alternatively, if the "useGWMIN2criterion" flag is true, the "GWMIN2"
@@ -698,31 +704,23 @@ class DBBNode1 implements Comparable, TaskObject {
    */
   private static boolean isFree2Cover(Node nj, Set active) {
     if (active.contains(nj)) return false;
-    /* slow method
-		Set nborsj = new HashSet(nj.getNbors());
-    nborsj.retainAll(active);
-    if (nborsj.size()>0) return false;
-		*/
-		// /* faster: no need for HashSet's creation
 		Set nborsj = nj.getNborsUnsynchronized();  // no modification to take place
 		Iterator itj = nborsj.iterator();
 		while (itj.hasNext()) {
 			Node nnj = (Node) itj.next();
 			if (active.contains(nnj)) return false;
 		}
-		// */
     return true;
   }
 
 
 	/**
 	 * check if the nodes parameter can be added to the current active set of
-	 * nodes represented by this BBNode1 object.
+	 * nodes represented by this DBBNode1 object.
 	 * @param nodes Set // Set&lt;Node&gt;
 	 * @return boolean true iff nodes can be added to the current solution
 	 */
   private boolean isFeas(Set nodes) {
-    //Set allnodes = new HashSet(getNodes());
     Set allnodes = new HashSet();
 		Iterator itids = _nodeids.iterator();
 		Graph g = DBBTree.getInstance().getGraph();
@@ -765,6 +763,19 @@ class DBBNode1 implements Comparable, TaskObject {
 			}
 		}
 		return true;
+	}
+
+	
+  private static long getLastDistributionTime() {
+    Long p = (Long) _lastDistributionTimes.get();
+    if (p==null) {
+      p = new Long(0);
+      _lastDistributionTimes.set(p);
+    }
+    return p.longValue();
+  }
+	private static void setLastDistributionTimeNow() {
+		_lastDistributionTimes.set(new Long(System.currentTimeMillis()));
 	}
 
 

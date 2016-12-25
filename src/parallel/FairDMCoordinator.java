@@ -4,11 +4,14 @@ import java.util.HashMap;
 import java.util.Vector;
 
 /**
- * <p>Title: Thread Coordination Management System</p>
- * <p>Description: Same as DMCoordinator class, but guarantees FIFO order
- * of threads' execution (i.e. if a writer thread arrives before a reader,
- * the writer will execute before the reader, and vice-versa).
- * </p>
+ * A read-write lock mechanism implementing the notion of fairness of granting
+ * requests, in that the first thread to execute the code a request, will get
+ * their request serviced before the second one. Same as DMCoordinator class, 
+ * but guarantees FIFO order of threads' execution (i.e. if a writer thread 
+ * arrives before a reader, the writer will execute before the reader, and 
+ * vice-versa).
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2003</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
@@ -362,31 +365,41 @@ public class FairDMCoordinator {
     }
     return false;
   }
-}
+
+	
+	/**
+	 * auxiliary inner-class, not part of the public API.
+	 */
+	class WaitObject {
+		String _name;
+		boolean _isDone=false;
+
+		public WaitObject(String n) {
+			_name=n;
+		}
+		public void setDone() { _isDone = true; }
+		public boolean getIsDone() { return _isDone; }
+	}
 
 
-class WaitObject {
-  String _name;
-  boolean _isDone=false;
-
-  public WaitObject(String n) {
-    _name=n;
-  }
-  public void setDone() { _isDone = true; }
-  public boolean getIsDone() { return _isDone; }
-}
+	/**
+	 * auxiliary inner-class, not part of the public API.
+	 */
+	class WriteWaitObject extends WaitObject {
+		public WriteWaitObject(String n) {
+			super(n);
+		}
+	}
 
 
-class WriteWaitObject extends WaitObject {
-  public WriteWaitObject(String n) {
-    super(n);
-  }
-}
+	/**
+	 * auxiliary inner-class, not part of the public API.
+	 */
+	class ReadWaitObject extends WaitObject {
+		public ReadWaitObject(String n) {
+			super(n);
+		}
+	}
 
-
-class ReadWaitObject extends WaitObject {
-  public ReadWaitObject(String n) {
-    super(n);
-  }
 }
 
