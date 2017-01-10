@@ -137,7 +137,7 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 	 * returns the <CODE>_myid</CODE> data member, which is unique among all tasks
 	 * that are actually submitted to the executor but not among all FNPTask 
 	 * objects.
-	 * @return 
+	 * @return long
 	 */
 	public long getId() { 
 		return _myid; 

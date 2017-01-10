@@ -33,6 +33,8 @@ public interface RandomArgMakerClonableIntf extends RandomArgMakerIntf {
 	/**
 	 * return the current argument.
 	 * @return Object
+	 * @throws UnsupportedOperationException if the implementation doesn't support
+	 * this method.
 	 */
 	public Object getCurrentArgument() throws UnsupportedOperationException;
 }

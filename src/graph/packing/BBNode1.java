@@ -633,7 +633,7 @@ class BBNode1 extends BBNodeBase {
 	 * Alternatively, if the "useGWMIN2criterion" flag is true, the "GWMIN2"
 	 * heuristic criterion is utilized, so that the free nodes that are within
 	 * <CODE>_ff</CODE> times from the maximum value of the quantity
-	 * $w_n / \Sum_{v \in N^+_n}$ form the return set.
+	 * $w_n / \Sum_{v \in N^+_n}w_v$ form the return set.
 	 * @param isroot boolean if true then _ff is set to zero, so that all
 	 * non-forbidden nodes with min. sum of neighbors-weights are returned.
 	 * @throws ParallelException

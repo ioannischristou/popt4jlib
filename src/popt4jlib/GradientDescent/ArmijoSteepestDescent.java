@@ -87,10 +87,12 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
 	 * <ul>
    * <li> &lt;"asd.numthreads", Integer nt&gt; optional, the number of threads to use in
    * the optimization process. Default is 1.
-   * <li> &lt;"asd.numtries", Integer ntries&gt; optional, the number of tries (starting
-   * from different initial points). Default is 1.
-   * <li> &lt;"asd.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
-   * function to be minimized. If this param-value pair does not exist, the
+	 * <li>&lt;"asd.numtries", Integer ntries&gt; optional, the number of initial 
+	 * starting points to use (must either exist then ntries 
+	 * &lt;"asd.x$i$",VectorIntf v&gt; pairs in the parameters or a pair 
+	 * &lt;"gradientdescent.x0",VectorIntf v&gt; pair in params). Default is 1.
+   * <li> &lt;"asd.gradient", VecFunctionIntf g&gt; optional, the gradient of f,
+   * the function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
    * <li> &lt;"asd.gtol", Double v&gt; optional, the minimum abs. value for each of the
    * gradient's coordinates, below which if all coordinates of the gradient
@@ -290,7 +292,7 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
     private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) throws OptimizerException {
       VecFunctionIntf grad = (VecFunctionIntf) p.get("asd.gradient");
       if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
-      final VectorIntf x0 = p.get("asd.x"+solindex) == null ?
+      final VectorIntf x0 = !p.containsKey("asd.x"+solindex) ?
           (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
           (VectorIntf) p.get("asd.x"+solindex);
       if (x0==null) throw new OptimizerException("no asd.x"+solindex+" initial point in _params passed");

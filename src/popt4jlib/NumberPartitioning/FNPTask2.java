@@ -99,7 +99,7 @@ public class FNPTask2 implements ComparableTaskObject {
 	 * returns the <CODE>_myid</CODE> data member, which is unique among all tasks
 	 * that are actually submitted to the executor but not among all FNPTask2 
 	 * objects.
-	 * @return 
+	 * @return long
 	 */
 	public long getId() { 
 		return _myid; 

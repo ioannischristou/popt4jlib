@@ -50,7 +50,7 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
 
   /**
    * return a new empty ArmijoBFGS optimizer object (that must be configured
-   * via a call to setParams(p) before it is used.)
+   * via a call to setParams(p) before it is used).
    * @return LocalOptimizerIntf
    */
   public LocalOptimizerIntf newInstance() {

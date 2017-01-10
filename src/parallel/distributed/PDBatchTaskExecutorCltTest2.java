@@ -144,7 +144,8 @@ public class PDBatchTaskExecutorCltTest2 {
 
 
 /**
- * auxiliary class implementing TaskObject interface.
+ * auxiliary class implementing TaskObject interface, not part of the public 
+ * API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -163,6 +164,7 @@ class GraphDiameterEvalTask implements TaskObject {
     _g = g;
   }
 
+	
   public Serializable run() {
     // louzy way to compute graph diameter
     double max_diam = Double.NEGATIVE_INFINITY;
@@ -170,8 +172,14 @@ class GraphDiameterEvalTask implements TaskObject {
       Node ni = _g.getNode(i);
       for (int j=i+1; j<_g.getNumNodes(); j++) {
         Node nj = _g.getNode(j);
-        double dij = _g.getShortestPath(ni, nj);
-        if (dij>max_diam) max_diam = dij;
+				try {
+					double dij = _g.getShortestPath(ni, nj);
+					if (dij>max_diam) max_diam = dij;
+				}
+				catch (GraphException e) {
+					e.printStackTrace();
+					System.exit(-1);
+				}
       }
     }
     setDone();

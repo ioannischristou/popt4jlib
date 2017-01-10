@@ -127,6 +127,7 @@ public class PDAsynchBatchTaskExecutorClt {
     }
     String client_addr = new String(buf);
     */
+		_initCmdStateInvalidated = true;
     InetAddress ia = InetAddress.getLocalHost();
     String client_addr_port = ia.getHostAddress()+"_"+_port;
     TaskObjectsAsynchExecutionRequest req = new TaskObjectsAsynchExecutionRequest(client_addr_port, tasks);
@@ -160,6 +161,7 @@ public class PDAsynchBatchTaskExecutorClt {
       throws IOException, ClassNotFoundException, PDAsynchBatchTaskExecutorException {
     if (tasks==null || tasks.length==0)
       throw new PDAsynchBatchTaskExecutorException("PDAsynchBatchTaskExecutorClt.submitWork(tasks): null or empty tasks passed in.");
+		_initCmdStateInvalidated = true;
     InetAddress ia = InetAddress.getLocalHost();
     String client_addr_port = ia.getHostAddress()+"_"+_port;
     TaskObjectsAsynchExecutionRequest req = 

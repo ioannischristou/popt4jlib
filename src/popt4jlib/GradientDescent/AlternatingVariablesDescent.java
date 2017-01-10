@@ -38,13 +38,14 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase impl
 
 
   /**
-   * public no-arg no-op constructor
+   * public no-arg no-op constructor.
    */
   public AlternatingVariablesDescent() {
     super();
 		// no-op
   }
 
+	
   /**
    * public constructor. The parameters passed in the argument are copied
    * in the data member _params so that later modifications to the argument
@@ -75,8 +76,9 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase impl
 
 
   /**
-   * return a new empty ArmijoSteepestDescent optimizer object (that must be
-   * configured via a call to setParams(p) before it is used.)
+   * return a new empty <CODE>AlternatingVariablesDescent</CODE> optimizer 
+	 * object (that must be configured via a call to setParams(p) before it is 
+	 * used).
    * @return LocalOptimizerIntf
    */
   public LocalOptimizerIntf newInstance() {

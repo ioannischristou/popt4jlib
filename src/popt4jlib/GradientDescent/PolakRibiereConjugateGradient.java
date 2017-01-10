@@ -87,37 +87,38 @@ public class PolakRibiereConjugateGradient implements LocalOptimizerIntf {
    * the main method of the class. Before it is called, a number of parameters
    * must have been set (via the parameters passed in the constructor, or via
    * a later call to <CODE>setParams(p)</CODE>). These are:
-   * &lt;"prcg.numtries", ntries&gt; optional, the number of initial starting points
-   * to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; pairs in the
-   * parameters or a pair &lt;"gradientdescent.x0",VectorIntf v&gt; pair in params).
-   * Default is 1.
-   * &lt;prcg.numthreads", Integer nt&gt; optional, the number of threads to use.
-   * Default is 1.
-   * &lt;"prcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
-   * function to be minimized. If this param-value pair does not exist, the
+   * <ul>
+	 * <li>&lt;"prcg.numtries", ntries&gt; optional, the number of initial 
+	 * starting points to use (must either exist then ntries 
+	 * &lt;"prcg.x$i$",VectorIntf v&gt; pairs in the parameters or a pair 
+	 * &lt;"gradientdescent.x0",VectorIntf v&gt; pair in params). Default is 1.
+   * <li>&lt;prcg.numthreads", Integer nt&gt; optional, the number of threads to 
+	 * use. Default is 1.
+   * <li>&lt;"prcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f, 
+	 * the function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * &lt;"prcg.gtol", Double v&gt; optional, the minimum abs. value for each of the
-   * gradient's coordinates, below which if all coordinates of the gradient
-   * happen to be, the search stops assuming it has reached a stationary point.
-   * Default is 1.e-8.
-   * &lt;"prcg.maxiters", Integer miters&gt; optional, the maximum number of major
-   * iterations of the CG search before the algorithm stops. Default is
+   * <li>&lt;"prcg.gtol", Double v&gt; optional, the minimum abs. value for each 
+	 * of the gradient's coordinates, below which if all coordinates of the 
+	 * gradient happen to be, the search stops assuming it has reached a 
+	 * stationary point. Default is 1.e-8.
+   * <li>&lt;"prcg.maxiters", Integer miters&gt; optional, the maximum number of 
+	 * major iterations of the CG search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * &lt;"prcg.rho", Double v&gt; optional, the value of the parameter &rho; in the Armijo
-   * rule. Default is 0.1.
-   * &lt;"prcg.beta", Double v&gt; optional, the value of the parameter &beta; in the
-   * approximate line search step-size determination obeying the Armijo rule
-   * conditions. Default is 0.9.
-   * &lt;"prcg.gamma", Double v&gt; optional, the value of the parameter &gamma; in the
-   * approximate line search step-size determination obeying the Armijo rule
-   * conditions. Default is 1.0.
-   * &lt;"prcg.looptol", Double v&gt; optional, the minimum step-size allowed. Default
-   * is 1.e-21.
-   *
+   * <li>&lt;"prcg.rho", Double v&gt; optional, the value of the parameter &rho; 
+	 * in the Armijo rule. Default is 0.1.
+   * <li>&lt;"prcg.beta", Double v&gt; optional, the value of the parameter 
+	 * &beta; in the approximate line search step-size determination obeying the 
+	 * Armijo rule conditions. Default is 0.9.
+   * <li>&lt;"prcg.gamma", Double v&gt; optional, the value of the parameter 
+	 * &gamma; in the approximate line search step-size determination obeying the 
+	 * Armijo rule conditions. Default is 1.0.
+   * <li>&lt;"prcg.looptol", Double v&gt; optional, the minimum step-size 
+	 * allowed. Default is 1.e-21.
+   * </ul>
    * @param f FunctionIntf the function to minimize
    * @throws OptimizerException if another thread is currently executing the
    * same method of this object or if the method fails to find a stationary
-   * point.
+   * point, or if f is null.
    * @return PairObjDouble the pair containing the arg. min (a VectorIntf) and
    * the min. value found.
    */
@@ -320,7 +321,7 @@ class PRCGThread extends Thread {
 
   /**
    * the implementation of the CG method using Polak-Ribiere update for the b
-   * parameter, and the Armijo rule for step-size determination
+   * parameter, and the Armijo rule for step-size determination.
    * @param f FunctionIntf
    * @param solindex int
    * @param p HashMap
@@ -330,9 +331,9 @@ class PRCGThread extends Thread {
   private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("prcg.gradient");
     if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
-    final VectorIntf x0 = p.get("prcg.x"+solindex) == null ?
-                          (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
-                          (VectorIntf) p.get("prcg.x"+solindex);
+    final VectorIntf x0 = p.containsKey("prcg.x"+solindex) ?
+                          (VectorIntf) p.get("prcg.x"+solindex) : 
+			                    (VectorIntf) p.get("gradientdescent.x0");  // attempt to retrieve generic point
     if (x0==null) throw new OptimizerException("no prcg.x"+solindex+" initial point in _params passed");
     VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
     final int n = x.getNumCoords();

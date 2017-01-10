@@ -2,7 +2,6 @@ package popt4jlib.GradientDescent;
 
 import java.util.*;
 import utils.*;
-import parallel.*;
 import analysis.*;
 import popt4jlib.*;
 
@@ -58,7 +57,8 @@ public class PolakRibiereConjugateGradientST extends GLockingObserverBase implem
 
 
   /**
-   * return an empty instance of this class.
+   * return an empty instance of this class that needs to have params set via a
+	 * call to <CODE>setParams(map)</CODE> before it can be used.
    * @return LocalOptimizerIntf
    */
   public LocalOptimizerIntf newInstance() {
@@ -83,31 +83,32 @@ public class PolakRibiereConjugateGradientST extends GLockingObserverBase implem
    * the main method of the class. Some parameters must have been passed in
    * before calling this method, either in the constructor, or via a later call
    * to <CODE>setParams(p)</CODE>. These are:
-   * &lt;"prcg.x0", VectorIntf x&gt; optional, the initial starting point. If this
-   * pair does not exist, or if x is null, then it becomes mandatory that
+   * <ul>
+	 * <li>&lt;"prcg.x0", VectorIntf x&gt; optional, the initial starting point.
+   * If this pair does not exist or if x is null, then it becomes mandatory that
    * a pair &lt;"gradientdescent.x0", VectorIntf x&gt; pair with a non-null x is
    * in the parameters that have been set.
-   * &lt;"prcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
-   * function to be minimized. If this param-value pair does not exist, the
-   * gradient will be computed using Richardson finite differences extrapolation
-   * &lt;"prcg.gtol", Double v&gt; optional, the minimum abs. value for each of the
-   * gradient's coordinates, below which if all coordinates of the gradient
-   * happen to be, the search stops assuming it has reached a stationary point.
-   * Default is 1.e-8.
-   * &lt;"prcg.maxiters", Integer miters&gt; optional, the maximum number of major
-   * iterations of the CG search before the algorithm stops. Default is
+   * <li>&lt;"prcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f,
+   * the function to be minimized. If this param-value pair does not exist, the
+   * gradient will be computed using Richardson finite differences extrapolation.
+   * <li>&lt;"prcg.gtol", Double v&gt; optional, the minimum abs. value for each 
+	 * of the gradient's coordinates, below which if all coordinates of the 
+	 * gradient happen to be, the search stops assuming it has reached a 
+	 * stationary point. Default is 1.e-8.
+   * <li>&lt;"prcg.maxiters", Integer miters&gt; optional, the maximum number of 
+	 * major iterations of the CG search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * &lt;"prcg.rho", Double v&gt; optional, the value of the parameter &rho; in the Armijo
-   * rule. Default is 0.1.
-   * &lt;"prcg.beta", Double v&gt; optional, the value of the parameter &beta; in the
-   * approximate line search step-size determination obeying the Armijo rule
-   * conditions. Default is 0.9.
-   * &lt;"prcg.gamma", Double v&gt; optional, the value of the parameter &gamma; in the
-   * approximate line search step-size determination obeying the Armijo rule
-   * conditions. Default is 1.0.
-   * &lt;"prcg.looptol", Double v&gt; optional, the minimum step-size allowed. Default
-   * is 1.e-21.
-   *
+   * <li>&lt;"prcg.rho", Double v&gt; optional, the value of the parameter &rho; 
+	 * in the Armijo rule. Default is 0.1.
+   * <li>&lt;"prcg.beta", Double v&gt; optional, the value of the parameter 
+	 * &beta; in the approximate line search step-size determination obeying the 
+	 * Armijo rule conditions. Default is 0.9.
+   * <li>&lt;"prcg.gamma", Double v&gt; optional, the value of the parameter 
+	 * &gamma; in the approximate line search step-size determination obeying the 
+	 * Armijo rule conditions. Default is 1.0.
+   * <li>&lt;"prcg.looptol", Double v&gt; optional, the minimum step-size 
+	 * allowed. Default is 1.e-21.
+   * </ul>
    * @param f FunctionIntf the function to minimize
    * @throws OptimizerException if another thread is concurrently executing the
    * same method or if the optimization process fails

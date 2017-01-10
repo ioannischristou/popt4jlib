@@ -2,23 +2,25 @@ package popt4jlib.LocalSearch;
 
 import utils.*;
 import popt4jlib.*;
+import popt4jlib.GradientDescent.LocalOptimizerIntf;
 import parallel.*;
 import java.util.*;
 
 
 /**
  * class implements a parallel LocalSearch method for combinatorial optimization
- * problems, obeying the general OptimizerIntf contract. The class uses
- * multi-threading to evaluate in parallel the available moves from any point,
- * and is itself thread-safe.
+ * problems, obeying the 
+ * <CODE>popt4jlib.GradientDescent.LocalOptimizerIntf</CODE> contract. The class 
+ * uses multi-threading to evaluate in parallel the available moves from any 
+ * point, and is itself thread-safe.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
-public class DLS implements OptimizerIntf {
+public class DLS implements LocalOptimizerIntf {
   private static int _nextId=0;
   private int _id;
   private HashMap _params=null;
@@ -90,7 +92,7 @@ public class DLS implements OptimizerIntf {
 
 
   /**
-   * the optimization params are set to p
+   * the optimization params are set to p.
    * @param p HashMap
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object. Note that unless the 2-arg
@@ -128,6 +130,16 @@ public class DLS implements OptimizerIntf {
     }
   }
 
+	
+  /**
+   * return a new empty <CODE>DLS</CODE> optimizer object (that must be
+   * configured via a call to setParams(p) before it is used).
+   * @return LocalOptimizerIntf
+   */
+  public LocalOptimizerIntf newInstance() {
+    return new DLS();
+  }
+
 
   /**
    * The most important method of the class.
@@ -135,38 +147,40 @@ public class DLS implements OptimizerIntf {
    * during construction of the object, or via a call to setParams(p).
    * The parameters are as follows:
    * <ul>
-   * <li> &lt;"dls.x0", Object arg&gt; mandatory, the initial point from which to start
-   * the local search.
-   * <li> &lt;"dls.movesmaker", AllChromosomeMakerIntf movesmaker&gt; mandatory, the object
-   * responsible for implementing the interface that allows creating ALL
-   * chromosome Objects from an existing one (produces -by definition- the
+   * <li> &lt;"dls.x0", Object arg&gt; mandatory, the initial point from which 
+	 * to start the local search.
+   * <li> &lt;"dls.movesmaker", AllChromosomeMakerIntf movesmaker&gt; mandatory, 
+	 * the object responsible for implementing the interface that allows creating 
+	 * ALL chromosome Objects from an existing one (produces -by definition- the
    * entire neighborhood of the object).
-   * <li> &lt;"dls.maxiters", Integer niters&gt; optional, the max number of iterations the
-   * process will go through, default is <CODE>Integer.MAX_VALUE</CODE>.
-   * <li> &lt;"dls.numthreads", Integer nt&gt; optional, the number of threads in the
-   * threadpool to be used for exploring each possible move in the neighborhood.
-   * Default is 1.
-   * <li> &lt;"dls.a2cmaker", Arg2ChromosomeMakerIntf a2cmaker&gt; optional, an object
-   * implementing the Arg2ChromosomeMakerIntf that transforms objects that can
-   * be passed directly to the FunctionIntf being minimized to Chromomome objects
-   * that can be used in the local-search process -and manipulated by the Object
-   * implementing the AllChromosomeMakerIntf interface. Default is
-   * null, which results in the arg objects being passed "as-is" to the
-   * AllChromosomeMakerIntf object.
-   * <li> &lt;"dls.c2amaker", Chromosome2ArgMakerIntf c2amaker&gt; optional, an object
-   * implementing the Chromosome2ArgMakerIntf that transforms chromosome Objects
-   * used in the localsearch process -and manipulated by the Object implementing
-   * the AllChromosomeMakerIntf interface- into argument Objects that can be
-   * passed into the FunctionIntf object that the process minimizes. Default is
-   * null, which results in the chromosome objects being passed "as-is" to the
-   * FunctionIntf object being minimized.
+   * <li> &lt;"dls.maxiters", Integer niters&gt; optional, the max number of 
+	 * iterations the process will go through, default is 
+	 * <CODE>Integer.MAX_VALUE</CODE>.
+   * <li> &lt;"dls.numthreads", Integer nt&gt; optional, the number of threads 
+	 * in the threadpool to be used for exploring each possible move in the 
+	 * neighborhood. Default is 1.
+   * <li> &lt;"dls.a2cmaker", Arg2ChromosomeMakerIntf a2cmaker&gt; optional, an 
+	 * object implementing the Arg2ChromosomeMakerIntf that transforms objects 
+	 * that can be passed directly to the FunctionIntf being minimized to 
+	 * Chromosome objects that can be used in the local-search process -and 
+	 * manipulated by the Object implementing the AllChromosomeMakerIntf interface. 
+	 * Default is null, which results in the arg objects being passed "as-is" to 
+	 * the AllChromosomeMakerIntf object.
+   * <li> &lt;"dls.c2amaker", Chromosome2ArgMakerIntf c2amaker&gt; optional, an 
+	 * object implementing the Chromosome2ArgMakerIntf that transforms chromosome 
+	 * Objects used in the local-search process -and manipulated by the Object 
+	 * implementing the AllChromosomeMakerIntf interface- into argument Objects 
+	 * that can be passed into the FunctionIntf object that the process minimizes. 
+	 * Default is null, which results in the chromosome objects being passed 
+	 * "as-is" to the FunctionIntf object being minimized.
    * </ul>
    * <p>The result is a PairObjDouble object that contains the best function arg.
    * along with the minimum function value obtained by this argument (or null
    * if the process fails to find any valid function argument).</p>
    * @param f FunctionIntf the function to optimize locally
    * @throws OptimizerException if another thread is concurrently running the
-   * same method of this object or if the optimization process fails
+   * same method of this object or if the argument function object is null or if
+	 * the optimization process fails
    * @return PairObjDouble an object that holds both the best value found by the
    * DLS process run as well as the argmin -the argument that produced this best
    * value.

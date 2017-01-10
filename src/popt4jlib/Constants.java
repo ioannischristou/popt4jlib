@@ -2,7 +2,7 @@ package popt4jlib;
 
 /**
  * class defines compile-time constants useful in the methods of the classes in
- * the parallel package, as well as in the Debug class in the utils package.
+ * the parallel package, as well as in the <CODE>utils.Debug</CODE> class.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -26,7 +26,8 @@ public final class Constants {
   public static final long RD=4096;
   public static final long DDE=8192;
   public static final long DFA=16384;
-
+	public static final long DGABH=32768;
+	
   public static final long OB=65536;
   public static final long MPC=131072;
 }

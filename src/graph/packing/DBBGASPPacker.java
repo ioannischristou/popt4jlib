@@ -40,9 +40,13 @@ public final class DBBGASPPacker {
 	 * DAccumulatorSrv that will be accumulating incumbents. Default is localhost.
 	 * <li> accport, $num$ optional, the port to which the DAccumulatorSrv listens.
 	 * Default is 7900.
+	 * <li> accnotificationshost, $string$ optional the internet address of the
+	 * server sending accumulator notifications (may simply be the DAccumulatorSrv
+	 * itself, or a BCastSrv to which the DAccumulatorSrv has also subscribed for
+	 * scaling-up reasons.) Default is localhost.
 	 * <li> accnotificationsport, $num$ optional, the port to which the 
-	 * DAccumulatorSrv server listens for clients wishing to receive notifications
-	 * about new incumbent solutions. Default is 9900.
+	 * accnotificationshost server listens for clients wishing to receive 
+	 * notifications about new incumbent solutions. Default is 9900.
 	 * <li> cchost, $string$ optional, the internet address of the 
 	 * DConditionCounterLLCSrv that will be listening for distributed 
 	 * condition-counter requests. Default is localhost.
@@ -215,6 +219,8 @@ public final class DBBGASPPacker {
 				if (params.containsKey("acchost")) acchost = (String) params.get("acchost");
 				int accport = 7900;
 				if (params.containsKey("accport")) accport = ((Integer) params.get("accport")).intValue();
+				String accnotificationshost = "localhost";
+				if (params.containsKey("accnotificationshost")) accnotificationshost = (String) params.get("accnotificationshost");				
 				int accnotificationsport = 9900;
 				if (params.containsKey("accnotificationsport")) accnotificationsport = ((Integer) params.get("accnotificationsport")).intValue();				
         Boolean localSearchB = (Boolean) params.get("localsearch");
@@ -264,13 +270,20 @@ public final class DBBGASPPacker {
 				Integer mnaI = (Integer) params.get("maxnodesallowed");
 				if (mnaI!=null && mnaI.intValue()>0)
 					maxnodesallowed = mnaI.intValue();
-				DBBTree.init(args[0], g, bound, pdahost, pdaport, cchost, ccport, acchost, accport, accnotificationsport,
+				if (maxnodes>0) maxnodesallowed = maxnodes;  // override value
+				/*
+				DBBTree.init(args[0], g, bound, pdahost, pdaport, cchost, ccport, 
+					           acchost, accport, accnotificationshost, accnotificationsport,
 					           localsearch, maker, ff, tlvl, kmax, 
 										 sortmaxsubsets, apen2a, ugwm2, elsf, mkb, maxchildren, bbcomp, 
 										 seed,
 										 true,  // true value indicates that a PDAsynchInitCmd must be sent to the asynch-server.
 										 maxnodesallowed,
-										 Messenger.getInstance().getDebugLvl());  
+										 Messenger.getInstance().getDebugLvl());
+				*/
+				// the call below, also requires that the exactly specified params file
+				// lives on each worker that will participate in the distributed process
+				DBBTree.init(args[0], args[1], true); 
 				DBBTree t = DBBTree.getInstance();
         t.run();
         int orsoln[] = t.getSolution();

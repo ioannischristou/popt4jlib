@@ -155,7 +155,7 @@ public class RandomGraphMaker {
   /**
    * invoke as:
    * <CODE>java -cp &lt;classpath&gt; utils.RandomGraphMaker &lt;numnodes&gt;
-   * &lt;xdim&gt; &lt;ydim&gt; &lt;radius&gt; &lt;filename&gt; [uniform] [rndseed] [jplotfilename(null)] [createMWIS(false)]</CODE>
+   * &lt;xdim&gt; &lt;ydim&gt; &lt;radius&gt; &lt;filename&gt; [uniform(false)] [rndseed(0)] [jplotfilename(null)] [createMWIS(false)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -181,7 +181,7 @@ public class RandomGraphMaker {
                                                     seed,
 			                                              domwis);
       Graph g = maker.buildUniformRandomDualGraph(jplotfilename);
-      //System.err.println("Dual graph has "+g.getNumComponents()+" components");
+      System.err.println("Dual graph has "+g.getNumComponents()+" components");
       DataMgr.writeGraphToFile2(g, args[4]);
       long duration = System.currentTimeMillis()-start_time;
       System.out.println("total time (msecs): "+duration);

@@ -6,6 +6,7 @@ import parallel.DMCoordinator;
 import parallel.ParallelException;
 import java.io.Serializable;
 import java.util.*;
+import parallel.BoundedMinHeapUnsynchronized;
 
 
 /**
@@ -262,7 +263,7 @@ public class Graph implements Serializable {
   /**
    * add a (directed) link between nodes with id starta and enda.
    * @param starta int (in the interval [0, this.getNumNodes()-1])
-   * @param enda int (in the interval [0, this.getNumNodes()-1]
+   * @param enda int (in the interval [0, this.getNumNodes()-1])
    * @param weight double
    * @throws GraphException if the <CODE>addLink(starta,enda)</CODE> has 
 	 * been called <CODE>getNumArcs()</CODE> times already, or if the starta or 
@@ -512,40 +513,33 @@ public class Graph implements Serializable {
 
   /**
    * return the shortest path between Node s and Node t, where the cost of a
-   * path is measured in terms of link weights adding up.
+   * path is measured in terms of link weights adding up, and all link weights
+	 * being assumed non-negative. Edges are directed, and the shortest path is 
+	 * one in which all edges are "forward" edges. Essentially this is Dijkstra's 
+	 * label setting method. The method will throw if it finds any negative link 
+	 * weight.
    * @param s Node
    * @param t Node
-   * @return double
+   * @return double will return <CODE>Double.MAX_VALUE</CODE> if there is no
+	 * path from node s to node t.
+	 * @throws IllegalArgumentException if s or t is null
+	 * @throws GraphException if any link weight is negative
    */
-  public double getShortestPath(Node s, Node t) {
+  public double getShortestPath(Node s, Node t) throws GraphException {
     try {
       getReadAccess();
-      if (s == t)return 0.0;
-      Stack stack = new Stack();
-      stack.add(s);
-      HashMap labels = new HashMap(); // map<Node n, Double dist>
-      labels.put(s, new Double(0));
-      while (stack.size() > 0) {
-        Node n = (Node) stack.pop();
-        double nd = ( (Double) labels.get(n)).doubleValue();
-        Set inlinks = n.getInLinks();
-        if (inlinks != null) {
-          Iterator itin = inlinks.iterator();
-          while (itin.hasNext()) {
-            Integer lid = (Integer) itin.next();
-            Link lin = _arcs[lid.intValue()];
-            int oe = lin.getStart();
-            double wa = lin.getWeight();
-            Node ne = _nodes[oe];
-            double nnd = nd + wa;
-            if (ne == t)return nnd; // found it
-            Double ned = (Double) labels.get(ne);
-            if (ned == null || ned.doubleValue() > nnd) {
-              labels.put(ne, new Double(nnd));
-              stack.insertElementAt(ne, 0); // insert ne in front of the stack
-            }
-          }
-        }
+      if (s == t) return 0.0;
+			if (s==null || t==null) 
+				throw new IllegalArgumentException("null source or target node");
+			BoundedMinHeapUnsynchronized queue = new BoundedMinHeapUnsynchronized(_nodes.length);
+      queue.addElement(new utils.Pair(s,new Double(0.0)));  // Pair(Node, double)
+			HashMap labels = new HashMap();  // map<Node n, Double dist>
+			labels.put(s, new Double(0.0));
+      while (queue.size() > 0) {
+        utils.Pair fp = (utils.Pair) queue.remove();  // remove min element
+				Node n = (Node) fp.getFirst();
+				if (n==t) return ((Double) fp.getSecond()).doubleValue();  // done
+        double nd = ( (Double) fp.getSecond()).doubleValue(); 
         Set outlinks = n.getOutLinks();
         if (outlinks != null) {
           Iterator itout = outlinks.iterator();
@@ -554,14 +548,23 @@ public class Graph implements Serializable {
             Link lin = _arcs[lid.intValue()];
             int oe = lin.getEnd();
             double wa = lin.getWeight();
+						if (wa<0) 
+							throw new GraphException("Graph.getShortestPath(s,t): "+
+								                       "encountered negative arc weight");
             Node ne = _nodes[oe];
             double nnd = nd + wa;
-            if (ne == t)return nnd; // found it
             Double ned = (Double) labels.get(ne);
-            if (ned == null || ned.doubleValue() > nnd) {
-              labels.put(ne, new Double(nnd));
-              stack.insertElementAt(ne, 0); // insert ne in front of the stack
+            if (ned == null) {
+							Double nndD = new Double(nnd);
+              labels.put(ne, nndD);
+              queue.addElement(new utils.Pair(ne, nndD)); // insert ne in heap
             }
+						else if (ned.doubleValue() > nnd) {  
+							Double nndD = new Double(nnd);
+              labels.put(ne, nndD);
+							// update ne's position in the min-heap
+							queue.decreaseKey(new utils.Pair(ne,ned), new utils.Pair(ne,nndD));
+						}
           }
         }
       }

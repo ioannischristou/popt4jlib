@@ -37,7 +37,7 @@ public class RandomDescents implements LocalOptimizerIntf {
 
   /**
    * public constructor, accepting the optimization process parameters (they can
-   * be later changed by a call to <CODE>setParams(p)</CODE>
+   * be later changed by a call to <CODE>setParams(p)</CODE>).
    * @param params HashMap
    */
   public RandomDescents(HashMap params) {
@@ -88,37 +88,39 @@ public class RandomDescents implements LocalOptimizerIntf {
    * the main method of the class. Before it is called, a number of parameters
    * must have been set (via the parameters passed in the constructor, or via
    * a later call to setParams(p). These are:
-   * &lt;"rd.numthreads", Integer nt&gt; optional, the number of threads to use in
+	 * <ul>
+	 * <li>&lt;"rd.x0", VectorIntf x&gt; mandatory, the initial starting point x0.
+   * <li>&lt;"rd.numthreads", Integer nt&gt; optional, the number of threads to use in
    * the optimization process. Default is 1.
-   * &lt;"rd.numtries", Integer ntries&gt; optional, the number of tries (starting
+   * <li>&lt;"rd.numtries", Integer ntries&gt; optional, the number of tries (starting
    * from different initial points). Default is 100.
-   * &lt;"rd.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
+   * <li>&lt;"rd.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
    * function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * &lt;"rd.gtol", Double v&gt; optional, the minimum abs. value for each of the
+   * <li>&lt;"rd.gtol", Double v&gt; optional, the minimum abs. value for each of the
    * gradient's coordinates, below which if all coordinates of the gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-6.
-   * &lt;"rd.maxiters", Integer miters&gt; optional, the maximum number of major
+   * <li>&lt;"rd.maxiters", Integer miters&gt; optional, the maximum number of major
    * iterations of the SD search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * &lt;"rd.rho", Double v&gt; optional, the value for the parameter &rho; in the
+   * <li>&lt;"rd.rho", Double v&gt; optional, the value for the parameter &rho; in the
    * Armijo rule implementation. Default is 0.1.
-   * &lt;"rd.beta", Double v&gt; optional, the value for the parameter &beta; in the
+   * <li>&lt;"rd.beta", Double v&gt; optional, the value for the parameter &beta; in the
    * Armijo rule implementation. Default is 0.8.
-   * &lt;"rd.gamma", Double v&gt; optional, the value for the parameter &gamma; in the
+   * <li>&lt;"rd.gamma", Double v&gt; optional, the value for the parameter &gamma; in the
    * Armijo rule implementation. Default is 1.
-   * &lt;"rd.looptol", Double v&gt; optional, the minimum step-size allowed. Default
+   * <li>&lt;"rd.looptol", Double v&gt; optional, the minimum step-size allowed. Default
    * is 1.e-21.
-   *
+   * </ul>
    * @param f FunctionIntf the function to minimize
    * @throws OptimizerException if another thread is currently executing the
-   * same method or if the method fails to find a minimizer
+   * same method or if the method fails to find a minimizer or if f is null
    * @return PairObjDouble the pair containing the arg. min (a VectorIntf) and
    * the min. value found
    */
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
-		if (f==null) throw new OptimizerException("RD.minimize(f): null f");
+		if (f==null) throw new OptimizerException("RandomDescents.minimize(f): null f");
     try {
       synchronized (this) {
         if (_f != null)throw new OptimizerException(
@@ -360,7 +362,7 @@ public class RandomDescents implements LocalOptimizerIntf {
       double len = 0.0;
       for (int i=0; i<n; i++) {
         double gi = g.getCoord(i);
-        if (Math.abs(gi)>1e-6/n) {  // itc: HERE change into param asap
+        if (Math.abs(gi)>(1.e-6)/n) {  // itc: HERE change into param asap
           double r = RndUtil.getInstance(_uid).getRandom().nextDouble();  // used to be _id
           if (r<0.55) {  // itc: HERE change into param asap
             try {

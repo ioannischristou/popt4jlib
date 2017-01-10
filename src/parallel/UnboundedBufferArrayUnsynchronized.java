@@ -139,7 +139,7 @@ public class UnboundedBufferArrayUnsynchronized {
 	
 	/**
 	 * print a String representation of this object. Used for debugging.
-	 * @return 
+	 * @return String
 	 */
 	public String toString() {
 		String arr = "UBAU(buf_length="+_buffer.length+

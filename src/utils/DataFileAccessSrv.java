@@ -12,7 +12,6 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
@@ -58,7 +57,7 @@ public class DataFileAccessSrv {
 	
   /**
    * constructor specifying the port the server will listen to, and
-   * the max. number of threads in the thread-pool.
+   * the maximum number of threads in the thread-pool.
    * @param port int if &lt; 1024, the number 7899 is used.
    * @param maxthreads int if &lt; 10000, the number 10000 is used.
    */
@@ -307,10 +306,10 @@ public class DataFileAccessSrv {
 
 
   /**
-   * inner helper class
+   * inner helper class.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
-   * <p>Copyright: Copyright (c) 2011</p>
+   * <p>Copyright: Copyright (c) 2011-2015</p>
    * <p>Company: </p>
    * @author Ioannis T. Christou
    * @version 1.0

@@ -83,51 +83,52 @@ public class FletcherConjugateGradientST extends GLockingObserverBase implements
    * the main method of the class. Before it is called, a number of parameters
    * must have been set (via the parameters passed in the constructor, or via
    * a later call to setParams(p)). These are:
-   * &lt;"fcg.x0", VectorIntf x&gt; optional, the initial starting point. If this
+   * <ul>
+	 * <li>&lt;"fcg.x0", VectorIntf x&gt; optional, the initial starting point. If this
    * pair does not exist, or if x is null, then it becomes mandatory that
    * a pair &lt;"gradientdescent.x0", VectorIntf x&gt; pair with a non-null x is
    * in the parameters that have been set.
-   * &lt;"fcg.numtries", ntries&gt; optional, the number of initial starting points
+   * <li>&lt;"fcg.numtries", ntries&gt; optional, the number of initial starting points
    * to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; pairs in the
    * parameters or a pair &lt;"gradientdescent.x0",VectorIntf v&gt; pair in params).
    * Default is 1.
-   * &lt;"fcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
+   * <li>&lt;"fcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
    * function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * &lt;"fcg.gtol", Double v&gt; optional, the minimum abs. value for each of the
+   * <li>&lt;"fcg.gtol", Double v&gt; optional, the minimum abs. value for each of the
    * gradient's coordinates, below which if all coordinates of the gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-8.
-   * &lt;"fcg.maxiters", Integer miters&gt; optional, the maximum number of major
+   * <li>&lt;"fcg.maxiters", Integer miters&gt; optional, the maximum number of major
    * iterations of the CG search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * &lt;"fcg.rho", Double v&gt; optional, the value of the parameter &rho; in approximate
+   * <li>&lt;"fcg.rho", Double v&gt; optional, the value of the parameter &rho; in approximate
    * line search step-size determination obeying the two Wolfe-Powell conditions
    * Default is 0.1.
-   * &lt;"fcg.sigma", Double v&gt; optional, the value of the parameter &sigma; in the
+   * <li>&lt;"fcg.sigma", Double v&gt; optional, the value of the parameter &sigma; in the
    * approximate line search step-size determination obeying the Wolfe-Powell
-   * conditions. Default is 0.9
-   * &lt;"fcg.t1", Double v&gt; optional, the value of the parameter t_1 in the
+   * conditions. Default is 0.9.
+   * <li>&lt;"fcg.t1", Double v&gt; optional, the value of the parameter t_1 in the
    * Al-Baali - Fletcher bracketing-sectioning algorithm for step-size
    * determination. Default is 9.0.
-   * &lt;"fcg.t2", Double v&gt; optional, the value of the parameter t_2 in the
+   * <li>&lt;"fcg.t2", Double v&gt; optional, the value of the parameter t_2 in the
    * Al-Baali - Fletcher algorithm. Default is 0.1.
-   * &lt;"fcg.t3", Double v&gt; optional, the value of the parameter t_3 in the
+   * <li>&lt;"fcg.t3", Double v&gt; optional, the value of the parameter t_3 in the
    * Al-Baali - Fletcher algorithm. Default is 0.5
-   * &lt;"fcg.redrate", Double v&gt; optional, a user acceptable reduction rate on the
+   * <li>&lt;"fcg.redrate", Double v&gt; optional, a user acceptable reduction rate on the
    * function f for stopping the Al-Baali - Fletcher algorithm in the bracketing
    * phase. Default is 2.0.
-   * &lt;"fcg.fbar", Double v&gt; optional, a user-specified acceptable function value
+   * <li>&lt;"fcg.fbar", Double v&gt; optional, a user-specified acceptable function value
    * to stop the Al-Baali - Fletcher algorithm in the bracketing phase. Default
    * is null (with the effect of utilizing the "fcg.redrate" value for stopping
    * criterion of the bracketing phase).
-   * &lt;"fcg.maxbracketingiters", Integer v&gt; optional, the maximum allowed
+   * <li>&lt;"fcg.maxbracketingiters", Integer v&gt; optional, the maximum allowed
    * iterations in the bracketing phase of the Al-Baali - Fletcher bracketing /
-   * sectioning algorithm for step-size determination. Default is length(x)*100
-   * &lt;"fcg.maxsectioningiters", Integer v&gt; optional, the maximum allowed
+   * sectioning algorithm for step-size determination. Default is length(x)*100.
+   * <li>&lt;"fcg.maxsectioningiters", Integer v&gt; optional, the maximum allowed
    * iterations in the sectioning phase of the Al-Baali - Fletcher bracketing /
-   * sectioning algorithm for step-size determination. Default is length(x)*100
-   *
+   * sectioning algorithm for step-size determination. Default is length(x)*100.
+   * </ul>
    * @param f FunctionIntf the function object to minimize
    * @throws OptimizerException if another thread is currently running this
    * method of this object, or if no stationary point is found.

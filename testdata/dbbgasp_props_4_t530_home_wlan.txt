@@ -1,10 +1,10 @@
-acchost,localhost
+acchost,192.168.1.2
 accport,7900
-#accnotificationshost,localhost
+#accnotificationshost,192.168.1.2
 accnotificationsport,9900
-cchost,localhost
+cchost,192.168.1.2
 ccport,7899
-pdahost,localhost
+pdahost,192.168.1.2
 pdaport,7981
 #localsearch,false
 #class,localsearchtype,graph.packing.IntSetN2RXPFirstImprovingGraphAllMovesMaker,1

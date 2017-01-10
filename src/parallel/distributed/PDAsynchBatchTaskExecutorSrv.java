@@ -169,6 +169,24 @@ public final class PDAsynchBatchTaskExecutorSrv {
 			_initCmd = cmd;
 			_initCmd.applyOnServer();
 			_sync.notifyAll();
+			if (_otherKnownServer!=null) {  // send the command to the other server too
+				try {
+					_otherKnownServer.sendInitCmd(cmd);
+				}
+				catch (Exception e) {
+					utils.Messenger.getInstance().msg("PDAsynchBatchTaskExecutorSrv.setInitCmd(): "+
+						                                "failed to send command to other "+
+						                                "known server, other server will "+
+						                                "not be used", 0);
+					try {
+						PDAsynchBatchTaskExecutorClt.disconnect();
+					}
+					catch (IOException e2) {
+						// ignore
+					}
+					_otherKnownServer=null;
+				}
+			}
 		}
 		utils.Messenger.getInstance().msg("PDAsynchBatchTaskExecutorSrv: init-cmd set.", 0);
 	}
@@ -308,23 +326,21 @@ public final class PDAsynchBatchTaskExecutorSrv {
         //mger.msg("PDAsynchBatchTaskExecutorSrv.submitWork(tasks): Thread-"+tid+": trying other known server",2);
         try {
           String clientipaddress_port = _otherKnownServer.getHostIPAddress() + "_" + _otherKnownServer.getPort();
-          if (contains(originating_clients,clientipaddress_port)) {
-            mger.msg("PDAsynchBatchTaskExecutorSrv.submitWork(tasks): Thread-"+tid+": "+
-                     "tasks have been created or forwarded from the other known server that is being checked",0);
-		        throw new PDAsynchBatchTaskExecutorException("no available worker or known srv could undertake work");
-          }
-					// ok, try other server
-          mger.msg("PDAsynchBatchTaskExecutorSrv.submitWork(tasks): Thread-"+tid+": "+
-                   "forwarding tasks to: "+clientipaddress_port,2);
-          originating_clients.addElement(clientipaddress_port);
-          _otherKnownServer.submitWork(originating_clients, tasks);
-          return;
-        }
+          if (!contains(originating_clients,clientipaddress_port)) {
+						// ok, try other server
+						mger.msg("PDAsynchBatchTaskExecutorSrv.submitWork(tasks): Thread-"+tid+": "+
+							       "forwarding tasks to: "+clientipaddress_port,2);
+						originating_clients.addElement(clientipaddress_port);
+						_otherKnownServer.submitWork(originating_clients, tasks);
+						return;
+					}
+					// otherwise, this server will have to handle the tasks...
+				}
         catch (Exception e) {  // other server failed, send to last resort worker
 					mger.msg("PDAsynchBatchTaskExecutorSrv.submitWork(tasks): Thread-"+tid+
 						       ": received exception e='"+e+
 						       "' while trying to submit to other known server."+
-						       " Will revert to last resort worker if one exists.", 0);
+						       " Will resort to fastest known worker if one exists.", 0);
         }
 			}
 			else if (t_last_resort!=null) {  // submit to last working, busy worker

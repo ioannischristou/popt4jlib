@@ -108,7 +108,7 @@ public class FNPTask3 implements ThreadSpecificTaskObject {
 	 * returns the <CODE>_myid</CODE> data member, which is unique among all tasks
 	 * that are actually submitted to the executor but not among all FNPTask3 
 	 * objects.
-	 * @return 
+	 * @return long
 	 */
 	public long getId() { 
 		return _myid; 

@@ -592,6 +592,16 @@ public class Node implements Comparable, Serializable {
       }
     }
   }
+	
+	
+	/**
+	 * returns a String representation of this Node, with information about the 
+	 * node's id.
+	 * @return String
+	 */
+	public String toString() {
+		return "Node[id="+_id+"]";
+	}
 
 
 	/**

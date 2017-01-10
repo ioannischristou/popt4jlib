@@ -14,13 +14,13 @@ import java.util.HashMap;
  * the received numbers). A thread wishing to send a number(s) invokes the
  * <CODE>addNumber[s](data)</CODE> method of the client. A client wishing to
  * receive the minimum value currently stored on the accumulating server, calls
- * the <CODE>getMinValue()</CODE>. Clients may also register their interest in
- * receiving updates on new min or max values accumulated in the server by 
- * calling the method 
+ * the <CODE>getMinValue()</CODE>. 
+ * <p>Clients may also register their interest in receiving updates on new min 
+ * or max values accumulated in the server by calling the method 
  * <CODE>registerListener(popt4jlib.ObserverIntf obs, int not_type)</CODE>;
- * in such a case, the obs object's <CODE>notifyChange(SubjectIntf)</CODE> method will
- * be invoked whenever a new min or max value is accumulated on the server, with
- * parameter the updating thread of this client.
+ * in such a case, the obs object's <CODE>notifyChange(SubjectIntf)</CODE> 
+ * method will be invoked whenever a new min or max value is accumulated on the 
+ * server, with parameter the updating thread of this client.
  * The client is thread-safe (essentially serialized).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -32,27 +32,49 @@ import java.util.HashMap;
 public class DAccumulatorClt {
   private static String _host="localhost";
   private static int _port = 7900;
+	private static String _notificationsHost="localhost";
 	private static int _notificationsPort = 9900;
 	private static AsynchUpdateThread _updaterThread=null;
 
 
   /**
-   * method specifies the host and ports where the accumulator server lives.
-   * @param host String
+   * method specifies the host and port where the accumulator server lives, as
+	 * well as the accumulator notifications server.
+   * @param host String the address of the <CODE>DAccumulatorSrv</CODE> or any
+	 * other <CODE>FwdSrv</CODE> connected to the accumulator server
    * @param port int
+	 * @param notificationshost String may be the <CODE>DAccumulatorSrv</CODE>
+	 * or any other <CODE>BCastSrv</CODE> connected to the accumulator server
 	 * @param notificationsport int if &lt; 0, the client does not register an 
 	 * interest in notifications, otherwise, if &lt; 1024 the default port is 
 	 * used.
    * @throws UnknownHostException
    */
-  public synchronized static void setHostPort(String host, int port, int notificationsport) throws UnknownHostException {
+  public synchronized static void setHostPort(String host, int port, 
+		                                          String notificationshost, 
+																							int notificationsport) 
+		throws UnknownHostException {
     _host = InetAddress.getByName(host).getHostAddress();
     _port = port;
+		_notificationsHost = InetAddress.getByName(notificationshost).getHostAddress();
 		if (notificationsport>=1024 || notificationsport<0)
 			_notificationsPort = notificationsport;
   }
 	
 	
+	/**
+	 * method must be called only once; it starts the 
+	 * <CODE>DAccumulatorClt.AsynchUpdateThread</CODE> thread that will first send
+	 * to the notifications server the type of notifications this client is 
+	 * interested in, and then will keep listening for double values representing
+	 * new accumulated incumbents (new min or max values).
+	 * @param observer ObserverIntf the object that will be receiving the 
+	 * notifications, ie this object's <CODE>notifyChange()</CODE> method will be
+	 * called each time a new value arrives from the socket
+	 * @param notification_type int allowed values are the declared 
+	 * <CODE>DAccumulatorNotificationType</CODE> constants
+	 * @throws IllegalStateException if called more than once
+	 */
 	public static synchronized void registerListener(ObserverIntf observer, int notification_type) {
 		if (_updaterThread!=null) {
 			throw new IllegalStateException("DAccumulatorClt.registerListener(): method already called.");
@@ -421,11 +443,17 @@ public class DAccumulatorClt {
 		 * opens a socket to the accumulator's server notifications-port (default 
 		 * 9990) and then enters an infinite loop listening for Double objects which 
 		 * are new incumbents (min or max, according to constructor's 2nd argument).
+		 * Notice that it is also possible that instead of connecting directly to 
+		 * the accumulator server's notifications-port, the client may connect to 
+		 * a broadcast server that is connected to the accumulator server; the 
+		 * effect would be the same, and in this way, it is possible to have many
+		 * more accumulator clients connected to the accumulator server than the 
+		 * O/S would allow (limit on number on sockets or threads etc.)
 		 */
 		public void run() {
 			try {
 				synchronized (DAccumulatorClt.class) {
-					_s = new Socket(_host, _notificationsPort);
+					_s = new Socket(_notificationsHost, _notificationsPort);
 				}
 				ObjectOutputStream oos = new ObjectOutputStream(_s.getOutputStream());
 				oos.flush();

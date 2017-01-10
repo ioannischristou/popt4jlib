@@ -59,6 +59,134 @@ final class DBBTree implements ObserverIntf {
 	public static synchronized DBBTree getInstance() {
 		return _instance;
 	}
+	
+	
+	/**
+	 * two-argument version of the first method that any client of this class 
+	 * must call to initialize the structure and possibly the workers in the 
+	 * network that will execute the B&amp;B method in an asynchronous distributed
+	 * manner. This method is better than the many-argument version in that the 
+	 * paramsfile that will be read from each worker (residing in their own file
+	 * system) may specify different accumulator-hosts/ports, to reflect the fact 
+	 * that some workers should connect for notifications not directly to the 
+	 * <CODE>parallel.distributed.DAccumulatorSrv</CODE> server that's responsible 
+	 * for accumulating results from the processes, but instead to a 
+	 * <CODE>parallel.distributed.BCastSrv</CODE> that will be broadcasting any 
+	 * results from the accumulator server, to any process connected to it. 
+	 * Notice that for this to happen, the small 
+	 * <CODE>parallel.distributed.BCastSrv2DAccumulatorBridge</CODE> program needs
+	 * to be running to connect the two mentioned servers.
+	 * @param graphfile String
+	 * @param paramsfile String
+	 * @param sendInitCmd boolean
+	 */
+	public static synchronized void init(String graphfile, String paramsfile,
+		                                   boolean sendInitCmd) {
+		if (_instance==null) {
+			Graph g=null;
+			HashMap params;
+			try {
+				g = DataMgr.readGraphFromFile2(graphfile);
+				params = DataMgr.readPropsFromFile(paramsfile);
+				double initbound=0.0;
+				_instance = new DBBTree(g, initbound);
+				// set-up distributed component clients
+				String pdahost = "localhost";
+				if (params.containsKey("pdahost")) pdahost = (String) params.get("pdahost");
+				int pdaport = 7981;
+				if (params.containsKey("pdaport")) pdaport = ((Integer) params.get("pdaport")).intValue();
+				//int dbglvl = utils.Messenger.getInstance().getDebugLvl();
+				//long seed = RndUtil.getInstance().getSeed();
+				PDAsynchBatchTaskExecutorClt.setHostPort(pdahost, pdaport);
+				if (sendInitCmd) {  // send the pda init-cmd
+					PDAsynchBatchTaskExecutorClt.getInstance().sendInitCmd(
+						new PDAInitDBBTreeCmd(graphfile, paramsfile));
+					PDAsynchBatchTaskExecutorClt.getInstance().awaitServerWorkers();					
+				} 
+				String cchost = "localhost";
+				if (params.containsKey("cchost")) cchost = (String) params.get("cchost");
+				int ccport = 7899;
+				if (params.containsKey("ccport")) ccport = ((Integer) params.get("ccport")).intValue();
+				String ccname = "DCondCntCoord_"+cchost+"_"+ccport;
+				String acchost = "localhost";
+				if (params.containsKey("acchost")) acchost = (String) params.get("acchost");
+				int accport = 7900;
+				if (params.containsKey("accport")) accport = ((Integer) params.get("accport")).intValue();
+				String accnotificationshost = "localhost";
+				if (params.containsKey("accnotificationshost")) accnotificationshost = (String) params.get("accnotificationshost");				
+				int accnotificationsport = 9900;
+				if (params.containsKey("accnotificationsport")) accnotificationsport = ((Integer) params.get("accnotificationsport")).intValue();				
+				DAccumulatorClt.setHostPort(acchost, accport, accnotificationshost, accnotificationsport);
+				DAccumulatorClt.registerListener(_instance, DAccumulatorNotificationType._MAX);
+				_instance._condCounterClt = new DConditionCounterLLCClt(cchost, ccport, ccname);
+				Boolean localSearchB = (Boolean) params.get("localsearch");
+				boolean localsearch = false;
+				if (localSearchB!=null) localsearch = localSearchB.booleanValue();
+				AllChromosomeMakerClonableIntf localsearchtype = (AllChromosomeMakerClonableIntf) params.get("localsearchtype");
+				_instance.setLocalSearch(localsearch);
+				_instance.setLocalSearchType(localsearchtype);
+				Double ffD = (Double) params.get("ff");
+				double ff = 0.85;
+				if (ffD!=null) ff = ffD.doubleValue();
+				if (!Double.isNaN(ff)) {
+					DBBNode1.setFF(ff);
+					DBBNode1.disallowFFChanges();
+				}
+				Integer tlvlI = (Integer) params.get("tightenboundlevel");
+				int tightenboundlevel = Integer.MAX_VALUE;
+				if (tlvlI!=null && tlvlI.intValue()>=1) 
+					tightenboundlevel = tlvlI.intValue();
+				_instance.setTightenUpperBoundLvl(tightenboundlevel);
+				int maxitersinGBNS2A = 100000;
+				Integer kmaxI = (Integer) params.get("maxitersinGBNS2A");
+				if (kmaxI!=null && kmaxI.intValue()>0)
+					maxitersinGBNS2A = kmaxI.intValue();
+				_instance.setMaxAllowedItersInGBNS2A(maxitersinGBNS2A);
+				Boolean sortmaxsubsetsB = (Boolean) params.get("sortmaxsubsets");
+				boolean sortmaxsubsets = false;
+				if (sortmaxsubsetsB!=null)
+					sortmaxsubsets = sortmaxsubsetsB.booleanValue();
+				_instance.setSortBestCandsInGBNS2A(sortmaxsubsets);
+				double avgpercextranodes2add=0.0;
+				Double avgpercextranodes2addD = (Double) params.get("avgpercextranodes2add");
+				if (avgpercextranodes2addD!=null)
+					avgpercextranodes2add = avgpercextranodes2addD.doubleValue();
+				_instance.setAvgPercExtraNodes2Add(avgpercextranodes2add);
+				Boolean useGWMIN24BN2AB = (Boolean) params.get("useGWMIN2criterion");
+				boolean useGWMIN2criterion = false;
+				if (useGWMIN24BN2AB!=null)
+					useGWMIN2criterion = useGWMIN24BN2AB.booleanValue();
+				_instance.setUseGWMIN24BestNodes2Add(useGWMIN2criterion);
+				Double expandlocalsearchfactorD = (Double) params.get("expandlocalsearchfactor");
+				double expandlocalsearchfactor = 1.0;
+				if (expandlocalsearchfactorD!=null)
+					expandlocalsearchfactor = expandlocalsearchfactorD.doubleValue();
+				_instance.setLocalSearchExpandFactor(expandlocalsearchfactor);
+				double minknownbound = Double.NEGATIVE_INFINITY;
+				Double minknownboundD = (Double) params.get("minknownbound");
+				if (minknownboundD!=null) 
+					minknownbound = minknownboundD.doubleValue();
+				_instance.setMinKnownBound(minknownbound);
+				int maxnodechildren = Integer.MAX_VALUE;
+				Integer maxchildrenI = (Integer) params.get("maxnodechildren");
+				if (maxchildrenI != null && maxchildrenI.intValue() > 0)
+					maxnodechildren = maxchildrenI.intValue();
+				_instance.setMaxChildrenNodesAllowed(maxnodechildren);
+				DBBNodeComparatorIntf dbbnodecomparator = (DBBNodeComparatorIntf) params.get("dbbnodecomparator");
+				if (dbbnodecomparator == null) dbbnodecomparator = new DefDBBNodeComparator();
+				_instance.setDBBNodeComparator(dbbnodecomparator);
+				int maxnodesallowed = Integer.MAX_VALUE;
+				Integer mnaI = (Integer) params.get("maxnodesallowed");
+				if (mnaI!=null && mnaI.intValue()>0)
+					maxnodesallowed = mnaI.intValue();
+				_instance.setMaxNodesAllowed(maxnodesallowed);			
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				System.exit(-1);
+			}			
+		}
+	}
 
 
 	/**
@@ -77,6 +205,7 @@ final class DBBTree implements ObserverIntf {
 	 * @param ccport int
 	 * @param acchost String
 	 * @param accport int
+	 * @param accnotificationshost String
 	 * @param accnotificationsport int
 	 * @param localsearch boolean
 	 * @param localsearchtype AllChromosomeMakerClonableIntf
@@ -92,13 +221,14 @@ final class DBBTree implements ObserverIntf {
 	 * @param dbbnodecomparator DBBNodeComparatorIntf
 	 * @param seed long
 	 * @param sendInitCmd boolean
-	 * @param maxNodesAllowed int
+	 * @param maxnodesallowed int
 	 * @param dbglvl int debug level of the "default" (global, i.e. all) class-name
 	 */
 	public static synchronized void init(String graphfile, Graph g, double initbound,
 		                                   String pdahost, int pdaport,
 																			 String cchost, int ccport,
-																			 String acchost, int accport,int accnotificationsport,
+																			 String acchost, int accport,
+																			 String accnotificationshost, int accnotificationsport,
 																			 boolean localsearch,
 																			 AllChromosomeMakerClonableIntf localsearchtype,
 																			 double ff,
@@ -133,7 +263,8 @@ final class DBBTree implements ObserverIntf {
 					PDAsynchBatchTaskExecutorClt.getInstance().sendInitCmd(
 						new PDAInitDBBTreeCmd(graphfile, initbound,
 							                    pdahost,pdaport,cchost,ccport,
-							                    acchost,accport,accnotificationsport,
+							                    acchost,accport,
+							                    accnotificationshost,accnotificationsport,
 								                  localsearch, localsearchtype,
 																	ff, tightenboundlevel,
 																	maxitersinGBNS2A, sortmaxsubsets,
@@ -147,7 +278,7 @@ final class DBBTree implements ObserverIntf {
 					RndUtil.getInstance().setSeed(seed);  // set random-number generator of the process
 				}
 				String ccname = "DCondCntCoord_"+cchost+"_"+ccport;
-				DAccumulatorClt.setHostPort(acchost, accport, accnotificationsport);
+				DAccumulatorClt.setHostPort(acchost, accport, accnotificationshost, accnotificationsport);
 				DAccumulatorClt.registerListener(_instance, DAccumulatorNotificationType._MAX);
 				_instance._condCounterClt = new DConditionCounterLLCClt(cchost, ccport, ccname);
 				_instance.setLocalSearch(localsearch);

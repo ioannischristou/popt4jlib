@@ -50,5 +50,27 @@ public class Pair {
    * @param s Object set the second object of this Pair to hold a ref to s
    */
   public void setSecond(Object s) { _second = s; }
+
+	
+	public boolean equals(Object other) {
+		if (other==this) return true;
+		if (other==null || !(other instanceof Pair)) return false;
+		Pair o = (Pair) other;
+		return _first.equals(o._first) && _second.equals(o._second);
+	}
+	
+	
+	public int hashCode() {
+		return _first.hashCode()+_second.hashCode();
+	}
+	
+	
+	/**
+	 * return a String in the following style: "("+first+","+second+")". 
+	 * @return String
+	 */
+	public String toString() {
+		return "("+_first+","+_second+")";
+	}
 }
 
