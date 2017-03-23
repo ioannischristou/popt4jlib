@@ -51,14 +51,16 @@ public class IntSetN21GraphAllMovesMaker extends IntSetN21AllMovesMaker {
     try {
       Graph g = (Graph) params.get("dls.graph");
 			boolean lock_graph = params.containsKey("dls.lock_graph") ?
-							               ((Boolean) params.get("dls.lock_graph")).booleanValue() :
+							               ((Boolean) params.get("dls.lock_graph")).
+															 booleanValue() :
 							               true;
       Node n = g.getNode(tid.intValue());
       Set nodes = new TreeSet();
       Iterator xiter = x.iterator();
       while (xiter.hasNext()) {
-				Node ni = lock_graph ? g.getNode(((Integer) xiter.next()).intValue()) :
-								               g.getNodeUnsynchronized(((Integer) xiter.next()).intValue());
+				Node ni = lock_graph ? 
+					g.getNode(((Integer) xiter.next()).intValue()) :
+					g.getNodeUnsynchronized(((Integer) xiter.next()).intValue());
         nodes.add(ni);
       }
       return isFree2Cover(n, nodes, lock_graph);

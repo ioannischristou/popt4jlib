@@ -73,7 +73,8 @@ public class DMsgPassingCoordinatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
-      oos.writeObject(new DSendMsg(myid, toid, data, _coordName));
+      // no need for oos.reset() first
+      oos.writeObject(new DSendMsg(myid, toid, data, _coordName));  
       oos.flush();
       Object reply = ois.readObject();
       if (reply instanceof OKReply) {
@@ -109,6 +110,7 @@ public class DMsgPassingCoordinatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+      // no need for oos.reset() first      
       oos.writeObject(new DSendMsg(myid, data, _coordName));
       oos.flush();
       Object reply = ois.readObject();
@@ -142,6 +144,7 @@ public class DMsgPassingCoordinatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+      // no need for oos.reset() first
       oos.writeObject(command);
       oos.flush();
       Object reply = ois.readObject();
@@ -170,7 +173,8 @@ public class DMsgPassingCoordinatorClt {
    * @throws ParallelException
    * @return Object
    */
-  public Object recvData(int myid) throws IOException, ClassNotFoundException, ParallelException {
+  public Object recvData(int myid) 
+    throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
     ObjectInputStream ois = null;
@@ -178,6 +182,7 @@ public class DMsgPassingCoordinatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+      // no need for oos.reset()
       oos.writeObject(new DRecvMsg(myid, _coordName));
       oos.flush();
       Object reply = ois.readObject();
@@ -204,7 +209,8 @@ public class DMsgPassingCoordinatorClt {
    * @throws ParallelException
    * @return Object
    */
-  public Object recvData(int myid, int fromid) throws IOException, ClassNotFoundException, ParallelException {
+  public Object recvData(int myid, int fromid) 
+    throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
     ObjectInputStream ois = null;
@@ -212,6 +218,7 @@ public class DMsgPassingCoordinatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+      // no need for oos.reset()
       oos.writeObject(new DRecvMsg(myid, fromid, _coordName));
       oos.flush();
       Object reply = ois.readObject();

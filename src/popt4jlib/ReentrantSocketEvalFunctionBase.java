@@ -11,7 +11,7 @@ import java.net.*;
  * host/port address, and will return the double value of the evaluation back
  * to the popt4jlib client through the same socket.
  * The class also keeps track of how many times a function has been evaluated,
- * plus it forces threads asking for function evaluation to execute sequentially.
+ * plus it forces threads asking for function evaluation to run sequentially.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -34,7 +34,8 @@ public class ReentrantSocketEvalFunctionBase implements FunctionIntf {
 	 * @throws IOException
 	 * @throws SocketException
    */
-  public ReentrantSocketEvalFunctionBase(String host, int port) throws IOException, SocketException {
+  public ReentrantSocketEvalFunctionBase(String host, int port) 
+		throws IOException, SocketException {
     _s = new Socket(host, port);
     _oos = new ObjectOutputStream(_s.getOutputStream());
     _oos.flush();
@@ -54,7 +55,8 @@ public class ReentrantSocketEvalFunctionBase implements FunctionIntf {
    * @throws IOException
    * @throws SocketException
    */
-  public ReentrantSocketEvalFunctionBase(String host, int port, boolean sendFunctionParams)
+  public ReentrantSocketEvalFunctionBase(String host, int port, 
+		                                     boolean sendFunctionParams)
       throws IOException, SocketException {
     this(host,port);
     _sendParams=sendFunctionParams;
@@ -68,11 +70,13 @@ public class ReentrantSocketEvalFunctionBase implements FunctionIntf {
    * @param params HashMap
    * @return double
    */
-  public synchronized double eval(Object arg, HashMap params) throws IllegalArgumentException {
+  public synchronized double eval(Object arg, HashMap params) 
+		throws IllegalArgumentException {
     ++_evalCount;
     // send params
     if (arg!=null) {
       try {
+				_oos.reset();  // force object to be written again
         _oos.writeObject(arg);
         _oos.flush();
         if (params != null && _sendParams) _oos.writeObject(params);

@@ -88,7 +88,8 @@ public class DAccumulatorSrv {
 					}
 				}
 			}
-			mger.msg("DAccumulatorSrv.run(): NotificationsServerThread up and running.", 0);
+			mger.msg("DAccumulatorSrv.run(): NotificationsServerThread up and "+
+				       "running.", 0);
 		}
     ServerSocket ss = new ServerSocket(_port);
 		while (true) {
@@ -147,13 +148,15 @@ public class DAccumulatorSrv {
 		if (_minValueWithArg > val) {
 			_minValueWithArg = val;
 			_minArg = arg;
-			mger.msg("DAccumulatorSrv.addArgDblPair(): new min value: "+_minValueWithArg+" w/ arg-object="+_minArg, 1);
+			mger.msg("DAccumulatorSrv.addArgDblPair(): new min value: "+
+				       _minValueWithArg+" w/ arg-object="+_minArg, 1);
 			_notificationsThread.notifyListenersNewMinValue(val);
 		}
 		if (_maxValueWithArg < val) {
 			_maxValueWithArg = val;
 			_maxArg = arg;
-			mger.msg("DAccumulatorSrv.addArgDblPair(): new max value: "+_maxValueWithArg+" w/ arg-object="+_maxArg, 1);
+			mger.msg("DAccumulatorSrv.addArgDblPair(): new max value: "+
+				       _maxValueWithArg+" w/ arg-object="+_maxArg, 1);
 			_notificationsThread.notifyListenersNewMaxValue(val);
 		}
 	}
@@ -165,6 +168,16 @@ public class DAccumulatorSrv {
 	 */
 	synchronized double getMinValue() {
 		return _minValue;
+	}
+	
+	
+	/**
+	 * returns the minimum value that arrived in a (Serializable,double) pair so
+	 * far.
+	 * @return double 
+	 */
+	synchronized double getMinValueWithArg() {
+		return _minValueWithArg;
 	}
 	
 	
@@ -188,6 +201,16 @@ public class DAccumulatorSrv {
 
 	
 	/**
+	 * returns the maximum value that arrived in a (Serializable,double) pair so
+	 * far.
+	 * @return double 
+	 */
+	synchronized double getMaxValueWithArg() {
+		return _maxValueWithArg;
+	}
+	
+	
+	/**
 	 * returns the argument object with the max value that arrived in a 
 	 * (Serializable,double) pair so far.
 	 * @return Serializable
@@ -208,7 +231,8 @@ public class DAccumulatorSrv {
 	
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.DAccumulatorSrv [port(7900)] [maxthreads(10000)] [notificationsport(9900)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.DAccumulatorSrv 
+	 * [port(7900)] [maxthreads(10000)] [notificationsport(9900)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -235,7 +259,8 @@ public class DAccumulatorSrv {
   }
 
 
-  private void handle(Socket s, long connum) throws IOException, ParallelException {
+  private void handle(Socket s, long connum) throws IOException, 
+		                                                ParallelException {
     DAccTask t = new DAccTask(s, connum);
     _pool.execute(t);
   }
@@ -260,14 +285,16 @@ public class DAccumulatorSrv {
     }
 
     public void run() {
-      utils.Messenger.getInstance().msg("DAccTask with id="+_conId+" running...",1);
+      utils.Messenger.getInstance().msg("DAccTask with id="+_conId+
+				                                " running...",1);
       ObjectInputStream ois = null;
       ObjectOutputStream oos = null;
       try {
         oos = new ObjectOutputStream(_s.getOutputStream());
         oos.flush();
         ois = new ObjectInputStream(_s.getInputStream());
-        DAccMsg msg = (DAccMsg) ois.readObject();  // read a msg (accumulate-numbers or get[Min/Max/Sum...])
+				// read a msg (accumulate-numbers or get[Min/Max/Sum...])
+        DAccMsg msg = (DAccMsg) ois.readObject();  
         msg.execute(DAccumulatorSrv.this, oos);
       }
       catch (IOException e) {
@@ -330,11 +357,15 @@ public class DAccumulatorSrv {
 			for (int i=_maxConnections.size()-1; i>=0; i--) {
 				ObjectOutputStream oosi = (ObjectOutputStream) _maxConnections.get(i);
 				try {
+					// no need for reset
 					oosi.writeObject(valD);
 					oosi.flush();
 				}
 				catch (IOException e) {  // client closed socket connection, remove
-					utils.Messenger.getInstance().msg("DAccumulatorSrv.NotificationsServerThread.notifyListenersNewMaxValue(): client #"+i+" has closed connection",0);
+					utils.Messenger.getInstance().msg(
+						"DAccumulatorSrv.NotificationsServerThread."+
+						"notifyListenersNewMaxValue(): client #"+i+" has closed connection",
+						0);
 					_maxConnections.remove(i);
 				}
 			}
@@ -350,11 +381,15 @@ public class DAccumulatorSrv {
 			for (int i=_minConnections.size()-1; i>=0; i--) {
 				ObjectOutputStream oosi = (ObjectOutputStream) _minConnections.get(i);
 				try {
+					// no need for reset
 					oosi.writeObject(valD);
 					oosi.flush();
 				}
 				catch (IOException e) {  // client closed socket connection, remove
-					utils.Messenger.getInstance().msg("DAccumulatorSrv.NotificationsServerThread.notifyListenersNewMinValue(): client #"+i+" has closed connection",0);
+					utils.Messenger.getInstance().msg(
+						"DAccumulatorSrv.NotificationsServerThread."+
+						"notifyListenersNewMinValue(): client #"+i+" has closed connection",
+						0);
 					_minConnections.remove(i);
 				}
 			}
@@ -379,17 +414,23 @@ public class DAccumulatorSrv {
 					ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
 					oos.flush();
 					ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
-					DAccumulatorNotificationType not_type = (DAccumulatorNotificationType) ois.readObject();
+					DAccumulatorNotificationType not_type = 
+						(DAccumulatorNotificationType) ois.readObject();
 					switch (not_type.getType()) {
 						case DAccumulatorNotificationType._MAX:
 							_maxConnections.add(oos);
 							// send back current max value
-							oos.writeObject(new Double(getMaxValue()));
+							double maxv = Math.max(getMaxValue(), getMaxValueWithArg());
+							// no need for reset
+							oos.writeObject(new Double(maxv));
 							oos.flush();
 							break;
 						case DAccumulatorNotificationType._MIN:
 							_minConnections.add(oos);
-							oos.writeObject(new Double(getMinValue()));
+							// send back current min value
+							double minv = Math.min(getMinValue(), getMinValueWithArg());							
+							// no need for reset
+							oos.writeObject(new Double(minv));
 							oos.flush();
 							break;
 						default:

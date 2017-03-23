@@ -15,7 +15,7 @@ import java.util.*;
 public class VecUtil {
 
   /**
-   * public no-arg constructor
+   * public no-arg constructor.
    */
   public VecUtil() {
     // no-op
@@ -23,14 +23,15 @@ public class VecUtil {
 
 
   /**
-   * compute the inner product of two VectorIntf objects
+   * compute the inner product of two VectorIntf objects.
    * @param x VectorIntf
    * @param y VectorIntf
    * @throws IllegalArgumentException if any arg is null or if the dimensions
    * of the two args don't match
    * @return double
    */
-  public static double innerProduct(VectorIntf x, VectorIntf y) throws IllegalArgumentException {
+  public static double innerProduct(VectorIntf x, VectorIntf y) 
+		throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("1st arg is null");
     if (y==null) throw new IllegalArgumentException("2nd arg is null");
     final int n = x.getNumCoords();
@@ -52,7 +53,8 @@ public class VecUtil {
    * of the two args don't match
    * @return VectorIntf
    */
-  public static VectorIntf add(VectorIntf x, VectorIntf y) throws IllegalArgumentException {
+  public static VectorIntf add(VectorIntf x, VectorIntf y) 
+		throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("1st arg is null");
     if (y==null) throw new IllegalArgumentException("2nd arg is null");
     final int n = x.getNumCoords();
@@ -80,7 +82,8 @@ public class VecUtil {
    * of the two args don't match
    * @return VectorIntf
    */
-  public static VectorIntf subtract(VectorIntf x, VectorIntf y) throws IllegalArgumentException {
+  public static VectorIntf subtract(VectorIntf x, VectorIntf y) 
+		throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("1st arg is null");
     if (y==null) throw new IllegalArgumentException("2nd arg is null");
     final int n = x.getNumCoords();
@@ -106,7 +109,8 @@ public class VecUtil {
    * @throws IllegalArgumentException if x==null or if k&le;0
    * @return double
    */
-  public static double norm(VectorIntf x, int k) throws IllegalArgumentException {
+  public static double norm(VectorIntf x, int k) 
+		throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("x is null");
     if (k<=0) throw new IllegalArgumentException("k<=0");
     if (k==2) return norm2(x);  // faster computation
@@ -151,7 +155,8 @@ public class VecUtil {
    * @throws IllegalArgumentException if x==null
    * @return double
    */
-  public static double normInfinity(VectorIntf x) throws IllegalArgumentException {
+  public static double normInfinity(VectorIntf x) 
+		throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("x is null");
     if (x instanceof DblArray1SparseVector) {  // short-cut for sparse vectors
       return ((DblArray1SparseVector) x).normInfinity();
@@ -174,32 +179,38 @@ public class VecUtil {
    */
   public static int zeroNorm(VectorIntf x) throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("x is null");
-    if (x instanceof DblArray1SparseVector) {  // short-cut for sparse vectors
-      return ((DblArray1SparseVector) x).getNumNonZeros();
+    if (x instanceof SparseVectorIntf) {  // short-cut for sparse vectors
+      SparseVectorIntf y = (SparseVectorIntf) x;
+			if (Double.compare(y.getDefaultValue(),0.0)==0) return y.getNumNonZeros();
     }
     final int n = x.getNumCoords();
     int res=0;
     for (int i=0; i<n; i++)
-      if (x.getCoord(i)!=0) ++res;
+      if (Double.compare(x.getCoord(i),0.0)!=0) ++res;
     return res;
   }
 
 
   /**
-   *
+   * checks if the two argument vectors have all their components equal. Faster
+	 * only if both arguments are <CODE>DblArray1SparseVector</CODE>.
    * @param x VectorIntf
    * @param y VectorIntf
    * @throws IllegalArgumentException if x &amp; y are both null
    * @return boolean true iff all the components of the vectors x and y are
-   * equal (so that for each component i, the comparison xi==yi returns true).
-   * Returns false if the two vectors have different lengths.
+   * equal (so that for each component i, the comparison 
+	 * <CODE>Double.compare(xi,yi)==0</CODE> returns true).
+   * Returns false immediately if the two vectors have different lengths
    */
-  public static boolean equal(VectorIntf x, VectorIntf y) throws IllegalArgumentException {
-    if (x==null && y==null) throw new IllegalArgumentException("both args null");
+  public static boolean equal(VectorIntf x, VectorIntf y) 
+		throws IllegalArgumentException {
+    if (x==null && y==null) 
+			throw new IllegalArgumentException("both args null");
     if (x==null || y==null) return false;
     if (x.getNumCoords()!=y.getNumCoords()) return false;
-    // short-cut for sparse vectors
-    if (x instanceof DblArray1SparseVector && y instanceof DblArray1SparseVector)
+    // short-cut for specific sparse vectors
+    if (x instanceof DblArray1SparseVector && 
+			  y instanceof DblArray1SparseVector)
       return ((DblArray1SparseVector) x).equals((DblArray1SparseVector) y);
     for (int i=0; i<x.getNumCoords(); i++) {
       if (Double.compare(x.getCoord(i),y.getCoord(i))!=0) return false;
@@ -215,7 +226,8 @@ public class VecUtil {
    * contains vectors of varying dimensions.
    * @return VectorIntf
    */
-  public static VectorIntf getCenter(Collection vectors) throws IllegalArgumentException {
+  public static VectorIntf getCenter(Collection vectors) 
+		throws IllegalArgumentException {
     if (vectors==null || vectors.size()==0)
       throw new IllegalArgumentException("null argument or empty set");
     Iterator it = vectors.iterator();
@@ -227,7 +239,8 @@ public class VecUtil {
       n = x.getNumCoords();
       if (arr==null) arr = new double[n];
       else if (arr.length!=n)
-        throw new IllegalArgumentException("vectors in collection have different length");
+        throw new IllegalArgumentException("vectors in collection "+
+					                                 "have different length");
       for (int i=0; i<n; i++) arr[i] += x.getCoord(i);
     }
     for (int i=0; i<arr.length; i++) arr[i] /= ((double) vectors.size());
@@ -244,9 +257,12 @@ public class VecUtil {
    * dimensions differ.
    * @return double
    */
-  public static double getEuclideanDistance(VectorIntf x, VectorIntf y) throws IllegalArgumentException {
-    if (x==null || y==null) throw new IllegalArgumentException("at least one arg null");
-    if (x.getNumCoords()!=y.getNumCoords()) throw new IllegalArgumentException("args of different dimensions");
+  public static double getEuclideanDistance(VectorIntf x, VectorIntf y) 
+		throws IllegalArgumentException {
+    if (x==null || y==null) 
+			throw new IllegalArgumentException("at least one arg null");
+    if (x.getNumCoords()!=y.getNumCoords()) 
+			throw new IllegalArgumentException("args of different dimensions");
     double dist = 0.0;
     final int n = x.getNumCoords();
     for (int i=0; i<n; i++) {
@@ -269,9 +285,12 @@ public class VecUtil {
    * the zero vector, or if the two vectors' dimensions don't agree.
    * @return double
    */
-  public static double getCosineSimilarityDistance(VectorIntf x, VectorIntf y) throws IllegalArgumentException {
-    if (x==null || y==null) throw new IllegalArgumentException("at least one arg null");
-    if (x.getNumCoords()!=y.getNumCoords()) throw new IllegalArgumentException("args of different dimensions");
+  public static double getCosineSimilarityDistance(VectorIntf x, VectorIntf y) 
+		throws IllegalArgumentException {
+    if (x==null || y==null) 
+			throw new IllegalArgumentException("at least one arg null");
+    if (x.getNumCoords()!=y.getNumCoords()) 
+			throw new IllegalArgumentException("args of different dimensions");
     double x_norm = norm2(x);
     double y_norm = norm2(y);
     if (Double.compare(x_norm,0.0)==0 || Double.compare(y_norm,0.0)==0)
@@ -293,16 +312,19 @@ public class VecUtil {
 
   /**
    * return the Jaccard distance measure between two vectors. Also known as the
-   * Tanimoto distance measure (used in Information Retrieval, Recommender Systems
-   * etc.)
+   * Tanimoto distance measure (used in Information Retrieval, 
+	 * Recommender Systems etc.)
    * @param x VectorIntf
    * @param y VectorIntf
    * @throws IllegalArgumentException
    * @return double
    */
-  public static double getJaccardDistance(VectorIntf x, VectorIntf y) throws IllegalArgumentException {
-    if (x==null || y==null) throw new IllegalArgumentException("at least one arg null");
-    if (x.getNumCoords()!=y.getNumCoords()) throw new IllegalArgumentException("args of different dimensions");
+  public static double getJaccardDistance(VectorIntf x, VectorIntf y) 
+		throws IllegalArgumentException {
+    if (x==null || y==null) 
+			throw new IllegalArgumentException("at least one arg null");
+    if (x.getNumCoords()!=y.getNumCoords()) 
+			throw new IllegalArgumentException("args of different dimensions");
     double ip = innerProduct(x,y);
     double x_norm = norm2(x);
     double y_norm = norm2(y);

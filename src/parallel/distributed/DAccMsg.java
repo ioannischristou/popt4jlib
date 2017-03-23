@@ -63,6 +63,7 @@ class DAccNumberRequest extends DAccMsg {
 		srv.addNumber(_num);
     oos.writeObject(new OKReply());
     oos.flush();
+		// no need for reset
 	}
 }
 
@@ -104,10 +105,12 @@ class DAccSerDblPairRequest extends DAccMsg {
 	 * @throws ParallelException
 	 * @throws IOException 
 	 */
-	public void execute(DAccumulatorSrv srv, ObjectOutputStream oos) throws ParallelException, IOException {
+	public void execute(DAccumulatorSrv srv, ObjectOutputStream oos) 
+		throws ParallelException, IOException {
 		srv.addArgDblPair(_arg,_num);
     oos.writeObject(new OKReply());
     oos.flush();
+		// no need for reset here
 	}
 }
 
@@ -146,7 +149,8 @@ class DAccNumbersRequest extends DAccMsg {
 	public void execute(DAccumulatorSrv srv, ObjectOutputStream oos) throws ParallelException, IOException {
 		srv.addNumbers(_numbers);
     oos.writeObject(new OKReply());
-    oos.flush();		
+    oos.flush();
+		// no need for reset
 	}
 }
 
@@ -185,6 +189,7 @@ class DGetMinNumberRequest extends DAccMsg {
 		double val = srv.getMinValue();
     oos.writeObject(new OKReplyData(new Double(val)));
     oos.flush();
+		// no need for reset here
 	}
 }
 
@@ -222,7 +227,8 @@ class DGetArgMinObjectRequest extends DAccMsg {
 	 */
 	public void execute(DAccumulatorSrv srv, ObjectOutputStream oos) throws ParallelException, IOException {
 		Serializable arg = srv.getArgMin();
-    oos.writeObject(new OKReplyData(arg));
+    oos.reset();  // force object to be written anew
+		oos.writeObject(new OKReplyData(arg));
     oos.flush();
 	}
 }
@@ -259,7 +265,8 @@ class DGetMaxNumberRequest extends DAccMsg {
 	 */
 	public void execute(DAccumulatorSrv srv, ObjectOutputStream oos) throws ParallelException, IOException {
 		double val = srv.getMaxValue();
-    oos.writeObject(new OKReplyData(new Double(val)));
+    oos.reset();  // force object to be written anew
+		oos.writeObject(new OKReplyData(new Double(val)));
     oos.flush();
 	}
 }
@@ -298,6 +305,7 @@ class DGetArgMaxObjectRequest extends DAccMsg {
 	 */
 	public void execute(DAccumulatorSrv srv, ObjectOutputStream oos) throws ParallelException, IOException {
 		Serializable arg = srv.getArgMax();
+		oos.reset();  // force object to be written anew
     oos.writeObject(new OKReplyData(arg));
     oos.flush();
 	}
@@ -336,6 +344,7 @@ class DGetSumOfNumbersRequest extends DAccMsg {
 	 */
 	public void execute(DAccumulatorSrv srv, ObjectOutputStream oos) throws ParallelException, IOException {
 		double val = srv.getSumValue();
+		oos.reset();  // force object to be written anew
     oos.writeObject(new OKReplyData(new Double(val)));
     oos.flush();
 	}
@@ -371,7 +380,8 @@ class DShutDownSrvRequest extends DAccMsg {
 	 * @throws IOException 
 	 */
 	public void execute(DAccumulatorSrv srv, ObjectOutputStream oos) throws ParallelException, IOException {
-    oos.writeObject(new OKReply());
+    // no need for reset here
+		oos.writeObject(new OKReply());
     oos.flush();
 		System.exit(0);
 	}

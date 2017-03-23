@@ -1,7 +1,8 @@
 package popt4jlib;
 
 import parallel.ParallelException;
-import java.util.Vector;
+import java.util.List;
+import java.util.ArrayList;
 
 
 /**
@@ -21,19 +22,24 @@ import java.util.Vector;
  * methods) in this package.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class DblArray1SparseVector implements SparseVectorIntf {
   private static final long serialVersionUID = 6365520149403267798L;
-  private int[] _indices=null;  // _indices[0] indicates the first non-zero element
-  private double[] _values=null;  // _values[0] is the value of the _indices[0]-th element of the array
-  private int _ilen;  // value of last non-zero element in _indices & _values arrays
+  private int[] _indices=null;  // _indices[0] indicates the first non-default 
+	                              // element
+  private double[] _values=null;  // _values[0] is the value of the 
+	                                // _indices[0]-th element of the array
+  private int _ilen;  // pos of last non-default element in _indices & _values 
+	                    // arrays
   private int _n;  // vector dimension
+	private double _defVal = 0.0;  // default value for components not set is 
+	                               // really final field
 
-
+	
   /**
    * constructs the zero sparse vector in n-dimensional space.
    * @param n int the number of dimensions
@@ -43,62 +49,238 @@ public class DblArray1SparseVector implements SparseVectorIntf {
     if (n<=0) throw new IllegalArgumentException("dimensions must be >= 1");
     _n = n;
   }
+	
+	
+	/**
+	 * same as 1-arg constructor, but also specifies default value for not-yet-set
+	 * components (default is normally zero).
+	 * @param n int
+	 * @param def double
+	 * @throws IllegalArgumentException if 1-arg constructor throws
+	 */
+	public DblArray1SparseVector(int n, double def) 
+		throws IllegalArgumentException {
+		this(n);
+		_defVal=def;
+	}
 
 
   /**
    * public constructor.
    * @param indices int[] must be in ascending order
-   * @param values double[] corresponds to values for each index in the indices array
+   * @param values double[] corresponds to values for each index in the indices 
+	 * array must not contain any zeros
    * @param n int total length of the vector
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if any component of values is equal to the
+	 * default value or if dimensions don't match or if indices are not ascending
    */
-  public DblArray1SparseVector(int[] indices, double[] values, int n) throws IllegalArgumentException {
+  public DblArray1SparseVector(int[] indices, double[] values, int n) 
+		throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
-      throw new IllegalArgumentException("Arguments null or dimensions don't match");
+      throw new IllegalArgumentException("Arguments null or dimensions "+
+				                                 "don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
     final int ilen = indices.length;
     _indices = new int[ilen];
-    for (int i=0; i<ilen; i++) _indices[i] = indices[i];
     _values = new double[ilen];
-    for (int i=0; i<ilen; i++) _values[i] = values[i];
+    for (int i=0; i<ilen; i++) {
+			_indices[i] = indices[i];
+			if (i>0 && _indices[i]<=_indices[i-1]) 
+				throw new IllegalArgumentException("indices not in ascending order");
+			if (Double.compare(values[i],0.0)==0)  // _defVal==0 in this constructor
+				throw new IllegalArgumentException("values array contains zero element"+
+					                                 " in position "+i);
+			_values[i] = values[i];
+		}
     _n = n;
     _ilen = ilen;
   }
 
+	
+  /**
+   * public constructor.
+	 * @param defVal double the default value for the components of this vector
+   * @param indices int[] must be in ascending order
+   * @param values double[] corresponds to values for each index in the indices 
+	 * array must not contain any defVal value
+   * @param n int total length of the vector
+   * @throws IllegalArgumentException if any component of values is equal to the
+	 * default value or if dimensions don't match or if indices don't ascend
+   */
+  public DblArray1SparseVector(double defVal, int[] indices, double[] values, 
+		                           int n) throws IllegalArgumentException {
+    if (indices==null || values==null || indices.length!=values.length)
+      throw new IllegalArgumentException("Arguments null or dimensions "+
+				                                 "don't match");
+    if (n<=indices[indices.length-1])
+      throw new IllegalArgumentException("dimension mismatch");
+    final int ilen = indices.length;
+    _indices = new int[ilen];
+    _values = new double[ilen];
+    for (int i=0; i<ilen; i++) {
+			_indices[i] = indices[i];
+			if (i>0 && _indices[i]<=_indices[i-1])
+				throw new IllegalArgumentException("indices not in ascending order");
+			if (Double.compare(defVal, values[i])==0) 
+				throw new IllegalArgumentException("values array contains default "+
+					                                 "element in position "+i);
+			_values[i] = values[i];
+		}
+    _n = n;
+    _ilen = ilen;
+		_defVal = defVal;
+  }
+
+	
+  /**
+   * protected constructor, only used from <CODE>newInstance(),newCopy()</CODE>
+	 * and sub-classes.
+	 * @param defVal double the default value for the components of this vector
+   * @param indices int[] must be in ascending order (doesn't check)
+   * @param values double[] corresponds to values for each index in the indices 
+	 * array must not have any value equal to defVal
+   * @param n int total length of the vector
+	 * @param ilen int the actual length of the _indices,_values array
+   * @throws IllegalArgumentException if any component of values is equal to the
+	 * default value
+   */
+  protected DblArray1SparseVector(double defVal, int[] indices, double[] values, 
+		                              int n, int ilen) 
+		throws IllegalArgumentException {
+    _indices = new int[ilen];
+    _values = new double[ilen];
+    for (int i=0; i<ilen; i++) {
+			_indices[i] = indices[i];
+			if (Double.compare(defVal, values[i])==0) 
+				throw new IllegalArgumentException("values array contains default "+
+					                                 "element in position "+i);
+			_values[i] = values[i];
+		}
+    _n = n;
+    _ilen = ilen;
+		_defVal = defVal;
+  }	
+	
 
   /**
    * public constructor making a copy of the vector passed in, and multiplying
    * each element by the multFactor passed in.
    * @param indices int[] elements must be in ascending order
-   * @param values double[]
+   * @param values double[] must not have any zero
+   * @param n int
+   * @param multFactor double must not be zero
+   * @throws IllegalArgumentException if any indices or values is null or their
+	 * dimensions don't match or if n &le; indices[indices.length-1] or if any
+	 * component of values has zero value of if indices don't ascend
+   */
+  public DblArray1SparseVector(int[] indices, double[] values, 
+		                           int n, double multFactor) 
+		throws IllegalArgumentException {
+    if (indices==null || values==null || indices.length!=values.length)
+      throw new IllegalArgumentException("Arguments null or dimensions "+
+				                                 "don't match");
+    if (n<=indices[indices.length-1])
+      throw new IllegalArgumentException("dimension mismatch");
+		if (Double.compare(multFactor, 0.0)==0) {  // _defVal is by default 0
+			_n=n;
+			return;
+		}
+    final int ilen = indices.length;
+    _indices = new int[ilen];
+    _values = new double[ilen];
+    for (int i=0; i<ilen; i++) {
+			_indices[i] = indices[i];
+			if (i>0 && _indices[i]<=_indices[i-1]) 
+				throw new IllegalArgumentException("indices don't ascend");
+			_values[i] = values[i]*multFactor;
+			if (Double.compare(_values[i],0.0)==0)  // _defVal is 0
+				throw new IllegalArgumentException("default (zero) value for values["+
+					                                 i+"]");
+		}
+    _n = n;
+    _ilen  = ilen;
+  }
+
+	
+  /**
+   * public constructor making a copy of the vector passed in, and multiplying
+   * each element by the multFactor passed in.
+   * @param indices int[] elements must be in ascending order
+   * @param values double[] must not contain any element with value equal to
+	 * defVal/multFactor
    * @param n int
    * @param multFactor double
+	 * @param defVal double default value of components
    * @throws IllegalArgumentException if any indices or values is null or their
-	 * dimensions don't match or if n &le; indices[indices.length-1]
+	 * dimensions don't match or if n &le; indices[indices.length-1] or if any
+	 * component of _values results in default value or if indices don't ascend
    */
-  public DblArray1SparseVector(int[] indices, double[] values, int n, double multFactor) throws IllegalArgumentException {
+  public DblArray1SparseVector(int[] indices, double[] values, 
+		                           int n, double multFactor, double defVal) 
+		throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
       throw new IllegalArgumentException("Arguments null or dimensions don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
     final int ilen = indices.length;
     _indices = new int[ilen];
-    for (int i=0; i<ilen; i++) _indices[i] = indices[i];
     _values = new double[ilen];
-    for (int i=0; i<ilen; i++) _values[i] = values[i]*multFactor;
+		_defVal = defVal;
+    for (int i=0; i<ilen; i++) {
+			_indices[i] = indices[i];
+			if (i>0 && _indices[i]<=_indices[i-1])
+				throw new IllegalArgumentException("indices don't ascend");
+			_values[i] = values[i]*multFactor;
+			if (Double.compare(_values[i],defVal)==0)  
+				throw new IllegalArgumentException("default value for _values["+i+"]");
+		}
     _n = n;
     _ilen  = ilen;
   }
 
+		
+  /**
+   * protected constructor making a copy of the vector passed in and multiplying
+   * each element by the multFactor passed in. Only used from 
+	 * <CODE>newCopy()</CODE> and sub-classes.
+   * @param indices int[] the first ilen elements must be in ascending order 
+	 * (doesn't check)
+   * @param values double[] the first ilen elements must not contain any element 
+	 * equal to defVal/multFactor
+   * @param n int
+   * @param multFactor double
+	 * @param defVal double default value of components
+	 * @param ilen int
+	 * @throws IllegalArgumentException if values[i]==defVal for some component
+   */
+  protected DblArray1SparseVector(int[] indices, double[] values, 
+		                              int n, double multFactor, double defVal, 
+                                  int ilen) 
+		throws IllegalArgumentException {
+    _indices = new int[ilen];
+    _values = new double[ilen];
+		_defVal = defVal;
+    for (int i=0; i<ilen; i++) {
+			_indices[i] = indices[i];
+			_values[i] = values[i]*multFactor;
+			if (Double.compare(_values[i],defVal)==0)  
+				throw new IllegalArgumentException("default value for _values["+i+"]");
+		}
+    _n = n;
+    _ilen  = ilen;
+  }
+	
 
   /**
-   * return a new VectorIntf object containing a copy of the data of this object.
+   * return new VectorIntf object containing a copy of the data of this object.
    * @return VectorIntf
    */
   public VectorIntf newCopy() {
-    if (_indices==null) return new DblArray1SparseVector(_n);
-    return new DblArray1SparseVector(_indices, _values, _n);
+    if (_indices==null) return new DblArray1SparseVector(_n, _defVal);
+    DblArray1SparseVector r = 
+			new DblArray1SparseVector(_defVal, _indices, _values, _n, _ilen);
+		return r;
   }
 
 
@@ -109,25 +291,61 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    * @return VectorIntf
    */
   public VectorIntf newCopyMultBy(double multFactor) {
-    if (_indices==null) return new DblArray1SparseVector(_n);
-    return new DblArray1SparseVector(_indices, _values, _n, multFactor);
+    if (_indices==null) return new DblArray1SparseVector(_n,_defVal);
+    DblArray1SparseVector r = 
+			new DblArray1SparseVector(_indices, _values, _n, multFactor, 
+				                        _defVal, _ilen);
+		return r;
   }
 
 	
 	/**
    * return a new VectorIntf object containing a copy of the data of this object
 	 * guaranteeing that the return object is not managed (not part of any pool).
-	 * @return VectorIntf
+	 * @return VectorIntf  // DblArray1SparseVector
 	 */
 	public VectorIntf newInstance() {
-    if (_indices==null) return new DblArray1SparseVector(_n);
-    return new DblArray1SparseVector(_indices, _values, _n);		
+    if (_indices==null) return new DblArray1SparseVector(_n,_defVal);
+    DblArray1SparseVector r = 
+			new DblArray1SparseVector(_defVal, _indices, _values, _n, _ilen);
+		return r;
+	}
+	
+	
+	/**
+	 * return a new VectorIntf object containing a copy of the data of this object
+	 * guaranteeing that the return object is not managed (not part of any pool)
+	 * and also having as default value for components the one specified in the
+	 * argument. This means that when invoking this method on a sparse vector of 
+	 * all zeros (having _defVal=0), with argument defVal=1 the result is a sparse 
+	 * vector of all ones (with _defVal=1).
+	 * @param defVal double
+	 * @return VectorIntf  // DblArray1SparseVector
+	 */
+	public VectorIntf newInstance(double defVal) {
+    if (_indices==null) return new DblArray1SparseVector(_n,defVal);
+		// if (Double.compare(defVal, _defVal)==0) return newInstance();  // useless
+		int[] indices = new int[_ilen];
+		double[] values = new double[_ilen];
+		int ilen=0;
+		for (int i=0; i<_ilen; i++) {
+			if (Double.compare(_values[i],defVal)!=0) {  // ok, put it in
+				indices[ilen] = _indices[i];
+				values[ilen++] = _values[i];
+			}
+		}
+		DblArray1SparseVector r = new DblArray1SparseVector(_n, defVal);
+		r._indices = indices;
+		r._values = values;
+		r._ilen = ilen;
+		return r;		
 	}
 	
 
   /**
    * return a DblArray1SparseVector object containing as data the arg passed in.
-   * Linear complexity in the length of the argument array.
+   * The resulting vector will have the same default value as this. Linear 
+	 * complexity in the length of the argument array.
    * @param arg double[]
    * @throws IllegalArgumentException
    * @return VectorIntf
@@ -135,20 +353,29 @@ public class DblArray1SparseVector implements SparseVectorIntf {
   public VectorIntf newInstance(double[] arg) throws IllegalArgumentException {
     if (arg==null) throw new IllegalArgumentException("null arg");
     final int n = arg.length;
-    Vector inds = new Vector();
-    Vector vals = new Vector();
+    List inds = new ArrayList();
+    List vals = new ArrayList();
     for (int i=0; i<n; i++) {
-      if (Double.compare(arg[i], 0.0) != 0) {
+      if (Double.compare(arg[i], _defVal) != 0) {
         inds.add(new Integer(i));
         vals.add(new Double(arg[i]));
       }
     }
     final int ilen = inds.size();
     int[] indices = new int[ilen];
-    for (int i=0; i<ilen; i++) indices[i] = ((Integer) inds.elementAt(i)).intValue();
+    for (int i=0; i<ilen; i++) 
+			indices[i] = ((Integer) inds.get(i)).intValue();
     double[] values = new double[ilen];
-    for (int i=0; i<ilen; i++) values[i] = ((Double) vals.elementAt(i)).doubleValue();
-    return new DblArray1SparseVector(indices, values, n);
+    for (int i=0; i<ilen; i++) 
+			values[i] = ((Double) vals.get(i)).doubleValue();
+    // below code is too slow without reason
+    //DblArray1SparseVector r = 
+		//	new DblArray1SparseVector(_defVal, indices, values, n);
+		DblArray1SparseVector r = new DblArray1SparseVector(n,_defVal);
+		r._ilen=ilen;
+		r._indices=indices;
+		r._values=values;
+		return r;
   }
 
 
@@ -158,7 +385,16 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    */
   public int getNumCoords() { return _n; }
 
+	
+	/**
+	 * return the default value of components for this vector.
+	 * @return double
+	 */
+	public double getDefaultValue() {
+		return _defVal;
+	}
 
+	
   /**
    * return a double[] representing this VectorIntf object. Should not really
    * be used as it defeats the purpose of this implementation, but if the
@@ -167,6 +403,10 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    */
   public double[] getDblArray1() {
     double[] x = new double[_n];
+		if (Double.compare(_defVal, 0.0)!=0) {  // set all to default vals
+			for (int i=0; i<_n; i++) x[i]=_defVal;
+		}
+		// override for the non-def-valued components
     for (int i=0; i<_ilen; i++) x[_indices[i]] = _values[i];
     return x;
   }
@@ -176,16 +416,17 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    * return the i-th coordinate of this VectorIntf (i must be in the set
    * {0,1,2,...<CODE>getNumCoords()</CODE>-1}). Has O(log(_ilen)) worst-case
    * time-complexity where _ilen is the (max.) number of non-zeros in this
-   * vector.
+   * vector (or more generally, non-default-vals).
    * @param i int
    * @throws IndexOutOfBoundsException if i is not in the set mentioned above
    * @return double
    */
   public double getCoord(int i) throws IndexOutOfBoundsException {
-    if (i<0 || i>=_n) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
-    if (_indices==null) return 0.0;
+    if (i<0 || i>=_n) 
+			throw new IndexOutOfBoundsException("index "+i+" out of bounds");
+    if (_indices==null) return _defVal;
     // requires a binary search in the indices.
-    if (i<_indices[0] || i>_indices[_ilen-1]) return 0.0;
+    if (i<_indices[0] || i>_indices[_ilen-1]) return _defVal;
     else if (i==_indices[0]) return _values[0];
     else if (i==_indices[_ilen-1]) return _values[_ilen-1];
     int i1 = 0;
@@ -197,27 +438,32 @@ public class DblArray1SparseVector implements SparseVectorIntf {
       else i2 = ih;
       ih = (i1+i2)/2;
     }
-    return 0.0;
+    return _defVal;
   }
 
 
   /**
    * set the i-th coordinate of this VectorIntf (i must be in the set
    * {0,1,2,...<CODE>getNumCoords()</CODE>-1}). Repeated calls to this method
-   * for indices not in the original contruction of this vector will eventually
+   * for indices not in the original construction of this vector will eventually
    * destroy its sparsity. Has O(_ilen) worst-case time-complexity where _ilen
-   * is the (max.) number of non-zeros in the array. The time-complexity
-   * reduces to O(log(_ilen)) if the element to be set, is already non-zero
+   * is the (max.) number of non-defaults in the array. The time-complexity
+   * reduces to O(log(_ilen)) if the element to be set, is already non-default
    * before the operation.
    * @param i int
    * @param val double
    * @throws IndexOutOfBoundsException if i is not in the set mentioned above
-   * @throws ParallelException -never throws this exception
+	 * @throws ParallelException -never throws this exception; the exception is 
+	 * only declared so that sub-classes can also declare they throw it (eg the
+	 * DblArray1SparseVectorMT class) when overriding this method
    */
-  public void setCoord(int i, double val) throws IndexOutOfBoundsException, ParallelException {
-    if (i<0 || i>=_n) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
+  public void setCoord(int i, double val) 
+		throws IndexOutOfBoundsException, ParallelException {
+    if (i<0 || i>=_n) 
+			throw new IndexOutOfBoundsException("index "+i+" out of bounds");
+		final boolean is_val_at_def = Double.compare(val,_defVal)==0;
     if (_indices==null) {
-      if (Double.compare(val,0.0)==0) return;  // don't do anything
+      if (is_val_at_def) return;  // don't do anything
       _indices = new int[1];
       _indices[0] = i;
       _values = new double[1];
@@ -230,11 +476,11 @@ public class DblArray1SparseVector implements SparseVectorIntf {
     int i1 = 0;
     int i2 = _ilen;
     if (_indices[0]==i) {
-      if (Double.compare(val,0.0)==0) shrink(0);
+      if (is_val_at_def) shrink(0);
       else _values[0] = val;
       return;
     } else if (_indices[_ilen-1] == i) {
-      if (Double.compare(val,0.0)==0) shrink(_ilen-1);
+      if (is_val_at_def) shrink(_ilen-1);
       else _values[_ilen-1] = val;
       return;
     }
@@ -246,11 +492,11 @@ public class DblArray1SparseVector implements SparseVectorIntf {
       ih = (i1+i2)/2;
     }
     if (_indices[ih]==i) {
-      if (Double.compare(val,0.0)==0) shrink(ih);
+      if (is_val_at_def) shrink(ih);
       else _values[ih] = val;
       return;
     }
-    else if (Double.compare(val,0.0)==0) return;  // no change
+    else if (is_val_at_def) return;  // no change
     // change is necessary
     // if needed, create new arrays to insert the value for <i,val> pair.
     if (_ilen == ilen) {  // increase arrays' capacity 20%
@@ -307,14 +553,19 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    *   double val = sparsevector.getCoord(pos);
    * }
    * </CODE>
-	 * </pre>
-   * @param i int.
+	 * </pre>.
+	 * <p>Notice that when <CODE>_defVal</CODE> of this object is non-zero, then
+	 * this method returns the i-th non-default-valued component of this vector.
+	 * </p>
+   * @param i int
    * @throws IndexOutOfBoundsException if i is out-of-bounds. Always throws if
-   * this is the zero vector.
+   * this is the zero vector
    * @return int
    */
   public int getIthNonZeroPos(int i) throws IndexOutOfBoundsException {
-    if (i<0 || i>=_ilen) throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+_ilen+"] Vector is: "+this);
+    if (i<0 || i>=_ilen) 
+			throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+
+				                                  _ilen+"] Vector is: "+this);
     return _indices[i];
   }
 
@@ -326,9 +577,11 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    * @param other VectorIntf
    * @throws IllegalArgumentException if other is null or does not have the
    * same dimensions as this vector or if m is NaN
-   * @throws ParallelException -never throws this exception
+   * @throws ParallelException -never throws this exception, but sub-classes
+	 * may
    */
-  public void addMul(double m, VectorIntf other) throws IllegalArgumentException, ParallelException {
+  public void addMul(double m, VectorIntf other) 
+		throws IllegalArgumentException, ParallelException {
     if (other==null || other.getNumCoords()!=_n || Double.isNaN(m))
       throw new IllegalArgumentException("cannot call addMul(m,v) with v "+
                                          "having different dimensions than "+
@@ -342,7 +595,7 @@ public class DblArray1SparseVector implements SparseVectorIntf {
   /**
    * divide the components of this vector by the argument h.
    * @param h double
-   * @throws IllegalArgumentException if h is zero
+   * @throws IllegalArgumentException if h is (almost) zero
    * @throws ParallelException -never throws this exception.
    */
   public void div(double h) throws IllegalArgumentException, ParallelException {
@@ -359,14 +612,12 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    * @return boolean
    */
   public boolean isAtOrigin() {
-    return _ilen==0;
-    // code below is redundant
-    /*
-    for (int i=0; i<_ilen; i++) {
-      if (Double.compare(_values[i],0.0)!=0) return false;
-    }
-    return true;
-    */
+    if (Double.compare(_defVal, 0.0)==0) return _ilen==0;
+		if (_ilen!=_n) return false;
+		for (int i=0; i<_n; i++) {
+			if ((Double.compare(_values[i], 0.0))!=0) return false;
+		}
+		return true;
   }
 
 
@@ -377,44 +628,57 @@ public class DblArray1SparseVector implements SparseVectorIntf {
   public String toString() {
     String x="[";
     for (int i=0; i<_ilen-1; i++) x += "("+_indices[i]+","+_values[i]+")"+", ";
-    x += "("+_indices[_ilen-1]+","+_values[_ilen-1]+")";
-    x += "]";
+    if (_ilen>0) {
+			x += "("+_indices[_ilen-1]+","+_values[_ilen-1]+")";
+		}
+		x += " _ilen="+_ilen+" _n="+_n;
+    x += " defaultValue="+_defVal+"]";
     return x;
   }
 
 
   /**
-   * returns the number of non-zero elements in this vector.
+   * returns the number of non-zero elements in this vector. 
+	 * <p>If _defVal is other than zero, returns the number of non-default-valued 
+	 * elements. </p>
    * @return int
    */
   public int getNumNonZeros() {
     return _ilen;
-    // code below is redundant
-    /*
-    int res=0;
-    for (int i=0; i<_ilen; i++)
-      if (Double.compare(_values[i],0.0)!=0) ++res;
-    return res;
-    */
   }
 
 
   /**
    * compute the inner product of this vector with the argument passed in.
    * The operation should be fast when this vector is sparse enough, as it only
-   * goes through the non-zero elements of the vector.
+   * goes through the non-zero elements of the vector (assuming the default 
+	 * value for this vector is zero).
    * @param other VectorIntf
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if vector dimensions don't match
    * @return double
    */
   public double innerProduct(VectorIntf other) throws IllegalArgumentException {
     if (other==null || other.getNumCoords()!=_n)
-      throw new IllegalArgumentException("dimensions don't match or null argument passed in");
-    double sum=0.0;
-    for (int i=0; i<_ilen; i++) {
-      sum += _values[i]*other.getCoord(_indices[i]);
-    }
-    return sum;
+      throw new IllegalArgumentException("dimensions don't match "+
+				                                 "or null argument passed in");
+		if (Double.compare(_defVal, 0.0)==0) {
+	    double sum=0.0;
+			for (int i=0; i<_ilen; i++) {
+				sum += _values[i]*other.getCoord(_indices[i]);
+			}
+	    return sum;
+		} else {
+			if (other instanceof DblArray1SparseVector) {  // try the other one
+				if (Double.compare(((DblArray1SparseVector) other)._defVal,0.0)==0)
+					return ((DblArray1SparseVector) other).innerProduct(this);
+			}
+			// go the hard way
+			double sum=0.0;
+			for (int i=0; i<_n; i++) {
+				sum += getCoord(i)*other.getCoord(i);
+			}
+			return sum;
+		}
   }
 
 
@@ -428,10 +692,18 @@ public class DblArray1SparseVector implements SparseVectorIntf {
     if (k<=0) throw new IllegalArgumentException("k<=0");
     if (k==2) return norm2();  // faster computation
     double res = 0.0;
-    for (int i=0; i<_ilen; i++) {
-      double absxi = Math.abs(_values[i]);
-      res += Math.pow(absxi,k);
-    }
+    if (Double.compare(_defVal, 0.0)==0) {
+			for (int i=0; i<_ilen; i++) {
+				double absxi = Math.abs(_values[i]);
+				res += Math.pow(absxi,k);
+			}
+		} else {
+			for (int i=0; i<_ilen; i++) {
+				double absxi = Math.abs(_values[i]);
+				res += Math.pow(absxi,k);
+			}
+			res += (_n-_ilen)*Math.pow(Math.abs(_defVal), k);
+		}
     res = Math.pow(res, 1.0/(double) k);
     return res;
   }
@@ -444,10 +716,11 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    */
   public double norm2() throws IllegalArgumentException {
     double res2=0.0;
-    for (int i=0; i<_ilen; i++) {
-      double xi = _values[i];
-      res2 += (xi * xi);
-    }
+		for (int i=0; i<_ilen; i++) {
+			double xi = _values[i];
+			res2 += (xi * xi);
+		}
+		res2 += (_n-_ilen)*_defVal*_defVal;
     return Math.sqrt(res2);
   }
 
@@ -462,12 +735,13 @@ public class DblArray1SparseVector implements SparseVectorIntf {
       final double absxi = Math.abs(_values[i]);
       if (absxi>res) res = absxi;
     }
+		if (_n>_ilen && Math.abs(_defVal)>res) return Math.abs(_defVal);
     return res;
   }
 
 
   /**
-   * return true iff the other vector is exactly equal to this.
+   * return true iff the other vector is exactly equal to this, component-wise.
    * @param other Object
    * @return boolean
    */
@@ -475,20 +749,56 @@ public class DblArray1SparseVector implements SparseVectorIntf {
     if (other==null || other instanceof VectorIntf == false) return false;
     VectorIntf o = (VectorIntf) other;
     if (o.getNumCoords()!=_n) return false;
+		if (other instanceof DblArray1SparseVector) {  // short-cut? 
+			if (Double.compare(((DblArray1SparseVector)other)._defVal, _defVal)!=0) {
+				// no short-cut
+				for (int i=0; i<_n; i++) {
+					if (Double.compare(getCoord(i), o.getCoord(i))!=0) return false;
+				}
+				return true;
+			} else {
+				// short-cut
+	      DblArray1SparseVector osv = (DblArray1SparseVector) other;
+		    for (int i = 0; i < _ilen; i++) {
+			    if (_indices[i] != osv._indices[i] || 
+						  Double.compare(_values[i], osv._values[i]) != 0)
+				    return false;
+				}
+				return true;
+			}
+		}
     if (other instanceof SparseVectorIntf) {  // short-cut
       SparseVectorIntf osv = (SparseVectorIntf) other;
-      for (int i = 0; i < _ilen; i++)
-        if (Double.compare(_values[i], osv.getCoord(_indices[i])) != 0)
-          return false;
-      for (int i = 0; i < osv.getNumNonZeros(); i++) {
-        int pi = osv.getIthNonZeroPos(i);
-        if (Double.compare(osv.getCoord(pi), getCoord(pi)) != 0)
-          return false;
-      }
-      return true;
+			if (Double.compare(osv.getDefaultValue(), _defVal)!=0) {
+				// no short-cut
+				for (int i=0; i<_n; i++) {
+					if (Double.compare(getCoord(i), o.getCoord(i))!=0) return false;
+				}
+				return true;
+			} else {  // same default-value
+				// short-cut
+		    for (int i = 0; i < _ilen; i++) {
+					int posi = osv.getIthNonZeroPos(i);
+			    if (_indices[i] != posi || 
+						  Double.compare(_values[i], osv.getCoord(posi)) != 0)
+				    return false;
+				}
+				return true;				
+			}
     }
     else return o.equals(this);  // no short-cut
   }
+	
+	
+	/**
+	 * return the integer part of the first value of the first non-zero element of 
+	 * this vector, if it exists, else return the integer part of the default 
+	 * value.
+	 * @return int
+	 */
+	public int hashCode() {
+		return _ilen > 0 ? (int) _values[0] : (int) _defVal;
+	}
 
 
   protected int[] getIndices() { return _indices; }
@@ -496,6 +806,7 @@ public class DblArray1SparseVector implements SparseVectorIntf {
   protected double[] getValues() { return _values; }
   protected void setValues(double[] values) { _values = values; }
   protected int getILen() { return _ilen; }
+	protected void setILen(int ilen) { _ilen = ilen; }
   protected void incrILen() { ++_ilen; }
 
 

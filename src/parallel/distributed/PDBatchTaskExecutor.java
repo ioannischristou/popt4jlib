@@ -25,7 +25,7 @@ import java.io.Serializable;
  * different threads will execute serially. For this reason, there is no need
  * for this executor to implement dynamic thread management (such as starting
  * more threads upon higher loads, or modifying threads' priorities etc. as is
- * done in the LimitedTimeTaskExecutor class).
+ * done in the <CODE>parallel.LimitedTimeTaskExecutor</CODE> class).
  * The class is meant to be used in conjunction with
  * PDBatchTaskExecutor[Srv/Clt/Wrk] classes that will allow parallel/distributed
  * execution of <CODE>TaskObject</CODE> objects in remote JVMs running under
@@ -44,7 +44,10 @@ public final class PDBatchTaskExecutor {
   private PDBTEThread[] _threads;
   private boolean _isRunning;
   private int _batchSize;
-  private FairDMCoordinator _rwLocker=null;  // used to query if executor is idle
+  private FairDMCoordinator _rwLocker=null;  // used 2 query if executor is idle
+	                                           // running or number of its threads
+	                                           // concurrently with executeBatch()
+	                                           // call
   private boolean _isIdle;
 
   private MsgPassingCoordinator _mpc_for;
@@ -52,7 +55,7 @@ public final class PDBatchTaskExecutor {
 
 	
   /**
-   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructs a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
 	 * @return PDBatchTaskExecutor properly initialized
    * @throws ParallelException if numthreads &le; 0.
@@ -66,7 +69,7 @@ public final class PDBatchTaskExecutor {
 
 	
   /**
-   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructs a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
    * @param bsize int the batch size to be submitted each time to the threadpool
 	 * @return PDBatchTaskExecutor properly initialized
@@ -87,24 +90,9 @@ public final class PDBatchTaskExecutor {
    * @throws ParallelException if numthreads &le; 0.
    */
   private PDBatchTaskExecutor(int numthreads) throws ParallelException {
-    if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
+    if (numthreads<=0) throw new ParallelException("ctor arg must be > 0");
     _id = getNextObjId();
     _threads = new PDBTEThread[numthreads];
-		/* itc: 2015-01-15 moved below code to initialize() method
-    for (int i=0; i<numthreads; i++) {
-      _threads[i] = new PDBTEThread(this);
-      _threads[i].setDaemon(true);  // thread will end when main thread ends
-      _threads[i].start();
-    }
-    _isRunning = true;
-    _isIdle = true;
-    _batchSize = MsgPassingCoordinator.getMaxSize()/2;
-    _rwLocker = FairDMCoordinator.getInstance("PDBatchTaskExecutor"+_id);
-    _mpc_for =
-        MsgPassingCoordinator.getInstance("PDBatchTaskExecutor"+_id);
-    _mpc_bak =
-        MsgPassingCoordinator.getInstance("PDBatchTaskExecutor_ack"+_id);
-		*/
   }
 
 
@@ -155,19 +143,20 @@ public final class PDBatchTaskExecutor {
    * (successfully or not). Asynchronous versions are implemented in the
    * ParallelAsynchBatchTaskExecutor and FasterParallelAsynchBatchTaskExecutor
    * classes.
-   * @param tasks Collection // Collection&lt;TaskObject&gt;. If the collection contains
-   * an object that does not implement the TaskObject interface, the object
+   * @param tasks Collection // Collection&lt;TaskObject&gt;. If the collection 
+	 * contains an object that does not implement the TaskObject interface, object
    * will be added in the results vector in the corresponding order without any
    * processing done (even if it implements the Runnable interface or defines a
    * run() method).
    * @throws ParallelException if the shutDown() method has been called prior
    * to this call
-   * @return Vector // Vector&lt;Serializable&gt; the successfully executed task results.
-   * If a task threw an exception then the TaskObject itself is returned instead
-   * of the expected result.
+   * @return Vector // Vector&lt;Serializable&gt; the successfully executed task 
+	 * results. If a task threw an exception then the TaskObject itself is 
+	 * returned instead of the expected result.
    * If tasks were null, then it also returns null.
    */
-  public synchronized Vector executeBatch(Collection tasks) throws ParallelException {
+  public synchronized Vector executeBatch(Collection tasks) 
+		throws ParallelException {
     if (tasks==null) return null;
     if (_isRunning==false)
       throw new ParallelException("thread-pool is not running");
@@ -272,9 +261,18 @@ public final class PDBatchTaskExecutor {
    * @return int
    */
   public int getNumThreads() {
-    if (_threads!=null)
+    try {
+      _rwLocker.getReadAccess();
       return _threads.length;
-    else return 0;
+    }
+    finally {
+			try {
+				_rwLocker.releaseReadAccess();
+			}
+			catch (ParallelException e) {  // cannot happen
+				e.printStackTrace();
+			}
+    }
   }
 
 
@@ -316,9 +314,13 @@ public final class PDBatchTaskExecutor {
 	 */
 	static class PDBTEThread extends Thread {
 		private static HashMap _ids = new HashMap();  // map<PDBTE e, Integer curId>
-		private PDBatchTaskExecutor _e;
+		private PDBatchTaskExecutor _e;  // unnecessary now
 		private boolean _doRun=true;
 
+		/**
+		 * sole constructor.
+		 * @param e PDBatchTaskExecutor was needed before class became nested.
+		 */
 		PDBTEThread(PDBatchTaskExecutor e) {
 			synchronized (PDBTEThread.class) {
 				if (_ids.get(e)==null)
@@ -357,8 +359,8 @@ public final class PDBatchTaskExecutor {
 						else throw new ParallelException("data object cannot be run");
 					}
 					catch (Exception e) {
-						e.printStackTrace();  // task threw an exception, ignore and continue
-						// send back the data object as acknowledgement on the "back-channel"
+						e.printStackTrace();  // task threw an exception, ignore & continue
+						// send back data object as acknowledgement on the "back-channel"
 						mpc_bak.sendDataBlocking(id, -1, data);
 					}
 				}

@@ -82,7 +82,8 @@ public class UnboundedBufferArrayUnsynchronized {
 
 	/**
 	 * removes the <CODE>i</CODE>-th element in this array and returns it. Much 
-	 * slower than the other operations.
+	 * slower than the other operations unless i is zero or <CODE>size()-1</CODE>
+	 * in which case, the operation is O(1) also.
 	 * @param i int 
 	 * @return Object the element previously in the <CODE>i</CODE>-th position.
 	 * @throws IndexOutOfBoundsException if the index is out of the range {0,...size()-1} 
@@ -151,6 +152,10 @@ public class UnboundedBufferArrayUnsynchronized {
 		for (int i=_head; i!=_tail; i=next(i)) {
 			arr += i+"->"+_buffer[i];
 			arr += "\n";
+		}
+		if (_head!=-1) {  // print the last (tail element)
+			arr += _tail+"->"+_buffer[_tail];
+			arr += "\n";			
 		}
 		arr += "])";
 		return arr;

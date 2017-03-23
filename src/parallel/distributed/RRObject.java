@@ -36,7 +36,7 @@ public abstract class RRObject implements Serializable {
 class TaskObjectsExecutionRequest extends RRObject {
   private final static long serialVersionUID = 5801899648236803371L;
   protected TaskObject[] _tasks;
-  protected Vector _originatingClients;  // Vector<String>  ordered by event time
+  protected Vector _originatingClients;  // Vector<String> ordered by event time
 
 
   /**
@@ -47,7 +47,7 @@ class TaskObjectsExecutionRequest extends RRObject {
   public TaskObjectsExecutionRequest(String originator, TaskObject[] tasks) {
     _tasks = tasks;
     _originatingClients = new Vector();
-    _originatingClients.addElement(originator);
+    _originatingClients.add(originator);
   }
 
 
@@ -74,22 +74,27 @@ class TaskObjectsExecutionRequest extends RRObject {
 	 * @throws ClassNotFoundException
 	 * @throws PDBatchTaskExecutorException
    */
-  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+  public void runProtocol(PDBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
+		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
     if (_tasks==null || _tasks.length==0)
-      throw new PDBatchTaskExecutorException("TaskObjectsExecutionRequest.runProtocol(): null or empty _tasks?");
+      throw new PDBatchTaskExecutorException(
+				"TaskObjectsExecutionRequest.runProtocol(): null or empty _tasks?");
 		TaskObjectsExecutionResults results=null;
 		try {
 			// 1. find an available worker on the net, submit work, wait for results
 			results = srv.submitWork(_originatingClients, _tasks);
 		}
 		catch (IOException e) {  // worker disconnected, try one last time
-			utils.Messenger.getInstance().msg("worker connection lost, will try one last time", 2);
+			utils.Messenger.getInstance().msg(
+				"worker connection lost, will try one last time", 2);
 			results = srv.submitWork(_originatingClients, _tasks);
 		}
 		// 2. send back the results to the requestor
+		oos.reset();  // force object to be written anew
 		oos.writeObject(results);
 		oos.flush();
-    return;
+		// return;
   }
 }
 
@@ -108,7 +113,7 @@ class TaskObjectsExecutionRequest extends RRObject {
 class TaskObjectsAsynchExecutionRequest extends RRObject {
   //private final static long serialVersionUID = 5801899648236803371L;
   TaskObject[] _tasks;  // need package access so they can be accessed from Wrk
-  protected Vector _originatingClients;  // Vector<String>  ordered by event time
+  protected Vector _originatingClients;  // Vector<String> ordered by event time
 
 	/**
 	 * public (empty) no-arg constructor, only needed for sub-classes.
@@ -123,10 +128,11 @@ class TaskObjectsAsynchExecutionRequest extends RRObject {
    * @param originator String the name of the originating client
    * @param tasks TaskObject[]
    */
-  public TaskObjectsAsynchExecutionRequest(String originator, TaskObject[] tasks) {
+  public TaskObjectsAsynchExecutionRequest(String originator, 
+		                                       TaskObject[] tasks) {
     _tasks = tasks;
     _originatingClients = new Vector();
-    _originatingClients.addElement(originator);
+    _originatingClients.add(originator);
   }
 
 
@@ -153,20 +159,24 @@ class TaskObjectsAsynchExecutionRequest extends RRObject {
 	 * @throws ClassNotFoundException
 	 * @throws PDAsynchBatchTaskExecutorException
    */
-  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) 
-		throws IOException, ClassNotFoundException, PDAsynchBatchTaskExecutorException {
+  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
+		throws IOException, ClassNotFoundException, 
+		       PDAsynchBatchTaskExecutorException {
     if (_tasks==null || _tasks.length==0)
-      throw new PDAsynchBatchTaskExecutorException("TaskObjectsAsynchExecutionRequest.runProtocol(): null or empty _tasks?");
+      throw new PDAsynchBatchTaskExecutorException(
+				"TaskObjectsAsynchExecutionRequest.runProtocol():null or empty tasks?");
 		try {
 			// 1. find an available worker on the net, submit work
 			srv.submitWork(_originatingClients, _tasks);
 		}
 		catch (IOException e) {  // worker disconnected, try one last time
-			utils.Messenger.getInstance().msg("TAOER.runProtocol(): Wrk connection lost, will try one last time", 2);
+			utils.Messenger.getInstance().msg(
+				"TAOER.runProtocol(): Wrk connection lost, will try one last time", 2);
 			srv.submitWork(_originatingClients, _tasks);
 		}
 		// 2. send back OKReply to requestor
-		oos.writeObject(new OKReply());
+		oos.writeObject(new OKReply());  // no need for oos.reset() here
 		oos.flush();
 		// return;
   }
@@ -181,7 +191,9 @@ class TaskObjectsAsynchExecutionRequest extends RRObject {
 	 * @throws ClassNotFoundException
 	 * @throws PDAsynchBatchTaskExecutorException 
 	 */
-  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+  public void runProtocol(PDBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
+		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
 		throw new PDAsynchBatchTaskExecutorException("Unsupported method");
 	}
 }
@@ -198,9 +210,11 @@ class TaskObjectsAsynchExecutionRequest extends RRObject {
  * @author Ioannis T. Christou
  * @version 1.0
  */
-class TaskObjectsAsynchParallelExecutionRequest extends TaskObjectsAsynchExecutionRequest {
+class TaskObjectsAsynchParallelExecutionRequest 
+  extends TaskObjectsAsynchExecutionRequest {
   //private final static long serialVersionUID = 5801899648236803371L;
-	private UnboundedBufferArrayUnsynchronized _taskChunksList=null;  // FIFOList<TaskObject[]>
+	private UnboundedBufferArrayUnsynchronized _taskChunksList=null;  
+  // FIFOList<TaskObject[]>
 	private int _maxChunkSize=8;  // default max chunk size represents the number
 	                              // of CPU cores in most current machines.
 	
@@ -210,7 +224,8 @@ class TaskObjectsAsynchParallelExecutionRequest extends TaskObjectsAsynchExecuti
    * @param originator String the name of the originating client
    * @param tasks TaskObject[]
    */
-  public TaskObjectsAsynchParallelExecutionRequest(String originator, TaskObject[] tasks) {
+  public TaskObjectsAsynchParallelExecutionRequest(String originator, 
+		                                               TaskObject[] tasks) {
 		super(originator, tasks);
   }
 
@@ -228,7 +243,9 @@ class TaskObjectsAsynchParallelExecutionRequest extends TaskObjectsAsynchExecuti
 																									 int max_chunk_size) {
 		this(originator, tasks);
 		if (max_chunk_size<1) 
-			throw new IllegalArgumentException("TaskObjectsAsynchParallelExecutionRequest: max_chunk_size="+max_chunk_size);
+			throw new IllegalArgumentException(
+				"TaskObjectsAsynchParallelExecutionRequest: max_chunk_size="+
+				max_chunk_size);
 		_maxChunkSize = max_chunk_size;
   }
 
@@ -239,7 +256,8 @@ class TaskObjectsAsynchParallelExecutionRequest extends TaskObjectsAsynchExecuti
    * @param originators Vector  // Vector&lt;String&gt;
    * @param tasks TaskObject[]
    */
-  TaskObjectsAsynchParallelExecutionRequest(Vector originators, TaskObject[] tasks) {
+  TaskObjectsAsynchParallelExecutionRequest(Vector originators, 
+		                                        TaskObject[] tasks) {
 		super(originators, tasks);
   }
 
@@ -264,32 +282,39 @@ class TaskObjectsAsynchParallelExecutionRequest extends TaskObjectsAsynchExecuti
 	 * @throws ClassNotFoundException
 	 * @throws PDAsynchBatchTaskExecutorException
    */
-  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) 
-		throws IOException, ClassNotFoundException, PDAsynchBatchTaskExecutorException {
+  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
+		throws IOException, ClassNotFoundException, 
+		       PDAsynchBatchTaskExecutorException {
     if (_tasks==null || _tasks.length==0)
       throw new PDAsynchBatchTaskExecutorException(
-				"TaskObjectsAsynchParallelExecutionRequest.runProtocol(): null or empty _tasks?");
+				"TaskObjectsAsynchParallelExecutionRequest.runProtocol(): "+
+				"null or empty _tasks?");
   	if (_taskChunksList==null) {
 			int num_chunks = _tasks.length / _maxChunkSize;
 			if (_maxChunkSize*num_chunks < _tasks.length) ++num_chunks;
 			_taskChunksList = new UnboundedBufferArrayUnsynchronized(num_chunks);
 			// create and put the chunks of up to _maxChunkSize tasks in TaskObject[] 
 			// objects in the list
-			int cur_batch_length = _tasks.length > _maxChunkSize ? _maxChunkSize : _tasks.length;
+			int cur_batch_length = Math.min(_tasks.length, _maxChunkSize);
+			//cur_batch_length=_tasks.length>_maxChunkSize?_maxChunkSize:_tasks.length
 			TaskObject[] cur_batch = new TaskObject[cur_batch_length];
 			int j=0;
 			for (int i=0; i<_tasks.length; i++) {
 				cur_batch[j++] = _tasks[i];
-				if (j==cur_batch.length) {  // current batch full, store it in buffer, and proceed
+				if (j==cur_batch.length) {  
+          // current batch full, store it in buffer, and proceed
 					_taskChunksList.addElement(cur_batch);
 					int num_rem_tasks = _tasks.length - (i+1);
-					cur_batch_length = num_rem_tasks > _maxChunkSize ? _maxChunkSize : num_rem_tasks;
+					cur_batch_length = Math.min(num_rem_tasks, _maxChunkSize);
 					cur_batch = new TaskObject[cur_batch_length];
 					j=0;
 				}
 			}
 		}
-		for (int i=0; i<_taskChunksList.size(); i++) {
+		boolean submit_failed=false;
+		int num_chunks = _taskChunksList.size();
+		for (int i=0; i<num_chunks; i++) {
 			// 0. the tasks to send are always at the beginning
 			TaskObject[] tasks = (TaskObject[]) _taskChunksList.elementAt(0);
 			try {
@@ -298,16 +323,44 @@ class TaskObjectsAsynchParallelExecutionRequest extends TaskObjectsAsynchExecuti
 				// 2. remove this successfully sent chunk from list
 				_taskChunksList.remove();
 			}
-			catch (IOException e) {  // worker disconnected, try one last time
-				utils.Messenger.getInstance().msg("TOAPER.runProtocol(): connection to Wrk was lost, will try one last time", 2);
+			catch (Exception e) {  // exception thrown, try one last time
+				utils.Messenger.getInstance().msg(
+					"TOAPER.runProtocol(): exception '"+e+"' thrown, try one last time", 
+					0);
 				// 3. try again
-				srv.submitWork(_originatingClients, tasks);
-				// 4. remove this successfully sent chunk from list
-				_taskChunksList.remove();
+				try {
+					srv.submitWork(_originatingClients, tasks);
+					// 4. remove this successfully sent chunk from list
+					_taskChunksList.remove();
+				}
+				catch (Exception e2) {
+					submit_failed=true;
+					// move failed chunk to end of list
+					_taskChunksList.remove();
+					_taskChunksList.addElement(tasks);
+				}
 			}
 		}
+		if (submit_failed) {  // make sure _tasks only contains those that failed
+			                    // to be submitted
+			int num_failed=0;
+			for (int i=0; i<_taskChunksList.size(); i++) {
+				TaskObject[] toi = (TaskObject[]) _taskChunksList.elementAt(i);
+				num_failed += toi.length;
+			}
+			_tasks = new TaskObject[num_failed];
+			int j=0;
+			for (int i=0; i<_taskChunksList.size(); i++) {
+				TaskObject[] toi = (TaskObject[]) _taskChunksList.elementAt(i);
+				for (int k=0; k<toi.length; k++) {
+					_tasks[j++]=toi[k];
+				}
+			}
+			throw new PDAsynchBatchTaskExecutorException(
+				"TOAPER.runProtocol(): At least one chunk failed submission");
+		}
 		// finally, send back OKReply to requestor
-		oos.writeObject(new OKReply());
+		oos.writeObject(new OKReply());  // no need for oos.reset() here
 		oos.flush();
 		// return;
   }
@@ -322,7 +375,9 @@ class TaskObjectsAsynchParallelExecutionRequest extends TaskObjectsAsynchExecuti
 	 * @throws ClassNotFoundException
 	 * @throws PDAsynchBatchTaskExecutorException 
 	 */
-  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+  public void runProtocol(PDBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
+		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
 		throw new PDAsynchBatchTaskExecutorException("Unsupported method");
 	}
 }
@@ -339,7 +394,8 @@ class TaskObjectsAsynchParallelExecutionRequest extends TaskObjectsAsynchExecuti
  * @author Ioannis T. Christou
  * @version 1.0
  */
-class PDAsynchBatchTaskExecutorSrvAwaitWrksRequest extends TaskObjectsAsynchExecutionRequest {
+class PDAsynchBatchTaskExecutorSrvAwaitWrksRequest 
+  extends TaskObjectsAsynchExecutionRequest {
 		
   /**
    * sole public constructor.
@@ -357,12 +413,65 @@ class PDAsynchBatchTaskExecutorSrvAwaitWrksRequest extends TaskObjectsAsynchExec
    * @param oos ObjectOutputStream
 	 * @throws IOException
    */
-  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) 
+  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
 		throws IOException {
 		srv.awaitWorkers();
-		oos.writeObject(new OKReply());
+		oos.writeObject(new OKReply());  // no need for oos.reset()
 		oos.flush();
   }
+}
+
+
+/**
+ * auxiliary class wrapping a request (from 
+ * <CODE>PDAsynchBatchTaskExecutorClt</CODE> objects) asking the server for 
+ * the number of connected workers. Not part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2016</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+class PDAsynchBatchTaskExecutorSrvGetNumWrksRequest extends RRObject {
+  //private final static long serialVersionUID = 5801899648236803371L;
+
+
+  /**
+   * sole public constructor.
+   */
+  public PDAsynchBatchTaskExecutorSrvGetNumWrksRequest() {
+		// no-op.
+  }
+
+
+  /**
+	 * unsupported operation always throws.
+   * @param srv PDAsynchBatchTaskExecutorSrv
+   * @param ois ObjectInputStream
+   * @param oos ObjectOutputStream
+	 * @throws PDAsynchBatchTaskExecutorException
+   */
+  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
+		throws PDAsynchBatchTaskExecutorException {
+    throw new PDAsynchBatchTaskExecutorException("Unsupported method");
+  }
+	
+	
+	/**
+	 * unsupported method always throws PDAsynchBatchTaskExecutorException.
+	 * @param srv PDBatchTaskExecutorSrv
+	 * @param ois ObjectInputStream
+	 * @param oos ObjectOutputStream
+	 * @throws PDAsynchBatchTaskExecutorException 
+	 */
+  public void runProtocol(PDBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
+		throws PDAsynchBatchTaskExecutorException {
+		throw new PDAsynchBatchTaskExecutorException("Unsupported method");
+	}
 }
 
 
@@ -396,7 +505,8 @@ class PDAsynchBatchTaskExecutorWrkAvailabilityRequest extends RRObject {
    * @param oos ObjectOutputStream
 	 * @throws PDAsynchBatchTaskExecutorException
    */
-  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) 
+  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
 		throws PDAsynchBatchTaskExecutorException {
     throw new PDAsynchBatchTaskExecutorException("Unsupported method");
   }
@@ -409,7 +519,9 @@ class PDAsynchBatchTaskExecutorWrkAvailabilityRequest extends RRObject {
 	 * @param oos ObjectOutputStream
 	 * @throws PDAsynchBatchTaskExecutorException 
 	 */
-  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws PDAsynchBatchTaskExecutorException {
+  public void runProtocol(PDBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
+		throws PDAsynchBatchTaskExecutorException {
 		throw new PDAsynchBatchTaskExecutorException("Unsupported method");
 	}
 }
@@ -417,10 +529,8 @@ class PDAsynchBatchTaskExecutorWrkAvailabilityRequest extends RRObject {
 
 /**
  * auxiliary class wrapping a request (from 
- * <CODE>PDAsynchBatchTaskExecutorSrv</CODE> objects) asking for worker capacity 
- * (in terms of their msg-passing queue) to accept request for asynch task 
- * execution without throwing <CODE>ParallelException</CODE>. Not part of the 
- * public API.
+ * <CODE>PDAsynchBatchTaskExecutorSrv</CODE> objects) asking for worker queue
+ * size. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2016</p>
@@ -428,27 +538,16 @@ class PDAsynchBatchTaskExecutorWrkAvailabilityRequest extends RRObject {
  * @author Ioannis T. Christou
  * @version 1.0
  */
-class PDAsynchBatchTaskExecutorWrkCapacityRequest extends RRObject {
+class PDAsynchBatchTaskExecutorWrkQueueSizeRequest extends RRObject {
   //private final static long serialVersionUID = 5801899648236803371L;
-	private int _size;
 
 
   /**
    * sole public constructor.
-	 * @param size int the request batch size
    */
-  public PDAsynchBatchTaskExecutorWrkCapacityRequest(int size) {
-		_size = size;
+  public PDAsynchBatchTaskExecutorWrkQueueSizeRequest() {
+		// no-op.
   }
-	
-	
-	/**
-	 * get the requested batch size.
-	 * @return int
-	 */
-	public int getSize() {
-		return _size;
-	}
 
 
   /**
@@ -458,7 +557,8 @@ class PDAsynchBatchTaskExecutorWrkCapacityRequest extends RRObject {
    * @param oos ObjectOutputStream
 	 * @throws PDAsynchBatchTaskExecutorException
    */
-  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) 
+  public void runProtocol(PDAsynchBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
 		throws PDAsynchBatchTaskExecutorException {
     throw new PDAsynchBatchTaskExecutorException("Unsupported method");
   }
@@ -471,7 +571,9 @@ class PDAsynchBatchTaskExecutorWrkCapacityRequest extends RRObject {
 	 * @param oos ObjectOutputStream
 	 * @throws PDAsynchBatchTaskExecutorException 
 	 */
-  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws PDAsynchBatchTaskExecutorException {
+  public void runProtocol(PDBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
+		throws PDAsynchBatchTaskExecutorException {
 		throw new PDAsynchBatchTaskExecutorException("Unsupported method");
 	}
 }
@@ -490,7 +592,8 @@ class PDAsynchBatchTaskExecutorWrkCapacityRequest extends RRObject {
  */
 class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
   // private final static long serialVersionUID = 5801899648236803371L;
-	private final static int _MAX_NUM_THREADS_TO_USE = 64;  // max. number of threads to use to submit batches
+	private final static int _MAX_NUM_THREADS_TO_USE = 64;  
+  // max. number of threads to use to submit batches
 	private final static int _GRAIN_SIZE=3;  // this size controls the granularity 
 	// of the batch jobs to be submitted to the server to forward to workers, 
 	// unless it is overridden by the value below; a grain-size of 1, implies that
@@ -500,25 +603,27 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
 	// known to the system, and each batch independently submitted to the server,
 	// and so on.
 	private int _grainSize=-1;  // if positive, use this size as grain-size
-	private utils.Messenger _mger = utils.Messenger.getInstance();
 
   /**
-   * sole public constructor.
+   * 2-arg public constructor.
    * @param originator String the name of the originating client
    * @param tasks TaskObject[]
    */
-  public TaskObjectsParallelExecutionRequest(String originator, TaskObject[] tasks) {
+  public TaskObjectsParallelExecutionRequest(String originator, 
+		                                         TaskObject[] tasks) {
 		super(originator, tasks);
   }
 
 	
   /**
-   * sole public constructor.
+   * 3-arg public constructor also specifies grainsize. 
    * @param originator String the name of the originating client
    * @param tasks TaskObject[]
 	 * @param grainsize int
    */
-  public TaskObjectsParallelExecutionRequest(String originator, TaskObject[] tasks, int grainsize) {
+  public TaskObjectsParallelExecutionRequest(String originator, 
+		                                         TaskObject[] tasks, 
+																						 int grainsize) {
 		super(originator, tasks);
 		_grainSize = grainsize;
   }
@@ -543,7 +648,8 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
 	 * @param grainsize int the grain-size to use when breaking up the tasks into
 	 * chunks (batches) to send to workers to execute
    */
-  TaskObjectsParallelExecutionRequest(Vector originators, TaskObject[] tasks, int grainsize) {
+  TaskObjectsParallelExecutionRequest(Vector originators, TaskObject[] tasks, 
+		                                  int grainsize) {
 		super(originators, tasks);
 		_grainSize = grainsize;
   }
@@ -563,33 +669,42 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
 	 * @throws ClassNotFoundException
 	 * @throws PDBatchTaskExecutorException
    */
-  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+  public void runProtocol(PDBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
+		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
     if (_tasks==null || _tasks.length==0)
-      throw new PDBatchTaskExecutorException("TaskObjectsParallelExecutionRequest.runProtocol(): null or empty _tasks?");
+      throw new PDBatchTaskExecutorException(
+				"TaskObjectsParallelExecutionRequest.runProtocol(): "+
+				"null or empty _tasks?");
+		utils.Messenger mger = utils.Messenger.getInstance();
 		ArrayList batches = new ArrayList();  // ArrayList<TaskObject[]>
 		int grain_size = _grainSize <= 0 ? _GRAIN_SIZE : _grainSize;
-		int num_threads = grain_size*srv.getNumWorkers();  // #threads up to grain_size*#workers_currently_available
-		if (num_threads>_MAX_NUM_THREADS_TO_USE) num_threads = _MAX_NUM_THREADS_TO_USE;
+		int num_threads = grain_size*srv.getNumWorkers();  
+    // #threads up to grain_size*#workers_currently_available
+		if (num_threads>_MAX_NUM_THREADS_TO_USE) 
+			num_threads = _MAX_NUM_THREADS_TO_USE;
 		// when num_threads > srv.getNumWorkers(), it is necessary that the 
-		// srv.submitWork(clients, tasks); method does not throw after a small number
+		// srv.submitWork(clients, tasks); method doesn't throw after a small number
 		// of attempts to find a free worker. The PDBTExecSingleCltWrkInitSrv class
 		// method, does just that.
 		// reduce num_threads if needed
 		if (num_threads > _tasks.length) num_threads = _tasks.length;
-		if (srv.getNumWorkers()==1) num_threads = 1;  // corner case: with one worker, breaking up tasks makes no sense
+		if (srv.getNumWorkers()==1) num_threads = 1;  // corner case with one worker 
+		                                              // break tasks makes no sense
 		int max_num_tasks_per_batch = _tasks.length / num_threads;
-		// if (max_num_tasks_per_batch<1) max_num_tasks_per_batch = 1;  // redundant corner case
-		int num = _tasks.length < max_num_tasks_per_batch ? _tasks.length :
-			                                                  max_num_tasks_per_batch;
+		// if (max_num_tasks_per_batch<1) max_num_tasks_per_batch = 1;  
+    // redundant corner case above commented out
+		int num = Math.min(_tasks.length, max_num_tasks_per_batch);
 		TaskObject[] batch = new TaskObject[num];
 		int cnt = 0;
 		int remaining = _tasks.length;
 		for (int i=0; i<_tasks.length; i++) {
 			if (cnt==batch.length) {
 				batches.add(batch);
-				num = remaining < max_num_tasks_per_batch ? remaining : max_num_tasks_per_batch;
+				num = Math.min(remaining, max_num_tasks_per_batch);
 				if (batches.size()==num_threads-1) 
-					num = remaining;  // it's the last batch available, so make enough space for all remaining tasks
+					num = remaining;  // it's the last batch available, so make enough 
+				                    // space for all remaining tasks
 				batch = new TaskObject[num];
 				cnt=0;
 			}
@@ -600,11 +715,12 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
 		batches.add(batch);
 		// batches are ready
 		if (num_threads>batches.size()) num_threads = batches.size();
-		_mger.msg("TaskObjectsParallelExecutionRequest.runProtocol(): created "+
-			                                batches.size()+" batches to be ran by "+num_threads+" threads", 2);
+		mger.msg("TaskObjectsParallelExecutionRequest.runProtocol(): created "+
+			       batches.size()+" batches to be ran by "+num_threads+" threads", 2);
 		WrkSubmissionThread[] threads = new WrkSubmissionThread[num_threads];
 		for (int i=0; i<num_threads; i++) {
-			threads[i] = new WrkSubmissionThread(srv, (TaskObject[]) batches.get(i), _originatingClients);
+			threads[i] = new WrkSubmissionThread(srv, (TaskObject[]) batches.get(i), 
+				                                   _originatingClients, i);
 			threads[i].start();
 		}
 		for (int i=0; i<num_threads; i++) {
@@ -622,17 +738,18 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
 		for (int i=0; i<num_threads; i++) {
 			Object[] res_i = threads[i].getResults();
 			if (res_i==null) {  // i-th submission failed, send FailedReply and return
-				oos.writeObject(new FailedReply());
+				oos.writeObject(new FailedReply());  // no need for oos.reset() first
 				oos.flush();
 				return;
 			}
 			for (int j=0; j<res_i.length; j++) res[cnt++] = res_i[j];
 		}
     TaskObjectsExecutionResults results = new TaskObjectsExecutionResults(res);
-    // finally, send back the results to the requestor
+    // finally, send back the results to the requestor (client)
+		oos.reset();  // force object to be written anew
     oos.writeObject(results);
     oos.flush();
-    return;
+    // return;
   }
 
 	
@@ -652,12 +769,15 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
 		private Vector _originatingClients;
 		private PDBatchTaskExecutorSrv _srv;
 		private TaskObjectsExecutionResults _results;
+		private int _id;
 
-		public WrkSubmissionThread(PDBatchTaskExecutorSrv srv, TaskObject[] tasks, Vector originatingClients) {
+		public WrkSubmissionThread(PDBatchTaskExecutorSrv srv, 
+			                         TaskObject[] tasks, Vector originatingClients, 
+															 int id) {
 			_srv = srv;
 			_tasks = tasks;
 			_originatingClients = originatingClients;
-			_mger.msg("WrkSubmissionThread(srv,tasks,clts): creating thread for "+tasks.length+" tasks",2);
+			_id=id;
 		}
 
 
@@ -667,24 +787,26 @@ class TaskObjectsParallelExecutionRequest extends TaskObjectsExecutionRequest {
 				_results = _srv.submitWork(_originatingClients, _tasks);
 			}
 			catch (IOException e) {  // worker closed connection, try one more time
-				_mger.msg("WrkSubmissionThread.run(): current "+
+				utils.Messenger.getInstance().msg("WrkSubmissionThread.run(): current "+
 					"worker closed connection, will retry one more time", 2);
 				try {
 					_results = _srv.submitWork(_originatingClients, _tasks);
 				}
 				catch (Exception e2) {
 					// e2.printStackTrace();
-					_mger.msg("WrkSubmissionThread.run(): _srv.submitWork(_originatingClients,"+
-							  		_tasks.length+" tasks) threw exception '"+e+
-										"'. Exiting with _results set to null",2); 
+					utils.Messenger.getInstance().msg(
+						"WrkSubmissionThread.run(): _srv.submitWork(_originatingClients,"+
+						_tasks.length+" tasks) threw exception '"+e+
+						"'. Exiting with _results set to null",2); 
 					_results = null;
 				}
 			}
 			catch (Exception e) {
 				// e.printStackTrace();
-				_mger.msg("WrkSubmissionThread.run(): _srv.submitWork(_originatingClients,"+
-									_tasks.length+" tasks) threw exception '"+e+
-									"'. Exiting with _results set to null",2);
+				utils.Messenger.getInstance().msg(
+					"WrkSubmissionThread.run(): _srv.submitWork(_originatingClients,"+
+					_tasks.length+" tasks) threw exception '"+e+
+					"'. Exiting with _results set to null",2);
 				_results = null;
 			}
 		}
@@ -730,10 +852,14 @@ class TaskObjectsExecutionResults extends RRObject {
    * @param oos ObjectOutputStream
    * @throws IOException
    */
-  public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) throws IOException, PDBatchTaskExecutorException {
+  public void runProtocol(PDBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
+		throws IOException, PDBatchTaskExecutorException {
     if (_results==null || _results.length==0)
-      throw new PDBatchTaskExecutorException("TaskObjectsExecutionResults.runProtocol(): null or empty _results?");
-    oos.writeObject(this);
+      throw new PDBatchTaskExecutorException(
+				"TaskObjectsExecutionResults.runProtocol(): null or empty _results?");
+    oos.reset();  // force object to be written anew.
+		oos.writeObject(this);
     oos.flush();
     //return;
   }

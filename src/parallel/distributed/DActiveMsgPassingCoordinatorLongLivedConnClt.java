@@ -97,6 +97,7 @@ public class DActiveMsgPassingCoordinatorLongLivedConnClt {
       _ois = new ObjectInputStream(_s.getInputStream());
     }
     */
+    _oos.reset();  // force object to be written anew
     if (data instanceof DMsgIntf) _oos.writeObject(data);
     else _oos.writeObject(new DSendMsg(myid, toid, data, _coordName));
     _oos.flush();
@@ -135,6 +136,7 @@ public class DActiveMsgPassingCoordinatorLongLivedConnClt {
       _ois = new ObjectInputStream(_s.getInputStream());
     }
     */
+    _oos.reset();  // force object to be written anew to the stream
     if (data instanceof DMsgIntf) _oos.writeObject(data);
     else _oos.writeObject(new DSendMsg(myid, data, _coordName));
     _oos.flush();
@@ -159,6 +161,7 @@ public class DActiveMsgPassingCoordinatorLongLivedConnClt {
 	 * @throws ParallelException 
 	 */
 	public synchronized Object sendAndRecvData(int myid, DMsgIntf data) throws IOException, ClassNotFoundException, ParallelException {
+    _oos.reset();  // force object to be written anew to the stream
     _oos.writeObject(data);
     _oos.flush();
     Object reply = _ois.readObject();
@@ -195,6 +198,7 @@ public class DActiveMsgPassingCoordinatorLongLivedConnClt {
       _ois = new ObjectInputStream(_s.getInputStream());
     }
     */
+    _oos.reset();  // force object to be written anew to the stream
     _oos.writeObject(new DRecvMsg(myid, _coordName));
     _oos.flush();
     Object reply = _ois.readObject();
@@ -229,6 +233,7 @@ public class DActiveMsgPassingCoordinatorLongLivedConnClt {
       _ois = new ObjectInputStream(_s.getInputStream());
     }
     */
+    _oos.reset();  // force object to be written anew to the stream
     _oos.writeObject(new DRecvMsg(myid, fromid, _coordName));
     _oos.flush();
     Object reply = _ois.readObject();

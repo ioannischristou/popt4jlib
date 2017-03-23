@@ -2,17 +2,22 @@ package popt4jlib.LocalSearch;
 
 import utils.*;
 import popt4jlib.*;
-import popt4jlib.GradientDescent.LocalOptimizerIntf;
 import parallel.*;
 import java.util.*;
 
 
 /**
  * class implements a parallel LocalSearch method for combinatorial optimization
- * problems, obeying the 
- * <CODE>popt4jlib.GradientDescent.LocalOptimizerIntf</CODE> contract. The class 
- * uses multi-threading to evaluate in parallel the available moves from any 
- * point, and is itself thread-safe.
+ * problems, obeying the <CODE>popt4jlib.LocalOptimizerIntf</CODE> contract. The 
+ * class uses multi-threading to evaluate in parallel the available moves from 
+ * any point, and is itself thread-safe. The local search, is essentially a 
+ * best-first search with no backtracking: the moves-maker object is responsible
+ * for generating all possible new positions from a given position; these 
+ * positions are then evaluated, and if there is one better than the current
+ * position, the best among the improving ones is chosen. These moves continue
+ * until the search reaches a position from which no improvement can be made,
+ * and then this last position is returned. The search may also be cut-short if
+ * the maximum number of allowed moves is reached.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2017</p>
@@ -21,11 +26,12 @@ import java.util.*;
  * @version 2.0
  */
 public class DLS implements LocalOptimizerIntf {
+	// private static final long serialVersionUID=...
   private static int _nextId=0;
   private int _id;
-  private HashMap _params=null;
+  private Params _params=null;
   private boolean _setParamsFromSameThreadOnly=false;
-  private Thread _originatingThread=null;
+  transient private Thread _originatingThread=null;  // threads don't serialize
   private Chromosome2ArgMakerIntf _c2amaker=null;
   private Arg2ChromosomeMakerIntf _a2cmaker=null;
   private AllChromosomeMakerIntf _allmovesmaker=null;
@@ -62,7 +68,7 @@ public class DLS implements LocalOptimizerIntf {
 
 
   /**
-   * Constructor of a DLS object, that assigns a unique id plus the parameters
+   * constructor of a DLS object, that assigns a unique id plus the parameters
    * passed into the argument. Also, it prevents other threads from modifying
    * the parameters passed into this object if the second argument is true.
    * @param params HashMap
@@ -77,17 +83,17 @@ public class DLS implements LocalOptimizerIntf {
       // no-op: cannot reach this point
     }
     _setParamsFromSameThreadOnly = setParamsOnlyFromSameThread;
-    if (setParamsOnlyFromSameThread) _originatingThread = Thread.currentThread();
+    if (setParamsOnlyFromSameThread) _originatingThread=Thread.currentThread();
   }
 
 
   /**
    * return a copy of the parameters. Modifications to the returned object
-   * do not affect the original data member
+   * do not affect the original data member.
    * @return HashMap
    */
   public synchronized HashMap getParams() {
-    return new HashMap(_params);
+    return new HashMap(_params.getParamsMap());
   }
 
 
@@ -103,30 +109,35 @@ public class DLS implements LocalOptimizerIntf {
 	 * <CODE>minimize(f)</CODE>.
    */
   public synchronized void setParams(HashMap p) throws OptimizerException {
-    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    if (_f!=null) 
+			throw new OptimizerException("cannot modify parameters while running");
     if (_setParamsFromSameThreadOnly) {
       if (Thread.currentThread()!=_originatingThread)
-        throw new OptimizerException("Current Thread is not allowed to call setParams() on this DLS.");
+        throw new OptimizerException("Current Thread is not allowed to call "+
+					                           "setParams() on this DLS.");
     }
-    _params = null;
-    _params = new HashMap(p);  // own the params
+    _params = new Params(p);  // own the params
     try {
-      _c2amaker = (Chromosome2ArgMakerIntf) _params.get("dls.c2amaker");
+      _c2amaker = (Chromosome2ArgMakerIntf) _params.getObject("dls.c2amaker");
     }
     catch (ClassCastException e) {
-      throw new OptimizerException("dls.c2amaker must be a Chromosome2ArgMakerIntf object");
+      throw new OptimizerException("dls.c2amaker must be a "+
+				                           "Chromosome2ArgMakerIntf object");
     }
     try {
-      _a2cmaker = (Arg2ChromosomeMakerIntf) _params.get("dls.a2cmaker");
+      _a2cmaker = (Arg2ChromosomeMakerIntf) _params.getObject("dls.a2cmaker");
     }
     catch (ClassCastException e) {
-      throw new OptimizerException("dls.a2cmaker must be a Arg2ChromosomeMakerIntf object");
+      throw new OptimizerException("dls.a2cmaker must be a "+
+				                           "Arg2ChromosomeMakerIntf object");
     }
     try {
-      _allmovesmaker = (AllChromosomeMakerIntf) _params.get("dls.movesmaker");
+      _allmovesmaker = 
+				(AllChromosomeMakerIntf) _params.getObject("dls.movesmaker");
     }
     catch (ClassCastException e) {
-      throw new OptimizerException("dls.a2cmaker must be a AllChromosomeMakerIntf object");
+      throw new OptimizerException("dls.movesmaker must be a "+
+				                           "AllChromosomeMakerIntf object");
     }
   }
 
@@ -142,7 +153,9 @@ public class DLS implements LocalOptimizerIntf {
 
 
   /**
-   * The most important method of the class.
+   * The most important method of the class is essentially a best-first search
+	 * with no backtracking -essentially, a discrete greedy (steepest descent) 
+	 * method.
    * Prior to calling this method, some parameters must have been set, either
    * during construction of the object, or via a call to setParams(p).
    * The parameters are as follows:
@@ -174,6 +187,10 @@ public class DLS implements LocalOptimizerIntf {
 	 * Default is null, which results in the chromosome objects being passed 
 	 * "as-is" to the FunctionIntf object being minimized.
    * </ul>
+	 * Notice that for all keys above, if the exact key of the form "dls.X" is not 
+	 * found in the params, then the params will be searched for key "X" alone, so
+	 * that if key "X" exists in the params, it will be assumed that its value
+	 * corresponds to the value of "dls.X" originally sought.
    * <p>The result is a PairObjDouble object that contains the best function arg.
    * along with the minimum function value obtained by this argument (or null
    * if the process fails to find any valid function argument).</p>
@@ -187,35 +204,28 @@ public class DLS implements LocalOptimizerIntf {
    */
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
 		if (f==null) throw new OptimizerException("DLS.minimize(f): null f");
+    HashMap p = null;
     try {
       int nt = 1;
       int max_iters = Integer.MAX_VALUE;
       synchronized (this) {
-        if (_f != null)throw new OptimizerException("DLS.minimize(): "+
-          "another thread is concurrently executing the method on the same object");
+        if (_f != null)
+					throw new OptimizerException("DLS.minimize(): another thread is "+
+						                           "concurrently executing the method on "+
+					                             "the same object");
         _f = f;
         reset();
-        try {
-          Integer ntI = (Integer) _params.get("dls.numthreads");
-          if (ntI != null) nt = ntI.intValue();
-        }
-        catch (ClassCastException e) {
-          e.printStackTrace();
-        }
+        Integer ntI = (Integer) _params.getInteger("dls.numthreads");
+        if (ntI != null) nt = ntI.intValue();
         if (nt < 1)throw new OptimizerException(
             "DLS.minimize(): invalid number of threads specified");
       }
-      try {
-        Integer niI = (Integer) _params.get("dls.maxiters");
-        if (niI != null) max_iters = niI.intValue();
-      }
-      catch (ClassCastException e) {
-        e.printStackTrace();
-      }
-
-      Object x0 = _params.get("dls.x0");
+      Integer niI = (Integer) _params.getInteger("dls.maxiters");
+      if (niI != null) max_iters = niI.intValue();
+      Object x0 = _params.getObject("dls.x0");
       if (x0==null) {
-        throw new OptimizerException("no initial point (with key dls.x0) specified in params");
+        throw new OptimizerException("no initial point (with key 'dls.x0') "+
+					                           "specified in params");
       }
       // do the work
       try {
@@ -227,8 +237,8 @@ public class DLS implements LocalOptimizerIntf {
         catch (ParallelException e) {
           // no-op: never happens
         }
-        HashMap p = getParams();
         Object x = x0;
+				p = getParams();
         try {
           _incValue = _f.eval(x, p);
           if (_a2cmaker!=null) _inc = _a2cmaker.getChromosome(x0, p);
@@ -242,9 +252,9 @@ public class DLS implements LocalOptimizerIntf {
         boolean cont = true;
 				Messenger mger = Messenger.getInstance();
         while (i++ < max_iters && cont) {
-          mger.msg("LocalSearch: executing iteration "+i,1);
-          // createAllChromosomes(x,p) can be, and usually is, the hardest computing task
-          // therefore, should be parallelized whenever possible
+          mger.msg("DLS.minimize(): executing iteration "+i,1);
+          // createAllChromosomes(x,p) can be, and usually is, the hardest 
+					// computing task therefore, should be parallelized whenever possible
           Vector newchromosomes = _allmovesmaker.createAllChromosomes(x, p);
           if (newchromosomes==null || newchromosomes.size()==0) break;
           Vector newtasks = new Vector();
@@ -253,16 +263,17 @@ public class DLS implements LocalOptimizerIntf {
             if (_c2amaker == null || _c2amaker instanceof IdentityC2ArgMaker)
               arg = newchromosomes.elementAt(j);
             else arg = _c2amaker.getArg(newchromosomes.elementAt(j),p);
-            FunctionEvaluationTask ftj = new FunctionEvaluationTask(getFunction(),
-                                                                    arg,p);
+            FunctionEvaluationTask ftj = 
+							new FunctionEvaluationTask(getFunction(),arg,p);
             newtasks.add(ftj);
           }
           executor.executeBatch(newtasks);  // blocking
           cont = false;
           for (int j=0; j<newtasks.size(); j++) {
-            FunctionEvaluationTask ftj = (FunctionEvaluationTask) newtasks.elementAt(j);
+            FunctionEvaluationTask ftj = 
+							(FunctionEvaluationTask) newtasks.elementAt(j);
             if (ftj.isDone()==false) {  // this task failed to evaluate
-							System.err.println("Task "+ftj+" failed to evaluate???");  // itc: HERE rm asap
+							mger.msg("DLS.minimize(): Task "+ftj+" failed to evaluate???",2);
 							continue;
 						}  
             double ftjval = ftj.getObjValue();
@@ -287,10 +298,10 @@ public class DLS implements LocalOptimizerIntf {
 
       synchronized (this) {
         if (_inc==null)
-          throw new OptimizerException("DLS.minimize(f): failed to find a solution");
+          throw new OptimizerException("DLS.minimize(f): "+
+						                           "failed to find solution");
         Object arg = _inc;
-        if (_c2amaker != null)
-          arg = _c2amaker.getArg(_inc, _params);
+        if (_c2amaker != null) arg = _c2amaker.getArg(_inc, p);
         return new PairObjDouble(arg, _incValue);
       }
     }

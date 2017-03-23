@@ -1,5 +1,6 @@
 package popt4jlib.GradientDescent;
 
+import popt4jlib.LocalOptimizerIntf;
 import java.util.*;
 import utils.*;
 import analysis.*;
@@ -22,7 +23,7 @@ public class PolakRibiereConjugateGradient implements LocalOptimizerIntf {
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
   FunctionIntf _f;
-  private PRCGThread[] _threads=null;
+  private transient PRCGThread[] _threads=null;
   private int _numOK=0;
   private int _numFailed=0;
 
@@ -91,7 +92,7 @@ public class PolakRibiereConjugateGradient implements LocalOptimizerIntf {
 	 * <li>&lt;"prcg.numtries", ntries&gt; optional, the number of initial 
 	 * starting points to use (must either exist then ntries 
 	 * &lt;"prcg.x$i$",VectorIntf v&gt; pairs in the parameters or a pair 
-	 * &lt;"gradientdescent.x0",VectorIntf v&gt; pair in params). Default is 1.
+	 * &lt;"[gradientdescent.]x0",VectorIntf v&gt; pair in params). Default is 1.
    * <li>&lt;prcg.numthreads", Integer nt&gt; optional, the number of threads to 
 	 * use. Default is 1.
    * <li>&lt;"prcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f, 
@@ -331,9 +332,12 @@ class PRCGThread extends Thread {
   private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("prcg.gradient");
     if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
-    final VectorIntf x0 = p.containsKey("prcg.x"+solindex) ?
-                          (VectorIntf) p.get("prcg.x"+solindex) : 
-			                    (VectorIntf) p.get("gradientdescent.x0");  // attempt to retrieve generic point
+    final VectorIntf x0 = 
+			p.containsKey("prcg.x"+solindex)==false ?
+         p.containsKey("gradientdescent.x0") ? 
+			    (VectorIntf) p.get("gradientdescent.x0") : 
+			      p.containsKey("x0") ? (VectorIntf) p.get("x0") : null // attempt to retrieve generic point
+			: (VectorIntf) p.get("prcg.x"+solindex);
     if (x0==null) throw new OptimizerException("no prcg.x"+solindex+" initial point in _params passed");
     VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
     final int n = x.getNumCoords();

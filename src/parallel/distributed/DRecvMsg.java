@@ -60,11 +60,12 @@ public class DRecvMsg implements DMsgIntf {
     try {
       if (_fromId != null) data = (Serializable) coord.recvData(_myId.intValue(), _fromId.intValue());
       else data = (Serializable) coord.recvData(_myId.intValue());
+			oos.reset();  // force object to be written anew
       oos.writeObject(data);
       oos.flush();
     }
     catch (ParallelException e) {  // indicate failure to remote client
-      oos.writeObject(new FailedReply());
+      oos.writeObject(new FailedReply());  // no need for oos.reset() first
       oos.flush();
       throw e;
     }

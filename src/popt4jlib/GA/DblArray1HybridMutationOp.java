@@ -1,7 +1,7 @@
 package popt4jlib.GA;
 
 import popt4jlib.*;
-import popt4jlib.GradientDescent.LocalOptimizerIntf;
+import popt4jlib.LocalOptimizerIntf;
 import utils.*;
 import java.util.*;
 

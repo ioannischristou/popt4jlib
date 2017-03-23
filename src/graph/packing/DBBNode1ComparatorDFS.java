@@ -24,11 +24,11 @@ public class DBBNode1ComparatorDFS implements DBBNodeComparatorIntf {
 
 	/**
 	 * compares two DBBNode1 objects according to their current weight.
-	 * @param o1 DBBNode1
-	 * @param o2 DBBNode1
+	 * @param o1 DBBNodeBase  // really, DBBNode1
+	 * @param o2 DBBNodeBase  // really, DBBNode1
 	 * @return int // -1, 0 or +1
 	 */
-  public int compare(DBBNode1 o1, DBBNode1 o2) {
+  public int compare(DBBNodeBase o1, DBBNodeBase o2) {
     try {
       double sct = o1.getCost();  // used to be o1.getNodes().size();
       double osct = o2.getCost();  // used to be o2.getNodes().size();
@@ -37,8 +37,8 @@ public class DBBNode1ComparatorDFS implements DBBNodeComparatorIntf {
       // else if (ct == oct) {
       if (ct_oct_comp<0) return -1;
       else if (ct_oct_comp==0) {
-        Set to = o2.getNodeIds();
-        Iterator it = o1.getNodeIds().iterator();
+        Set to = o2.getNodeIdsAsSet();
+        Iterator it = o1.getNodeIdsAsSet().iterator();
         Iterator oit = to.iterator();
         while (it.hasNext()) {
           Integer mi = (Integer) it.next();

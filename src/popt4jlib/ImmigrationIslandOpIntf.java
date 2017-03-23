@@ -7,12 +7,15 @@
 package popt4jlib;
 
 import java.util.HashMap;
+import java.io.Serializable;
 
 
 /**
  * interface that may be used in island models of population-based optimization
  * meta-heuristics, allowing for the customization of the island migration 
  * topologies.
+ * Extends the <CODE>java.io.Serializable</CODE> interface so that implementing 
+ * objects can be transported across JVMs in distributed computation.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2016</p>
@@ -20,7 +23,7 @@ import java.util.HashMap;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public interface ImmigrationIslandOpIntf {
+public interface ImmigrationIslandOpIntf extends Serializable {
 	
 	/**
 	 * get the id of the island to which the island with id=myid should send 

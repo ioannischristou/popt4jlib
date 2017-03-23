@@ -94,7 +94,9 @@ final class BBTree {
       Thread.currentThread().sleep(100);
 			int num_busy_threads = _q.getNumBusyThreads();
 			++num_checks;
-			avg_num_busy_threads = ((num_checks-1)*avg_num_busy_threads+num_busy_threads)/(double)num_checks;
+			avg_num_busy_threads = 
+				((num_checks-1)*avg_num_busy_threads+num_busy_threads) /
+				(double)num_checks;
     }
 		System.err.println("avg_num_busy_threads="+avg_num_busy_threads);
     System.out.println("Soln found: "+getBound());  // keep FindBugs happy...

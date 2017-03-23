@@ -1,5 +1,6 @@
 package tests;
 
+import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.*;
 import popt4jlib.SA.*;
 import popt4jlib.GradientDescent.*;
@@ -25,19 +26,20 @@ public class DSATest {
 
 
   /**
-   * run as <CODE> java -cp &lt;classpath&gt; tests.DSATest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>
-   * where the params_file must contain lines of the following form:
+   * run as <CODE> java -cp &lt;classpath&gt; tests.DSATest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>.
+   * The params_file must contain lines of the following form:
 	 * <ul>
-   * <li> class,dsa.function, &lt;fullclasspathname&gt;  mandatory, the java class
-   * name defining the function to be optimized, which must accept
+   * <li> class,dsa.function, &lt;fullclasspathname&gt;  mandatory, the java 
+	 * class name defining the function to be optimized, which must accept
    * as arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
    * objects.
-   * <li> class,dsa.randomchromosomemaker, &lt;fullclassname&gt; mandatory the class
-   * name of a RandomChromosomeMakerIntf object responsible for implementing the
-   * interface that allows creating random initial chromosome objects.
-   * <li> class,dsa.movemaker, &lt;fullclassname&gt; mandatory, the  object responsible
-   * for implementing the interface NewChromosomeMakerIntf that allows creating
-   * new chromosome Objects from an existing one (makes a move).
+   * <li> class,dsa.randomchromosomemaker, &lt;fullclassname&gt; mandatory the 
+	 * class name of a RandomChromosomeMakerIntf object responsible for 
+	 * implementing the interface that allows creating random initial chromosome 
+	 * objects.
+   * <li> class,dsa.movemaker, &lt;fullclassname&gt; mandatory, the  object 
+	 * responsible for implementing the interface NewChromosomeMakerIntf that 
+	 * allows creating new chromosome Objects from an existing one (makes a move).
    * <li> dsa.numouteriters, $num$ optional, the total number of "generations"
    * i.e. outer iterations to run, default is 100.
    * <li> dsa.numthreads, $num$ optional, the number of threads representing
@@ -51,25 +53,31 @@ public class DSATest {
    * Objects used in the evolutionary process -and manipulated by the Object
    * implementing the NewChromosomeMakerIntf interface- into argument Objects
    * that can be passed into the FunctionIntf object that the process minimizes.
-   * Default is null, which results in the chromosome objects being passed "as-is"
-   * to the FunctionIntf object being minimized.
+   * Default is null, which results in the chromosome objects being passed 
+	 * "as-is" to the FunctionIntf object being minimized.
    * <li> dsa.numtriesperiter, $num$ optional, the number of
    * iterations each thread will run before communicating its incumbent solution
    * to all others, and get the best overall incumbent -among running threads-
    * to continue with, default is 100.
-   * <li> class,dsa.schedule, &lt;fullclasspathname&gt; optional, class name of the
-   * object implementing the SAScheduleIntf that determines the temperature at
-   * each "generation" i.e. outer iteration. Default is LinScaleSchedule, that
+   * <li> class,dsa.schedule, &lt;fullclasspathname&gt; optional, class name of 
+	 * the object implementing the SAScheduleIntf that determines the temperature 
+	 * at each "generation" i.e. outer iteration. Default is LinScaleSchedule that
    * can be configured by the following two optional parameters:
+	 * <ul>
    * <li> dsa.T0, $num$ optional, initial temperature, default is 1000.0
    * <li> dsa.K, $num$ optional, the "Boltzman constant", default is 20.0
+	 * </ul>
+   * <li> class,dsa.localoptimizer,&lt;fullclasspathname&gt;[,args] optional 
+	 * the java class name of an object implementing the LocalOptimizerIntf 
+	 * defined in the popt4jlib package, to be used as further optimizer of
+   * the best solution found by the SA process.
    * </ul>
    * <p> if the second optional argument is passed in, it overrides the random
-   * seed specified in the params_file.
+   * seed specified in the params_file.</p>
    * <p> The optional third argument, if present, overrides any max. limit set
    * on the number of function evaluations allowed. After this limit, the
    * function will always return Double.MAX_VALUE instead, and won't increase
-   * the evaluation count.
+   * the evaluation count.</p>
    *
    * @param args String[]
    */

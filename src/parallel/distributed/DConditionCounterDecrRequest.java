@@ -45,6 +45,7 @@ public class DConditionCounterDecrRequest implements DMsgIntf {
   public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
     DConditionCounter.getInstance().decrement(_num);
     // ok, handling thread on server decreased the associated unique CondCounter
+		// no need for reset
     oos.writeObject(new OKReply());
     oos.flush();
   }

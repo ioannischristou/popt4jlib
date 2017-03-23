@@ -62,13 +62,24 @@ public class BoolVectorTest {
 				one.set(j, j%10==0);
 				two.set(j, j%100==0);
 			}
-			*/
 			long start = System.currentTimeMillis();
 			one.andParallel2(two);
 			two.andParallel2(three);
 			three.andParallel2(one);
 			dur += (System.currentTimeMillis()-start);
+			*/
 		}
-		System.out.println("total duration for andParallel2()="+dur);
+		//System.out.println("total duration for andParallel2()="+dur);
+		
+		// test for containsAll
+		one.clear();
+		for (int i=0; i<one.capacity(); i++) {
+			one.set(i);
+			if (i>0) one.unset(i-1);
+			System.out.println("#try="+i+" one="+one+" last bit set="+one.lastSetBit());
+		}
+		one.unset(one.capacity()-1);
+		System.out.println("Last-try:"+" one="+one+" last bit set="+one.lastSetBit());
+		
 	}
 }

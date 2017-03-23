@@ -31,13 +31,19 @@ public class DConditionCounterResetRequest implements DMsgIntf {
    * @throws ParallelException
    * @throws IOException
    */
-  public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
+  public void execute(ObjectOutputStream oos) 
+		throws ParallelException, IOException {
     DConditionCounter.getInstance().reset();
     // ok, handling thread on server reset the associated unique CondCounter
+		// no need for reset
     oos.writeObject(new OKReply());
     oos.flush();
   }
 
+	/**
+	 * return &quot;DConditionCounterResetRequest()&quot;.
+	 * @return String
+	 */
   public String toString() {
     return "DConditionCounterResetRequest()";
   }

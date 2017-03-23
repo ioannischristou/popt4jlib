@@ -1,5 +1,6 @@
 package tests;
 
+import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.*;
 import popt4jlib.PS.*;
 import popt4jlib.GradientDescent.*;
@@ -34,7 +35,7 @@ public class DPSOTest {
    * <CODE>popt4jlib.FunctionIntf</CODE> interface.)
    * <li> class,dpso.localoptimizer, &lt;fullclassname&gt; optional, if present,
    * specifies the full java class name of the class implementing the
-   * <CODE>popt4jlib.GradientDescent.LocalOptimizerIntf</CODE> interface that
+   * <CODE>popt4jlib.LocalOptimizerIntf</CODE> interface that
    * will be used to post-optimize the DPSO search, starting from the best
    * solution the DPSO process will find.
    * <li> class,dpso.randomparticlemaker, &lt;fullclassname&gt;, mandatory, the

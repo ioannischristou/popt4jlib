@@ -172,11 +172,10 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
   public void executeBatch(Collection tasks) throws ParallelException, ParallelExceptionUnsubmittedTasks {
     if (tasks == null)return;
     Iterator it = tasks.iterator();
-    if (isRunning() == false)
-      throw new ParallelException("thread-pool is not running");
     Vector unsubmitted_tasks = new Vector();  // tasks that couldn't be submitted
     Vector tasks_to_run = new Vector();  // tasks to run on same thread
     synchronized (this) {
+			if (!_isRunning) throw new ParallelException("thread-pool not running");
       while (it.hasNext()) {
         Object t = null;
         ComparableTaskObject task = null;
@@ -233,10 +232,9 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    */
   public boolean execute(ComparableTaskObject task) throws ParallelException {
     if (task == null)return false;
-    if (isRunning() == false)
-      throw new ParallelException("thread-pool is not running");
     boolean res = true;
     synchronized (this) {
+			if (!_isRunning) throw new ParallelException("thread-pool not running");
       if ( (!_runOnCurrent && existsRoom()) || existsIdleThread()) { // ok
         _spmpc.sendDataBlocking(task);
       }
@@ -294,10 +292,8 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * return the number of threads in the thread-pool.
    * @return int
    */
-  public int getNumThreads() {
-    if (_threads!=null)
-      return _threads.length;
-    else return 0;
+  public synchronized int getNumThreads() {
+     return _threads.length;
   }
 
 	
@@ -336,9 +332,6 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
     }
     return false;
   }
-
-
-  private synchronized boolean isRunning() { return _isRunning; }
 
 
   private synchronized static int getNextObjId() { return ++_nextId; }

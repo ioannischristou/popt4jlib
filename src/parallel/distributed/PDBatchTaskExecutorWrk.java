@@ -63,42 +63,52 @@ public class PDBatchTaskExecutorWrk {
     ObjectOutputStream oos=null;
     PDBatchTaskExecutor executor=null;
     try {
-      System.out.println("Wrk: About to Connect to Srv at address(host,port)=("+_host+","+_port+")");
+      System.out.println("Wrk: About to Connect to Srv at address(host,port)=("+
+		                     _host+","+_port+")");
       System.out.flush();
       _s = new Socket(_host, _port);
       utils.Messenger.getInstance().msg("Wrk: socket created",1);
       oos = new ObjectOutputStream(_s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(_s.getInputStream());
-      System.out.println("Wrk: Connected to Srv at address(host,port)=("+_host+","+_port+")");
+      System.out.println("Wrk: Connected to Srv at address(host,port)=("+
+			                   _host+","+_port+")");
       System.out.flush();
       executor = PDBatchTaskExecutor.newPDBatchTaskExecutor(_numthreads);
       while (true) {
         try {
           // get a request
-          utils.Messenger.getInstance().msg("Wrk: waiting to read a TaskObjectsExecutionRequest",2);
-          TaskObjectsExecutionRequest req = (TaskObjectsExecutionRequest) ois.readObject();
-          utils.Messenger.getInstance().msg("Wrk: got a TaskObjectsExecutionRequest",2);
+          utils.Messenger.getInstance().msg(
+	          "Wrk: waiting to read a TaskObjectsExecutionRequest",2);
+          TaskObjectsExecutionRequest req = 
+						(TaskObjectsExecutionRequest) ois.readObject();
+          utils.Messenger.getInstance().msg(
+						"Wrk: got a TaskObjectsExecutionRequest",2);
           if (req!=null) {
             Vector tasks = new Vector();
             for (int i=0; i<req._tasks.length; i++)
               tasks.addElement(req._tasks[i]);
             //  process the request and get back results
             Vector results = executor.executeBatch(tasks);
-            utils.Messenger.getInstance().msg("Wrk: finished processing the TaskObjectsExecutionRequest",2);
+            utils.Messenger.getInstance().msg(
+							"Wrk: finished processing the TaskObjectsExecutionRequest",2);
             Object[] arr = new Object[results.size()];
             for (int i=0; i<results.size(); i++) {
-              arr[i] = results.elementAt(i);
+              arr[i] = results.get(i);
             }
-            TaskObjectsExecutionResults res = new TaskObjectsExecutionResults(arr);
-            oos.writeObject(res);
+            TaskObjectsExecutionResults res = 
+							new TaskObjectsExecutionResults(arr);
+            oos.reset();  // force object to be written anew
+						oos.writeObject(res);
             oos.flush();
-            utils.Messenger.getInstance().msg("Wrk: sent a TaskObjectsExecutionResults response",2);
+            utils.Messenger.getInstance().msg(
+							"Wrk: sent a TaskObjectsExecutionResults response",2);
           }
         }
         catch (SocketException e) {
           //e.printStackTrace();
-          utils.Messenger.getInstance().msg("Socket Exception caught.Exiting.",0);
+          utils.Messenger.getInstance().msg(
+						"Socket Exception caught.Exiting.",0);
           break;
         }
         catch (IOException e2) {
@@ -127,14 +137,18 @@ public class PDBatchTaskExecutorWrk {
           e2.printStackTrace();
         }
       }
-      utils.Messenger.getInstance().msg("Wrk: Closed Connection to Srv at address(host,port)=("+_host+","+_port+")",0);
+      utils.Messenger.getInstance().msg(
+				"Wrk: Closed Connection to Srv at address(host,port)=("+
+				_host+","+_port+")",0);
     }
   }
 
 
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBatchTaskExecutorWrk [numthreads(10)] [host(localhost)] [port(7890)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; 
+	 * parallel.distributed.PDBatchTaskExecutorWrk 
+	 * [numthreads(10)] [host(localhost)] [port(7890)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -171,7 +185,8 @@ public class PDBatchTaskExecutorWrk {
         System.exit(-1);
       }
     }
-    PDBatchTaskExecutorWrk worker = new PDBatchTaskExecutorWrk(numthreads, host, port);
+    PDBatchTaskExecutorWrk worker = 
+			new PDBatchTaskExecutorWrk(numthreads, host, port);
     try {
       worker.run();
     }
@@ -183,7 +198,9 @@ public class PDBatchTaskExecutorWrk {
 
 
   private static void usage() {
-    System.err.println("usage: java -cp <classpath> parallel.distributed.PDBatchTaskExecutorWrk [numthreads(10)] [host(localhost)] [port(7890)]");
+    System.err.println("usage: java -cp <classpath> "+
+			                 "parallel.distributed.PDBatchTaskExecutorWrk "+
+			                 "[numthreads(10)] [host(localhost)] [port(7890)]");
   }
 
 }

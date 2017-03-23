@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package parallel;
 import utils.Pair;
 import java.util.HashMap;
@@ -12,15 +6,12 @@ import java.util.Comparator;
 
 /**
  * a bounded-length Min-Heap data structure, supporting insert/remove-min/
- * decrease-key operations in O((logN)^2) time. All methods are unsynchronized 
+ * decrease-key operations in O(logN) time. All methods are unsynchronized 
  * for efficiency reasons. The implementation uses standard array-based complete 
  * binary tree. For more information see ch. 6 in: 
  * "M.A. Weiss, Data Structures and Algorithm Analysis in C++, Addison-Wesley,
  * Upper Saddle River, NJ, 2014". This class is used in shortest-path computing
- * in the <CODE>graph.Graph</CODE> class. Notice that the (logN)^2 time is due
- * to the need to support the decrease-key operation (needed for updating the
- * elements inside the min-heap), which requires a hash-table to maintain 
- * element positions in the heap array store.
+ * in the <CODE>graph.Graph</CODE> class. 
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2017</p>
@@ -86,7 +77,8 @@ public class BoundedMinHeapUnsynchronized {
 	
 	/**
 	 * adds an element to this heap. Duplicates are not allowed. 
-	 * Time complexity is O((logN)^2) where N is the size of this heap.
+	 * Time complexity is O(logN) where N is the size of this heap (assuming O(1)
+	 * complexity for hash-map operations <CODE>containsKey(),put()</CODE>).
 	 * @param o Object must be comparable via this object's comparator member 
 	 * (<CODE>_comp</CODE>)
 	 * @throws IndexOutOfBoundsException if min-heap is full
@@ -130,9 +122,10 @@ public class BoundedMinHeapUnsynchronized {
 	/**
 	 * find the object key in the min-heap, and move it up so that its position
 	 * matches the position for the value of the update object. Time complexity is 
-	 * O((logN)^2) where N is the size of this heap.
-	 * @param key
-	 * @param update 
+	 * O(logN) where N is the size of this heap, assuming O(1) complexity for 
+	 * hash-map operations <CODE>remove(),get(),put()</CODE>.
+	 * @param key Object the object to be updated in this min-heap
+	 * @param update Object the updated object that replaces the key above
 	 * @throws IllegalArgumentException if key doesn't exist in the min-heap
 	 */
 	public void decreaseKey(Object key, Object update) {
@@ -144,10 +137,25 @@ public class BoundedMinHeapUnsynchronized {
 			_positions.put(_heap[hole], new Integer(hole));
 		}
 		_heap[hole] = _heap[0];
-		_positions.put(key, new Integer(hole));
+		_positions.remove(key);
+		_positions.put(update, new Integer(hole));  // used to be put(key,hole);
 		_heap[0] = null;  // 0 position is only used for temporary storage
 	}
 	
+	
+	/**
+	 * return a String representation of the elements in this min-heap.
+	 * @return String
+	 */
+	public String toString() {
+		String res = "";
+		for (int i=0; i<_curSize; i++) {
+			res += _heap[i];
+			if (i<_curSize-1) res += ",";
+		}
+		return res;
+	}
+		
 	
 	/**
 	 * find the index in the store where key is stored.
@@ -158,7 +166,8 @@ public class BoundedMinHeapUnsynchronized {
 	private int findPos(Object key) throws IllegalArgumentException {
 		Integer hole = (Integer) _positions.get(key);
 		if (hole!=null) return hole.intValue();
-		throw new IllegalArgumentException("key "+key+" not found in min-heap");
+		throw new IllegalArgumentException("key "+key+" not found in min-heap"+
+			                                 "\nHeap is: "+toString());
 	}
 	
 	

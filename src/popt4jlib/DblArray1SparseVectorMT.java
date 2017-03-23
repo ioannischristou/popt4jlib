@@ -18,7 +18,8 @@ import java.io.Serializable;
  * same operations when operating with a DblArray1Vector (where the operations
  * are O(1) -constant time simple memory accesses).
  * Notice also that the class is thread-safe but quite expensive. A faster but
- * not thread-safe implementation is DblArray1SparseVector.
+ * not thread-safe implementation is DblArray1SparseVector. Also notice that 
+ * this class does not support default-values other than zero for components.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -29,8 +30,13 @@ import java.io.Serializable;
 public class DblArray1SparseVectorMT extends DblArray1SparseVector {
   private static final long serialVersionUID = -303574319696853810L;
   private static PDBatchTaskExecutor _executor=null;
-  private static final double MIN_REQ_ILEN = 1000;  // min length to warrant parallel processing
-  private transient DMCoordinator _rwLocker=null;
+  private static final double MIN_REQ_ILEN = 1000;  // min length to warrant 
+	                                                  // parallel processing
+  private DMCoordinator _rwLocker=null;  // if a thread has any lock on this
+	                                       // object while it is serialized, an
+	                                       // exception will be thrown, as the
+	                                       // _rwLocker will contain references to
+	                                       // Thread objects that don't serialize
 
 
   /**
@@ -40,21 +46,25 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    */
   public DblArray1SparseVectorMT(int n) throws IllegalArgumentException {
     super(n);
-    _rwLocker = DMCoordinator.getInstance("DblArray1SparseVectorMT"+DataMgr.getUniqueId());
+    _rwLocker = DMCoordinator.getInstance("DblArray1SparseVectorMT"+
+			                                    DataMgr.getUniqueId());
   }
 
 
   /**
    * public constructor.
    * @param indices int[] must be in ascending order
-   * @param values double[] corresponds to values for each index in the indices array
+   * @param values double[] corresponds to values for each index in the indices 
+	 * array
    * @param n int total length of the vector
    * @throws IllegalArgumentException if any of indices or values is null or if
 	 * they have different lengths or if n&le;indices[indices.length-1].
    */
-  public DblArray1SparseVectorMT(int[] indices, double[] values, int n) throws IllegalArgumentException {
+  public DblArray1SparseVectorMT(int[] indices, double[] values, int n) 
+		throws IllegalArgumentException {
     super(indices, values, n);
-    _rwLocker = DMCoordinator.getInstance("DblArray1SparseVectorMT"+DataMgr.getUniqueId());
+    _rwLocker = DMCoordinator.getInstance("DblArray1SparseVectorMT"+
+			                                    DataMgr.getUniqueId());
   }
 
 
@@ -67,9 +77,49 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * @param multFactor double
    * @throws IllegalArgumentException same as 3-argument constructor 
    */
-  public DblArray1SparseVectorMT(int[] indices, double[] values, int n, double multFactor) throws IllegalArgumentException {
+  public DblArray1SparseVectorMT(int[] indices, double[] values, int n, 
+		                             double multFactor) 
+		throws IllegalArgumentException {
     super(indices, values, n, multFactor);
-    _rwLocker = DMCoordinator.getInstance("DblArray1SparseVectorMT"+DataMgr.getUniqueId());
+    _rwLocker = DMCoordinator.getInstance("DblArray1SparseVectorMT"+
+			                                    DataMgr.getUniqueId());
+  }
+
+	
+  /**
+   * private constructor.
+   * @param indices int[] must be in ascending order
+   * @param values double[] corresponds to values for each index in the indices 
+	 * array
+   * @param n int total length of the vector
+	 * @param ilen int
+   * @throws IllegalArgumentException if any of indices or values is null or if
+	 * they have different lengths or if n&le;indices[indices.length-1].
+   */
+  private DblArray1SparseVectorMT(int[] indices, double[] values, int n, 
+		                              int ilen) throws IllegalArgumentException {
+    super(0.0, indices, values, n, ilen);
+    _rwLocker = DMCoordinator.getInstance("DblArray1SparseVectorMT"+
+			                                    DataMgr.getUniqueId());
+  }
+
+	
+  /**
+   * private constructor making a copy of the vector passed in and multiplying
+   * each element by the multFactor passed in.
+   * @param indices int[] elements must be in ascending order
+   * @param values double[]
+   * @param n int total length of the vector
+   * @param multFactor double
+	 * @param ilen int
+   * @throws IllegalArgumentException same as 3-argument constructor 
+   */
+  private DblArray1SparseVectorMT(int[] indices, double[] values, int n, 
+		                              double multFactor, int ilen) 
+		throws IllegalArgumentException {
+    super(indices, values, n, multFactor, 0.0, ilen);
+    _rwLocker = DMCoordinator.getInstance("DblArray1SparseVectorMT"+
+			                                    DataMgr.getUniqueId());
   }
 
 
@@ -83,7 +133,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
 
   /**
    * release the read-lock associated with this vector.
-   * @throws ParallelException if the current thread doesn't have the read-lock.
+   * @throws ParallelException if the current thread doesn't have the read-lock
    */
   public void releaseReadLock() throws ParallelException {
     _rwLocker.releaseReadAccess();
@@ -103,7 +153,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
 
   /**
    * release the read-lock associated with this vector.
-   * @throws ParallelException if the current thread doesn't have the write-lock.
+   * @throws ParallelException if the current thread doesn't have the write-lock
    */
   public void releaseWriteLock() throws ParallelException {
     _rwLocker.releaseWriteAccess();
@@ -111,7 +161,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
 
 
   /**
-   * return a new VectorIntf object containing a copy of the data of this object.
+   * return new VectorIntf object containing a copy of the data of this object.
    * @return VectorIntf
    */
   public VectorIntf newCopy() {
@@ -120,7 +170,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
       if (getIndices()==null) {
         return new DblArray1SparseVectorMT(getNumCoords());
       } else return new DblArray1SparseVectorMT(getIndices(), getValues(),
-                                                getNumCoords());
+                                                getNumCoords(), getILen());
     }
     finally {
       try {
@@ -142,9 +192,11 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
   public VectorIntf newCopyMultBy(double multFactor) {
     try {
       _rwLocker.getReadAccess();
-      if (getIndices()==null) return new DblArray1SparseVectorMT(getNumCoords());
+      if (getIndices()==null) 
+				return new DblArray1SparseVectorMT(getNumCoords());
       else return new DblArray1SparseVectorMT(getIndices(), getValues(),
-                                              getNumCoords(), multFactor);
+                                              getNumCoords(), multFactor, 
+				                                      getILen());
     }
     finally {
       try {
@@ -168,7 +220,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
       if (getIndices()==null) {
         return new DblArray1SparseVectorMT(getNumCoords());
       } else return new DblArray1SparseVectorMT(getIndices(), getValues(),
-                                                getNumCoords());
+                                                getNumCoords(), getILen());
     }
     finally {
       try {
@@ -202,10 +254,16 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
     }
     final int ilen = inds.size();
     int[] indices = new int[ilen];
-    for (int i=0; i<ilen; i++) indices[i] = ((Integer) inds.elementAt(i)).intValue();
+    for (int i=0; i<ilen; i++) indices[i] = ((Integer) inds.get(i)).intValue();
     double[] values = new double[ilen];
-    for (int i=0; i<ilen; i++) values[i] = ((Double) vals.elementAt(i)).doubleValue();
-    return new DblArray1SparseVectorMT(indices, values, n);
+    for (int i=0; i<ilen; i++) values[i] = ((Double) vals.get(i)).doubleValue();
+    //return new DblArray1SparseVectorMT(indices, values, n);
+		// faster way below
+		DblArray1SparseVectorMT r = new DblArray1SparseVectorMT(n);
+		r.setIndices(indices);
+		r.setValues(values);
+		r.setILen(ilen);
+		return r;
   }
 
 
@@ -312,9 +370,9 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * set the i-th coordinate of this VectorIntf (i must be in the set
    * {0,1,2,...<CODE>getNumCoords()</CODE>-1}). Repeated calls to this method
    * for indices not in the original contruction of this vector will eventually
-   * destroy its sparsity. Has O(_ilen/NT) worst-case time-complexity where _ilen
-   * is the (max.) number of non-zeros in the array and NT is the number of
-   * cores in the system. The time-complexity reduces to O(log(_ilen)) if the
+   * destroy its sparsity. Has O(_ilen/NT) worst-case time-complexity where 
+	 * _ilen is the (max.) number of non-zeros in the array and NT is the number
+   * of cores in the system. The time-complexity reduces to O(log(_ilen)) if the
    * element to be set, is already non-zero before the operation.
    * @param i int
    * @param val double
@@ -322,8 +380,10 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * @throws ParallelException if a read-lock for this object is already
    * acquired by the current thread and some-other thread as well.
    */
-  public void setCoord(int i, double val) throws IndexOutOfBoundsException, ParallelException {
-    if (i<0 || i>=getNumCoords()) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
+  public void setCoord(int i, double val) 
+		throws IndexOutOfBoundsException, ParallelException {
+    if (i<0 || i>=getNumCoords()) 
+			throw new IndexOutOfBoundsException("index "+i+" out of bounds");
     boolean got_lock=false;
     try {
       _rwLocker.getWriteAccess();
@@ -462,13 +522,13 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
             final int chunk_size = getILen() / nt;
             int k = 0;
             List tasks = new ArrayList();
-            for (int ii = 0; ii < nt - 1; ii++) {
-              SetCoordTask2 ti = new SetCoordTask2(k, k + chunk_size - 1, i, val);
+            for (int ii = 0; ii < nt-1; ii++) {
+              SetCoordTask2 ti = new SetCoordTask2(k, k+chunk_size-1, i, val);
               tasks.add(ti);
               k += chunk_size;
             }
             // last task
-            SetCoordTask2 tlast = new SetCoordTask2(k, getILen() - 1, i, val);
+            SetCoordTask2 tlast = new SetCoordTask2(k, getILen()-1, i, val);
             tasks.add(tlast);
             _executor.executeBatch(tasks);
             incrILen();
@@ -850,10 +910,11 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
 
 
   /**
-   * return true iff the other vector is exactly equal to this. When invoked
-   * with another DblArray1SparseVectorMT argument, the read-locks of both
-   * object (this, and the argument) will be requested, and released in the
-   * same order they were requested.
+   * return true iff the other vector is exactly equal to this, component-wise. 
+	 * When invoked with another DblArray1SparseVectorMT argument, the read-locks 
+	 * of both objects (this, and the argument) will be requested, and released in 
+	 * the same order they were requested. Notice that the class inherits the
+	 * <CODE>hashCode()</CODE> implementation from its super-class.
    * @param other Object
    * @return boolean
    */
@@ -886,7 +947,8 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
    * @param numthreads int
    * @throws ParallelException
    */
-  public synchronized static void setExecutor(int numthreads) throws ParallelException {
+  public synchronized static void setExecutor(int numthreads) 
+		throws ParallelException {
     if (_executor==null) {
       _executor = PDBatchTaskExecutor.newPDBatchTaskExecutor(numthreads);
     }
@@ -909,10 +971,12 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
       _rwLocker.getReadAccess();
       got_lock = true;
       for (int i=0; i<getILen(); i++) {
-        if (Double.compare(getValues()[i], o.getCoord(getIndices()[i]))!=0) return false;
+        if (Double.compare(getValues()[i], o.getCoord(getIndices()[i]))!=0) 
+					return false;
       }
       for (int i=0; i<o.getILen(); i++) {
-        if (Double.compare(o.getValues()[i], getCoord(o.getIndices()[i]))!=0) return false;
+        if (Double.compare(o.getValues()[i], getCoord(o.getIndices()[i]))!=0) 
+					return false;
       }
       return true;
     }
@@ -1076,7 +1140,8 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
       final int[] indices = getIndices();
       final double[] values = getValues();
       double sum = 0.0;
-      for (int i=_start; i<=_end; i++) sum += values[i]*_other.getCoord(indices[i]);
+      for (int i=_start; i<=_end; i++) 
+				sum += values[i]*_other.getCoord(indices[i]);
       synchronized (this) {
         _isDone=true;
       }

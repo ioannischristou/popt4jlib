@@ -44,12 +44,18 @@ public class DRLockGetRequest implements DMsgIntf {
    * @throws IOException
    */
   public void execute(ObjectOutputStream oos) throws IOException {
-		FairDMCoordinator.getInstance(_rwlname).getReadAccess();  // never throws ParallelException
+		FairDMCoordinator.getInstance(_rwlname).getReadAccess();  // never throws
 		// ok, handling thread on server added
+		// no need fo oos.reset() first
 		oos.writeObject(new OKReply());
 		oos.flush();
   }
 
+	
+	/**
+	 * return String representation containing <CODE>_rwlname</CODE> data member.
+	 * @return String
+	 */
   public String toString() {
     return "DRLockGetRequest("+_rwlname+")";
   }

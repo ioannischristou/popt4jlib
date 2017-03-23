@@ -10,7 +10,7 @@ import java.io.*;
  * Not for use as part of the public API (despite the "public" status).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -24,7 +24,7 @@ public class DSendMsg implements DMsgIntf {
 
 
   /**
-   * wraps a sendData(fromid) request -i.e. don't care who the receiver is.
+   * wraps a sendData(fromid) request -ie don't care who the receiver is.
    * @param fromid int
    * @param data Serializable data to send
    * @param coordName String the name of the coordinator to be used by the
@@ -38,7 +38,7 @@ public class DSendMsg implements DMsgIntf {
 
 
   /**
-   * wraps a sendData(fromid, tiid) request -i.e. only send data from this sender
+   * wraps a sendData(fromid, tiid) request -ie only send data from this sender
    * who declared their tid is fromid, to a thread that will declare their tid
    * to be toid.
    * @param fromid int
@@ -55,13 +55,14 @@ public class DSendMsg implements DMsgIntf {
 
   /**
    * sends the data and sends back to the JVM's thread that connected to
-   * the server, via the same socket an <CODE>parallel.distributed.OKReply</CODE>
+   * the server via the same socket an <CODE>parallel.distributed.OKReply</CODE>
    * object.
    * @param oos ObjectOutputStream
    * @throws IOException
    * @throws ParallelException
    */
-  public void execute(ObjectOutputStream oos) throws IOException, ParallelException {
+  public void execute(ObjectOutputStream oos) 
+    throws IOException, ParallelException {
     MsgPassingCoordinator coord = MsgPassingCoordinator.getInstance(_coordName);
     try {
       if (_toId != null) coord.sendData(_fromId.intValue(), _toId.intValue(),
@@ -69,11 +70,11 @@ public class DSendMsg implements DMsgIntf {
       else coord.sendData(_fromId.intValue(), _data);
     }
     catch (ParallelException e) {
-      oos.writeObject(new FailedReply());
+      oos.writeObject(new FailedReply());  // no need for oos.reset() first
       oos.flush();
       throw e;
     }
-    oos.writeObject(new OKReply());
+    oos.writeObject(new OKReply());  // no need for oos.reset() first
     oos.flush();
   }
 }

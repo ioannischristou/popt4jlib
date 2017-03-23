@@ -55,5 +55,19 @@ public class IntSet extends TreeSet implements Comparable, Serializable {
     if (oit.hasNext()) return -1;
     else return 0;
   }
+	
+	
+	public String toString() {
+		String res = "[";
+		Iterator it = super.iterator();
+		while (it.hasNext()) {
+			Integer i = (Integer) it.next();
+			res += i.intValue();
+			if (it.hasNext()) res += ",";
+		}
+		res += "]";
+		return res;
+	}
+	
 }
 

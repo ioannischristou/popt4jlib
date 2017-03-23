@@ -40,7 +40,8 @@ public class GraphPackingEvalFunction implements FunctionIntf {
 	 * @return double specified above
 	 * @throws IllegalArgumentException if arg is not a Set&lt;Node&gt; 
 	 */
-  public double eval(Object arg, HashMap params) throws IllegalArgumentException {
+  public double eval(Object arg, HashMap params) 
+		throws IllegalArgumentException {
     try {
       double val = Double.MAX_VALUE;
       Set s = (Set) arg;

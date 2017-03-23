@@ -44,6 +44,7 @@ public class IntSetN2RXPGraphAllMovesMaker extends IntSetN2RXPAllMovesMaker {
 	 * @param k int specifies the type of problem: 1- or 2-packing problem. 
 	 */
   public IntSetN2RXPGraphAllMovesMaker(int k) {
+		System.err.println("IntSetN2RXPGraphAllMovesMaker("+k+") ctor called.");  // itc: HERE rm asap
 		_k = k;
   }
 	
@@ -65,12 +66,13 @@ public class IntSetN2RXPGraphAllMovesMaker extends IntSetN2RXPAllMovesMaker {
    * @param res Set // TreeSet&lt;IntSet&gt;
    * @param rmids Set // IntSet
    * @param tryids List // List&lt;Integer&gt;
-   * @param maxcard int the maximum cardinality of any of the IntSet's to be returned
+   * @param maxcard int the maximum cardinality of any of the IntSet's to be 
+	 * returned
    * @param params HashMap must contain the pair &lt;"dls.graph", Graph g&gt;
 	 * and may optionally contain a key-value pair
-   * &lt;"dls.createsetsperlevellimit", Integer limit&gt; to cut the search short,
-	 * and optionally a pair &lt;"dls.lock_graph", Boolean val&gt; which if present
-	 * and val is false, indicates no locking of graph elements
+   * &lt;"dls.createsetsperlevellimit", Integer limit&gt; to cut the search 
+	 * short, and optionally a pair &lt;"dls.lock_graph", Boolean val&gt; which if 
+	 * present and val is false, indicates no locking of graph elements
    * @return Set // TreeSet&lt;IntSet&gt;
    */
   protected Set createSets(Set res, Set rmids, List tryids, int maxcard, HashMap params) {
@@ -136,12 +138,13 @@ public class IntSetN2RXPGraphAllMovesMaker extends IntSetN2RXPAllMovesMaker {
 					if (_g==null) {
 						_g = (Graph) params.get("dls.graph");
 						_doLock = params.containsKey("dls.lock_graph") ?
-								            ((Boolean) params.get("dls.lock_graph")).booleanValue() :
-								            true;
+								        ((Boolean)params.get("dls.lock_graph")).booleanValue() :
+								        true;
 					}
 				}
 			}
-      Node n = _doLock ? _g.getNode(tid.intValue()) : _g.getNodeUnsynchronized(tid.intValue());
+      Node n = _doLock ? _g.getNode(tid.intValue()) : 
+				                 _g.getNodeUnsynchronized(tid.intValue());
 			/* slow
 			Set nodes = new TreeSet();
       Iterator xiter = x.iterator();
@@ -181,7 +184,8 @@ public class IntSetN2RXPGraphAllMovesMaker extends IntSetN2RXPAllMovesMaker {
    * @return boolean true iff nj can be added to active
    * @throws ParallelException
    */
-  private boolean isFree2Cover(Node nj, Set active, boolean do_lock) throws ParallelException {
+  private boolean isFree2Cover(Node nj, Set active, boolean do_lock) 
+		throws ParallelException {
     if (active==null) return true;
     if (active.contains(nj)) return false;
 		/* slow
@@ -199,7 +203,8 @@ public class IntSetN2RXPGraphAllMovesMaker extends IntSetN2RXPAllMovesMaker {
 		// /* faster: no need for HashSet's creation
 		Set nborsj = do_lock ? 
 						       (_k==1 ? nj.getNbors() : nj.getNNbors()) : 
-						       (_k==1 ? nj.getNborsUnsynchronized() : nj.getNNborsUnsynchronized());
+						       (_k==1 ? nj.getNborsUnsynchronized() : 
+			                      nj.getNNborsUnsynchronized());
 		Iterator itj = nborsj.iterator();
 		while (itj.hasNext()) {
 			Node nnj = (Node) itj.next();

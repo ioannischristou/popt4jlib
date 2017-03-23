@@ -1,5 +1,6 @@
 package popt4jlib.GradientDescent;
 
+import popt4jlib.LocalOptimizerIntf;
 import java.util.*;
 import utils.*;
 import analysis.*;
@@ -25,7 +26,7 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
   FunctionIntf _f;
-  private FCGThread[] _threads=null;
+  private transient FCGThread[] _threads=null;
   private int _numOK=0;
   private int _numFailed=0;
 
@@ -91,7 +92,7 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
 	 * <ul>
    * <li>&lt;"fcg.numtries", ntries&gt; optional, the number of initial starting points
    * to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; pairs in the
-   * parameters or a pair &lt;"gradientdescent.x0",VectorIntf v&gt; pair in params).
+   * parameters or a pair &lt;"[gradientdescent.]x0",VectorIntf v&gt; pair in params).
    * Default is 1.
    * <li>&lt;fcg.numthreads", Integer nt&gt; optional, the number of threads to use.
    * Default is 1.
@@ -335,9 +336,12 @@ class FCGThread extends Thread {
   private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("fcg.gradient");
     if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
-    final VectorIntf x0 = !p.containsKey("fcg.x"+solindex) ?
-                          (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
-                          (VectorIntf) p.get("fcg.x"+solindex);
+    final VectorIntf x0 = 
+			p.containsKey("fcg.x"+solindex)==false ?
+         p.containsKey("gradientdescent.x0") ? 
+			    (VectorIntf) p.get("gradientdescent.x0") : 
+			      p.containsKey("x0") ? (VectorIntf) p.get("x0") : null // attempt to retrieve generic point
+			: (VectorIntf) p.get("fcg.x"+solindex);
     if (x0==null) throw new OptimizerException("no fcg.x"+solindex+" initial point in _params passed");
     VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
     final int n = x.getNumCoords();

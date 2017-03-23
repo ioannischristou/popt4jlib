@@ -38,10 +38,12 @@ public class DBarrierRequest implements DMsgIntf {
     try {
       ComplexBarrier.getInstance(_bName).barrier();  // enter barrier
       // ok, barrier passed
+			// no need for reset
       oos.writeObject(new OKReply());
       oos.flush();
     }
     catch (ParallelException e) {
+			// again, no need for reset
       oos.writeObject(new FailedReply());
       oos.flush();
       throw e;

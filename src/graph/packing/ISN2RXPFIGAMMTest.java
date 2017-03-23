@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package graph.packing;
 
 import popt4jlib.FunctionIntf;
@@ -22,7 +16,8 @@ import utils.DataMgr;
  */
 public class ISN2RXPFIGAMMTest {
 	/**
-	 * invoke as <CODE>java -cp &lt;classpath&gt; graph.packing.ISN2RXPFIGAMMTest &lt;graph_file&gt; &lt;int_file&gt; [k(1)]</CODE>.
+	 * invoke as <CODE>java -cp &lt;classpath&gt; graph.packing.ISN2RXPFIGAMMTest 
+	 * &lt;graph_file&gt; &lt;int_file&gt; [k(1)]</CODE>.
 	 * @param args String[]
 	 * @throws Exception 
 	 */
@@ -31,9 +26,11 @@ public class ISN2RXPFIGAMMTest {
 		utils.IntSet x0 = DataMgr.readIntegersFromFile(args[1]);
 		int k = 1;
 		if (args.length>2) k = Integer.parseInt(args[2]);
-		IntSetN2RXPGraphAllMovesMaker maker = 
-		  new IntSetN2RXPGraphAllMovesMaker(k);
-    IntSetNeighborhoodFilterIntf filter = new
+		//IntSetN2RXPGraphAllMovesMaker maker = 
+		//  new IntSetN2RXPGraphAllMovesMaker(k);
+    IntSetN2RXPFirstImprovingGraphAllMovesMaker maker =
+			new IntSetN2RXPFirstImprovingGraphAllMovesMaker(1);
+		IntSetNeighborhoodFilterIntf filter = new
       GRASPPackerIntSetNbrhoodFilter3(1,g);
 		java.util.HashMap params = new java.util.HashMap();
 		params.put("dls.graph", g);
@@ -57,8 +54,9 @@ public class ISN2RXPFIGAMMTest {
 		java.util.Vector points = maker.createAllChromosomes(x0, params);
 		for (int i=0; i<points.size(); i++) {
 			utils.IntSet si = (utils.IntSet) points.get(i);
-			System.out.println("si="+si);
+			System.out.println("si="+si+" size="+si.size());
 		}
+		System.out.println("total of "+points.size()+" point-sets created");
 		
 	}
 }

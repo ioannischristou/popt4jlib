@@ -328,7 +328,7 @@ public class DataMgr {
 							}
 							else {
 								// finally, cannot represent as anything else, must be a string
-								argtypes[i] = "".getClass();
+								argtypes[i] = "".getClass();  // String.class ok too
 								argvals[i++] = objval;
 							}
 						}

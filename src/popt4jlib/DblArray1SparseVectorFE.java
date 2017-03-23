@@ -9,7 +9,8 @@ import java.util.Vector;
  * based on the DblArray1SparseVector class but is much faster on getCoord()
  * operations, at the expense of (eventually huge) memory requirements.
  * Notice also that the class is not thread-safe, just like the
- * DblArray1SparseVector class isn't either.
+ * DblArray1SparseVector class isn't either. Also notice that this class does
+ * not support default-values other than zero for components.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -84,6 +85,15 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
     _ilen  = ilen;
   }
 
+	
+	/**
+	 * default value is always zero.
+	 * @return double // zero
+	 */
+	public double getDefaultValue() {
+		return 0;
+	}
+	
 
   /**
    * return a new VectorIntf object containing a copy of the data of this object.
@@ -458,6 +468,15 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
     }
     else return o.equals(this);  // no short-cut
   }
+	
+	
+	/**
+	 * return the integer part of the first element of this vector.
+	 * @return int
+	 */
+	public int hashCode() {
+		return (int) _x[0];
+	}
 
 
   protected int[] getIndices() { return _indices; }

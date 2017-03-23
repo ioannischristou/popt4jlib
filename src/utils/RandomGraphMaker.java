@@ -49,6 +49,7 @@ public class RandomGraphMaker {
 
   private Graph buildUniformRandomDualGraph(String jplotfilename) throws GraphException, ParallelException, FileNotFoundException {
     PrintWriter pw = null;
+		Random rnd = RndUtil.getInstance().getRandom();
     if (jplotfilename!=null && !jplotfilename.equals("null")) {
       pw = new PrintWriter(new FileOutputStream(jplotfilename));
       pw.println("double double");
@@ -59,14 +60,14 @@ public class RandomGraphMaker {
     double[] _y = new double[_numnodes];
     double[] _rs = _uniformr ? new double[_numnodes] : null;
     for (int i = 0; i < _numnodes; i++) {
-      _x[i] = RndUtil.getInstance().getRandom().nextDouble() * _xlen;
-      _y[i] = RndUtil.getInstance().getRandom().nextDouble() * _ylen;
+      _x[i] = rnd.nextDouble() * _xlen;
+      _y[i] = rnd.nextDouble() * _ylen;
     }
     // the following is outside the previous loop so we can generate the same
     // node positions, once for const. radius, and once with uniform distr.
     if (_rs!=null) {
       for (int i = 0; i < _numnodes; i++) {
-        _rs[i] = 0.5*_r + RndUtil.getInstance().getRandom().nextDouble()*_r;
+        _rs[i] = 0.5*_r + rnd.nextDouble()*_r;
       }
     }
     // 2. compute arcs
@@ -75,14 +76,16 @@ public class RandomGraphMaker {
     for (int i=0; i<_numnodes; i++) {
       nbors[i] = new TreeSet();
       for (int j=i+1; j<_numnodes; j++) {
-        if (_uniformr==false && Math.pow(_x[i]-_x[j],2.0)+Math.pow(_y[i]-_y[j],2.0) <= _r*_r) { // i and j are nbors
+        if (_uniformr==false && 
+					  Math.pow(_x[i]-_x[j],2.0)+Math.pow(_y[i]-_y[j],2.0) <= _r*_r) { 
+          // i and j are nbors
           nbors[i].add(new Integer(j));
           ++numarcs;
         }
         else if (_uniformr==true &&
                  Math.pow(_x[i]-_x[j],2.0)+Math.pow(_y[i]-_y[j],2.0)<=
-                 Math.pow(_rs[i]+_rs[j],2.0)) {  // i and j are neighbors
-          // according to the undirected disk graph model
+                 Math.pow(Math.min(_rs[i],_rs[j]),2.0)) {  // used to be _rs[i]+_rs[j]
+          // i and j are neighbors according to the undirected disk graph model
           nbors[i].add(new Integer(j));
           ++numarcs;
         }
@@ -130,7 +133,7 @@ public class RandomGraphMaker {
 					}
 				}
 				// add node weight
-				int num = (int) (dg.getNumNodes()*_r*RndUtil.getInstance().getRandom().nextDouble());
+				int num = (int) (dg.getNumNodes()*_r*rnd.nextDouble());
 				if (num==0) num = 1;
 				dg2.getNode(i).setWeight("value", new Double(num));
 			}
@@ -142,7 +145,8 @@ public class RandomGraphMaker {
         Link li = dg.getLink(i);
         int starta = li.getStart();
         int enda = li.getEnd();
-        pw.println("line "+dgnxpos[starta]+" "+dgnypos[starta]+" "+dgnxpos[enda]+" "+dgnypos[enda]);
+        pw.println("line "+dgnxpos[starta]+" "+dgnypos[starta]+" "+
+					         dgnxpos[enda]+" "+dgnypos[enda]);
       }
       pw.println("go");
       pw.flush();
@@ -155,7 +159,7 @@ public class RandomGraphMaker {
   /**
    * invoke as:
    * <CODE>java -cp &lt;classpath&gt; utils.RandomGraphMaker &lt;numnodes&gt;
-   * &lt;xdim&gt; &lt;ydim&gt; &lt;radius&gt; &lt;filename&gt; [uniform(false)] [rndseed(0)] [jplotfilename(null)] [createMWIS(false)]</CODE>
+   * &lt;xdim&gt; &lt;ydim&gt; &lt;radius&gt; &lt;filename&gt; [uniform(false)] [rndseed(0)] [jplotfilename(null)] [createMWIS(false)]</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {

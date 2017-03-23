@@ -1,5 +1,6 @@
 package popt4jlib.GradientDescent;
 
+import popt4jlib.LocalOptimizerIntf;
 import java.util.*;
 import cern.colt.matrix.*;
 import cern.jet.math.*;
@@ -23,7 +24,7 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
   FunctionIntf _f;
-  private ABFGSThread[] _threads=null;
+  transient private ABFGSThread[] _threads=null;
 
 
   /**
@@ -93,7 +94,7 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
 	 * <ul>
    * <li>&lt;"abfgs.numtries", ntries&gt; optional, the number of initial starting 
 	 * points to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; 
-	 * pairs in the parameters or a pair &lt;"gradientdescent.x0",VectorIntf v&gt; 
+	 * pairs in the parameters or a pair &lt;"[gradientdescent.]x0",VectorIntf v&gt; 
 	 * pair in params). Default is 1.
    * <li>&lt;"abfgs.numthreads", Integer nt&gt; optional, the number of threads to 
 	 * use. Default is 1.
@@ -190,7 +191,7 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
   /**
    * optimize the function f starting from the point that is found in the
    * parameters with key "abfgs.x$solindex$" (or, alternatively, the point
-   * with key in the parameters "gradientdescent.x0")
+   * with key in the parameters "[gradientdescent.]x0")
    * @param f FunctionIntf the function to minimize
    * @param solindex int the index of the starting point
    * @throws OptimizerException if the process fails
@@ -199,9 +200,12 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
   private PairObjDouble min(FunctionIntf f, int solindex) throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) _params.get("abfgs.gradient");
     if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
-    final VectorIntf x0 = _params.get("abfgs.x"+solindex) == null ?
-                          (VectorIntf) _params.get("gradientdescent.x0") :  // attempt to retrieve generic point
-                          (VectorIntf) _params.get("abfgs.x"+solindex);
+    final VectorIntf x0 = 
+			_params.containsKey("abfgs.x"+solindex)==false ?
+         _params.containsKey("gradientdescent.x0") ? 
+			    (VectorIntf) _params.get("gradientdescent.x0") : 
+			      _params.containsKey("x0") ? (VectorIntf) _params.get("x0") : null // attempt to retrieve generic point
+			: (VectorIntf) _params.get("abfgs.x"+solindex);
     if (x0==null) throw new OptimizerException("no abfgs.x"+solindex+" initial point in _params passed");
     VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
     final int n = x.getNumCoords();

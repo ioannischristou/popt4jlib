@@ -224,7 +224,7 @@ public final class DLockSrv {
 					}
           incrLockCount();
 					try {
-						if (got_lock) oos.writeObject(new LockResponse());
+						if (got_lock) oos.writeObject(new LockResponse());  // no need for reset
 						else oos.writeObject(new FailedReply());
 						oos.flush();
 					}
@@ -340,7 +340,7 @@ public final class DLockSrv {
 					}
 					// then unlock this server
           _lock.releaseLock();
-          oos.writeObject(new UnlockResponse());
+          oos.writeObject(new UnlockResponse());  // no need for reset
           oos.flush();
         }
 				else if (inobj instanceof LockIfAvailableRequest) {
@@ -360,8 +360,8 @@ public final class DLockSrv {
           incrLockCount();
 					try {
 						if (got_lock)
-							oos.writeObject(new LockResponse());
-						else oos.writeObject(new LockNotAvailableNowResponse());
+							oos.writeObject(new LockResponse());  // no need for reset
+						else oos.writeObject(new LockNotAvailableNowResponse());  // same
 						oos.flush();
 					}
 					catch (IOException e) {  // client closed connection; release the lock

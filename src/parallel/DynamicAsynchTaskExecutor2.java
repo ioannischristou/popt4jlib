@@ -151,10 +151,9 @@ public final class DynamicAsynchTaskExecutor2 {
    */
   public void execute(Runnable task) throws ParallelException {
     if (task == null)return;
-    if (isRunning() == false)
-      throw new ParallelException("thread-pool is not running");
     boolean run_on_current = false;
     synchronized (this) {
+			if (!_isRunning) throw new ParallelException("thread-pool not running");
       ++_numTasksSubmitted;
       //utils.Messenger.getInstance().msg("Current total #threads="+getNumThreads(),1);
       if (isOK2SubmitTask() || task instanceof DATEPoissonPill2) {
@@ -321,8 +320,6 @@ public final class DynamicAsynchTaskExecutor2 {
   private synchronized boolean isOK2SubmitTask() {
     return _numTasksSubmitted - _numTasksHandled < _threads.size();
   }
-
-  private synchronized boolean isRunning() { return _isRunning; }
 
 
   private synchronized static int getNextObjId() { return ++_nextId; }

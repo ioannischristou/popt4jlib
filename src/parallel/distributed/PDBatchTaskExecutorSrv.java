@@ -418,7 +418,7 @@ public class PDBatchTaskExecutorSrv {
 
 
   /**
-   * auxiliary inner class.
+   * auxiliary inner class. Not part of the public API.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
    * <p>Copyright: Copyright (c) 2011</p>
@@ -433,7 +433,8 @@ public class PDBatchTaskExecutorSrv {
     private PDBatchTaskExecutorSrv _srv;
     private boolean _isAvail = true;
 
-    private PDBTECListenerThread(PDBatchTaskExecutorSrv srv, Socket s) throws IOException {
+    private PDBTECListenerThread(PDBatchTaskExecutorSrv srv, Socket s) 
+      throws IOException {
       _srv = srv;
       _s = s;
       _oos = new ObjectOutputStream(_s.getOutputStream());
@@ -446,9 +447,11 @@ public class PDBatchTaskExecutorSrv {
 			utils.Messenger mger = utils.Messenger.getInstance();
       while (true) {
         try {
-          mger.msg("PDBTECListenerThread.run(): waiting to read an RRObject...",2);
+          mger.msg("PDBTECListenerThread.run(): waiting to read an RRObject...",
+						       2);
           // 1. read from socket input
-          RRObject obj =  (RRObject) _ois.readObject();  // obj is an TaskObjectsExecutionRequest
+          RRObject obj =  (RRObject) _ois.readObject();  
+          // obj is an TaskObjectsExecutionRequest
           mger.msg("PDBTECListenerThread.run(): RRObject read",2);
           // 2. take appropriate action
           try {
@@ -456,10 +459,12 @@ public class PDBatchTaskExecutorSrv {
           }
           catch (PDBatchTaskExecutorException e) {  // give it a second chance
 						mger.msg("PDBTECListenerThread.run(): calling obj.runProtocol() "+
-							       "issued PDBatchTaskExecutorException, will try one more time.", 1);
+							       "issued PDBatchTaskExecutorException, try one more time.", 
+							       1);
 						secondChance(obj);
           }
-					catch (IOException e) {  // worker somehow failed, give srv one more shot, then notify client
+					catch (IOException e) {  // worker somehow failed, 
+						                       // give srv one more shot, then notify client
 						mger.msg("PDBTECListenerThread.run(): calling obj.runProtocol() "+
 							       "issued IOException, will try one more time.", 1);
 						secondChance(obj);
@@ -475,27 +480,33 @@ public class PDBatchTaskExecutorSrv {
           catch (Exception e2) {
             e2.printStackTrace();
           }
-          mger.msg("PDBatchTaskExecutorSrv: Client Network Connection Closed",0);
+          mger.msg("PDBatchTaskExecutorSrv:Client Network Connection Closed",0);
           return;  // bye bye
         }
       }  // while true
     }
 		
 		
-		private void secondChance(RRObject obj) throws ClassNotFoundException, IOException {
+		private void secondChance(RRObject obj) 
+			throws ClassNotFoundException, IOException {
 			try {
 				obj.runProtocol(_srv, _ois, _oos);
 			}
 			catch (PDBatchTaskExecutorException e2) {
-				utils.Messenger.getInstance().msg("PDBTECListenerThread.run(): sending NoWorkerAvailableResponse() to client...",2);
+				utils.Messenger.getInstance().msg(
+					"PDBTECListenerThread.run(): sending NoWorkerAvailableResponse() "+
+					"to client...",2);
 				// e.printStackTrace();
-				_oos.writeObject(new NoWorkerAvailableResponse(((TaskObjectsExecutionRequest) obj)._tasks));
+				_oos.reset();  // force object to be written anew
+				_oos.writeObject(new NoWorkerAvailableResponse(
+					                     ((TaskObjectsExecutionRequest) obj)._tasks));
 				_oos.flush();							
 			}
 			catch (IOException e2) {
-				utils.Messenger.getInstance().msg("PDBTECListenerThread.run(): sending FailedReply to client...",2);
+				utils.Messenger.getInstance().msg(
+					"PDBTECListenerThread.run(): sending FailedReply to client...",2);
 				// e.printStackTrace();
-				_oos.writeObject(new FailedReply());
+				_oos.writeObject(new FailedReply());  // no need for _oos.reset()
 				_oos.flush();														
 			}
 		}
@@ -520,7 +531,8 @@ public class PDBatchTaskExecutorSrv {
 		private boolean _isPrevRunSuccess=true;
 		private TaskObject[] _prevFailedBatch=null;
 
-    private PDBTEWListener(PDBatchTaskExecutorSrv srv, Socket s) throws IOException {
+    private PDBTEWListener(PDBatchTaskExecutorSrv srv, Socket s) 
+			throws IOException {
       _srv = srv;
       _s = s;
       _oos = new ObjectOutputStream(_s.getOutputStream());
@@ -529,11 +541,13 @@ public class PDBatchTaskExecutorSrv {
     }
 
 
-    private TaskObjectsExecutionResults runObject(TaskObjectsExecutionRequest obj) throws IOException, PDBatchTaskExecutorException {
+    private TaskObjectsExecutionResults runObject(TaskObjectsExecutionRequest o) 
+			throws IOException, PDBatchTaskExecutorException {
       Object res = null;
       try {
         setAvailability(false);
-        _oos.writeObject(obj);
+				_oos.reset();  // force object to be written anew
+        _oos.writeObject(o);
         _oos.flush();
         res = _ois.readObject();
         setAvailability(true);
@@ -553,11 +567,11 @@ public class PDBatchTaskExecutorSrv {
       else {
 				PDBatchTaskExecutorException e = 
 					new PDBatchTaskExecutorException("worker failed to run tasks");
-				if (_isPrevRunSuccess==false && !sameAsPrevFailedJob(obj._tasks)) { 
+				if (_isPrevRunSuccess==false && !sameAsPrevFailedJob(o._tasks)) { 
 					processException(e);  // twice a loser, kick worker out
 				}
 				_isPrevRunSuccess=false;
-				_prevFailedBatch = obj._tasks;
+				_prevFailedBatch = o._tasks;
 				throw e;
 			}
     }
@@ -609,7 +623,8 @@ public class PDBatchTaskExecutorSrv {
       finally {
 	      synchronized (_srv) {
 		      _workers.remove(_s);
-			    utils.Messenger.getInstance().msg("PDBatchTaskExecutorSrv: Worker Network Connection Closed",0);
+			    utils.Messenger.getInstance().msg(
+						"PDBatchTaskExecutorSrv: Worker Network Connection Closed",0);
 				}
         _ois = null;
         _oos = null;

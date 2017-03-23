@@ -4,6 +4,7 @@ import utils.IntSet;
 import utils.DataMgr;
 import parallel.DMCoordinator;
 import parallel.ParallelException;
+import parallel.BoundedBufferArrayUnsynchronized;
 import java.io.Serializable;
 import java.util.*;
 import parallel.BoundedMinHeapUnsynchronized;
@@ -46,6 +47,11 @@ public class Graph implements Serializable {
 	                                      //     Node[] nodes_sorted_desc>
   private DMCoordinator _rwLocker=null;  // used for ensuring that the methods
                                          // are re-entrant (i.e. thread-safe)
+	boolean _isDirectionReverted=false;  // set to true when edges point
+	                                     // in the opposite direction than
+	                                     // the original: useful in some
+	                                     // SPP algorithms. Set to package-private
+	                                     // access for fast access from Link class
 
 	
 	/**
@@ -259,7 +265,51 @@ public class Graph implements Serializable {
 		}		
 	}
 	
+	
+	/**
+	 * reverses the direction of all links in this Graph, so that after calling 
+	 * this method once, the methods <CODE>Node.getInLinks()</CODE>,
+	 * <CODE>Node.getOutLinks()</CODE> return respectively the sets 
+	 * <CODE>Node._outlinks</CODE> and <CODE>Node._inlinks</CODE>, and the methods
+	 * <CODE>Link.getStart(),Link.getEnd()</CODE> return respectively 
+	 * <CODE>Link._enda</CODE> and <CODE>Link._starta</CODE>.
+	 * @throws ParallelException 
+	 */
+	void reverseLinksDirection() throws ParallelException {
+		boolean got_lock=false;
+		try {
+			getWriteAccess();
+			got_lock=true;
+			_isDirectionReverted = !_isDirectionReverted;
+		}
+		finally {
+			if (got_lock) {
+				releaseWriteAccess();
+			}
+		}
+	}
+	
+	
+	public boolean isLinksDirectionReversed() {
+		boolean got_lock=false;
+		try {
+			getReadAccess();
+			got_lock=true;
+			return _isDirectionReverted;
+		}
+		finally {
+			if (got_lock) {
+				try {
+					releaseReadAccess();
+				}
+				catch (ParallelException e) {  // never throws
+					// no-op
+				}
+			}
+		}
+	}
 
+	
   /**
    * add a (directed) link between nodes with id starta and enda.
    * @param starta int (in the interval [0, this.getNumNodes()-1])
@@ -267,7 +317,8 @@ public class Graph implements Serializable {
    * @param weight double
    * @throws GraphException if the <CODE>addLink(starta,enda)</CODE> has 
 	 * been called <CODE>getNumArcs()</CODE> times already, or if the starta or 
-	 * enda arguments are out-of-bounds
+	 * enda arguments are out-of-bounds or if the arc (starta,enda) has already
+	 * been added to this Graph
    * @throws ParallelException if the current thread also had the read-lock
    * but there was at least another reader thread in the system
    */
@@ -284,6 +335,9 @@ public class Graph implements Serializable {
         throw new GraphException("start node " + starta + " is out-of-bounds");
       if (enda < 0 || enda >= _nodes.length)
         throw new GraphException("end node " + enda + " is out-of-bounds");
+			if (existsLink(starta,enda))
+				throw new GraphException("Graph.addLink("+starta+","+enda+","+weight+
+					                       "): link already exists");
       _arcs[_addLinkPos] = new Link(this, _addLinkPos++, starta, enda, weight);
     }
     finally {
@@ -297,6 +351,39 @@ public class Graph implements Serializable {
       }
     }
   }
+	
+	
+	/**
+	 * check whether a link exists from starta to enda.
+	 * @param starta int source-node-id
+	 * @param enda int end-node-id
+	 * @return boolean true iff the link exists
+	 * @throws GraphException if arguments are out-of-bounds
+	 * @throws ParallelException never throws this exception
+	 */
+	public boolean existsLink(int starta, int enda) 
+			throws GraphException, ParallelException {
+		try {
+      getReadAccess();
+      if (_arcs == null)throw new GraphException("null _arcs array.");
+      if (starta < 0 || starta >= _nodes.length)
+        throw new GraphException("start node " + starta + " is out-of-bounds");
+      if (enda < 0 || enda >= _nodes.length)
+        throw new GraphException("end node " + enda + " is out-of-bounds");
+			Node s = _nodes[starta];
+			Set s_outlinks = s.getOutLinks();
+			Iterator sit = s_outlinks.iterator();
+			while (sit.hasNext()) {
+				int lid = ((Integer)sit.next()).intValue();
+				Link l = _arcs[lid];
+				if (l.getEnd()==enda) return true;
+			}
+			return false;
+    }
+    finally {
+      releaseReadAccess();
+    }
+	}
 
 
   /**
@@ -472,7 +559,28 @@ public class Graph implements Serializable {
     }
   }
 
+	
+	/**
+	 * modifies the weight of the link with given id to positive infinity. Useful
+	 * when re-optimizing shortest-path problems and must somehow "remove" certain
+	 * paths.
+	 * @param linkid int
+   * @throws ParallelException if the current thread has the read-lock and there
+   * was at least another thread with a read-lock
+	 */
+	public void setInfiniteLinkWeight(int linkid) throws ParallelException {
+    boolean got_wlock=false;
+		try {
+      getWriteAccess();
+			got_wlock=true;
+			_arcs[linkid].setWeight(Double.POSITIVE_INFINITY);
+    }
+    finally {
+      if (got_wlock) releaseWriteAccess();
+    }		
+	}
 
+	
   /**
    * obtain the read-lock for this Graph object.
    */
@@ -531,15 +639,17 @@ public class Graph implements Serializable {
       if (s == t) return 0.0;
 			if (s==null || t==null) 
 				throw new IllegalArgumentException("null source or target node");
-			BoundedMinHeapUnsynchronized queue = new BoundedMinHeapUnsynchronized(_nodes.length);
-      queue.addElement(new utils.Pair(s,new Double(0.0)));  // Pair(Node, double)
+			BoundedMinHeapUnsynchronized queue = 
+				new BoundedMinHeapUnsynchronized(_nodes.length);
+      queue.addElement(new utils.Pair(s,new Double(0.0)));  // Pair(Node,double)
 			HashMap labels = new HashMap();  // map<Node n, Double dist>
 			labels.put(s, new Double(0.0));
       while (queue.size() > 0) {
         utils.Pair fp = (utils.Pair) queue.remove();  // remove min element
 				Node n = (Node) fp.getFirst();
-				if (n==t) return ((Double) fp.getSecond()).doubleValue();  // done
-        double nd = ( (Double) fp.getSecond()).doubleValue(); 
+				if (n.getId()==t.getId()) 
+					return ((Double) fp.getSecond()).doubleValue();  // done
+        double nd = ((Double) fp.getSecond()).doubleValue(); 
         Set outlinks = n.getOutLinks();
         if (outlinks != null) {
           Iterator itout = outlinks.iterator();
@@ -580,6 +690,78 @@ public class Graph implements Serializable {
       }
     }
   }
+	
+	
+  /**
+   * return the shortest path costs between Node s and all nodes in this graph, 
+	 * where the cost of a path is measured in terms of link weights adding up, 
+	 * and all link weights are assumed non-negative. Edges are directed, and the 
+	 * shortest path is one in which all edges are "forward" edges. Essentially 
+	 * this is Dijkstra's label setting method. The method will throw if it finds 
+	 * any negative link weight.
+   * @param s Node
+   * @return double[] array whose i-th element is the cost of the shortest path 
+	 * from s to the i-th node. It will return 
+	 * <CODE>Double.POSITIVE_INFINITY</CODE> if there is no path from node s to 
+	 * the i-th node
+	 * @throws IllegalArgumentException if s or t is null
+	 * @throws GraphException if any link weight is negative
+   */	
+	public double[] getAllShortestPaths(Node s) throws GraphException {
+    try {
+      getReadAccess();
+			if (s==null) 
+				throw new IllegalArgumentException("null source node");
+			BoundedMinHeapUnsynchronized queue = 
+				new BoundedMinHeapUnsynchronized(_nodes.length);
+      queue.addElement(new utils.Pair(s,new Double(0.0)));  // Pair(Node,double)
+			double[] labels = new double[_nodes.length];  // labels[i]=spp from s to i
+			for (int i=0; i<labels.length; i++) labels[i]=Double.POSITIVE_INFINITY;
+			labels[s.getId()]=0.0;
+      while (queue.size() > 0) {
+        utils.Pair fp = (utils.Pair) queue.remove();  // remove min element
+				Node n = (Node) fp.getFirst();
+        double nd = ((Double) fp.getSecond()).doubleValue(); 
+        Set outlinks = n.getOutLinks();
+        if (outlinks != null) {
+          Iterator itout = outlinks.iterator();
+          while (itout.hasNext()) {
+            Integer lid = (Integer) itout.next();
+            Link lin = _arcs[lid.intValue()];
+            int oe = lin.getEnd();
+            double wa = lin.getWeight();
+						if (wa<0) 
+							throw new GraphException("Graph.getShortestPath(s,t): "+
+								                       "encountered negative arc weight");
+            Node ne = _nodes[oe];
+            double nnd = nd + wa;
+            double ned = labels[ne.getId()];
+            if (Double.isInfinite(ned) && !Double.isInfinite(nnd)) {
+							Double nndD = new Double(nnd);
+							labels[ne.getId()]=nnd;  // // labels.put(ne, nndD);
+              queue.addElement(new utils.Pair(ne, nndD)); // insert ne in heap
+            }
+						else if (ned > nnd) {  
+							Double nndD = new Double(nnd);
+              labels[ne.getId()] = nnd;  // labels.put(ne, nndD);
+							// update ne's position in the min-heap
+							queue.decreaseKey(new utils.Pair(ne,ned), new utils.Pair(ne,nndD));
+						}
+          }
+        }
+      }
+      return labels;
+    }
+    finally {
+      try {
+        releaseReadAccess();
+      }
+      catch (ParallelException e) {
+        // can never get here
+        e.printStackTrace();
+      }
+    }		
+	}
 
 
 	/**
@@ -1391,7 +1573,8 @@ public class Graph implements Serializable {
 			Node[] arr = getNodesSortedDescByWeight(name);
 			for (int i=0; i<arr.length; i++) {
 				Node ai = arr[i];
-				if (!forbiddenNodes.contains(ai)) return ai.getWeightValue(name);
+				if (!forbiddenNodes.contains(ai)) 
+					return ai.getWeightValueUnsynchronized(name);
 			}
 			return null;  // no free node available
 		}
@@ -1499,11 +1682,12 @@ public class Graph implements Serializable {
 			if (arr==null) {
 				releaseReadAccess();
 				getWriteAccess();
+				arr = (Node[]) _sortedNodeArrays.get(wname);
 				if (arr==null) {  // Double-Check Locking style but correct
 					// do the work
 					arr = new Node[_nodes.length];
 					for (int i=0; i<arr.length; i++) arr[i] = _nodes[i];
-					Arrays.sort(arr, new NodeWeightComparator(wname));
+					Arrays.sort(arr, new NodeWeightComparatorUnsynchronized(wname));
 					_sortedNodeArrays.put(wname, arr);
 				}
 				getReadAccess();
@@ -1519,11 +1703,13 @@ public class Graph implements Serializable {
 	
 
   /**
-   * nid is a Node id,
-   * c is the component which this node and all nodes reachable by it
-   * belong to. Updates the <CODE>_comps</CODE> data member.
-   * @param nid int
-   * @param c int
+   * labels the node with given id and all other nodes reachable by it, with the 
+	 * "label" given by the 2nd argument. Updates the <CODE>_comps</CODE> data 
+	 * member.
+   * @param nid int represents a Node id
+   * @param c int the component to which the node with id nid plus all nodes
+	 * reachable by it belong to (where reachability is defined without respect 
+	 * for the edges' direction)
    * @return int number of nodes labeled
    * @throws ParallelException
    */
@@ -1532,6 +1718,9 @@ public class Graph implements Serializable {
       getWriteAccess();
       int res = 1;
       _comps[nid] = c;
+			BoundedBufferArrayUnsynchronized bbau = 
+				new BoundedBufferArrayUnsynchronized(_nodes.length);
+			/* below method is slow -about 10 times slower than method further below!
       Set nbors = new HashSet(_nodes[nid].getNbors());
       while (nbors.size() > 0) {
         Iterator it = nbors.iterator();
@@ -1547,6 +1736,21 @@ public class Graph implements Serializable {
           if (_comps[nn.getId()] == -1) nbors.add(nn);
         }
       }
+			*/
+			bbau.addElement(_nodes[nid]);
+			while (bbau.size()>0) {
+				Node n = (Node) bbau.remove();
+				Set nbors = n.getNbors();
+				Iterator it = nbors.iterator();
+				while (it.hasNext()) {
+					Node nn = (Node) it.next();
+					if (_comps[nn.getId()] == -1) {
+						_comps[nn.getId()] = c;  // label node
+						++res;
+						bbau.addElement(nn);
+					}
+				}
+			}
       return res;
     }
     finally {

@@ -40,15 +40,17 @@ public class DReduceRequest implements DMsgIntf {
    * @throws ParallelException
    * @throws IOException
    */
-  public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
+  public void execute(ObjectOutputStream oos) 
+		throws ParallelException, IOException {
     try {
       Serializable result = (Serializable) ReduceOpBase.getInstance(_bName).reduce(_data, _op);
       // ok, reduction done
+			oos.reset();  // force object to be written anew
       oos.writeObject(new OKReplyData(result));
       oos.flush();
     }
     catch (ParallelException e) {
-      oos.writeObject(new FailedReply());
+      oos.writeObject(new FailedReply());  // no need for oos.reset() here
       oos.flush();
       throw e;
     }

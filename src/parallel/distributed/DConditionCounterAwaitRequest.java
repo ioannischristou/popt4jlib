@@ -35,6 +35,7 @@ public class DConditionCounterAwaitRequest implements DMsgIntf {
   public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
     DConditionCounter.getInstance().await();
     // ok, handling thread on server awaited the associated unique CondCounter
+		// no need for reset
     oos.writeObject(new OKReply());
     oos.flush();
   }

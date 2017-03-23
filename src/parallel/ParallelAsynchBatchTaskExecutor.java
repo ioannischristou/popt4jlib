@@ -20,7 +20,7 @@ import java.util.*;
  * satisfied.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -30,12 +30,12 @@ public final class ParallelAsynchBatchTaskExecutor {
   private int _id;  // ParallelBatchTaskExecutor id
   private PABTEThread[] _threads;
   private boolean _isRunning;
-  private boolean _runOnCurrent=true;
+  private final boolean _runOnCurrent;
   private MsgPassingCoordinator _mpc;
-
+	private int _executeBatchInProgress = 0;  // init to zero
 	
   /**
-   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructs a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
 	 * @return ParallelAsynchBatchTaskExecutor properly initialized
    * @throws ParallelException if numthreads &le; 0 or if too many threads are
@@ -44,14 +44,15 @@ public final class ParallelAsynchBatchTaskExecutor {
 	public static ParallelAsynchBatchTaskExecutor 
 				newParallelAsynchBatchTaskExecutor(int numthreads) 
 								throws ParallelException {
-		ParallelAsynchBatchTaskExecutor ex = new ParallelAsynchBatchTaskExecutor(numthreads);
+		ParallelAsynchBatchTaskExecutor ex = 
+			new ParallelAsynchBatchTaskExecutor(numthreads);
 		ex.initialize();
 		return ex;
 	}
 
 				
   /**
-   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructs a thread-pool of numthreads threads.
    * @param numthreads int the number of threads in the thread-pool
    * @param runoncurrent boolean if false no task will on current thread in case
    * the threads in the pool are full.
@@ -62,7 +63,8 @@ public final class ParallelAsynchBatchTaskExecutor {
 	public static ParallelAsynchBatchTaskExecutor 
 				newParallelAsynchBatchTaskExecutor(int numthreads, boolean runoncurrent) 
 								throws ParallelException {
-		ParallelAsynchBatchTaskExecutor ex = new ParallelAsynchBatchTaskExecutor(numthreads, runoncurrent);
+		ParallelAsynchBatchTaskExecutor ex = 
+			new ParallelAsynchBatchTaskExecutor(numthreads, runoncurrent);
 		ex.initialize();
 		return ex;
 	}
@@ -74,12 +76,14 @@ public final class ParallelAsynchBatchTaskExecutor {
    * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created.
    */
-  private ParallelAsynchBatchTaskExecutor(int numthreads) throws ParallelException {
-    if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
+  private ParallelAsynchBatchTaskExecutor(int numthreads) 
+		throws ParallelException {
+    if (numthreads<=0) throw new ParallelException("ctor arg must be > 0");
     if (numthreads > MsgPassingCoordinator.getMaxSize()/2)
       throw new ParallelException("cannot construct so many threads");
     _id = getNextObjId();
     _threads = new PABTEThread[numthreads];
+		_runOnCurrent=true;
   }
 
 
@@ -90,8 +94,13 @@ public final class ParallelAsynchBatchTaskExecutor {
    * the threads in the pool are full.
    * @throws ParallelException if numthreads &le; 0.
    */
-  private ParallelAsynchBatchTaskExecutor(int numthreads, boolean runoncurrent) throws ParallelException {
-    this(numthreads);
+  private ParallelAsynchBatchTaskExecutor(int numthreads, boolean runoncurrent) 
+		throws ParallelException {
+    if (numthreads<=0) throw new ParallelException("ctor arg must be > 0");
+    if (numthreads > MsgPassingCoordinator.getMaxSize()/2)
+      throw new ParallelException("cannot construct so many threads");
+    _id = getNextObjId();
+    _threads = new PABTEThread[numthreads];
     _runOnCurrent = runoncurrent;
   }
 
@@ -107,7 +116,8 @@ public final class ParallelAsynchBatchTaskExecutor {
       _threads[i].start();
     }
     _isRunning = true;
-    _mpc = MsgPassingCoordinator.getInstance("ParallelAsynchBatchTaskExecutor"+_id);		
+    _mpc = MsgPassingCoordinator.getInstance(
+			"ParallelAsynchBatchTaskExecutor"+_id);		
 	}
 	
 
@@ -149,38 +159,49 @@ public final class ParallelAsynchBatchTaskExecutor {
    * to this call
    * @throws ParallelExceptionUnsubmittedTasks if this object does not allow
    * running tasks in the current thread and some tasks could not be sent to
-   * the thread-pool due to a full <CODE>SimpleFasterMsgPassingCoordinator</CODE>
-   * msg-queue; in this case the unsubmitted tasks are returned inside the
+   * the thread-pool due to full <CODE>MsgPassingCoordinator</CODE>
+   * msg-queue; in this case the un-submitted tasks are returned inside the
    * exception object.
    */
-  public void executeBatch(Collection tasks) throws ParallelException, ParallelExceptionUnsubmittedTasks {
+  public void executeBatch(Collection tasks) 
+		throws ParallelException, ParallelExceptionUnsubmittedTasks {
     if (tasks == null) return;
-    Vector unsubmitted_tasks = new Vector();  // tasks that couldn't be submitted
+    Vector unsubmitted_tasks = new Vector();  // any that couldn't be submitted
     Iterator it = tasks.iterator();
-    if (isRunning() == false)
-      throw new ParallelException("thread-pool is not running");
-    while (it.hasNext()) {
-      Object task = it.next();
-      if ( (!_runOnCurrent && existsRoom()) || existsIdleThread()) {  // ok
-        _mpc.sendDataBlocking(_id, task);
-      }
-      else {
-        if (!_runOnCurrent) {  // try to submit, if it fails add in Vector,
-                               // then send back in exception object.
-          try {
-            _mpc.sendData(_id, task);
-          }
-          catch (ParallelException e) {
-            unsubmitted_tasks.add(task);
-          }
-        } else {
-          if (task instanceof TaskObject) ( (TaskObject) task).run();
-          else if (task instanceof Runnable) ( (Runnable) task).run();
-        }
-      }
-    }
-    if (unsubmitted_tasks.size()>0)
-      throw new ParallelExceptionUnsubmittedTasks(unsubmitted_tasks);
+		synchronized (this) {
+			if (!_isRunning) throw new ParallelException("thread-pool not running");
+			++_executeBatchInProgress;
+		}
+		try {
+			while (it.hasNext()) {
+				Object task = it.next();
+				if ( (!_runOnCurrent && existsRoom()) || existsIdleThread()) {  // ok
+					_mpc.sendDataBlocking(_id, task);
+				}
+				else {
+					if (!_runOnCurrent) {  // try to submit, if it fails add in Vector,
+																 // then send back in exception object.
+						try {
+							_mpc.sendData(_id, task);
+						}
+						catch (ParallelException e) {
+							unsubmitted_tasks.add(task);
+						}
+					} else {
+						if (task instanceof TaskObject) ( (TaskObject) task).run();
+						else if (task instanceof Runnable) ( (Runnable) task).run();
+					}
+				}
+			}
+			if (unsubmitted_tasks.size()>0)
+				throw new ParallelExceptionUnsubmittedTasks(unsubmitted_tasks);
+		}
+		finally {
+			synchronized (this) {
+				--_executeBatchInProgress;
+				if (_executeBatchInProgress==0) notifyAll();
+			}
+		}
   }
 
 
@@ -196,10 +217,20 @@ public final class ParallelAsynchBatchTaskExecutor {
    * @throws ParallelException
    * @throws InterruptedException
    */
-  public synchronized void shutDown() throws ParallelException, InterruptedException {
+  public synchronized void shutDown() 
+		throws ParallelException, InterruptedException {
     if (_isRunning==false)
       throw new ParallelException("shutDown() has been called already");
     _isRunning = false;
+		while (_executeBatchInProgress>0) {
+			try {
+				wait();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+		// ok, now go submit poison pills
     final int numthreads = _threads.length;
     for (int i=0; i<numthreads; i++) {
       _mpc.sendDataBlocking(_id, -(i+1), new PoissonPill());
@@ -217,7 +248,7 @@ public final class ParallelAsynchBatchTaskExecutor {
    * return the number of threads in the thread-pool.
    * @return int
    */
-  public int getNumThreads() {
+  public synchronized int getNumThreads() {
     if (_threads!=null)
       return _threads.length;
     else return 0;
@@ -225,18 +256,6 @@ public final class ParallelAsynchBatchTaskExecutor {
 
 
   int getObjId() { return _id; }
-
-
-  /* deprecated
-  private boolean mustLock() {
-    Thread cur = Thread.currentThread();
-    for (int i=0; i<_threads.length; i++) {
-      if (cur == _threads[i])
-        return false;
-    }
-    return true;
-  }
-  */
 
 
   /**
@@ -264,14 +283,12 @@ public final class ParallelAsynchBatchTaskExecutor {
   }
 
 
-  private synchronized boolean isRunning() { return _isRunning; }
-
-
   private synchronized static int getNextObjId() { return ++_nextId; }
 
 	
 	/**
-	 * helper class for ParallelAsynchBatchTaskExecutor. Not part of the public API.
+	 * helper class for ParallelAsynchBatchTaskExecutor, not part of the public 
+	 * API.
 	 * <p>Title: popt4jlib</p>
 	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
 	 * <p>Copyright: Copyright (c) 2011</p>
@@ -301,7 +318,9 @@ public final class ParallelAsynchBatchTaskExecutor {
 		 */
 		public void run() {
 			final int pbteid = getObjId();
-			final MsgPassingCoordinator pabtetmpc = MsgPassingCoordinator.getInstance("ParallelAsynchBatchTaskExecutor"+pbteid);
+			final MsgPassingCoordinator pabtetmpc = 
+				MsgPassingCoordinator.getInstance("ParallelAsynchBatchTaskExecutor"+
+					                                pbteid);
 			boolean do_run = true;
 			while (do_run) {
 				try {
@@ -317,7 +336,7 @@ public final class ParallelAsynchBatchTaskExecutor {
 						else throw new ParallelException("data object cannot be run");
 					}
 					catch (Exception e) {
-						e.printStackTrace();  // task threw an exception, ignore and continue
+						e.printStackTrace();  // task threw exception, ignore and continue
 					}
 					setIdle(true);
 				}

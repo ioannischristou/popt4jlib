@@ -29,6 +29,7 @@ public interface DMsgIntf extends Serializable {
    * @throws ParallelException
    * @throws IOException
    */
-  public void execute(ObjectOutputStream oos) throws ParallelException, IOException;
+  public void execute(ObjectOutputStream oos) 
+    throws ParallelException, IOException;
 }
 

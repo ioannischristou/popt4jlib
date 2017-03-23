@@ -20,7 +20,7 @@ import java.io.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-class DBBNode1 implements Comparable, TaskObject {
+class DBBNode1 extends DBBNodeBase {
 
 	private static final long _MIN_REQ_ELAPSED_TIME_4_DISTRIBUTION = 10000L;  // 10 seconds
 	private boolean _immigrant = false;  // set when sent for distributed exec.
@@ -35,19 +35,6 @@ class DBBNode1 implements Comparable, TaskObject {
   };
 
 	
-	/**
-	 * defines a multiplicative fudge factor by which the "best cost" of
-	 * graph-nodes is allowed to be "over" so as to still be considered "best" for
-	 * inclusion in the <CODE>getBestNodes2Add(DBBNode1)</CODE> method and further
-	 * consideration. This value is allowed to change until a call to
-	 * <CODE>disallowFFChanges()</CODE> is made by any thread.
-	 */
-	private static double _ff = 0.85;
-	/**
-	 * guard member to ensure the value of _ff doesn't change after BBNode1
-	 * objects are created.
-	 */
-	private static boolean _ffAllowed2Change = true;
 	/**
 	 * comparator between node-sets used in sorting node-sets in the
 	 * <CODE>getBestNodeSets2Add()</CODE> method if the appropriate option in the
@@ -98,7 +85,8 @@ class DBBNode1 implements Comparable, TaskObject {
 			int cur_counter = _master.incrementCounter();  // increment this process's #DBBNode1 objects
 			mger.msg("#DBBNode1 objects created by this process="+cur_counter, 2);
 			if (cur_counter > _master.getMaxNodesAllowed()) {
-				return null; // stop computations
+				PDAsynchBatchTaskExecutorWrk.setServerRequestsDisabled(true);
+				return null;  // this worker is done
       }
       // step 2.
       // check for pruning
@@ -294,6 +282,11 @@ class DBBNode1 implements Comparable, TaskObject {
 		//return _nodes;
 		return _nodeids;
 	}
+	
+	
+	protected final Set getNodeIdsAsSet() {
+		return new HashSet(_nodeids);
+	}
 
 
  /**
@@ -351,14 +344,15 @@ class DBBNode1 implements Comparable, TaskObject {
 	 * return the sum of weights of the active nodes.
 	 * @return double
 	 */
-	double getCost() {
+	protected double getCost() {
 		double res = 0.0;
 		Iterator it = getNodeIds().iterator();
 		Graph g = DBBTree.getInstance().getGraph();
 		while (it.hasNext()) {
 			//Node ni = (Node) it.next();
 			Integer nid = (Integer) it.next();
-			Node ni = g.getNode(nid.intValue());
+			// Node ni = g.getNode(nid.intValue());
+			Node ni = g.getNodeUnsynchronized(nid.intValue());  // no need for synchronization
 			Double niwD = ni.getWeightValueUnsynchronized("value");  // used to be ni.getWeightValue("value");
 			double niw = niwD==null ? 1.0 : niwD.doubleValue();
 			res += niw;
@@ -420,26 +414,6 @@ class DBBNode1 implements Comparable, TaskObject {
     _bound = res;
     return res;
   }
-
-
-	/**
-	 * disallow changes to <CODE>_ff</CODE>. Called only from the
-	 * <CODE>DBBGASPAcker</CODE> class.
-	 */
-	static synchronized void disallowFFChanges() {
-		_ffAllowed2Change = false;
-	}
-
-
-	/**
-	 * set the value of <CODE>_ff</CODE> field. Called only from the
-	 * <CODE>DBBGASPPacker</CODE> class, before any DBBNode1 objects are constructed
-	 * or executed on threads.
-	 * @param val double
-	 */
-	static synchronized void setFF(double val) {
-		if (_ffAllowed2Change) _ff = val;
-	}
 
 
   /**
@@ -569,7 +543,7 @@ class DBBNode1 implements Comparable, TaskObject {
     final DBBTree master = DBBTree.getInstance();
 		final int gsz=master.getGraphSize();
     final double perc_extra_nodes2add = master.getAvgPercExtraNodes2Add();
-		final double ff = isroot ? 0.0 : _ff;
+		final double ff = isroot ? 0.0 : DBBNodeBase.getFF();
 		final boolean useGWMIN2 = master.getUseGWMIN24BestNodes2Add();
     Set best = new HashSet();
     double bestcost = Double.MAX_VALUE;

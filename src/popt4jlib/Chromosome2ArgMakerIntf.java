@@ -1,12 +1,15 @@
 package popt4jlib;
 
-import java.util.*;
+import java.util.HashMap;
+import java.io.Serializable;
 
 /**
  * the inverse map of the <CODE>Arg2ChromosomeMakerIntf</CODE>. Provides method
  * for converting a chromosome object (notion used in the GA,EA,SA,PS etc. meta-
  * heuristics) into a function argument object (an object belonging to the
- * domain of the function being minimized)
+ * domain of the function being minimized).
+ * Extends the <CODE>java.io.Serializable</CODE> interface so that implementing 
+ * objects can be transported across JVMs in distributed computation.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -14,7 +17,7 @@ import java.util.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public interface Chromosome2ArgMakerIntf {
+public interface Chromosome2ArgMakerIntf extends Serializable {
   /**
    * converts a chromosome object (used in the computations of GA etc. meta-
    * heuristics) into an object belonging to the functions' domain.

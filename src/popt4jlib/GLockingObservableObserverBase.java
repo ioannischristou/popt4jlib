@@ -14,7 +14,7 @@ import parallel.ParallelException;
 
 
 /**
- * base class implementing both the SubjectIntf and ObserverIntf interfaces, with 
+ * base class implementing both the SubjectIntf and ObserverIntf interfaces with 
  * all implemented methods locking on the global "popt4jlib" w-lock. Necessarily 
  * therefore, the API <CODE>notifyChange(subject)</CODE> calls are not 
  * open-calls when the <CODE>notifyObservers()</CODE> method is invoked, but
@@ -27,7 +27,8 @@ import parallel.ParallelException;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public abstract class GLockingObservableObserverBase implements SubjectIntf, ObserverIntf {
+public abstract class GLockingObservableObserverBase implements SubjectIntf, 
+	                                                              ObserverIntf {
 
   private HashMap _observers;  // map<ObserverIntf o, Vector<Object> newSols>
   private HashMap _subjects;  // map<SubjectIntf o, Vector<Object> newSols>
@@ -215,7 +216,8 @@ public abstract class GLockingObservableObserverBase implements SubjectIntf, Obs
    * @param subject SubjectIntf
    * @throws OptimizerException
    */
-  public final void notifyChange(SubjectIntf subject) throws OptimizerException {
+  public final void notifyChange(SubjectIntf subject) 
+		throws OptimizerException {
     try {
       DMCoordinator.getInstance("popt4jlib").getWriteAccess();
       Object arg = subject.getIncumbent();

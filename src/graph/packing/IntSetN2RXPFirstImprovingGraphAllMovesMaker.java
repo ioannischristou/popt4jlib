@@ -132,7 +132,10 @@ public class IntSetN2RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    * the behavior of this move-maker. This method implements a depth-first
    * search on the space of neighbors to find the first improving solution
    * which it returns immediately (the soln is a maximally-improving soln in the
-   * DF fashion)
+   * DF fashion). Notice how this method does NOT override the 
+	 * <CODE>createSets()</CODE> method of <CODE>IntSetN2RXPAllMovesMaker</CODE>,
+	 * from which in fact is NOT a sub-class, and further, in templates form,
+	 * wouldn't have the same return type (this method returns a single IntSet).
    * @param res Set // IntSet
    * @param rmids Set // IntSet
    * @param tryids List // List&lt;Integer&gt;
@@ -143,6 +146,7 @@ public class IntSetN2RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    */
   protected Set createSet(Set res, Set rmids, List tryids, int maxcard, HashMap params) {
     IntSet x = (IntSet) res;
+		if (maxcard<=0) return res;  // itc-20170314: cut search at depth=maxcard
     for (int i=0; i<tryids.size(); i++) {
       Integer tid = (Integer) tryids.get(i);
       if (rmids.contains(tid)==false) {

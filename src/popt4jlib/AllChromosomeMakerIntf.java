@@ -6,7 +6,7 @@ import java.io.*;
 /**
  * allows the definition of the neighborhood of a point in a search space that
  * is needed by Local-Search algorithms in combinatorial optimization problems.
- * Extends the <CODE>Serializable</CODE> interface so that implementing 
+ * Extends the <CODE>java.io.Serializable</CODE> interface so that implementing 
  * objects can be transported across JVMs in distributed computation.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>

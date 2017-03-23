@@ -91,7 +91,7 @@ public final class GRASPPacker {
           }
           else if (_k==2 || !isApproximatelyEqualWeight(n,first)) break;
         }  // while it.hasNext()
-        //System.err.println("candidates.size()=" + candidates.size());
+        System.err.println("candidates.size()=" + candidates.size());
         // pick a candidate node at random
         int pos = rand.nextInt(candidates.size());
         Iterator it2 = candidates.iterator();
@@ -101,8 +101,8 @@ public final class GRASPPacker {
         updateQueue(n);
         // 3. add the element to the result set
         res.add(n);
-        //System.err.println("added n=" + n.getId() + " res.size()=" +
-        //                   res.size() + " _nodesq.size()=" + _nodesq.size());
+        System.err.println("added n=" + n.getId() + " res.size()=" +
+                           res.size() + " _nodesq.size()=" + _nodesq.size());
         cont = true;
       }
       else {
@@ -235,33 +235,35 @@ public final class GRASPPacker {
     _nodesq.remove(n);
     Set nnbors = _k==2 ? n.getNNbors() : n.getNborsUnsynchronized();  // used to be n.getNbors();
     _nodesq.removeAll(nnbors);
-    // 1. create the nnnbors set of the nbors of _nnbors U n set
-    Set nnnbors = new HashSet();  // Set<Node>
-    Set nbors = n.getNbors();
-    Iterator it = nbors.iterator();
-    while (it.hasNext()) {
-      Node nbor = (Node) it.next();
-      Set nnbors2 = _k==2 ? nbor.getNNbors() : nbor.getNborsUnsynchronized();  // used to be nbor.getNbors();
-      nnnbors.addAll(nnbors2);
-    }
-    nnnbors.removeAll(nnbors);
-    nnnbors.remove(n);
-    nnnbors.retainAll(_nodesq);  // don't accidentally insert back bad nodes
-    // 2. remove the nnnbors nodes from the _nodesq set and re-insert them
-    // (which updates correctly the _nodesq TreeSet)
-    // nnnbors are all the nodes at distance 3 from the node n for _k==2, distance 2 for _k==1
-    // Update the _nnbors data member of those nodes.
-    _nodesq.removeAll(nnnbors);
-		if (_k==2) {
-			Iterator it2 = nnnbors.iterator();
-			while (it2.hasNext()) {
-				Node nb = (Node) it2.next();
-				nb.getNNbors().removeAll(nnbors);
-				nb.getNNbors().remove(n);
+		if (_k==2) {  // itc-20170307: the code in the if is only useful when _k=2
+			// 1. create the nnnbors set of the nbors of _nnbors U n set
+			Set nnnbors = new HashSet();  // Set<Node>
+			Set nbors = n.getNborsUnsynchronized();  // itc-20170307: used to be getNbors()
+			Iterator it = nbors.iterator();
+			while (it.hasNext()) {
+				Node nbor = (Node) it.next();
+				Set nnbors2 = _k==2 ? nbor.getNNbors() : nbor.getNborsUnsynchronized();  // used to be nbor.getNbors();
+				nnnbors.addAll(nnbors2);
 			}
+			nnnbors.removeAll(nnbors);
+			nnnbors.remove(n);
+			nnnbors.retainAll(_nodesq);  // don't accidentally insert back bad nodes
+			// 2. remove the nnnbors nodes from the _nodesq set and re-insert them
+			// (which updates correctly the _nodesq TreeSet in case of _k==2)
+			// nnnbors are all the nodes at distance 3 from the node n for _k==2, distance 2 for _k==1
+			// Update the _nnbors data member of those nodes.
+			_nodesq.removeAll(nnnbors);
+			if (_k==2) {
+				Iterator it2 = nnnbors.iterator();
+				while (it2.hasNext()) {
+					Node nb = (Node) it2.next();
+					nb.getNNbors().removeAll(nnbors);
+					nb.getNNbors().remove(n);
+				}
+			}
+			_nodesq.addAll(nnnbors);
+			if (_k==2) nnbors.clear();  // clear n's NNbors
 		}
-    _nodesq.addAll(nnnbors);
-    if (_k==2) nnbors.clear();  // clear n's NNbors
   }
 
 
@@ -343,7 +345,11 @@ public final class GRASPPacker {
 
 
   /**
-   * invoke as <CODE>java -cp &lt;classpath&gt; graph.packing.GRASPPacker &lt;graph_file&gt; &lt;k&gt; [numinitnodes] [numiterations] [do_local_search] [dls_num_threads] [max_allowed_time(ms)]</CODE>.
+   * invoke as <CODE>java -cp &lt;classpath&gt; graph.packing.GRASPPacker 
+	 * &lt;graph_file&gt; &lt;k&gt; 
+	 * [numinitnodes(0)] [numiterations(1)] 
+	 * [do_local_search(false)] [dls_num_threads(1)] [max_allowed_time(ms)(+Inf)] 
+	 * [use_N2RXP_4_DLS(false)]</CODE>.
    * The graph_file contains the graph in the format specified in the
    * comments of method <CODE>utils.DataMgr.readGraphFromFile2(filename)</CODE>
    * and the numinitnodes is an optional number specifying how many (non-conflicting)
@@ -358,7 +364,7 @@ public final class GRASPPacker {
 	 * <li> args[1] k mandatory, must be 1 or 2, describing the type of the problem
 	 * <li> args[2] numinitnodes optional, if present describes the cardinality of an
 	 * initial random population from which to attempt to construct a first partial
-	 * solution, Default is 0.
+	 * solution. Default is 0.
 	 * <li> args[3] numiterations optional, if present describes the number of major
 	 * outer iterations to run. Default is 1.
 	 * <li> args[4] do_local_search optional, if "true" implies a local search via
@@ -378,7 +384,10 @@ public final class GRASPPacker {
    */
   public static void main(String[] args) throws ParallelException {
 		if (args.length < 2) {
-			System.err.println("usage: java -cp <classpath> <graphfile> <k> [numinitnodes] [numiterations] [do_local_search] [num_dls_threads] [max_allowed_time_millis] [use_N2RXP_4_DLS]");
+			System.err.println("usage: java -cp <classpath> <graphfile> <k> "+
+				                 "[numinitnodes] [numiterations] "+
+				                 "[do_local_search] [num_dls_threads] "+
+				                 "[max_allowed_time_millis] [use_N2RXP_4_DLS]");
 			System.exit(-1);
 		}
     try {
@@ -397,7 +406,7 @@ public final class GRASPPacker {
         int numinit = 0;
         try {
           numinit = Integer.parseInt(args[2]);
-          if (numinit<0) numinit=0;  // ignore wront option value and continue
+          if (numinit<0) numinit=0;  // ignore wrong option value and continue
         }
         catch (ClassCastException e) {
           e.printStackTrace();  // ignore wrong option value and continue
@@ -443,10 +452,13 @@ public final class GRASPPacker {
         }
       }
       Set best_found = null;
+			if (max_time_ms<0)  // -1 or any negative value indicates +Inf
+				max_time_ms = Long.MAX_VALUE;
 			boolean cont = true;
 			TimerThread t = new TimerThread(max_time_ms, cont);
 			t.start();
       for (int i=0; i<num_iters && t.doContinue(); i++) {
+				System.err.println("GRASPPacker: starting iteration "+i);
         Set s = p.pack(init); // Set<Node>
         if (do_local_search) {
           // convert s to Set<Integer>

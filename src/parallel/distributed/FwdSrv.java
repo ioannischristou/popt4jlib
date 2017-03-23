@@ -266,11 +266,13 @@ public final class FwdSrv {
 				// read request from client
 				Object req = _ois.readObject();
 				// forward request to server
+				foos.reset();  // force req to be written anew
 				foos.writeObject(req);
 				foos.flush();
 				// read response from server
 				Object res = fois.readObject();
 				// forward response to client
+				_oos.reset();  // force req to be written anew
 				_oos.writeObject(res);
 				_oos.flush();
 			}
@@ -281,7 +283,7 @@ public final class FwdSrv {
 				// reduce the number of working conns
 				synchronized (FwdSrv.class) {
 					if (--_numWorkingFwdConns<_MAX_WORKING_SHORT_LIVED_CONNS)
-						FwdSrv.class.notifyAll();  // notify any waiting threads on this resource
+						FwdSrv.class.notifyAll();  // notify any waiting threads on this rsc
 				}
 				if (fsios!=null) {
 					releaseForwardingSocket(fsios);
@@ -347,13 +349,17 @@ public final class FwdSrv {
 						}
 						try {
 							_forwardSocket = new Socket(_host2Fwd,_port2Fwd);
-							_forwardOOS = new ObjectOutputStream(_forwardSocket.getOutputStream());
+							_forwardOOS = 
+								new ObjectOutputStream(_forwardSocket.getOutputStream());
 							_forwardOOS.flush();
-							_forwardOIS = new ObjectInputStream(_forwardSocket.getInputStream());
+							_forwardOIS = 
+								new ObjectInputStream(_forwardSocket.getInputStream());
 						}
 						catch (Exception e) {
-							System.err.println("FwdSrv: long-lived connection to fwd-server lost and cannot be re-established"+
-								                 ", will stop accepting long-lived connections from clients");
+							System.err.println("FwdSrv: long-lived connection to fwd-server "+
+								                 "lost and cannot be re-established"+
+								                 ", will stop accepting long-lived connections "+
+								                 "from clients");
 							LLCHdlrThread.stopLLCHdlrThread();
 						}
 					}
@@ -365,12 +371,14 @@ public final class FwdSrv {
 					// forward object to fwd-server, then read response atomically
 					synchronized (_sync) {
 						try {
+							_forwardOOS.reset();  // force object to be written anew
 							_forwardOOS.writeObject(req);
 							_forwardOOS.flush();
 							res = _forwardOIS.readObject();
 						}
 						catch (Exception e) {
-							System.err.println("FwdSrv: long-lived connection to fwd-server lost, shutting down");
+							System.err.println("FwdSrv: long-lived connection to fwd-server "+
+								                 "lost, shutting down");
 							try {
 								try {
 									_forwardSocket.shutdownOutput();
@@ -390,6 +398,7 @@ public final class FwdSrv {
 						}  // end catch clause sending/retrieving data from fwd-server
 					}
 					// send response back to client
+					_oos.reset();  // force object to be written anew
 					_oos.writeObject(res);
 					_oos.flush();
 				}
@@ -416,7 +425,8 @@ public final class FwdSrv {
 	 * dealing with long-lived connection clients, it makes little sense to use
 	 * an executor (thread-pool) as each client connection will likely remain 
 	 * running for very long times, and thus each thread created for handling a
-	 * client connection is not likely to be reusable.
+	 * client connection is not likely to be reusable. Not part of the public API
+	 * (obviously).
 	 */	
 	private static class LLCHdlrThread extends Thread {
 		private static boolean _cont=true;
@@ -443,7 +453,7 @@ public final class FwdSrv {
 	
 	/**
 	 * auxiliary inner-class representing a data-structure holding a socket and
-	 * its associated i/o streams.
+	 * its associated i/o streams. Not part of the public API (obviously).
 	 */
 	private static class SocketIOS {
 		private final Socket _s;

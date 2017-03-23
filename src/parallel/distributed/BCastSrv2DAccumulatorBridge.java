@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package parallel.distributed;
 
 import java.io.ObjectInputStream;
@@ -39,7 +33,11 @@ public class BCastSrv2DAccumulatorBridge implements ObserverIntf {
 	
 	/**
 	 * invoke as:
-	 * <CODE>java -cp &lt;classpath&gt; parallel.distributed.BCastSrv2DAccumulatorBridge [acchost(localhost)] [accport(7900)] [notificationsport(9900)] [bcasthost(localhost)] [bcastport(9901)]</CODE>.
+	 * <CODE>java -cp &lt;classpath&gt; 
+	 * parallel.distributed.BCastSrv2DAccumulatorBridge 
+	 * [acchost(localhost)] [accport(7900)] [notificationsport(9900)] 
+	 * [bcasthost(localhost)] [bcastport(9901)] 
+	 * [notification_type(MAX)]</CODE>.
 	 * @param args 
 	 */
 	public static void main(String[] args) {
@@ -53,13 +51,15 @@ public class BCastSrv2DAccumulatorBridge implements ObserverIntf {
 		if (args.length>3) bcasthost = args[3];
 		int bcastport = 9901;
 		if (args.length>4) bcastport = Integer.parseInt(args[4]);
+		int not_type = DAccumulatorNotificationType._MAX;
+		if (args.length>5) not_type = Integer.parseInt(args[5]);
 		try {
 			_s = new Socket(bcasthost, bcastport);
 			_oos = new ObjectOutputStream(_s.getOutputStream());
 			_oos.flush();
 			_ois = new ObjectInputStream(_s.getInputStream());  // useless
 			DAccumulatorClt.setHostPort(acchost, accport, acchost, notificationsport);
-			DAccumulatorClt.registerListener(new BCastSrv2DAccumulatorBridge(), notificationsport);
+			DAccumulatorClt.registerListener(new BCastSrv2DAccumulatorBridge(), not_type);
 			// now, sleep for ever
 			while (true) {
 				Thread.sleep(1000);  // if interrupted, the thread will exit, and with
@@ -87,6 +87,7 @@ public class BCastSrv2DAccumulatorBridge implements ObserverIntf {
 		try {
 			_oos.writeObject(new Double(value));
 			_oos.flush();
+			_oos.reset();  // force object to be written anew to the stream
 		}
 		catch (Exception e) {
 			try {

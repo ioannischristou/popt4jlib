@@ -7,7 +7,7 @@ import java.io.*;
 
 /**
  * test-driver for PDBTExecInitedClt and networks of PDBTExecInitedWrk
- * objects in general.
+ * objects in general. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2016</p>
@@ -33,7 +33,8 @@ public class PDBTExecInitedCltTest implements Serializable {
     long start = System.currentTimeMillis();
     final int numdims = 100;
     final int numtasks = 10000;  // should reach 10000 at least
-		PDBTExecInitedCltTestInitCommand init_cmd = new PDBTExecInitedCltTestInitCommand();
+		PDBTExecInitedCltTestInitCommand init_cmd = 
+			new PDBTExecInitedCltTestInitCommand();
     PDBTExecInitedClt client1 = new PDBTExecInitedClt();
     PDBTExecInitedClt client2 = new PDBTExecInitedClt();
 		try {
@@ -93,7 +94,8 @@ public class PDBTExecInitedCltTest implements Serializable {
 
   /**
    * invoke with no args as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBTExecInitedCltTest</CODE>.
+   * <CODE>java -cp &lt;classpath&gt; 
+	 * parallel.distributed.PDBTExecInitedCltTest</CODE>.
 	 * A PDBTExecInitedSrv server must be running on localhost accepting client
 	 * connections on default port 7891.
    * @param args String[]
@@ -119,7 +121,9 @@ public class PDBTExecInitedCltTest implements Serializable {
   }
 
 
-  // inner class
+  /**
+	 * auxiliary nested class, not part of the public API.
+	 */
   class PDBTECTThread extends Thread {
     PDBTExecInitedClt _client;
     TNLEvalTask[] _tasks;
@@ -169,7 +173,8 @@ public class PDBTExecInitedCltTest implements Serializable {
             return;
           }
           catch (PDBatchTaskExecutorException e2) {
-            System.err.println("oops, failed again with exception "+e2.getMessage());
+            System.err.println("oops, failed again with exception "+
+							                 e2.getMessage());
           }
           catch (Exception e3) {
             e3.printStackTrace();
@@ -198,6 +203,7 @@ public class PDBTExecInitedCltTest implements Serializable {
 	/**
 	 * auxiliary inner class implementing TaskObject interface, by means of 
 	 * evaluating the <CODE>tests.TridNonlinearFunction</CODE> at a given vector.
+	 * Not part of the public API.
 	 * <p>Title: popt4jlib</p>
 	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
 	 * <p>Copyright: Copyright (c) 2011</p>
@@ -242,7 +248,7 @@ public class PDBTExecInitedCltTest implements Serializable {
 
 
 /**
- * auxiliary no-op class.
+ * auxiliary no-op class, not part of the public API.
  */
 class PDBTExecInitedCltTestInitCommand extends RRObject {
 	//private final static long serialVersionUID = 0L;
@@ -265,7 +271,8 @@ class PDBTExecInitedCltTestInitCommand extends RRObject {
 	 * @throws ClassNotFoundException
 	 * @throws PDBatchTaskExecutorException 
 	 */
-	public void runProtocol(PDBatchTaskExecutorSrv srv, ObjectInputStream ois, ObjectOutputStream oos) 
+	public void runProtocol(PDBatchTaskExecutorSrv srv, 
+		                      ObjectInputStream ois, ObjectOutputStream oos) 
 		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
 		// no-op
 	}

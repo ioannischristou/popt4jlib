@@ -2,7 +2,6 @@ package graph.packing;
 
 import java.util.*;
 import graph.*;
-import parallel.*;
 
 /**
  * Level-dependent Search for the Max Weighted Independent Set problem (MWIS).

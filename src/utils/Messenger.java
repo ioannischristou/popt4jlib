@@ -106,6 +106,25 @@ public class Messenger {
     _instances.put(name, new Messenger(os));
   }
 
+	
+	/**
+	 * utility print method for object arrays.
+	 * @param array Object[]
+	 * @return String
+	 */
+	public static String toString(Object[] array) {
+		String ret="[";
+		if (array==null) ret += "<null>";
+		else {
+			for (int i=0; i<array.length; i++) {
+				ret += array[i];
+				if (i<array.length-1) ret += ",";
+			}
+		}
+		ret += "]";
+		return ret;
+	}
+
 
   /**
    * set a "debug level" to be later used for printing out messages according

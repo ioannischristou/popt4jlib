@@ -2,8 +2,6 @@ package graph.packing;
 
 import java.io.*;
 import java.util.*;
-import graph.Graph;
-import parallel.ParallelException;
 import parallel.distributed.PDAsynchInitCmd;
 import parallel.distributed.PDBatchTaskExecutorSrv;
 import popt4jlib.AllChromosomeMakerClonableIntf;
@@ -11,9 +9,10 @@ import utils.DataMgr;
 import utils.RndUtil;
 
 /**
- * auxiliary class used for the initialization of distributed 
+ * auxiliary class NOT used for the initialization of distributed 
  * <CODE>PDAsynchBatchTaskExecutorWrk</CODE> objects running code for the 
- * distributed version of the BBGASPPacker. Not part of the public API.
+ * distributed version of the BBGASPPacker. Not part of the public API. Will be
+ * removed.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2016</p>

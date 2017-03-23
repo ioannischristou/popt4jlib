@@ -49,17 +49,23 @@ public class DWLockReleaseRequest implements DMsgIntf {
     try {
 			FairDMCoordinator.getInstance(_rwlname).releaseWriteAccess();
 	    // ok, handling thread on server added
-		  oos.writeObject(new OKReply());
+		  oos.writeObject(new OKReply());  // no need for oos.reset() first
 			oos.flush();
 		}
     catch (ParallelException e) {
-      oos.writeObject(new FailedReply());
+      oos.writeObject(new FailedReply());  // no need for oos.reset() first
       oos.flush();
       // throw e;  // don't throw as this would destroy the long-lived socket
 			// connection
     }
   }
 
+	
+	/**
+	 * return String representation containing name of rw-locker for which
+	 * this request is.
+	 * @return String
+	 */
   public String toString() {
     return "DWLockReleaseRequest("+_rwlname+")";
   }

@@ -31,11 +31,16 @@ public class DConditionCounterShutDownRequest implements DMsgIntf {
    * @throws IOException
    */
   public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
-    oos.writeObject(new OKReply());
+    // no need for reset
+		oos.writeObject(new OKReply());
     oos.flush();
     DConditionCounter.getInstance().shutDown();
   }
 
+	/**
+	 * return &quot;DConditionCounterShutDownRequest()&quot;.
+	 * @return String
+	 */
   public String toString() {
     return "DConditionCounterShutDownRequest()";
   }

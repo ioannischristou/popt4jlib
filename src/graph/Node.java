@@ -135,10 +135,18 @@ public class Node implements Comparable, Serializable {
    * @param val Double
    * @throws ParallelException if the current thread has read-lock on the graph
    * and there is another thread currently having a read-lock also
+	 * @throws IllegalStateException if this Node has already set its named 
+	 * property to a non-null value
    */
   public void setWeight(String name, Double val) throws ParallelException {
     try {
       getWriteAccess();
+			// ensure Node's weight doesn't exist
+			Double cval = (Double) _weights.get(name);
+			if (cval!=null) 
+				throw new IllegalStateException("Node with id="+_id+
+					                              "has already set its property "+name+
+					                              " to val="+cval.doubleValue());
       _weights.put(name, val);
       _g.updateMaxNodeWeight(name,val.doubleValue());
     }
@@ -154,7 +162,8 @@ public class Node implements Comparable, Serializable {
 
 
   /**
-   * get the node value for the property named &lt;name&gt; in the passed argument
+   * get the node value for the property named &lt;name&gt; in the passed 
+	 * argument.
    * @param name String
    * @return Double
    */
@@ -352,7 +361,7 @@ public class Node implements Comparable, Serializable {
 
 
   /**
-   * return this Node's neighbors' indices (excluding this Node's id)
+   * return this Node's neighbors' and neighbors' neighbors indices.
    * @return Set // Set&lt;Integer nodeid&gt;
    */
   public Set getNNborIndices() {
@@ -380,7 +389,7 @@ public class Node implements Comparable, Serializable {
 
 	
   /**
-   * return this Node's neighbors' indices (excluding this Node's id).
+   * return this Node's neighbors' and their neighbors' indices.
 	 * This operation is unsynchronized, and therefore, if used in a multi-
 	 * threaded context, should be externally synchronized or otherwise provide
 	 * guarantees that prevent race-conditions from occurring.
@@ -495,7 +504,7 @@ public class Node implements Comparable, Serializable {
   public Set getInLinks() {
     try {
       getReadAccess();
-      return _inlinks;
+      return _g._isDirectionReverted ? _outlinks : _inlinks;
     }
     finally {
       try {
@@ -515,7 +524,7 @@ public class Node implements Comparable, Serializable {
   public Set getOutLinks() {
     try {
       getReadAccess();
-      return _outlinks;
+      return _g._isDirectionReverted ? _inlinks : _outlinks;
     }
     finally {
       try {
@@ -606,7 +615,11 @@ public class Node implements Comparable, Serializable {
 
 	/**
 	 * copies the weights of the Node passed in, in a new hash-table, and updates
-	 * the relevant max node weight values in the graph this node belongs to.
+	 * the relevant max node weight values in the graph this node belongs to. The
+	 * method is not synchronized on itself, as it is only called from methods
+	 * <CODE>Graph.getGraphComponents()</CODE> and 
+	 * <CODE>Graph.getComplement()</CODE> on Graph objects created within these
+	 * methods, and therefore 
 	 * @param n Node
 	 */
 	void copyWeightsFrom(Node n) {

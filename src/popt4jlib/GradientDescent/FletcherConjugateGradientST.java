@@ -1,5 +1,6 @@
 package popt4jlib.GradientDescent;
 
+import popt4jlib.LocalOptimizerIntf;
 import java.util.*;
 import utils.*;
 import parallel.*;
@@ -86,7 +87,7 @@ public class FletcherConjugateGradientST extends GLockingObserverBase implements
    * <ul>
 	 * <li>&lt;"fcg.x0", VectorIntf x&gt; optional, the initial starting point. If this
    * pair does not exist, or if x is null, then it becomes mandatory that
-   * a pair &lt;"gradientdescent.x0", VectorIntf x&gt; pair with a non-null x is
+   * a pair &lt;"[gradientdescent.]x0", VectorIntf x&gt; pair with a non-null x is
    * in the parameters that have been set.
    * <li>&lt;"fcg.numtries", ntries&gt; optional, the number of initial starting points
    * to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; pairs in the
@@ -201,9 +202,12 @@ public class FletcherConjugateGradientST extends GLockingObserverBase implements
   private PairObjDouble min(FunctionIntf f, HashMap p) throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("fcg.gradient");
     if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
-    final VectorIntf x0 = p.get("fcg.x0") == null ?
-                          (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
-                          (VectorIntf) p.get("fcg.x0");
+    final VectorIntf x0 = 
+			p.containsKey("fcg.x0")==false ?
+         _params.containsKey("gradientdescent.x0") ? 
+			    (VectorIntf) _params.get("gradientdescent.x0") : 
+			      _params.containsKey("x0") ? (VectorIntf) _params.get("x0") : null // attempt to retrieve generic point
+			: (VectorIntf) _params.get("fcg.x0");
     if (x0==null) throw new OptimizerException("no fcg.x0"+
                                                " initial point in _params passed");
     VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln

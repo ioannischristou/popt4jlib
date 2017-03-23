@@ -8,16 +8,20 @@ import java.util.*;
 /**
  * class extends the PDBatchTaskExecutorSrv class to allow a load-balancing 
  * distributed computing architecture, whereby a server object of this class can 
- * only have many clients connected to it, and no other known servers 
- * connected to it at all. Several workers of type <CODE>PDBTExecInitedWrk</CODE> 
- * (only) can be connected to this server. Each such worker, before starting its 
- * threads, will have to be initialized by executing an "initialization-command" 
- * object that will arrive first via any client to this server, even though each
- * client has the obligation to send first an initialization command. The server 
- * will always be forwarding the initialization command to each worker upon 
+ * have many clients connected to it, but no other known servers connected to it 
+ * at all. Several workers of type <CODE>PDBTExecInitedWrk</CODE> (only) can be 
+ * connected to this server. Each such worker, before starting its threads, will 
+ * have to be initialized by executing an "initialization-command" object that 
+ * will arrive first via any client to this server, even though each client has 
+ * the obligation to send first an initialization command. The server will 
+ * always be forwarding the initialization command to each worker upon 
  * connecting to it (the initialization command to be used will be the first one 
  * arriving from any client to this server; any other init-cmds from other 
- * clients, will be silently ignored). The clients must be 
+ * clients, will be silently ignored). If the initialization command is an 
+ * <CODE>OKReplyRequestedPDBTExecWrkInitCmd</CODE> object, the server will wait
+ * until each worker finishes its initialization, and sends back to the server
+ * an <CODE>OKReply</CODE>. In this case, the client will also wait until there 
+ * is at least one initialized worker. The clients must always be 
  * <CODE>PDBTExecInitedClt</CODE> objects only.
  * Notice that in case workers connect to this server before any client 
  * connects to it, the workers will have to wait indefinitely until one client 
@@ -41,10 +45,10 @@ import java.util.*;
  * to process two different batches of jobs in sequence, the server drops its
  * connection from this "loser" worker. If the same batch of jobs fails to be 
  * executed by two different workers, the server sends back to the client a 
- * <CODE>FailedReply</CODE> to indicate the job cannot be successfully completed.
+ * <CODE>FailedReply</CODE> indicating the job cannot be successfully completed.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -54,6 +58,8 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 	private RRObject _initCmd=null;  // the init. cmd to be sent to all workers
 	                                 // attached to this server before any other
 	                                 // job.
+	private PDBTExecCmd _cmd=null;  // the current cmd to be sent to all workers
+	                                // attached to this server.
 
 	
   /**
@@ -68,7 +74,8 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBTExecInitedSrv [workers_port(7890)] [clients_port(7891)] [debuglvl(0)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBTExecInitedSrv 
+	 * [workers_port(7890)] [clients_port(7891)] [debuglvl(0)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -125,8 +132,11 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
   }
 
 	
-  TaskObjectsExecutionResults submitWork(Vector originating_clients, TaskObject[] tasks) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
-    Set workers2rm = new HashSet();  // Set<Socket s> for (Socket s, PDBTEW2Listener t) pair
+  TaskObjectsExecutionResults submitWork(Vector originating_clients, 
+		                                     TaskObject[] tasks) 
+		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+    Set workers2rm = new HashSet();  // Set<Socket s> for 
+		                                 // (Socket s, PDBTEW2Listener t) pair
     PDBTEW2Listener t = null;
 		utils.Messenger mger = utils.Messenger.getInstance();
     mger.msg("PDBTExecInitedSrv.submitWork(clts,tasks): "+
@@ -171,15 +181,21 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
       }
     }  // synchronized (this)
     if (t==null) {  // failed to find an available thread
-      mger.msg("PDBTExecInitedSrv.submitWork(clt,tasks): no available threads...",1);
-      throw new PDBatchTaskExecutorException("no available worker or known srv to undertake work");
+      mger.msg("PDBTExecInitedSrv.submitWork(clt,tasks): "+
+				       "no available threads...",1);
+      throw new PDBatchTaskExecutorException(
+				"no available worker or known srv to undertake work");
     }
-    mger.msg("PDBTExecInitedSrv.submitWork(clt,tasks): found an available worker",1);
+    mger.msg("PDBTExecInitedSrv.submitWork(clt,tasks): found "+
+			       "an available worker",1);
     // 2. submit tasks and get back results
-    TaskObjectsExecutionRequest req = new TaskObjectsExecutionRequest(originating_clients, tasks);
-    mger.msg("PDBTExecInitedSrv.submitWork(clt,tasks): created the TaskObjectsExecutionRequest to send",1);
+    TaskObjectsExecutionRequest req = 
+			new TaskObjectsExecutionRequest(originating_clients, tasks);
+    mger.msg("PDBTExecInitedSrv.submitWork(clt,tasks): created the "+
+			       "TaskObjectsExecutionRequest to send",1);
     RRObject res = submitWork(req, t);
-    mger.msg("PDBTExecInitedSrv.submitWork(tasks): finished running submitWork(req,ois,oos)",1);
+    mger.msg("PDBTExecInitedSrv.submitWork(tasks): finished running "+
+			       "submitWork(req,ois,oos)",1);
     synchronized (this) {
       getWorking().remove(t);  // declare worker's availability again
 			notifyAll();  // declare I'm done
@@ -187,7 +203,8 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
     if (res instanceof TaskObjectsExecutionResults)
       return (TaskObjectsExecutionResults) res;
     else {
-      throw new PDBatchTaskExecutorException("PDBTExecInitedSrv.submitWork(tasks): worker failed to process tasks.");
+      throw new PDBatchTaskExecutorException(
+				"PDBTExecInitedSrv.submitWork(tasks): worker failed to process tasks.");
     }
   }
 
@@ -201,11 +218,14 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 	 * @throws IOException
 	 * @throws PDBatchTaskExecutorException 
 	 */
-  private TaskObjectsExecutionResults submitWork(TaskObjectsExecutionRequest req, PDBTEW2Listener t)
+  private TaskObjectsExecutionResults submitWork(
+		TaskObjectsExecutionRequest req, PDBTEW2Listener t)
       throws IOException, PDBatchTaskExecutorException {
-    utils.Messenger.getInstance().msg("PDBTExecInitedSrv.submitWork(req,t): sending request",1);
+    utils.Messenger.getInstance().msg("PDBTExecInitedSrv.submitWork(req,t): "+
+			                                "sending request",1);
     TaskObjectsExecutionResults res = t.runObject(req);
-    utils.Messenger.getInstance().msg("PDBTExecInitedSrv.submitWork(req,t): response received",1);
+    utils.Messenger.getInstance().msg("PDBTExecInitedSrv.submitWork(req,t): "+
+			                                "response received",1);
     return res;
   }
 
@@ -215,24 +235,77 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 	 * worker-threads waiting for such command to be sent to the workers. Only the
 	 * cmd received first applies; subsequent invocations are "lost" (no-ops).
 	 * @param obj RRObject
+	 * @return boolean false iff the init-cmd has already been set and is not an
+	 * <CODE>OKReplyRequestedPDBTExecWrkInitCmd</CODE> object but the argument obj
+	 * is.
 	 */
-	private synchronized void setInitCmd(RRObject obj) {
+	private synchronized boolean setInitCmd(RRObject obj) {
 		if (_initCmd==null) {
 			_initCmd = obj;
 			notifyAll();
+			return true;
 		}
+		return (_initCmd instanceof OKReplyRequestedPDBTExecWrkInitCmd) ||
+			     !(obj instanceof OKReplyRequestedPDBTExecWrkInitCmd);
 	}
-
+	
+	
+	/**
+	 * sets the command to be forwarded to all connected workers. Each worker
+	 * listener will first forward this command when the time comes to execute
+	 * another command, when its method 
+	 * <CODE>PDBTExecInitedSrv.PDBTEW2Listener.runObject(RRobject)</CODE> is 
+	 * executed next. The worker receiving such commands executes them on the main
+	 * thread receiving objects through the wire, not in its thread-pool.
+	 * Notice that if this method is called often enough 
+	 * (by the same or different clients), it's possible that different workers
+	 * will execute different commands. To see this, consider the following 
+	 * scenario: a client sets a command c1, and then sends some tasks t1 to be 
+	 * executed which the server forwards to worker w1; the worker w1 first 
+	 * executes the command c1 of the client, then the tasks t1 sent. Meanwhile, 
+	 * another client sends another command c2, and then another set of tasks t2 
+	 * to be executed to the same server. The server has now changed its command
+	 * to c2, and then decides to send the tasks to worker w2. Worker w2 will now
+	 * execute only c2 (c1 is "lost" to this worker), and will then execute t2.
+	 * At this point, w1 has executed c1, and w2 has executed c2. If another 
+	 * client submits tasks t3 which the server forwards to w1, then w1 will also
+	 * execute c2 first, and then execute t3, and will be "in synch" with w2 as
+	 * far as the latest commands are concerned.
+	 * @param obj PDBTExecCmd
+	 */
+	private synchronized void setCmd(PDBTExecCmd obj) {
+		_cmd = obj;
+	}
+	
+	
+	/**
+	 * get the latest command set by a client to be forwarded to workers.
+	 * @return PDBTExecCmc
+	 */
+	private synchronized PDBTExecCmd getCmd() {
+		return _cmd;
+	}
+	
 
   /**
-   * adds a new worker to the network.
+   * adds a new worker to the network. Workers are server programs that connect
+	 * to a <CODE>PDBTExecInitedSrv</CODE> and listen for commands (as 
+	 * <CODE>RRObject</CODE> objects) to arrive through the wire, which they then 
+	 * execute. This method will block until the server receives an initialization
+	 * command from a client; the method will further block if the initialization
+	 * command received first is a <CODE>OKReplyRequestedPDBTExecWrkInitCmd</CODE>
+	 * in which case the method will not return until the worker in the other end
+	 * of the socket has been fully initialized and sends back an 
+	 * <CODE>OKReply</CODE>.
    * @param s Socket
 	 * @throws IOException
    */
-  private synchronized void addNewWorkerConnection(Socket s) throws IOException {
+  private synchronized void addNewWorkerConnection(Socket s) 
+		throws IOException {
     PDBTEW2Listener lt = new PDBTEW2Listener(s);
-		lt.init();
+		lt.initWorker();
     getWorkers().put(s, lt);
+		notifyAll();  // notify client-threads waiting for workers to be inited
   }
 
 
@@ -240,27 +313,32 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
    * adds a new client to the network. The difference between clients and
    * workers is that "clients" submit jobs to the network, but don't want to
    * "get" any job to do themselves. Workers may also submit jobs to the network
-   * but are also available to run tasks themselves as well.
+   * but are mainly available to run tasks themselves as well, and in fact this
+	 * is their main purpose.
    * @param s Socket
 	 * @throws IOException
    */
-  private synchronized void addNewClientConnection(Socket s) throws IOException {
+  private synchronized void addNewClientConnection(Socket s) 
+		throws IOException {
 		PDBTEC2ListenerThread lt = new PDBTEC2ListenerThread(s);
     lt.start();
   }
 
 
   private static void usage() {
-    System.err.println("usage: java -cp <classpath> parallel.distributed.PDBTExecInitedSrv [workersport(7890)] [clientsport(7891)] [debuglvl(0)]");
+    System.err.println("usage: java -cp <classpath> "+
+			                 "parallel.distributed.PDBTExecInitedSrv "+
+			                 "[workersport(7890)] [clientsport(7891)] [debuglvl(0)]");
   }
 
 
   /**
    * auxiliary inner class used for listening for incoming worker connections
-   * and creating new PDBTEWListener objects to handle each connection.
+   * and creating new PDBTEW2Listener objects to handle each connection. Not 
+	 * part of the public API.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
-   * <p>Copyright: Copyright (c) 2011</p>
+   * <p>Copyright: Copyright (c) 2011-2017</p>
    * <p>Company: </p>
    * @author Ioannis T. Christou
    * @version 1.0
@@ -289,13 +367,15 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
           try {
             Socket s = ss.accept();
             mger.msg("Srv: Incoming New Worker Connection to the Network",1);
-						mger.msg("Srv: Thread may have to wait if an init_cmd has not yet arrived from the client",1);
+						mger.msg("Srv: Thread may have to wait if an init_cmd has not "+
+							       "yet arrived from the client",1);
             addNewWorkerConnection(s);
-            mger.msg("Srv: finished adding new worker connection to the _workers",1);
+            mger.msg("Srv: finished adding new worker connection "+
+							       "to the _workers",1);
           }
           catch (Exception e) {
 						mger.msg("PDBTExecInitedSrv.W2Thread.run(): "+
-							                                "An error occured while adding new worker connection", 0);
+							       "An error occured while adding new worker connection", 0);
             // e.printStackTrace();
           }
         }
@@ -303,7 +383,7 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
       catch (IOException e) {
         // e.printStackTrace();
 				mger.msg("PDBTExecInitedSrv.W2Thread.run(): "+
-					                                "Failed to create Server Socket, Server exiting.", 0);
+					       "Failed to create Server Socket, Server exiting.", 0);
 				System.exit(-1);
       }
     }
@@ -312,10 +392,11 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 
   /**
    * auxiliary inner class used for listening for incoming client connections
-   * and creating new PDBTECListenerThread threads to handle each connection.
+   * and creating new <CODE>PDBTEC2ListenerThread</CODE> threads to handle each 
+	 * connection. Not part of the public API.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
-   * <p>Copyright: Copyright (c) 2011</p>
+   * <p>Copyright: Copyright (c) 2011-2017</p>
    * <p>Company: </p>
    * @author Ioannis T. Christou
    * @version 1.0
@@ -355,7 +436,7 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
       catch (IOException e) {
         // e.printStackTrace();
 				mger.msg("PDBTExecInitedSrv.C2Thread.run(): "+
-					                                "Failed to create Server Socket, Server exiting.", 0);
+					       "Failed to create Server Socket, Server exiting.", 0);
 				System.exit(-1);
       }
     }
@@ -363,10 +444,10 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 
 
   /**
-   * auxiliary inner class.
+   * auxiliary inner class. Not part of the public API.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
-   * <p>Copyright: Copyright (c) 2011</p>
+   * <p>Copyright: Copyright (c) 2011-2017</p>
    * <p>Company: </p>
    * @author Ioannis T. Christou
    * @version 1.0
@@ -387,26 +468,56 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 
 		/**
 		 * reads from the input stream the initialization command sent to it, sends
-		 * back to the client an <CODE>OKReply</CODE> "ACK" msg, and then enters an
-		 * infinite loop waiting to read from the input stream an 
-		 * <CODE>RRObject</CODE> obj that should really be of type 
-		 * <CODE>TaskObjectsExecutionRequest</CODE>, on which it executes its method
-		 * <CODE>obj.runProtocol(_srv,_ois, _oos)</CODE>.
+		 * back to the client an <CODE>OKReply</CODE> "ACK" msg (immediately, unless
+		 * the init-cmd is an <CODE>OKReplyRequestedPDBTExecWrkInitCmd</CODE> and is
+		 * first to arrive to the server, in which case server first waits until at 
+		 * least one worker has been properly initialized) and then enters an 
+		 * infinite loop waiting to read from the input stream <CODE>RRObject</CODE> 
+		 * objects that should really be of type 
+		 * <CODE>TaskObjectsExecutionRequest</CODE> on which it executes its method
+		 * <CODE>obj.runProtocol(_srv,_ois,_oos)</CODE>. Alternatively, the objects 
+		 * received within the loop may be <CODE>PDBTExecCmd</CODE>, in which case 
+		 * the method <CODE>setCmd(obj)</CODE> is executed, and an OKReply sent back 
+		 * to the client. Notice that if the client sends an init-cmd that requests
+		 * workers to reply, but the server has already set (from another client) an 
+		 * init-cmd that doesn't require replies from the workers, the connection
+		 * to the client will be lost, as this is considered an inconsistent state.
 		 */
     public void run() {
 			// first, read from socket the worker-initialization object that will
 			// be broadcast for execution to every worker connecting to this server.
 			utils.Messenger mger = utils.Messenger.getInstance();
 			try {
-				mger.msg("PDBTEC2ListenerThread: waiting to read the init_cmd from client", 1);
+				mger.msg(
+					"PDBTEC2ListenerThread: waiting to read the init_cmd from client", 1);
 				RRObject initCmd = (RRObject) _ois.readObject();
-				mger.msg("PDBTEC2ListenerThread: done reading the init_cmd from client", 1);
-				setInitCmd(initCmd);  // initCmd will be set only if this is 1st client
+				mger.msg(
+					"PDBTEC2ListenerThread: done reading the init_cmd from client", 1);
+				boolean set = setInitCmd(initCmd);  // initCmd will be set but
+				                                    // only if this is 1st client
+				if (!set) 
+					throw new IllegalStateException(
+						"init-cmd already set is not OKReplyRequestedPDBTExecWrkInitCmd");
 				mger.msg("PDBTEC2ListenerThread: done setting the init_cmd", 2);
+				if (initCmd instanceof OKReplyRequestedPDBTExecWrkInitCmd) {
+					// wait until at least one worker is initialized
+					mger.msg("PDBTEC2ListenerThread: waiting "+
+						       "for at least 1 Wrk to initialize", 2);
+					synchronized (PDBTExecInitedSrv.this) {
+						while (getWorkers().size()==0) {  // wait for at least 1 worker
+							try {
+								PDBTExecInitedSrv.this.wait();
+							}
+							catch (InterruptedException e) {
+								Thread.currentThread().interrupt();
+							}
+						}
+					}
+				}
 				// send back to the clt an "ACK" message
-				_oos.writeObject(new OKReply());
+				_oos.writeObject(new OKReply());  // no need to call _oos.reset() first
 				_oos.flush();
-				mger.msg("PDBTEC2ListenerThread: done sending OKReply through the socket", MIN_PRIORITY);
+				mger.msg("PDBTEC2ListenerThread: sent OKReply to client", 2);
 			}
 			catch (Exception e) {  // client closed connection
         // e.printStackTrace();
@@ -418,24 +529,43 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
         catch (Exception e2) {
           // e2.printStackTrace();
         }
-        mger.msg("PDBTEC2ListenerThread: Client Network Connection Closed",0);
+				finally {
+					mger.msg("PDBTEC2ListenerThread.run(): in initialization, "+
+						       "received Exception '"+e+"'.Client connection closed; "+
+						       "thread exits.",0);
+					return;
+				}
 			}
+			// main loop
       while (true) {
         try {
-          mger.msg("PDBTEC2ListenerThread.run(): waiting to read an RRObject...",2);
+          mger.msg(
+						"PDBTEC2ListenerThread.run(): waiting to read an RRObject...",2);
           // 1. read from socket input
-          RRObject obj =  (RRObject) _ois.readObject();  // obj is an TaskObjectsExecutionRequest
+          RRObject obj =  (RRObject) _ois.readObject();
           mger.msg("PDBTEC2ListenerThread.run(): RRObject read",2);
           // 2. take appropriate action
           try {
+						if (obj instanceof PDBTExecCmd) {
+							setCmd((PDBTExecCmd)obj);
+							mger.msg("PDBTEC2ListenerThread: done setting PDBTExecCmd", 2);
+							// send back to the clt an "ACK" message
+							_oos.writeObject(new OKReply());  // no need to call _oos.reset()
+							_oos.flush();
+							mger.msg("PDBTEC2ListenerThread: done sending OKReply "+
+								       "to client", 2);
+							continue;
+						}
             obj.runProtocol(PDBTExecInitedSrv.this, _ois, _oos);
           }
           catch (PDBatchTaskExecutorException e) {
 						mger.msg("PDBTEC2ListenerThread.run(): calling obj.runProtocol() "+
-							       "issued PDBatchTaskExecutorException, will try one more time.", 1);
+							       "issued PDBatchTaskExecutorException, will try one more "+
+							       "time.", 1);
 						secondChance(obj);
           }
-					catch (IOException e) {  // worker somehow failed, give srv one more shot, then notify client
+					catch (IOException e) {  
+            // worker somehow failed, give srv one more shot, then notify client
 						mger.msg("PDBTEC2ListenerThread.run(): calling obj.runProtocol() "+
 							       "issued IOException, will try one more time.", 1);
 						secondChance(obj);
@@ -455,24 +585,30 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 						       "(exception '"+e+"' caught)",0);
 					break;  // terminate the thread as client lost connection
         }
-      }
+      }  // while true
     }
 		
 		
-		private void secondChance(RRObject obj) throws ClassNotFoundException, IOException {
+		private void secondChance(RRObject obj) throws ClassNotFoundException, 
+			                                             IOException {
 			try {
 				obj.runProtocol(PDBTExecInitedSrv.this, _ois, _oos);
 			}
 			catch (PDBatchTaskExecutorException e) {
-				utils.Messenger.getInstance().msg("PDBTEC2ListenerThread.run(): sending NoWorkerAvailableResponse() to client...",1);
+				utils.Messenger.getInstance().msg(
+					"PDBTEC2ListenerThread.run(): sending NoWorkerAvailableResponse() "+
+					"to client...",1);
 				// e.printStackTrace();
-				_oos.writeObject(new NoWorkerAvailableResponse(((TaskObjectsExecutionRequest) obj)._tasks));
+				_oos.reset();  // force objects to be written anew
+				_oos.writeObject(new NoWorkerAvailableResponse(
+					                     ((TaskObjectsExecutionRequest) obj)._tasks));
 				_oos.flush();							
 			}
 			catch (IOException e2) {
-				utils.Messenger.getInstance().msg("PDBTEC2ListenerThread.run(): sending FailedReply to client...",1);
+				utils.Messenger.getInstance().msg(
+					"PDBTEC2ListenerThread.run(): sending FailedReply to client...",1);
 				// e2.printStackTrace();
-				_oos.writeObject(new FailedReply());
+				_oos.writeObject(new FailedReply());  // _oos.reset() not needed here
 				_oos.flush();														
 			}
 		}
@@ -481,10 +617,10 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 
 
   /**
-   * auxiliary inner class.
+   * auxiliary inner class. Not part of the public API.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
-   * <p>Copyright: Copyright (c) 2011</p>
+   * <p>Copyright: Copyright (c) 2011-2017</p>
    * <p>Company: </p>
    * @author Ioannis T. Christou
    * @version 1.0
@@ -497,6 +633,10 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 		private boolean _OK2SendOOB = false;  // redundant initialization
 		private boolean _isPrevRunSuccess=true;
 		private TaskObject[] _prevFailedBatch=null;
+		private PDBTExecCmd _lastCmdExecuted=null;  // any cmd sent by a client to
+		                                            // be executed on all connected
+		                                            // workers that was actually run
+		                                            // note: not same as _initCmd
 
     private PDBTEW2Listener(Socket s) throws IOException {
       _s = s;
@@ -512,32 +652,64 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 		 * <CODE>addNewWorkerConnection(s)</CODE> method.
 		 * @throws IOException 
 		 */
-		private void init() throws IOException {
+		private void initWorker() throws IOException {
 			// wait until the _initCmd is ready, and send it over the socket
 			while (_initCmd==null) {
 				try {
 					utils.Messenger.getInstance().msg(
-						"PDBTExecInitedSrv.PDBTEW2Listener.init(): "+
+						"PDBTExecInitedSrv.PDBTEW2Listener.initWorker(): "+
 						"W2Thread waiting on server to obtain init_cmd from client...", 0);
-					PDBTExecInitedSrv.this.wait();  // the thread calling this method is already synchronized on _srv.
+					PDBTExecInitedSrv.this.wait();  // the thread calling this method 
+					                                // is already synchronized on _srv.
 				}
 				catch (InterruptedException e) {
 					// e.printStackTrace();
 					Thread.currentThread().interrupt();
 				}
 			}
+			_oos.reset();  // force object to be written anew
 			_oos.writeObject(_initCmd);
 			_oos.flush();
+			if (_initCmd instanceof OKReplyRequestedPDBTExecWrkInitCmd) {
+				try {
+					Object res = _ois.readObject();
+					if (!(res instanceof OKReply)) {
+						throw new IllegalStateException("Wrk: initialization failed");
+					}
+				}
+				catch (ClassNotFoundException e) {
+					throw new IllegalStateException("Wrk: failed to initialize");					
+				}
+			}
 			utils.Messenger.getInstance().msg(
-						"PDBTExecInitedSrv.PDBTEW2Listener.init(): done.", 0);
+						"PDBTExecInitedSrv.PDBTEW2Listener.initWorker(): done.", 0);
 		}
 
 		
-    private TaskObjectsExecutionResults runObject(TaskObjectsExecutionRequest obj) throws IOException, PDBatchTaskExecutorException {
+    private TaskObjectsExecutionResults runObject(TaskObjectsExecutionRequest o) 
+			throws IOException, PDBatchTaskExecutorException {
       Object res = null;
       try {
         setAvailability(false);
-        _oos.writeObject(obj);
+				PDBTExecCmd cmd = getCmd();
+				if (cmd!=null && cmd!=_lastCmdExecuted) {  // send the new cmd to worker
+					_oos.reset();  // force writing object anew
+					_oos.writeObject(cmd);
+					_oos.flush();
+					res = _ois.readObject();
+					if (!(res instanceof OKReply)) {
+						PDBatchTaskExecutorException e = 
+							new PDBatchTaskExecutorException(
+								    "worker failed to run PDBTExecCmd");
+						processException(e);  // kick worker out
+						_isPrevRunSuccess=false;
+						_prevFailedBatch = o._tasks;
+						throw e;
+					}
+					_lastCmdExecuted = cmd;
+				}
+				_oos.reset();  // force writing object anew
+        _oos.writeObject(o);
         _oos.flush();
         res = _ois.readObject();
         setAvailability(true);
@@ -557,11 +729,11 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
       else {
 				PDBatchTaskExecutorException e = 
 					new PDBatchTaskExecutorException("worker failed to run tasks");
-				if (_isPrevRunSuccess==false && !sameAsPrevFailedJob(obj._tasks)) { 
+				if (_isPrevRunSuccess==false && !sameAsPrevFailedJob(o._tasks)) { 
 					processException(e);  // twice a loser, kick worker out
 				}
 				_isPrevRunSuccess=false;
-				_prevFailedBatch = obj._tasks;
+				_prevFailedBatch = o._tasks;
 				throw e;
 			}
     }
@@ -584,14 +756,17 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
       if (res && _OK2SendOOB) {  // work-around the OOB data issue  
         // last test using OOB sending of data
         try {
-					_OK2SendOOB = false;  // indicates should not send OOB data until set to true
-          _s.sendUrgentData(0);  // unfortunately, if this method is called often enough, 
-					                       // it will cause the socket to close???
+					_OK2SendOOB = false;  // indicates should not send OOB data 
+					                      // until set to true
+          _s.sendUrgentData(0);  // unfortunately, if this method is called 
+					                       // often enough, it will cause the socket to 
+					                       // close???
           res = true;
         }
         catch (IOException e) {
 					// e.printStackTrace();
-          utils.Messenger.getInstance().msg("PDBTExecInitedSrv.getAvailability(): Socket has been closed",0);
+          utils.Messenger.getInstance().msg(
+						"PDBTExecInitedSrv.getAvailability(): Socket has been closed",0);
           res = false;
           _isAvail = false;  // declare availability to false as well
           // try graceful exit
@@ -634,7 +809,8 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
       finally {
 	      synchronized (PDBTExecInitedSrv.this) {
 		      getWorkers().remove(_s);
-			    utils.Messenger.getInstance().msg("PDBTExecInitedSrv: Worker Network Connection Closed",0);
+			    utils.Messenger.getInstance().msg(
+						"PDBTExecInitedSrv: Worker Network Connection Closed",0);
 				}
         _ois = null;
         _oos = null;

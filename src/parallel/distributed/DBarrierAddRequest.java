@@ -38,10 +38,16 @@ public class DBarrierAddRequest implements DMsgIntf {
   public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
     ComplexBarrier.addThread(_bname, Thread.currentThread());
     // ok, handling thread on server added
+    // no need for reset
     oos.writeObject(new OKReply());
     oos.flush();
   }
 
+	
+  /**
+	 * return a String representation containing the name of this barrier.
+	 * @return String
+	 */
   public String toString() {
     return "DBarrierAddRequest("+_bname+")";
   }

@@ -10,7 +10,8 @@ import java.io.Serializable;
 
 /**
  * Multi-threaded version of the 
- * <CODE>IntSetN1RXPFirstImprovingGraphAllMovesMaker</CODE> class.
+ * <CODE>IntSetN1RXPFirstImprovingGraphAllMovesMaker</CODE> class. Class is 
+ * specific to the 1-packing (MWIS) and 2-packing graph problems.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -18,7 +19,8 @@ import java.io.Serializable;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromosomeMakerClonableIntf {
+public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT 
+  implements AllChromosomeMakerClonableIntf {
   private IntSet _soln=null;
 	private int _k;
 	
@@ -56,7 +58,8 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
    * @param chromosome Object Set&lt;Integer node-id&gt;
    * @param params HashMap must contain the following key-value pairs:
 	 * <ul>
-   * <li> &lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;
+   * <li> &lt;"dls.intsetneighborhoodfilter", 
+	 *      IntSetNeighborhoodFilterIntf filter&gt;
 	 * <li> &lt;"dls.graph", Graph g&gt; the original problem graph
 	 * </ul>
    * It may also optionally contain the following pairs:
@@ -67,20 +70,25 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
    * <li> &lt;"dls.numthreads", Integer num_threads&gt; which if present denotes 
 	 * the number of threads that an a-synchronous batch-task executor will create 
 	 * and use to execute the generated tasks, default is 1.
-	 * <li> &lt;"dls.fpabte", FasterParallelAsynchronousBatchTaskExecutor extor&gt;
+	 * <li> &lt;"dls.fpabte", 
+	 *      FasterParallelAsynchronousBatchTaskExecutor extor&gt;
 	 * which if present is the parallel executor to use, default is null. If such
 	 * an executor is present, the "dls.numthreads" value is ignored.
 	 * <li> &lt;"dls.lock_graph", Boolean val&gt; which if present and false, 
 	 * indicates that the graph and its elements will be accessed without any
 	 * synchronization. Default is true.
 	 * </ul>
-   * <p>The filter must specify what ints to be tried for addition to the set given
-   * an int to be removed from the set.</p>
+   * <p>The filter must specify what ints to be tried for addition to the set 
+	 * given an int to be removed from the set.</p>
    * @throws OptimizerException if any of the parameters are incorrectly set
    * @return Vector Vector&lt;Set&lt;Integer nodeid&gt; &gt;
    */
-  public Vector createAllChromosomes(Object chromosome, HashMap params) throws OptimizerException {
-    if (chromosome==null) throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): null chromosome");
+  public Vector createAllChromosomes(Object chromosome, HashMap params) 
+		throws OptimizerException {
+    if (chromosome==null) 
+			throw new OptimizerException(
+				"IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): "+
+				"null chromosome");
     synchronized (this) {
       _soln=null;  // reset
     }
@@ -105,7 +113,8 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
         e.printStackTrace();  // ignore
       }
 			if (params.containsKey("dls.fpabte")) 
-				executor = (FasterParallelAsynchBatchTaskExecutor) params.get("dls.fpabte");
+				executor = 
+					(FasterParallelAsynchBatchTaskExecutor) params.get("dls.fpabte");
 			else executor = FasterParallelAsynchBatchTaskExecutor.
 							newFasterParallelAsynchBatchTaskExecutor(numthreads);
       g = (Graph) params.get("dls.graph");
@@ -143,7 +152,8 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
           IntSet xnew = new IntSet(x0);
           xnew.removeAll(rmids);
           if (!searchCompleted()) {
-            SetCreatorTaskObject scto = new SetCreatorTaskObject(xnew, id.intValue(), tryids, 2, params);
+            SetCreatorTaskObject scto = 
+							new SetCreatorTaskObject(xnew, id.intValue(), tryids, 2, params);
             tasks.addElement(scto);
             if (--count==0) {  // batch is full, submit
               executor.executeBatch(tasks);
@@ -161,7 +171,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
         ConditionCounter cond = new ConditionCounter(tasks.size());
         for (int i=0; i<tasks.size(); i++) {
           SetCreatorTaskObject ti = (SetCreatorTaskObject) tasks.elementAt(i);
-          ti.setCondCounter(cond);  // add the counter to each task to be executed
+          ti.setCondCounter(cond);  // add counter to each task to be executed
         }
         executor.executeBatch(tasks);
         // now wait until those tasks run
@@ -181,7 +191,9 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
     }
     catch (Exception e) {
       e.printStackTrace();
-      throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): failed");
+      throw new OptimizerException(
+				"IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): "+
+				"failed");
     }
     finally {
       if (rlocked_graph) {
@@ -190,7 +202,8 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
         }
         catch (ParallelException e) {  // can never get here
           e.printStackTrace();
-          throw new OptimizerException("insanity: ParallelException should not have been thrown");
+          throw new IllegalStateException("insanity: ParallelException "+
+						                              "should not have been thrown");
         }
       }
 			if (params.get("dls.fpabte")==null) {
@@ -199,12 +212,8 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
 				}
 				catch (ParallelException e) {  // can never get here
 					e.printStackTrace();
-					throw new OptimizerException("insanity: ParallelException should not have been thrown");
-				}
-	      catch (ParallelExceptionUnsubmittedTasks e) {  // can never get here
-		      e.printStackTrace();
-			    throw new OptimizerException("insanity: ParallelExceptionUnsubmittedTasks should not have been thrown:"+
-				                               " total of "+e.getUnsubmittedTasks().size()+" pills reported failing?");
+					throw new OptimizerException("insanity: ParallelException "+
+						                           "should not have been thrown");
 				}
 			}
     }
@@ -228,8 +237,10 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
 	 * elements
    * @return Set // IntSet
    */
-  protected Set createSet(Set res, int rmid, List tryids, int maxcard, HashMap params) {
+  protected Set createSet(Set res, int rmid, List tryids, int maxcard, 
+		                      HashMap params) {
     IntSet x = (IntSet) res;
+		if (maxcard<=0) return res;  // itc-20170314: cut search at depth=maxcard
     for (int i=0; i<tryids.size(); i++) {
       Integer tid = (Integer) tryids.get(i);
       if (tid.intValue()!=rmid) {
@@ -264,14 +275,17 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
       Graph g = (Graph) params.get("dls.graph");
 			boolean do_rlock = true;
 			Object drlO = params.get("dls.lock_graph");
-			if (drlO!=null && drlO instanceof Boolean && ((Boolean) drlO).booleanValue()==false)
+			if (drlO!=null && drlO instanceof Boolean && 
+				  ((Boolean) drlO).booleanValue()==false)
 				do_rlock = false;
-      Node n = do_rlock ? g.getNode(tid.intValue()) : g.getNodeUnsynchronized(tid.intValue());
+      Node n = do_rlock ? g.getNode(tid.intValue()) : 
+				                  g.getNodeUnsynchronized(tid.intValue());
       Set nodes = new TreeSet();
       Iterator xiter = x.iterator();
       while (xiter.hasNext()) {
 				Node nx = do_rlock ? g.getNode(((Integer) xiter.next()).intValue()) :
-								             g.getNodeUnsynchronized(((Integer) xiter.next()).intValue());
+								             g.getNodeUnsynchronized(((Integer) xiter.next()).
+															 intValue());
         nodes.add(nx);
       }
       return isFree2Cover(n, nodes, _k, do_rlock);
@@ -293,8 +307,9 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
    * @return boolean // true iff nj can be added to active
    * @throws ParallelException
    */
-  private static boolean isFree2Cover(Node nj, Set active, int k, boolean do_rlock) 
-	    throws ParallelException {
+  private static boolean isFree2Cover(Node nj, Set active, int k, 
+		                                  boolean do_rlock) 
+	  throws ParallelException {
     if (active==null) return true;
     if (active.contains(nj)) return false;
 		/* slow
@@ -310,8 +325,9 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
     return !activated.contains(nj);
 		*/
 		// /* faster: no need for HashSet's creation
-		Set nborsj = k==1 ? (do_rlock ? nj.getNbors() : nj.getNborsUnsynchronized()) :
-						            (do_rlock ? nj.getNNbors() : nj.getNNborsUnsynchronized());
+		Set nborsj = k==1 ? 
+			(do_rlock ? nj.getNbors() : nj.getNborsUnsynchronized()) :
+			(do_rlock ? nj.getNNbors() : nj.getNNborsUnsynchronized());
 		Iterator itj = nborsj.iterator();
 		while (itj.hasNext()) {
 			Node nnj = (Node) itj.next();
@@ -347,7 +363,8 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
     private boolean _isDone=false;
     private ConditionCounter _cond = null;
 
-    SetCreatorTaskObject(IntSet x, int id, List tryids, int maxcard, HashMap params) {
+    SetCreatorTaskObject(IntSet x, int id, List tryids, int maxcard, 
+			                   HashMap params) {
       _x0 = x;
       _id = id;
       _tryids = tryids;
@@ -367,7 +384,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMakerMT  implements AllChromo
       return this;
     }
     public void copyFrom(TaskObject other) throws IllegalArgumentException {
-      throw new IllegalArgumentException("copyFrom(other): operation not supported");
+      throw new IllegalArgumentException("copyFrom(other): method unsupported");
     }
   }
 

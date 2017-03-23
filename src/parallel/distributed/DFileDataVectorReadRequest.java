@@ -57,6 +57,7 @@ public class DFileDataVectorReadRequest implements DMsgIntf {
 	public void execute(ObjectOutputStream oos) throws IOException {
 		try {
 			Vector vectors = DataMgr.readVectorsFromFileInRange(_filename, _fromIndex, _toIndex);
+			oos.reset();  // force object to be written anew
 			oos.writeObject(vectors);
 			_vectors = vectors;
 		}

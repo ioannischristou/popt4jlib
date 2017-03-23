@@ -1,5 +1,6 @@
 package popt4jlib.GradientDescent;
 
+import popt4jlib.LocalOptimizerIntf;
 import java.util.*;
 import utils.*;
 import analysis.*;
@@ -19,7 +20,7 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
   FunctionIntf _f;
-  private ASDThread[] _threads=null;
+  private transient ASDThread[] _threads=null;
   private int _numOK=0;
   private int _numFailed=0;
 
@@ -90,7 +91,7 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
 	 * <li>&lt;"asd.numtries", Integer ntries&gt; optional, the number of initial 
 	 * starting points to use (must either exist then ntries 
 	 * &lt;"asd.x$i$",VectorIntf v&gt; pairs in the parameters or a pair 
-	 * &lt;"gradientdescent.x0",VectorIntf v&gt; pair in params). Default is 1.
+	 * &lt;"[gradientdescent.]x0",VectorIntf v&gt; pair in params). Default is 1.
    * <li> &lt;"asd.gradient", VecFunctionIntf g&gt; optional, the gradient of f,
    * the function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
@@ -292,9 +293,12 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
     private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) throws OptimizerException {
       VecFunctionIntf grad = (VecFunctionIntf) p.get("asd.gradient");
       if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
-      final VectorIntf x0 = !p.containsKey("asd.x"+solindex) ?
-          (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
-          (VectorIntf) p.get("asd.x"+solindex);
+    final VectorIntf x0 = 
+			_params.containsKey("asd.x"+solindex)==false ?
+         _params.containsKey("gradientdescent.x0") ? 
+			    (VectorIntf) _params.get("gradientdescent.x0") : 
+			      _params.containsKey("x0") ? (VectorIntf) _params.get("x0") : null // attempt to retrieve generic point
+			: (VectorIntf) _params.get("asd.x"+solindex);
       if (x0==null) throw new OptimizerException("no asd.x"+solindex+" initial point in _params passed");
       VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
       final int n = x.getNumCoords();

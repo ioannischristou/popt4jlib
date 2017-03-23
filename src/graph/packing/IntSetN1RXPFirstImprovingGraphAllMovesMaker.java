@@ -12,7 +12,9 @@ import java.util.*;
  * interface, and implements local search in the N_{-1+P} neighborhood of ints:
  * a set of integers S1 is a neighbor of another set S, if S1 is the result of
  * subtracting one member of S, and then augmenting S by as many integers as 
- * possible without violating feasibility of the solution.
+ * possible without violating feasibility of the solution. The class is specific
+ * to the 2-packing problem as it checks for neighbors-of-neighbors when testing
+ * feasibility of adding nodes to a solution.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -20,7 +22,8 @@ import java.util.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromosomeMakerIntf {
+public class IntSetN1RXPFirstImprovingGraphAllMovesMaker 
+  implements AllChromosomeMakerIntf {
 
   /**
    * no-arg, no-op constructor.
@@ -36,7 +39,8 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    * @param params HashMap must contain the following key-value pairs:
 	 * <ul>
 	 * <li>&lt;"dls.graph", Graph g&gt; the graph of the problem
-   * <li>&lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;
+   * <li>&lt;"dls.intsetneighborhoodfilter", 
+	 *     IntSetNeighborhoodFilterIntf filter&gt;
 	 * </ul>
    * It may also optionally contain a pair
    * &lt;"dls.intsetneighborhoodmaxnodestotry", Integer max_nodes&gt; which if 
@@ -47,8 +51,12 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    * @throws OptimizerException
    * @return Vector // Vector&lt;Set&lt;Integer&gt; &gt;
    */
-  public Vector createAllChromosomes(Object chromosome, HashMap params) throws OptimizerException {
-    if (chromosome==null) throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): null chromosome");
+  public Vector createAllChromosomes(Object chromosome, HashMap params) 
+		throws OptimizerException {
+    if (chromosome==null) 
+			throw new OptimizerException(
+				"IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): "+
+				"null chromosome");
     boolean rlocked_graph = false;
     Graph g = null;
     try {
@@ -59,7 +67,7 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
       Set x0 = (Set) chromosome;
       //System.err.println("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): working w/ a soln of size="+x0.size());
       IntSetNeighborhoodFilterIntf filter = (IntSetNeighborhoodFilterIntf)
-          params.get("dls.intsetneighborhoodfilter");
+        params.get("dls.intsetneighborhoodfilter");
       int max_nodes2try = Integer.MAX_VALUE;
       Integer mn2tI = null;
       try {
@@ -103,7 +111,9 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
     }
     catch (Exception e) {
       e.printStackTrace();
-      throw new OptimizerException("IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): failed");
+      throw new OptimizerException(
+				"IntSetN1RXPFirstImprovingGraphAllMovesMaker.createAllChromosomes(): "+
+				"failed");
     }
     finally {
       if (rlocked_graph) {
@@ -112,7 +122,8 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
         }
         catch (ParallelException e) {  // can never get here
           e.printStackTrace();
-          throw new OptimizerException("insanity: ParallelException should not have been thrown");
+          throw new IllegalStateException(
+						"insanity: ParallelException should not have been thrown");
         }
       }
     }
@@ -133,8 +144,10 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    * @param params HashMap
    * @return Set // IntSet
    */
-  protected Set createSet(Set res, int rmid, List tryids, int maxcard, HashMap params) {
+  protected Set createSet(Set res, int rmid, List tryids, int maxcard, 
+		                      HashMap params) {
     IntSet x = (IntSet) res;
+		if (maxcard<=0) return res;  // itc-20170314: cut search at depth=maxcard
     for (int i=0; i<tryids.size(); i++) {
       Integer tid = (Integer) tryids.get(i);
       if (tid.intValue()!=rmid) {
@@ -186,7 +199,8 @@ public class IntSetN1RXPFirstImprovingGraphAllMovesMaker  implements AllChromoso
    * @return boolean // true iff nj can be added to active
    * @throws ParallelException
    */
-  private static boolean isFree2Cover(Node nj, Set active) throws ParallelException {
+  private static boolean isFree2Cover(Node nj, Set active) 
+		throws ParallelException {
     if (active==null) return true;
     if (active.contains(nj)) return false;
     Set activated = new HashSet(active);

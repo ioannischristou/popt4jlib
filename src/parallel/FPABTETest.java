@@ -50,7 +50,7 @@ public class FPABTETest {
         tasks.add(tti);
       }
       fpabte.executeBatch(tasks);
-      fpabte.shutDown();
+      fpabte.shutDownAndWait4Threads2Finish();
       long dur = System.currentTimeMillis()-start;
       System.out.println("Executed in "+dur+" msecs.");
     }

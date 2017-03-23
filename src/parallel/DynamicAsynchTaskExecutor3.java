@@ -134,10 +134,9 @@ public final class DynamicAsynchTaskExecutor3 {
    */
   public void execute(Runnable task) throws ParallelException {
     if (task == null)return;
-    if (isRunning() == false)
-      throw new ParallelException("thread-pool is not running");
     boolean run_on_current = false;
     synchronized (this) {
+			if (!_isRunning) throw new ParallelException("thread-pool not running");
       ++_numTasksSubmitted;
       //utils.Messenger.getInstance().msg("Current total #threads="+getNumThreads(),1);
       if (isOK2SubmitTask() || task instanceof DATEPoissonPill3) {
@@ -350,8 +349,6 @@ public final class DynamicAsynchTaskExecutor3 {
 		return true;  // task doesn't care about which thread it runs on
 	}
 	
-  private synchronized boolean isRunning() { return _isRunning; }
-
 
   private synchronized static int getNextObjId() { return ++_nextId; }
 

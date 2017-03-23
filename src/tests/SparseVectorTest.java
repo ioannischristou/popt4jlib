@@ -9,7 +9,7 @@ import parallel.distributed.*;
  * tests the popt4jlib.DblArray1SparseVector[MT/FE/...] class.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -30,6 +30,26 @@ public class SparseVectorTest {
       System.exit(-1);
     }
   }
+	
+	
+	public static void main2(String[] args) throws ParallelException {
+		DblArray1SparseVector v1 = new DblArray1SparseVector(100);
+		System.out.println("v1="+v1);
+		DblArray1SparseVector v2 = new DblArray1SparseVector(100,-1);
+		System.out.println("v2="+v2);
+		for(int i=0; i<10; i+=2) {
+			v1.setCoord(i, i);
+			v2.setCoord(i, i);
+		}
+		System.out.println("v1="+v1);
+		System.out.println("v2="+v2);
+		for(int i=0; i<10; i+=2) {
+			v1.setCoord(i, 0);
+			v2.setCoord(i, -1);
+		}
+		System.out.println("v1="+v1);
+		System.out.println("v2="+v2);		
+	}
 
 
   public static void main1(String[] args) throws ParallelException {

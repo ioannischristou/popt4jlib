@@ -103,6 +103,7 @@ class DBBNode12 extends DBBNode1 {
 			if (_lvl % 10==0)
 				mger.msg("#DBBNode12 objects created by this process="+cur_counter, 1);
 			if (cur_counter > _master.getMaxNodesAllowed()) {
+				PDAsynchBatchTaskExecutorWrk.setServerRequestsDisabled(true);
 				return null; // stop computations
       }
       // step 2.

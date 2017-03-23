@@ -77,6 +77,7 @@ public class DataFileAccessClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+      // no need to call oos.reset() first
       oos.writeObject(new DFileDataVectorReadRequest(filename, fromind, toind));
       oos.flush();
       Object reply = ois.readObject();
@@ -117,6 +118,7 @@ public class DataFileAccessClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+      // no need to call oos.reset() here
       oos.writeObject(new DFileAccessSrvStatsRequest(filename));
       oos.flush();
       Object reply = ois.readObject();

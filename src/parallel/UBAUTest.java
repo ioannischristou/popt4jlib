@@ -1,10 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package parallel;
+
 import java.util.ArrayList;
 //import java.util.ArrayDeque;
 
@@ -84,5 +79,31 @@ public class UBAUTest {
 		}
 		dur = System.currentTimeMillis()-start;
 		System.out.println("UnboundedBufferArrayUnsynchronized takes "+dur+" msecs.");
+		// functionality tests
+		buf = new UnboundedBufferArrayUnsynchronized(10);
+		System.out.println("1. buf="+buf);
+		for (int i=0; i<20; i++) {
+			buf.addElement(new Integer(i));
+		}
+		System.out.println("2. buf="+buf);
+		for(int i=0; i<10; i++) {
+			buf.remove();
+		}
+		System.out.println("3. buf="+buf);
+		for(int i=9; i>=0; i--) {
+			buf.remove(i);
+			System.out.println("4."+i+". buf="+buf);
+		}
+		buf.addElement(new Integer(1));
+		System.out.println("5. buf="+buf);
+		System.out.println("5. buf.size()="+buf.size()+" buf.elementAt(0)="+buf.elementAt(0));
+		for (int i=0; i<100; i++) {
+			buf.addElement(new Integer(i));
+		}
+		while (buf.size()>0) {
+			System.out.print("buf.size()="+buf.size()+" removing first.");
+			Object bi = buf.remove();
+			System.out.println("bi="+bi);
+		}
 	}
 }

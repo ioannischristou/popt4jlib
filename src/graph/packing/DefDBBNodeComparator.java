@@ -22,16 +22,16 @@ public class DefDBBNodeComparator implements DBBNodeComparatorIntf {
   }
 
 	/**
-	 * compares two DBBNode1 objects according to the bound of the solutions they
+	 * compares two DBBNode objects according to the bound of the solutions they
 	 * represent, and break ties (which should be a rare condition) according to
 	 * the ids of the nodes contained in each solution.
-	 * @param o1 DBBNode1
-	 * @param o2 DBBNode1
+	 * @param o1 DBBNodeBase
+	 * @param o2 DBBNodeBase
 	 * @return int // -1, 0 or +1
 	 */
-  public int compare(DBBNode1 o1, DBBNode1 o2) {
-    double sct = o1.getNodeIds().size();
-    double osct = o2.getNodeIds().size();
+  public int compare(DBBNodeBase o1, DBBNodeBase o2) {
+    double sct = o1.getNodeIdsAsSet().size();
+    double osct = o2.getNodeIdsAsSet().size();
     double bd = o1.getBound();
     double obd = o2.getBound();
     double ct = bd / sct + sct - 1.0;
@@ -41,8 +41,8 @@ public class DefDBBNodeComparator implements DBBNodeComparatorIntf {
     int ct_oct_comp = Double.compare(oct, ct);
     if (ct_oct_comp<0) return -1;
     else if (ct_oct_comp==0) {
-      Set to = o2.getNodeIds();
-      Iterator it = o1.getNodeIds().iterator();
+      Set to = o2.getNodeIdsAsSet();
+      Iterator it = o1.getNodeIdsAsSet().iterator();
       Iterator oit = to.iterator();
       while (it.hasNext()) {
         Integer mi = (Integer) it.next();

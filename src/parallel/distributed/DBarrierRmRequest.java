@@ -30,16 +30,23 @@ public class DBarrierRmRequest implements DMsgIntf {
   public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
     try {
       ComplexBarrier.removeCurrentThread(_bname);
+			// no need for reset
       oos.writeObject(new OKReply());
       oos.flush();
     }
     catch (ParallelException e) {
+			// no need for reset
       oos.writeObject(new FailedReply());
       oos.flush();
       throw e;
     }
   }
 
+	
+	/**
+	 * return a String containing the name of this barrier.
+	 * @return String
+	 */
   public String toString() {
     return "DBarrierRmRequest(_bName="+_bname+")";
   }

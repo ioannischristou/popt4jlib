@@ -1,5 +1,6 @@
 package tests;
 
+import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.*;
 import popt4jlib.EA.*;
 import popt4jlib.GradientDescent.*;
@@ -8,7 +9,7 @@ import utils.RndUtil;
 
 /**
  * test-driver for the (Distributed) Evolutionary Algorithm implemented in the
- * popt4jlib.EA.DEA class.
+ * <CODE>popt4jlib.EA.DEA</CODE> class.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -24,8 +25,8 @@ public class DEATest {
   }
 
   /**
-   * run as <CODE> java -cp &lt;classpath&gt; tests.DEATest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>
-   * where the params_file must contain lines of the following form:
+   * run as <CODE> java -cp &lt;classpath&gt; tests.DEATest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>.
+   * The params_file must contain lines of the following form:
 	 * <ul>
    * <li> class,dea.function, &lt;fullclasspathname&gt;  mandatory, the java class
    * name defining the function to be optimized, which must accept
@@ -35,16 +36,18 @@ public class DEATest {
    * of wall-clock time that each function evaluation will be allowed to execute
    * (so that if the function takes more to execute, it will be considered that
    * the function at this point returns Double.MAX_VALUE)
-   * <li> class,dea.localoptimizer, &lt;fullclasspathname&gt; optional the java
-   * class name of an object implementing the LocalOptimizerIntf defined in
-   * the popt4jlib.GradientDescent package, to be used as further optimizer of
+   * <li> class,dea.localoptimizer, &lt;fullclasspathname&gt;[,args] optional 
+	 * the java class name of an object implementing the LocalOptimizerIntf 
+	 * defined in the popt4jlib package, to be used as further optimizer of
    * the best solution found by the DE process.
-   * <li> class,dea.randomchromosomemaker, &lt;fullclassname&gt; mandatory the class
-   * name of a RandomChromosomeMakerIntf object responsible for implementing the
-   * interface that allows creating random initial chromosome objects.
-   * <li> class,dea.movemaker, &lt;fullclassname&gt; mandatory, the  object responsible
-   * for implementing the interface NewChromosomeMakerIntf that allows creating
-   * new chromosome Objects from an existing one (makes a move).
+   * <li> class,dea.randomchromosomemaker, &lt;fullclassname&gt;[,args] 
+	 * mandatory, the class name of the object responsible for implementing the
+	 * <CODE>popt4jlib.RandomChromosomeMakerIntf</CODE> interface that allows 
+	 * creating random initial chromosome objects.
+   * <li> class,dea.movemaker, &lt;fullclassname&gt;[,args] mandatory, the 
+	 * object responsible for implementing the interface NewChromosomeMakerIntf 
+	 * that allows creating new chromosome Objects from an existing one (makes a 
+	 * move).
    * <li> dea.numiters, $num$ optional, the number of iterations each
    * thread will go through in this evolutionary process run, default is 100.
    * <li> dea.sendrecvperiod, $num$ optional, the number of generations
@@ -57,20 +60,20 @@ public class DEATest {
    * seed to use for each of the $num2$ threads to use (the value num2 must
    * equal the number given in the line for dde.numthreads). The value of num
    * should be a positive integer.
-   * <li> class,dea.c2amaker, &lt;fullclassname&gt; optional, the object that
-   * implements the Chromosome2ArgMakerIntf interface that transforms chromosome
-   * Objects used in the evolutionary process -and manipulated by the Object
-   * implementing the NewChromosomeMakerIntf interface- into argument Objects
-   * that can be passed into the FunctionIntf object that the process minimizes.
-   * Default is null, which results in the chromosome objects being passed "as-is"
-   * to the FunctionIntf object being minimized.
+   * <li> class,dea.c2amaker, &lt;fullclassname&gt;[,args] optional, the object 
+	 * that implements the Chromosome2ArgMakerIntf interface that transforms 
+	 * chromosome Objects used in the evolutionary process -and manipulated by the 
+	 * Object implementing the NewChromosomeMakerIntf interface- into argument 
+	 * Objects that can be passed into the FunctionIntf object that the process 
+	 * minimizes. Default is null, which results in the chromosome objects being 
+	 * passed "as-is" to the FunctionIntf object being minimized.
    * </ul>
-   * <p> if the optional second argument is also passed in, it overrides the random
-   * seed specified in the params_file.
+   * <p> if the optional second argument is also passed in, it overrides the 
+	 * random seed specified in the params_file.</p>
    * <p> The optional third argument, if present, overrides any max. limit set
    * on the number of function evaluations allowed. After this limit, the
    * function will always return Double.MAX_VALUE instead, and won't increase
-   * the evaluation count.
+   * the evaluation count.</p>
    *
    * @param args String[]
    */

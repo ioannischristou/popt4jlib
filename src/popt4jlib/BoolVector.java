@@ -1,17 +1,13 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib;
 
-import parallel.ParallelBatchTaskExecutor;
-import parallel.TaskObject;
-import parallel.ParallelException;
+//import parallel.ParallelBatchTaskExecutor;
+//import parallel.TaskObject;
+//import parallel.ParallelException;
+import java.util.Set;
+import java.util.Iterator;
 import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
+//import java.util.List;
+//import java.util.ArrayList;
 import java.io.Serializable;
 
 
@@ -27,22 +23,27 @@ import java.io.Serializable;
  * Clients must ensure no race-conditions exist when using this class.
  * <li> 2016-01-27: The <CODE>and(BoolVector), or(BoolVector)</CODE> operations
  * execute in parallel in the face of very large data lengths (above 1mio bits
- * stored in both vectors to be and-ed). The implementation is modeled after the pattern
- * in <CODE>popt4jlib.MSSC.GMeansMTClusterer</CODE> which turned out to be almost
- * twice as fast as the generic <CODE>parallel.ParallelBatchTaskExecutor</CODE>.
+ * stored in both vectors to be and-ed). The implementation is modeled after the 
+ * pattern in <CODE>popt4jlib.MSSC.GMeansMTClusterer</CODE> which turned out to 
+ * be almost twice as fast as the generic 
+ * <CODE>parallel.ParallelBatchTaskExecutor</CODE>.
+ * <li> 2017-02-10: The class is made serializable so that it can be used with
+ * <CODE>graph.packing.DBBNode*</CODE> to store the node-ids of a partial soln
+ * instead of using expensive HashSet's.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2016</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class BoolVector {
+public class BoolVector implements Serializable, Comparable {
   private final static int _MIN_CAPACITY_REQD_4_PARALLEL_OP = 1000000;
   private final static int _NUM_THREADS = 4;
   private long[] _data;
   private int _numSetBits = -1; // cache to cardinality
+	private int _lastSetBit = -1;  // cache to last set bit
 
 	
   private volatile static BVThread[] _threads = new BVThread[_NUM_THREADS];
@@ -54,6 +55,7 @@ public class BoolVector {
     }
   }
 
+	
   /**
    * shut-down this class's thread-pool. Method is not thread-safe, and clients
    * must ensure that the method is called in a safe manner.
@@ -76,6 +78,23 @@ public class BoolVector {
   }
 
 	
+	/**
+	 * public constructor, specifying both the max number of bits this vector may
+	 * hold, and the initial bits set for it, held as integers in the first 
+	 * argument.
+	 * @param bits Set  // Set&lt;Integer&gt;
+	 * @param sizeinbits int 
+	 */
+	public BoolVector(Set bits, int sizeinbits) {
+		this(sizeinbits);
+		Iterator it = bits.iterator();
+		while (it.hasNext()) {
+			int b = ((Integer) it.next()).intValue();
+			set(b);
+		}
+	}
+
+	
   /**
    * public copy constructor.
    * @param other BoolVector
@@ -83,8 +102,10 @@ public class BoolVector {
   public BoolVector(BoolVector other) {
     _data = new long[other._data.length];
     for (int i = 0; i < _data.length; i++) _data[i] = other._data[i];
+		_numSetBits = other._numSetBits;
+		_lastSetBit = other._lastSetBit;
   }
-
+	
 	
   /**
    * resets all bits in this vector.
@@ -92,6 +113,7 @@ public class BoolVector {
   public void clear() {
     Arrays.fill(_data, 0);
     _numSetBits = 0;
+		_lastSetBit = -1;
   }
 
 	
@@ -110,6 +132,7 @@ public class BoolVector {
       _data[i] = other._data[i];
     }
     _numSetBits = other._numSetBits;
+		_lastSetBit = other._lastSetBit;
   }
 
 	
@@ -142,7 +165,7 @@ public class BoolVector {
    * @return int the number of set bits in this vector.
    */
   public int cardinality() {
-    if (_numSetBits >= 0)return _numSetBits;
+    if (_numSetBits >= 0) return _numSetBits;
     int sum = 0;
     //for(long l : _data) {  // JDK 1.5 method
     for (int i = 0; i < _data.length; i++) {
@@ -174,6 +197,7 @@ public class BoolVector {
   public void set(int i) throws IndexOutOfBoundsException {
     _data[i / 64] |= (1l << (i % 64));
     _numSetBits = -1; // invalidate cache
+		if (i>_lastSetBit && _lastSetBit>=0) _lastSetBit = i;
   }
 
 	
@@ -185,6 +209,7 @@ public class BoolVector {
   public void unset(int i) throws IndexOutOfBoundsException {
     _data[i / 64] &= ~ (1l << (i % 64));
     _numSetBits = -1; // invalidate cache
+		if (i==_lastSetBit) _lastSetBit = -1;  // invalidate cache
   }
 
 	
@@ -197,8 +222,23 @@ public class BoolVector {
   public void set(int i, boolean b) throws IndexOutOfBoundsException {
     if (b) set(i);
     else unset(i);
-    // no reason to invalidate cache here again: set/unset do that already
+    // no reason to invalidate caches here again: set/unset do that already
   }
+	
+	
+	/**
+	 * set the bits of all indices contained in the argument.
+	 * @param bits Set  // Set&lt;Integer&gt;
+	 * @throws IndexOutOfBoundsException if any of the numbers in the set is not
+	 * in the range [0,capacity()-1]
+	 */
+	public void setAll(Set bits) throws IndexOutOfBoundsException {
+		Iterator it = bits.iterator();
+		while (it.hasNext()) {
+			Integer i = (Integer) it.next();
+			set(i.intValue());
+		}
+	}
 
 	
   /**
@@ -232,7 +272,50 @@ public class BoolVector {
     }
     return -1;
   }
+	
+	
+	/**
+	 * get the last bit position that is currently set.
+	 * @return int will return -1 if no bit is set
+	 */
+	public int lastSetBit() {
+		if (_lastSetBit>=0) return _lastSetBit;  // use cache
+		if (cardinality()==0) return -1;
+		// cache invalid, do the work
+		int res = -1;
+		for (int i=nextSetBit(0); i>=0; i=nextSetBit(i+1)) {
+			res = i;
+		}
+		_lastSetBit = res;
+		return _lastSetBit;
+	}
 
+	
+	/**
+	 * check if all bits set in other are also set in this bit-vector.
+	 * @param other BoolVector
+	 * @return boolean
+	 * @throws IllegalArgumentException if other is null 
+	 */
+	public boolean containsAll(BoolVector other) throws IllegalArgumentException {
+    if (other == null)throw new IllegalArgumentException(
+        "null argument passed in");
+		long[] one = _data;
+		long[] two = other._data;
+		int minlen = Math.min(_data.length, other._data.length);
+		for (int i=0; i<minlen; i++) {
+			long oi = one[i] & two[i];
+			int coi = bitCount(oi);
+			int toi = bitCount(two[i]);
+			if (coi < toi) return false; 
+		}
+		if (one.length>=two.length) return true;
+		for (int i=one.length; i<two.length-1; i++) {
+			if (two[i]!=0L) return false;
+		}
+		return true;
+	}
+	
 	
   /**
    * equivalent to the retainAll(set) operation on Set. Utilizes parallel
@@ -257,7 +340,7 @@ public class BoolVector {
         if (i >= other.capacity())break;
         if (!other.get(i)) unset(i);
       }
-      // no reason to invalidate cache here; if it was needed, unset(i) did it
+      // no reason to invalidate caches here; if it was needed, unset(i) did it
     }
     else { // probably this is faster
       for (int i = 0; i < _data.length; i++) {
@@ -265,6 +348,7 @@ public class BoolVector {
         _data[i] &= other._data[i];
       }
       _numSetBits = -1; // invalidate cache
+			_lastSetBit = -1;  // invalidate cache
     }
   }
 
@@ -276,7 +360,7 @@ public class BoolVector {
    * @param other BoolVector
    * @throws IllegalStateException if the thread-pool has been shut-down.
    */
-  public void andParallel2(BoolVector other) throws IllegalStateException {
+  private void andParallel2(BoolVector other) throws IllegalStateException {
     if (_threads == null)throw new IllegalStateException(
         "pool has been shut-down");
     final int chunk_size = _data.length / _NUM_THREADS;
@@ -298,8 +382,9 @@ public class BoolVector {
       _threads[i].getBVAux().waitForTask();
     }
     if (end > min_len) end = min_len;
-    for (i = end; i < _data.length; i++) _data[i] = 0L; // finalize
-    _numSetBits = -1; // invalidate cache
+    for (i = end; i < _data.length; i++) _data[i] = 0L;  // finalize
+    _numSetBits = -1;  // invalidate cache
+		_lastSetBit = -1;  // invalidate cache
   }
 
 	
@@ -315,7 +400,8 @@ public class BoolVector {
         "null argument passed in");
     if (other._data.length > _data.length) resize(other.capacity());
     if (_data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP &&
-        other._data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP && _threads != null) {
+        other._data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP && 
+			  _threads != null) {
       orParallel2(other);
       return;
     }
@@ -326,7 +412,8 @@ public class BoolVector {
       if (other._data.length <= i)break;
       _data[i] |= other._data[i];
     }
-    _numSetBits = -1; // invalidate cache
+    _numSetBits = -1;  // invalidate cache
+		_lastSetBit = -1;  // invalidata cache
   }
 
 	
@@ -356,9 +443,76 @@ public class BoolVector {
     for (i = 0; i < _NUM_THREADS; i++) {
       _threads[i].getBVAux().waitForTask();
     }
-    _numSetBits = -1; // invalidate cache
+    _numSetBits = -1;  // invalidate cache
+		_lastSetBit = -1;  // invalidate cache
   }
+	
+	
+	/**
+	 * returns true if and only if the <CODE>_data</CODE> data members of this
+	 * vector and the argument are exactly equal, both in length, and in element
+	 * values.
+	 * @param o Object  // must be BoolVector
+	 * @return boolean
+	 */
+	public boolean equals(Object o) {
+		if (o instanceof BoolVector == false) return false;
+		BoolVector other = (BoolVector) o;
+		if (_data.length != other._data.length) return false;
+		for (int i=0; i<_data.length; i++) {
+			if (_data[i]!=other._data[i]) return false;
+		}
+		return true;
+	}
+	
+	
+	/**
+	 * returns the integer part of the sum of the first and last element of the 
+	 * <CODE>_data</CODE> array.
+	 * @return int  // (int) (_data[0]+_data[_data.length-1])
+	 */
+	public int hashCode() {
+		return (int) (_data[0]+_data[_data.length-1]);
+	}
 
+	
+	/**
+	 * element-wise comparison between two bit-vectors. empty vector comes first.
+	 * If the argument has different size, then assuming the common data are the
+	 * same, the vector with the less data-length comes first.
+	 * @param o Object  // BoolVector
+	 * @return int -1 if this vector comes before o in element-wise number order, 
+	 * 0 if they are the same
+	 */
+	public int compareTo(Object o) {
+		BoolVector other = (BoolVector) o;
+		int min_len = Math.min(_data.length, other._data.length);
+		for (int i=0; i<min_len; i++) {
+			long di = _data[i];
+			long oi = other._data[i];
+			int comp = Long.compare(di, oi);
+			if (comp!=0) return comp;
+		}
+		// check lengths
+		return Integer.compare(_data.length, other._data.length);
+	}
+
+	
+	/**
+	 * prints out the elements of _data as long values. Mostly used for debugging
+	 * purposes.
+	 * @return String
+	 */
+	public String toString() {
+		String result="[";
+		for (int i=_data.length-1; i>=0; i--) {
+			result += "d["+i+"]="+_data[i];
+			if (i>0) result += ",";
+		}
+		result += "]";
+		return result;
+	}
+	
 	
   /*
     private static int bitCountSlow(long l) {
@@ -443,8 +597,8 @@ public class BoolVector {
   static class BVAux {
     static final int _AND_OP = 0;
     static final int _OR_OP = 1;
-
     // ... other ops enumerated here
+		
     private int _starti = -1;
     private int _endi = -1;
     private boolean _finish = false;
@@ -535,8 +689,7 @@ public class BoolVector {
   /**
    * auxiliary nested class not part of the public API.
    */
-  static class BVThread
-      extends Thread {
+  static class BVThread extends Thread {
     private BVAux _r;
     BVThread(BVAux r) {
       _r = r;

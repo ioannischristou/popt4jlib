@@ -3,14 +3,14 @@ package graph.packing;
 import java.io.*;
 
 /**
- * comparator for DBBNode1 objects. Not part of the public API.
+ * comparator for DBBNode objects. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
 public interface DBBNodeComparatorIntf extends Serializable {
-  public int compare(DBBNode1 o1, DBBNode1 o2);
+  public int compare(DBBNodeBase o1, DBBNodeBase o2);
 }

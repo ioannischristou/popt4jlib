@@ -1,8 +1,8 @@
 package tests;
 
+import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.*;
 import popt4jlib.GA.*;
-import popt4jlib.GradientDescent.*;
 import java.util.*;
 import utils.RndUtil;
 
@@ -26,9 +26,10 @@ public class DGAFPTest {
 
 
   /**
-   * invoke as <CODE>java -&lt;classpath&gt; tests.DGAFPTest &lt;params_file&gt;</CODE>
+   * invoke as 
+	 * <CODE>java -cp &lt;classpath&gt; tests.DGAFPTest &lt;params_file&gt;</CODE>
    * where the params_file must have the lines described in the documentation of
-   * the class popt4jlib.GA.DGA.
+   * the class <CODE>popt4jlib.GA.DGA</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {

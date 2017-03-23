@@ -6,10 +6,7 @@
 
 package parallel.distributed;
 
-//import parallel.ParallelException;
-//import utils.DataMgr;
 import java.io.*;
-//import java.util.Vector;
 
 
 /**
@@ -44,6 +41,7 @@ public class DFileAccessSrvStatsRequest implements DMsgIntf {
 	 */
 	public void execute(ObjectOutputStream oos) throws IOException {
 		try {
+			oos.reset();  // force object to be written anew
 			oos.writeObject(_answer);
 		}
 		catch (IOException e) {

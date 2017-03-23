@@ -4,13 +4,13 @@ import java.util.*;
 import java.io.*;
 import utils.*;
 import graph.*;
-import parallel.SimpleFasterMsgPassingCoordinator;
 import popt4jlib.AllChromosomeMakerClonableIntf;
 
 /**
  * implements a hybrid parallel-distributed GASP-Branch &amp; Bound heuristic 
  * scheme for the 1-packing problem in graphs (Maximum Weighted Independent Set
- * problem - MWIS).
+ * problem - MWIS). Notice that the problem graph must have non-negative node
+ * weights.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2016</p>
@@ -85,11 +85,11 @@ public final class DBBGASPPacker {
 	 * graphs (arising from wireless ad-hoc networks etc.) 
 	 * <li> sortmaxsubsets, $boolean$ optional, if true, then the max subsets
 	 * generated in method <CODE>getBestNodeSets2Add()</CODE> will be sorted in
-	 * descending weight order so that if children <CODE>BBNode*</CODE> objects
+	 * descending weight order so that if children <CODE>DBBNode*</CODE> objects
 	 * are "cut", they will be the "least" heavy-weight. Default is false.
 	 * <li> maxitersinGBNS2A, $num$ optional, if present, the number represents 
 	 * the max number of iterations the <CODE>getBestNodeSets2Add()</CODE> method 
-	 * of <CODE>DBBNode1</CODE> class will be allowed to go through. Default is
+	 * of <CODE>DBBNode*</CODE> class will be allowed to go through. Default is
 	 * 100000 (specified in <CODE>DBBTree</CODE> class.)
 	 * <li> useGWMIN2criterion, $boolean$ optional, if true, then when computing
 	 * the best nodes to consider as a partial solution is being expanded, the
@@ -110,7 +110,7 @@ public final class DBBGASPPacker {
 	 * MWIS problem) where it makes much more sense to have a "fudge factor" by
 	 * which to multiply the best cost in order to determine if a node is "close
 	 * enough" to the best cost to be included in the best-candidate-nodes list.
-	 * Default value is <CODE>DBBNode1._ff</CODE> (currently set to 0.85). The
+	 * Default value is <CODE>DBBNodeBase._ff</CODE> (currently set to 0.85). The
 	 * smaller this value, the longer it will take for the search to complete,
 	 * with potentially better solutions found.
 	 * <li> minknownbound, $num$ optional, a known bound to the problem at hand,

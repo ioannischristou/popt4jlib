@@ -18,7 +18,9 @@ import java.util.Vector;
  * Notice also that the class is not thread-safe, i.e. none of the methods can
  * be considered as reentrant in a multi-threaded environment. This choice is
  * made for speed considerations. Clients must therefore ensure on their own
- * that the application is race-condition free when using this class.
+ * that the application is race-condition free when using this class. 
+ * Also notice that this class does not support default-values other than zero 
+ * for components.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -51,7 +53,8 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    * @param values double[] corresponds to values for each index in the indices array
    * @param n int total length of the vector
    * @throws IllegalArgumentException if indices or values are null, or if their
-	 * lengths differ, or if n&le;indices[indices.length-1]
+	 * lengths differ, or if n&le;indices[indices.length-1] or if some component
+	 * of values is zero
    */
   public FltArray1SparseVector(int[] indices, double[] values, int n) throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
@@ -62,7 +65,11 @@ public class FltArray1SparseVector implements SparseVectorIntf {
     _indices = new int[ilen];
     for (int i=0; i<ilen; i++) _indices[i] = indices[i];
     _values = new float[ilen];
-    for (int i=0; i<ilen; i++) _values[i] = (float) values[i];
+    for (int i=0; i<ilen; i++) {
+			_values[i] = (float) values[i];
+			if (Float.compare(_values[i], 0.0f)==0)
+				throw new IllegalArgumentException("zero component "+i);
+		}
     _n = n;
     _ilen = ilen;
   }
@@ -76,18 +83,27 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    * @param n int total length of vector
    * @param multFactor double
    * @throws IllegalArgumentException if indices or values are null, or if their
-	 * lengths differ, or if n&le;indices[indices.length-1]
+	 * lengths differ, or if n&le;indices[indices.length-1] or if some component 
+	 * of values is zero
    */
   public FltArray1SparseVector(int[] indices, double[] values, int n, double multFactor) throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
       throw new IllegalArgumentException("Arguments null or dimensions don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
+		if (Double.compare(multFactor, 0.0)==0) {
+			_n = n;
+			return;
+		}
     final int ilen = indices.length;
     _indices = new int[ilen];
     for (int i=0; i<ilen; i++) _indices[i] = indices[i];
     _values = new float[ilen];
-    for (int i=0; i<ilen; i++) _values[i] = (float) (values[i]*multFactor);
+    for (int i=0; i<ilen; i++) {
+			_values[i] = (float) (values[i]*multFactor);
+			if (Float.compare(_values[i], 0.0f)==0) 
+				throw new IllegalArgumentException("zero component "+i);
+		}
     _n = n;
     _ilen  = ilen;
   }
@@ -101,18 +117,27 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    * @param n int total length of vector
    * @param multFactor float
    * @throws IllegalArgumentException if indices or values are null, or if their
-	 * lengths differ, or if n&le;indices[indices.length-1]
+	 * lengths differ, or if n&le;indices[indices.length-1] or if some component 
+	 * of values is zero
    */
   public FltArray1SparseVector(int[] indices, float[] values, int n, float multFactor) throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
       throw new IllegalArgumentException("Arguments null or dimensions don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
+		if (Float.compare(multFactor, 0.0f)==0) {
+			_n=n;
+			return;
+		}
     final int ilen = indices.length;
     _indices = new int[ilen];
     for (int i=0; i<ilen; i++) _indices[i] = indices[i];
     _values = new float[ilen];
-    for (int i=0; i<ilen; i++) _values[i] = values[i]*multFactor;
+    for (int i=0; i<ilen; i++) {
+			_values[i] = values[i]*multFactor;
+			if (Float.compare(_values[i], 0.0f)==0)
+				throw new IllegalArgumentException("zero component "+i);
+		}
     _n = n;
     _ilen  = ilen;
   }
@@ -164,7 +189,7 @@ public class FltArray1SparseVector implements SparseVectorIntf {
     Vector inds = new Vector();
     Vector vals = new Vector();
     for (int i=0; i<n; i++) {
-      if (Double.compare(arg[i], 0.0) != 0) {
+      if (Float.compare((float) arg[i], 0.0f) != 0) {
         inds.add(new Integer(i));
         vals.add(new Double(arg[i]));
       }
@@ -184,6 +209,15 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    */
   public int getNumCoords() { return _n; }
 
+	
+	/**
+	 * default value is always zero.
+	 * @return double // zero
+	 */
+	public double getDefaultValue() {
+		return 0;
+	}
+	
 
   /**
    * return a double[] representing this VectorIntf object. Should not really
@@ -230,7 +264,7 @@ public class FltArray1SparseVector implements SparseVectorIntf {
   /**
    * set the i-th coordinate of this VectorIntf (i must be in the set
    * {0,1,2,...<CODE>getNumCoords()</CODE>-1}). Repeated calls to this method
-   * for indices not in the original contruction of this vector will eventually
+   * for indices not in the original construction of this vector will eventually
    * destroy its sparsity. Has O(_ilen) worst-case time-complexity where _ilen
    * is the (max.) number of non-zeros in the array. The time-complexity
    * reduces to O(log(_ilen)) if the element to be set, is already non-zero
@@ -242,8 +276,9 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    */
   public void setCoord(int i, double val) throws IndexOutOfBoundsException, ParallelException {
     if (i<0 || i>=_n) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
-    if (_indices==null) {
-      if (Double.compare(val,0.0)==0) return;  // don't do anything
+    final boolean is_val_0 = Float.compare((float)val,0.0f)==0;
+		if (_indices==null) {
+      if (is_val_0) return;  // don't do anything
       _indices = new int[1];
       _indices[0] = i;
       _values = new float[1];
@@ -256,11 +291,11 @@ public class FltArray1SparseVector implements SparseVectorIntf {
     int i1 = 0;
     int i2 = _ilen;
     if (_indices[0]==i) {
-      if (Double.compare(val,0.0)==0) shrink(0);
+      if (is_val_0) shrink(0);
       else _values[0] = (float) val;
       return;
     } else if (_indices[_ilen-1] == i) {
-      if (Double.compare(val,0.0)==0) shrink(_ilen-1);
+      if (is_val_0) shrink(_ilen-1);
       else _values[_ilen-1] = (float) val;
       return;
     }
@@ -272,11 +307,11 @@ public class FltArray1SparseVector implements SparseVectorIntf {
       ih = (i1+i2)/2;
     }
     if (_indices[ih]==i) {
-      if (Double.compare(val,0.0)==0) shrink(ih);
+      if (is_val_0) shrink(ih);
       else _values[ih] = (float) val;
       return;
     }
-    else if (Double.compare(val,0.0)==0) return;  // no change
+    else if (is_val_0) return;  // no change
     // change is necessary
     // if needed, create new arrays to insert the value for <i,val> pair.
     if (_ilen == ilen) {  // increase arrays' capacity 20%
@@ -368,7 +403,7 @@ public class FltArray1SparseVector implements SparseVectorIntf {
   /**
    * divide the components of this vector by the argument h.
    * @param h double
-   * @throws IllegalArgumentException if h is zero
+   * @throws IllegalArgumentException if h is (almost) zero
    * @throws ParallelException -never throws this exception.
    */
   public void div(double h) throws IllegalArgumentException, ParallelException {
@@ -387,7 +422,6 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    */
   public boolean isAtOrigin() {
     return _ilen==0;
-    // code below is redundant
   }
 
 
@@ -398,7 +432,7 @@ public class FltArray1SparseVector implements SparseVectorIntf {
   public String toString() {
     String x="[";
     for (int i=0; i<_ilen-1; i++) x += "("+_indices[i]+","+_values[i]+")"+", ";
-    x += "("+_indices[_ilen-1]+","+_values[_ilen-1]+")";
+    if (_ilen>0) x += "("+_indices[_ilen-1]+","+_values[_ilen-1]+")";
     x += "]";
     return x;
   }
@@ -410,13 +444,6 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    */
   public int getNumNonZeros() {
     return _ilen;
-    // code below is redundant
-    /*
-    int res=0;
-    for (int i=0; i<_ilen; i++)
-      if (Double.compare(_values[i],0.0)!=0) ++res;
-    return res;
-    */
   }
 
 
@@ -511,6 +538,16 @@ public class FltArray1SparseVector implements SparseVectorIntf {
     }
     else return o.equals(this);  // no short-cut
   }
+	
+	
+	/**
+	 * return the integer part of the first value of the first non-zero element of 
+	 * this vector, if it exists, else return zero.
+	 * @return int
+	 */
+	public int hashCode() {
+		return _ilen > 0 ? (int) _values[0] : 0;
+	}
 
 
   /**

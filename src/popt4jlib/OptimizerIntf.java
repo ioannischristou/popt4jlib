@@ -18,7 +18,8 @@ public interface OptimizerIntf {
    * implement.
    * @param f FunctionIntf
    * @throws OptimizerException
-   * @return PairObjDouble
+   * @return PairObjDouble returning the arg-min together with the min value 
+	 * found
    */
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException;
 }

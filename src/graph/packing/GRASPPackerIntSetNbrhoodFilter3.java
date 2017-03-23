@@ -59,12 +59,13 @@ class GRASPPackerIntSetNbrhoodFilter3 implements IntSetNeighborhoodFilterIntf {
 	 * who represent node-ids, excluding the nodes in arg.
    * @param x Object // IntSet (with expected cardinality 1 or 2)
    * @param arg Object // Set&lt;Integer&gt;
-   * @param params HashMap must contain a pair &lt;"dls.graph",Graph g&gt; unless
-	 * this object was constructed with the 2-arg constructor
+   * @param params HashMap must contain a pair &lt;"dls.graph",Graph g&gt;
+	 * unless this object was constructed with the 2-arg constructor
    * @throws LocalSearchException if the params are incorrectly set
    * @return List // ArrayList&lt;Integer&gt; the integers that may be tried
    */
-  public List filter(Object x, Object arg, HashMap params) throws LocalSearchException {
+  public List filter(Object x, Object arg, HashMap params) 
+		throws LocalSearchException {
     try {
       //System.err.print("running filter(IntSet rmids, Set sol, params) ");
       IntSet rmids = (IntSet) x;
@@ -77,7 +78,8 @@ class GRASPPackerIntSetNbrhoodFilter3 implements IntSetNeighborhoodFilterIntf {
         Integer rmid = (Integer) it.next();
         Node rni = _g.getNodeUnsynchronized(rmid.intValue());
 				Set toadd = _k==2 ? rni.getNNborIndicesUnsynchronized() : 
-								            rni.getNborIndicesUnsynchronized(Double.NEGATIVE_INFINITY);
+								            rni.getNborIndicesUnsynchronized(
+			                        Double.NEGATIVE_INFINITY);
         nbors.addAll(toadd);
       }
       nbors.removeAll(s);  // is it necessary?
@@ -126,18 +128,21 @@ class GRASPPackerIntSetNbrhoodFilter3 implements IntSetNeighborhoodFilterIntf {
 	 * 2*_k from x.
    * @param x // Integer
    * @param arg Set // IntSet values in arg &le; to the value of x are ignored
-   * @param params HashMap must contain a key-value pair &lt;"dls.graph", Graph g&gt;
-	 * unless this object was constructed with the 2-arg constructor
+   * @param params HashMap must contain a key-value pair 
+	 * &lt;"dls.graph", Graph g&gt; unless this object was constructed with the 
+	 * 2-arg constructor
    * @throws LocalSearchException if any params are incorrectly set
    * @return List // ArrayList&lt;IntSet&gt;
    */
-  public List filter(Integer x, Set arg, HashMap params) throws LocalSearchException {
+  public List filter(Integer x, Set arg, HashMap params) 
+		throws LocalSearchException {
     try {
       //System.err.print("running filter(Integer x, IntSet sol, params). Adding ");
       if (_g==null) _g = (Graph) params.get("dls.graph");
       Node nx = _g.getNodeUnsynchronized(x.intValue());
       // Set nxnnborids = nx.getNNborIndicesUnsynchronized();
-			Set nxnnbors = _k==2 ? nx.getNNborsUnsynchronized() : nx.getNborsUnsynchronized();
+			Set nxnnbors = _k==2 ? nx.getNNborsUnsynchronized() : 
+				                     nx.getNborsUnsynchronized();
       List result = new ArrayList();
       Iterator it = arg.iterator();
       while (it.hasNext()) {
@@ -179,7 +184,7 @@ class GRASPPackerIntSetNbrhoodFilter3 implements IntSetNeighborhoodFilterIntf {
 	
 	
 	/**
-	 * check if the two sets have a non-empty intersection
+	 * check if the two sets have a non-empty intersection.
 	 * @param x Set // Set&lt;Node&gt;
 	 * @param y Set // Set&lt;Node&gt;
 	 * @return true iff the intersection of x and y is not empty.

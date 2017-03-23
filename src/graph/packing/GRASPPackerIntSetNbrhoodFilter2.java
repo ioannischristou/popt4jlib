@@ -59,12 +59,13 @@ class GRASPPackerIntSetNbrhoodFilter2 implements IntSetNeighborhoodFilterIntf {
 	 * who represent node-ids, excluding the nodes in arg.
    * @param x Object // IntSet (with expected cardinality 2)
    * @param arg Object // Set&lt;Integer&gt;
-   * @param params HashMap must contain a pair &lt;"dls.graph",Graph g&gt; unless
-	 * this object was constructed with the 2-arg constructor
+   * @param params HashMap must contain a pair &lt;"dls.graph",Graph g&gt; 
+	 * unless this object was constructed with the 2-arg constructor
    * @throws LocalSearchException if the params are incorrectly set
    * @return List // ArrayList&lt;Integer&gt; the integers that may be tried
    */
-  public List filter(Object x, Object arg, HashMap params) throws LocalSearchException {
+  public List filter(Object x, Object arg, HashMap params) 
+		throws LocalSearchException {
     try {
       //System.err.print("running filter(IntSet rmids, Set sol, params) ");
       IntSet rmids = (IntSet) x;
@@ -92,8 +93,8 @@ class GRASPPackerIntSetNbrhoodFilter2 implements IntSetNeighborhoodFilterIntf {
 
 
   /**
-   * provide a List&lt;IntSet&gt; of sets of two integers; in each such set, one of 
-	 * the integers is x, and the other is an integer y in arg which represents
+   * provide a List&lt;IntSet&gt; of sets of two integers; in each such set, one 
+	 * of the integers is x, and the other is an integer y in arg which represents
 	 * the id of a node ny whose immediate neighbors intersect the set of 
 	 * neighbors of x at distance 1 or 2 as specified in the constructor of this
 	 * object. Essentially, returns a list of sets of pairs of nodes &lt;x,y&gt; 
@@ -101,12 +102,14 @@ class GRASPPackerIntSetNbrhoodFilter2 implements IntSetNeighborhoodFilterIntf {
 	 * on the value of the k-packing problem that is being solved.
    * @param x // Integer
    * @param arg Set // IntSet values in arg &le; to the value of x are ignored
-   * @param params HashMap must contain a key-value pair &lt;"dls.graph", Graph g&gt;
-	 * unless this object was constructed with the 2-arg constructor
+   * @param params HashMap must contain a key-value pair 
+	 * &lt;"dls.graph", Graph g&gt; unless this object was constructed with the 
+	 * 2-arg constructor
    * @throws LocalSearchException if any params are incorrectly set
    * @return List // ArrayList&lt;IntSet&gt;
    */
-  public List filter(Integer x, Set arg, HashMap params) throws LocalSearchException {
+  public List filter(Integer x, Set arg, HashMap params) 
+		throws LocalSearchException {
     try {
       //System.err.print("running filter(Integer x, IntSet sol, params). Adding ");
       if (_g==null) _g = (Graph) params.get("dls.graph");

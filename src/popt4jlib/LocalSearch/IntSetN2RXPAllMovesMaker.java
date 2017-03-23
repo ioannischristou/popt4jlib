@@ -6,7 +6,7 @@ import java.util.*;
 
 /**
  * the class implements the notion of the N_{-2+P} neighborhood of a set of
- * integers. For a given set of integers S, a set S' belongs to this neighborhood
+ * integers. For a given set of integers S a set S' belongs to this neighborhood
  * iff there are exactly two integers from S missing in S', and any number of
  * other integers included in S' (as proposed by the possible combinations of
  * integers computed by the associated IntSetNeighborhoodFilterIntf).
@@ -17,7 +17,8 @@ import java.util.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerClonableIntf {
+public class IntSetN2RXPAllMovesMaker 
+  implements AllChromosomeMakerClonableIntf {
 
   /**
    * public constructor.
@@ -39,28 +40,35 @@ public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerClonableIntf
    * implements the N_{-2+P} neighborhood for sets of integers.
    * @param chromosome Object // Set&lt;Integer&gt;
    * @param params HashMap must contain a key-value pair
-   * &lt;"dls.intsetneighborhoodfilter", IntSetNeighborhoodFilterIntf filter&gt;.
+   * &lt;"dls.intsetneighborhoodfilter",IntSetNeighborhoodFilterIntf filter&gt;.
    * The filter must both specify what two numbers to remove, as well as what
    * ints to be tried for addition to the set given a vector of 2 ints to be
-   * removed from the set. In particular, the filter(Integer x, Set s, HashMap params)
+   * removed from the set. In particular, the 
+	 * <CODE>filter(Integer x, Set s, HashMap params)</CODE>
    * method must return a Vector&lt;IntSet&gt; that comprise all the 2-int 
 	 * combinations that may be tried for removal.
    * @throws OptimizerException
    * @return Vector // Vector&lt;IntSet&gt;
    */
-  public Vector createAllChromosomes(Object chromosome, HashMap params) throws OptimizerException {
-    if (chromosome==null) throw new OptimizerException("IntSetN2RXPAllMovesMaker.createAllChromosomes(): null chromosome");
+  public Vector createAllChromosomes(Object chromosome, HashMap params) 
+		throws OptimizerException {
+    if (chromosome==null) 
+			throw new OptimizerException(
+				"IntSetN2RXPAllMovesMaker.createAllChromosomes(): null chromosome");
     try {
+			utils.Messenger mger = utils.Messenger.getInstance();
       TreeSet result = new TreeSet();  // Set<IntSet>
       Set x0 = (Set) chromosome;
-      //System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): working w/ a soln of size="+x0.size());
+      mger.msg("IntSetN2RXPAllMovesMaker.createAllChromosomes(): "+
+				       "working w/ a soln of size="+x0.size(),2);
       IntSetNeighborhoodFilterIntf filter = (IntSetNeighborhoodFilterIntf)
           params.get("dls.intsetneighborhoodfilter");
       Iterator iter = x0.iterator();
 			Set res = new TreeSet();  // Set<IntSet>
       while (iter.hasNext()) {
         Integer id = (Integer) iter.next();
-        //System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): working w/ id="+id);
+        mger.msg("IntSetN2RXPAllMovesMaker.createAllChromosomes(): "+
+					       "working w/ id="+id,3);
         List twoint_sets = filter.filter(id, x0, params);  // Vector<IntSet>
         final int tissz = twoint_sets.size();
         int cnt = 0;
@@ -71,26 +79,30 @@ public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerClonableIntf
             IntSet xnew = new IntSet(x0);
             xnew.removeAll(rmids);
             // add up to as many as the filter suggests.
-            res.clear();  // itc 2015-03-02: used to be Set res = new TreeSet();  // Set<IntSet>
+            res.clear();  // itc 2015-03-02: used to be Set res = new TreeSet();
             res.add(xnew);
-						tryids.removeAll(rmids);  // remove now all rmids from tryids so as not to have to do the check below
-            Set allres = createSets(res, null, tryids, filter.getMaxCardinality4Search(), params);
+            tryids.removeAll(rmids);  // remove now all rmids from tryids 
+						                          // so as not to have to do the check below
+            Set allres = createSets(res, null, tryids, 
+		                                filter.getMaxCardinality4Search(), params);
             // res, allres is Set<IntSet>
             result.addAll(allres);
             cnt += allres.size();
           }
         }
-        //System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): done w/ id="+id+
-        //           " returned "+cnt+" sets.");
+        mger.msg("IntSetN2RXPAllMovesMaker.createAllChromosomes(): "+
+					       "done w/ id="+id+" returned "+cnt+" sets.",3);
       }
       // convert Set<IntSet> to Vector<IntSet>
       Vector fres = new Vector(result);
-      //System.err.println("IntSetN2RXPAllMovesMaker.createAllChromosomes(): in total "+res.size()+" moves generated.");
+      mger.msg("IntSetN2RXPAllMovesMaker.createAllChromosomes(): in total "+
+				       res.size()+" moves generated.",2);
       return fres;
     }
     catch (Exception e) {
       e.printStackTrace();
-      throw new OptimizerException("IntSetN2RXPAllMovesMaker.createAllChromosomes(): failed");
+      throw new OptimizerException(
+				          "IntSetN2RXPAllMovesMaker.createAllChromosomes(): failed");
     }
   }
 
@@ -106,7 +118,8 @@ public class IntSetN2RXPAllMovesMaker  implements AllChromosomeMakerClonableIntf
    * @param params HashMap unused
    * @return Set // TreeSet&lt;IntSet&gt;
    */
-  protected Set createSets(Set res, Set rmids, List tryids, int maxcard, HashMap params) {
+  protected Set createSets(Set res, Set rmids, List tryids, int maxcard, 
+		                       HashMap params) {
     if (maxcard==0) return res;
     Set res2 = new TreeSet(res);  // was new TreeSet();
     for (int i=0; i<tryids.size(); i++) {

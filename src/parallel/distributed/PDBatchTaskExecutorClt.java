@@ -19,6 +19,7 @@ import java.util.*;
 public class PDBatchTaskExecutorClt {
 	private String _host = "localhost";  // default host
 	private int _port = 7891;  // default client port
+	private String _client_addr_port = null;  // cache
 
 	/**
 	 * public no-arg constructor, will assume connection is to be made on
@@ -100,10 +101,13 @@ public class PDBatchTaskExecutorClt {
 			 }
 			 String client_addr = new String(buf);
 			 */
-			InetAddress ia = InetAddress.getLocalHost();
-			String client_addr_port = ia.getHostAddress() + "_" + _port;
-			TaskObjectsExecutionRequest req = new TaskObjectsExecutionRequest(client_addr_port, tasks);
-			oos.writeObject(req);
+			if (_client_addr_port==null) {
+				InetAddress ia = InetAddress.getLocalHost();
+				_client_addr_port = ia.getHostAddress() + "_" + _port;
+			}
+			TaskObjectsExecutionRequest req = 
+				new TaskObjectsExecutionRequest(_client_addr_port, tasks);
+			oos.writeObject(req);  // no need for oos.reset() here
 			oos.flush();
 			Object response = ois.readObject();
 			if (response instanceof TaskObjectsExecutionResults) {
@@ -138,10 +142,14 @@ public class PDBatchTaskExecutorClt {
 	public Object[] submitWork(String originating_client, TaskObject[] tasks)
 		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
 		if (tasks == null || tasks.length == 0) {
-			throw new PDBatchTaskExecutorException("PDBatchTaskExecutorClt.submitWork(clientname, tasks): null or empty tasks passed in.");
+			throw new PDBatchTaskExecutorException(
+				"PDBatchTaskExecutorClt.submitWork(clientname, tasks): "+
+				"null or empty tasks passed in.");
 		}
 		if (originating_client == null || originating_client.length() == 0) {
-			throw new PDBatchTaskExecutorException("PDBatchTaskExecutorClt.submitWork(clientname, tasks): null or empty clientname passed in.");
+			throw new PDBatchTaskExecutorException(
+				"PDBatchTaskExecutorClt.submitWork(clientname, tasks): "+
+				"null or empty clientname passed in.");
 		}
 		Socket s = null;
 		ObjectInputStream ois = null;
@@ -151,8 +159,9 @@ public class PDBatchTaskExecutorClt {
 			oos = new ObjectOutputStream(s.getOutputStream());
 			oos.flush();
 			ois = new ObjectInputStream(s.getInputStream());
-			TaskObjectsExecutionRequest req = new TaskObjectsExecutionRequest(originating_client, tasks);
-			oos.writeObject(req);
+			TaskObjectsExecutionRequest req = 
+				new TaskObjectsExecutionRequest(originating_client, tasks);
+			oos.writeObject(req);  // no need for oos.reset() here
 			oos.flush();
 			Object response = ois.readObject();
 			if (response instanceof TaskObjectsExecutionResults) {
@@ -188,10 +197,14 @@ public class PDBatchTaskExecutorClt {
 	public Object[] submitWork(Vector originating_clients, TaskObject[] tasks)
 		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
 		if (tasks == null || tasks.length == 0) {
-			throw new PDBatchTaskExecutorException("PDBatchTaskExecutorClt.submitWork(clientsnames, tasks): null or empty tasks passed in.");
+			throw new PDBatchTaskExecutorException(
+				"PDBatchTaskExecutorClt.submitWork(clientsnames, tasks): "+
+				"null or empty tasks passed in.");
 		}
 		if (originating_clients == null || originating_clients.size() == 0) {
-			throw new PDBatchTaskExecutorException("PDBatchTaskExecutorClt.submitWork(clientsnames, tasks): null or empty clientname passed in.");
+			throw new PDBatchTaskExecutorException(
+				"PDBatchTaskExecutorClt.submitWork(clientsnames, tasks): "+
+				"null or empty clientname passed in.");
 		}
 		Socket s = null;
 		ObjectInputStream ois = null;
@@ -202,7 +215,7 @@ public class PDBatchTaskExecutorClt {
 			oos.flush();
 			ois = new ObjectInputStream(s.getInputStream());
 			TaskObjectsExecutionRequest req = new TaskObjectsExecutionRequest(originating_clients, tasks);
-			oos.writeObject(req);
+			oos.writeObject(req);  // no need for oos.reset() here
 			oos.flush();
 			Object response = ois.readObject();
 			if (response instanceof TaskObjectsExecutionResults) 

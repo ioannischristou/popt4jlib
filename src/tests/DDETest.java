@@ -2,13 +2,12 @@ package tests;
 
 import popt4jlib.*;
 import popt4jlib.DE.*;
-import popt4jlib.GradientDescent.*;
 import java.util.*;
 import utils.RndUtil;
 
 /**
  * Test-driver class for the (Distributed) Differential Evolution algorithm
- * implemented in class popt4jlib.DE.DDE.
+ * implemented in class <CODE>popt4jlib.DE.DDE</CODE>.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -34,8 +33,8 @@ public class DDETest {
    * objects.
    * <li> class,dde.localoptimizer, &lt;fullclasspathname&gt; optional the java
    * class name of an object implementing the LocalOptimizerIntf defined in
-   * the popt4jlib.GradientDescent package, to be used as further optimizer of
-   * the best solution found by the DE process.
+   * the popt4jlib package, to be used as further optimizer of the best solution 
+	 * found by the DE process.
    * <li> dde.numdimensions, $num$ mandatory, the dimension of the domain of
    * the function to be minimized.
    * <li> dde.numtries, $num$ optional, the total number of "tries", default

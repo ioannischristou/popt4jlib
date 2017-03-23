@@ -71,8 +71,8 @@ public class RandomBallGraphMaker {
         }
         else if (_uniformr==true &&
                  Math.pow(xi-xj,2.0)+Math.pow(yi-yj,2.0)+Math.pow(zi-zj,2.0)<=
-                 Math.pow(_rs[i]+_rs[j],2.0)) {  // i and j are neighbors
-          // according to the undirected disk graph model
+                 Math.pow(Math.min(_rs[i],_rs[j]),2.0)) {  // used to be _rs[i]+_rs[j]  
+          // i and j are neighbors according to the undirected disk graph model
           nbors[i].add(new Integer(j));
           ++numarcs;
         }
@@ -120,7 +120,7 @@ public class RandomBallGraphMaker {
                                                     uniformr,
                                                     seed);
       Graph g = maker.buildUniformRandomDualGraph();
-      //System.err.println("Dual graph has "+g.getNumComponents()+" components");
+      System.err.println("Dual graph has "+g.getNumComponents()+" components");
       DataMgr.writeGraphToFile2(g, args[3]);
       long duration = System.currentTimeMillis()-start_time;
       System.out.println("total time (msecs): "+duration);

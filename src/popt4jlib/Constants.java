@@ -26,7 +26,7 @@ public final class Constants {
   public static final long RD=4096;
   public static final long DDE=8192;
   public static final long DFA=16384;
-	public static final long DGABH=32768;
+  public static final long DGABH=32768;
 	
   public static final long OB=65536;
   public static final long MPC=131072;

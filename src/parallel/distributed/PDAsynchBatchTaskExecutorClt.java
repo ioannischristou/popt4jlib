@@ -19,18 +19,22 @@ import java.util.*;
  * server resources.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2016</p>
+ * <p>Copyright: Copyright (c) 2016-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
 public class PDAsynchBatchTaskExecutorClt {
   private static String _host="localhost";  // default host
+	private static String _hostIP=null;  // the server IP address
   private static int _port = 7981;  // default client port
+	private String _client_addr_port = null;  // cache of the client IP_port
 	private Socket _s = null;
 	private ObjectInputStream _ois = null;
 	private ObjectOutputStream _oos = null;
 	private boolean _initCmdStateInvalidated = false;
+	private volatile boolean _isSubmitting = false;  // volatile boolean works
+	                                                 // in JDK 1.4 as well
 	
 	private static PDAsynchBatchTaskExecutorClt _instance = null;  // singleton 
 
@@ -40,7 +44,8 @@ public class PDAsynchBatchTaskExecutorClt {
 	 * @return PDAsynchBatchTaskExecutorClt
 	 * @throws IOException 
 	 */
-	public static synchronized PDAsynchBatchTaskExecutorClt getInstance() throws IOException {
+	public static synchronized PDAsynchBatchTaskExecutorClt getInstance() 
+		throws IOException {
 		if (_instance==null) _instance = new PDAsynchBatchTaskExecutorClt();
 		return _instance;
 	}
@@ -69,7 +74,9 @@ public class PDAsynchBatchTaskExecutorClt {
    */
   public static synchronized void setHostPort(String hostipaddress, int port) {
     if (_instance!=null) {
-			throw new IllegalStateException("PDAsynchBatchTaskExecutorClt.setHostPort(): getInstance() has already been invoked");
+			throw new IllegalStateException(
+				          "PDAsynchBatchTaskExecutorClt.setHostPort(): "+
+				          "getInstance() has already been invoked");
 		}
 		_host = hostipaddress;
     _port = port;
@@ -82,17 +89,25 @@ public class PDAsynchBatchTaskExecutorClt {
    * @return String
    */
   public static synchronized String getHostIPAddress() {
+		if (_hostIP!=null) {
+			return _hostIP;
+		}
+		// do the work
     if ("localhost".equals(_host)) {
       // figure out the localhost IP address
       try {
         InetAddress i = InetAddress.getLocalHost();
-        return i.getHostAddress();
+        _hostIP = i.getHostAddress();
+				return _hostIP;
       }
       catch (Exception e) {
         e.printStackTrace();
         return null;
       }
-    } else return _host;
+    } else {
+			_hostIP = _host;
+			return _hostIP;
+		}
   }
 
 
@@ -103,7 +118,30 @@ public class PDAsynchBatchTaskExecutorClt {
    */
   public static synchronized int getPort() { return _port; }
 
+	
+	/**
+	 * figure out the originator string added to requests.
+	 * @return String
+	 * @throws IOException 
+	 */
+	public synchronized String getOriginatorString() throws IOException {
+		if (_client_addr_port==null) {
+	    InetAddress ia = InetAddress.getLocalHost();
+		  _client_addr_port = ia.getHostAddress()+"_"+_port;
+		}		
+		return _client_addr_port;
+	}
+	
+	
+	/**
+	 * check whether client is currently submitting work to server.
+	 * @return boolean
+	 */
+	public boolean isCurrentlySubmittingWork() {
+		return _isSubmitting;
+	}
 
+	
   /**
    * the main method of the class. Sends over the network the tasks parameter
    * to the PDAsynchBatchTaskExecutorSrv server who then distributes them to one
@@ -112,36 +150,42 @@ public class PDAsynchBatchTaskExecutorClt {
    * @throws IOException
    * @throws ClassNotFoundException
    * @throws PDAsynchBatchTaskExecutorException
-	 * @throws PDAsynchBatchTaskExecutorNWAException if no worker has capacity
+	 * @throws PDAsynchBatchTaskExecutorNWAException if no worker currently allows
+	 * submissions
    */
   public synchronized void submitWorkFromSameHost(TaskObject[] tasks)
-      throws IOException, ClassNotFoundException, PDAsynchBatchTaskExecutorException {
-    if (tasks==null || tasks.length==0)
-      throw new PDAsynchBatchTaskExecutorException("PDAsynchBatchTaskExecutorClt.submitWork(tasks): null or empty tasks passed in.");
-    /*
-    byte[] localipaddr = s.getLocalAddress().getAddress();
-    StringBuffer buf = new StringBuffer();
-    for (int i=0; i<localipaddr.length; i++) {
-      buf.append(String.valueOf(localipaddr[i]));
-      if (i < localipaddr.length-1) buf.append('.');
-    }
-    String client_addr = new String(buf);
-    */
-		_initCmdStateInvalidated = true;
-    InetAddress ia = InetAddress.getLocalHost();
-    String client_addr_port = ia.getHostAddress()+"_"+_port;
-    TaskObjectsAsynchExecutionRequest req = new TaskObjectsAsynchExecutionRequest(client_addr_port, tasks);
-    _oos.writeObject(req);
-    _oos.flush();
-    Object response = _ois.readObject();
-    if (response instanceof OKReply) {
-      return;
-    }
-    else if (response instanceof NoWorkerAvailableResponse)
-      throw new PDAsynchBatchTaskExecutorNWAException("no worker was available...");
-		else if (response instanceof FailedReply) 
-			throw new PDAsynchBatchTaskExecutorException("worker failed...");
-    throw new PDAsynchBatchTaskExecutorException("cannot parse response...");
+      throws IOException, ClassNotFoundException, 
+		         PDAsynchBatchTaskExecutorException {
+		try {
+			_isSubmitting = true;
+			if (tasks==null || tasks.length==0)
+				throw new PDAsynchBatchTaskExecutorException(
+										"PDAsynchBatchTaskExecutorClt.submitWork(tasks): "+
+										"null or empty tasks passed in.");
+			_initCmdStateInvalidated = true;
+			if (_client_addr_port==null) {
+				InetAddress ia = InetAddress.getLocalHost();
+				_client_addr_port = ia.getHostAddress()+"_"+_port;
+			}
+			TaskObjectsAsynchExecutionRequest req = 
+				new TaskObjectsAsynchExecutionRequest(_client_addr_port, tasks);
+			_oos.reset();  // force object to be written anew
+			_oos.writeObject(req);
+			_oos.flush();
+			Object response = _ois.readObject();
+			if (response instanceof OKReply) {
+				return;
+			}
+			else if (response instanceof NoWorkerAvailableResponse)
+				throw new PDAsynchBatchTaskExecutorNWAException(
+										"no worker was available...");
+			else if (response instanceof FailedReply) 
+				throw new PDAsynchBatchTaskExecutorException("worker failed...");
+			throw new PDAsynchBatchTaskExecutorException("cannot parse response...");
+		}
+		finally {
+			_isSubmitting = false;
+		}
   }
 
 
@@ -155,28 +199,54 @@ public class PDAsynchBatchTaskExecutorClt {
    * @throws IOException
    * @throws ClassNotFoundException
    * @throws PDAsynchBatchTaskExecutorException
-	 * @throws PDAsynchBatchTaskExecutorNWAException if no worker has capacity
+	 * @throws PDAsynchBatchTaskExecutorNWAException if no worker was available. 
+	 * Notice that in this case, there might be some tasks that were successfully
+	 * submitted, while others failed to be submitted. In such a case, the tasks 
+	 * array is modified and has null elements for all those tasks that were 
+	 * successfully submitted
    */
-  public synchronized void submitWorkFromSameHostInParallel(TaskObject[] tasks, int max_chunk_size)
-      throws IOException, ClassNotFoundException, PDAsynchBatchTaskExecutorException {
-    if (tasks==null || tasks.length==0)
-      throw new PDAsynchBatchTaskExecutorException("PDAsynchBatchTaskExecutorClt.submitWork(tasks): null or empty tasks passed in.");
-		_initCmdStateInvalidated = true;
-    InetAddress ia = InetAddress.getLocalHost();
-    String client_addr_port = ia.getHostAddress()+"_"+_port;
-    TaskObjectsAsynchExecutionRequest req = 
-			new TaskObjectsAsynchParallelExecutionRequest(client_addr_port, tasks, max_chunk_size);
-    _oos.writeObject(req);
-    _oos.flush();
-    Object response = _ois.readObject();
-    if (response instanceof OKReply) {
-      return;
-    }
-    else if (response instanceof NoWorkerAvailableResponse)
-      throw new PDAsynchBatchTaskExecutorNWAException("no worker was available...");
-		else if (response instanceof FailedReply) 
-			throw new PDAsynchBatchTaskExecutorException("worker failed...");
-    throw new PDAsynchBatchTaskExecutorException("cannot parse response...");
+  public synchronized void submitWorkFromSameHostInParallel(TaskObject[] tasks, 
+		                                                        int max_chunk_size)
+      throws IOException, ClassNotFoundException, 
+		         PDAsynchBatchTaskExecutorException {
+		try {
+			_isSubmitting = true;
+			if (tasks==null || tasks.length==0)
+				throw new PDAsynchBatchTaskExecutorException(
+					"PDAsynchBatchTaskExecutorClt.submitWork(tasks): "+
+					"null or empty tasks passed in.");
+			_initCmdStateInvalidated = true;
+			if (_client_addr_port==null) {
+				InetAddress ia = InetAddress.getLocalHost();
+				_client_addr_port = ia.getHostAddress()+"_"+_port;
+			}
+			TaskObjectsAsynchExecutionRequest req = 
+				new TaskObjectsAsynchParallelExecutionRequest(_client_addr_port, tasks, 
+																											max_chunk_size);
+			_oos.reset();  // force object to be written anew
+			_oos.writeObject(req);
+			_oos.flush();
+			Object response = _ois.readObject();
+			if (response instanceof OKReply) {
+				return;
+			}
+			else if (response instanceof NoWorkerAvailableResponse) {
+				// edit the tasks array to contain only those tasks that weren't processed
+				TaskObject[] returned_tasks = 
+					((NoWorkerAvailableResponse) response)._tasks;
+				for (int i=0; i<tasks.length; i++) {
+					if (!contains(returned_tasks, tasks[i])) tasks[i] = new NoOpTask();
+				}
+				throw new PDAsynchBatchTaskExecutorNWAException(
+										"no worker was available...");
+			}
+			else if (response instanceof FailedReply) 
+				throw new PDAsynchBatchTaskExecutorException("worker failed...");
+			throw new PDAsynchBatchTaskExecutorException("cannot parse response...");
+		}
+		finally {
+			_isSubmitting = false;
+		}
   }
 	
 	
@@ -192,14 +262,22 @@ public class PDAsynchBatchTaskExecutorClt {
 	 * @throws PDAsynchBatchTaskExecutorNWAException when all workers are at full
 	 * capacity, and cannot accept other tasks currently.
    */
-  public synchronized void submitWork(String originating_client, TaskObject[] tasks)
-      throws IOException, ClassNotFoundException, PDAsynchBatchTaskExecutorException {
+  public synchronized void submitWork(String originating_client, 
+		                      TaskObject[] tasks)
+    throws IOException, ClassNotFoundException, 
+           PDAsynchBatchTaskExecutorException {
     if (tasks==null || tasks.length==0)
-      throw new PDAsynchBatchTaskExecutorException("PDAsynchBatchTaskExecutorClt.submitWork(clientname, tasks): null or empty tasks passed in.");
+      throw new PDAsynchBatchTaskExecutorException(
+				"PDAsynchBatchTaskExecutorClt.submitWork(clientname, tasks): "+
+				"null or empty tasks passed in.");
     if (originating_client==null || originating_client.length()==0)
-      throw new PDAsynchBatchTaskExecutorException("PDAsynchBatchTaskExecutorClt.submitWork(clientname, tasks): null or empty clientname passed in.");
+      throw new PDAsynchBatchTaskExecutorException(
+				"PDAsynchBatchTaskExecutorClt.submitWork(clientname, tasks): "+
+				"null or empty clientname passed in.");
 		_initCmdStateInvalidated = true;
-    TaskObjectsAsynchExecutionRequest req = new TaskObjectsAsynchExecutionRequest(originating_client, tasks);
+    TaskObjectsAsynchExecutionRequest req = 
+			new TaskObjectsAsynchExecutionRequest(originating_client, tasks);
+    _oos.reset();  // force object to be written anew
     _oos.writeObject(req);
     _oos.flush();
     Object response = _ois.readObject();
@@ -207,7 +285,8 @@ public class PDAsynchBatchTaskExecutorClt {
       return;
     }
     else if (response instanceof NoWorkerAvailableResponse)
-      throw new PDAsynchBatchTaskExecutorNWAException("no worker was available...");
+      throw new PDAsynchBatchTaskExecutorNWAException(
+				"no worker was available...");
 		else if (response instanceof FailedReply) 
 			throw new PDAsynchBatchTaskExecutorException("worker failed...");
     throw new PDAsynchBatchTaskExecutorException("cannot parse response...");
@@ -226,14 +305,22 @@ public class PDAsynchBatchTaskExecutorClt {
    * @throws PDAsynchBatchTaskExecutorException
 	 * @throws PDAsynchBatchTaskExecutorNWAException if no worker has capacity
    */
-  public synchronized void submitWork(Vector originating_clients, TaskObject[] tasks)
-      throws IOException, ClassNotFoundException, PDAsynchBatchTaskExecutorException {
+  public synchronized void submitWork(Vector originating_clients, 
+		                      TaskObject[] tasks)
+    throws IOException, ClassNotFoundException, 
+    PDAsynchBatchTaskExecutorException {
     if (tasks==null || tasks.length==0)
-      throw new PDAsynchBatchTaskExecutorException("PDAsynchBatchTaskExecutorClt.submitWork(clientsnames, tasks): null or empty tasks passed in.");
+      throw new PDAsynchBatchTaskExecutorException(
+        "PDAsynchBatchTaskExecutorClt.submitWork(clientsnames, tasks): "+
+				"null or empty tasks passed in.");
     if (originating_clients==null || originating_clients.size()==0)
-      throw new PDAsynchBatchTaskExecutorException("PDAsynchBatchTaskExecutorClt.submitWork(clientsnames, tasks): null or empty clientname passed in.");
+      throw new PDAsynchBatchTaskExecutorException(
+        "PDAsynchBatchTaskExecutorClt.submitWork(clientsnames, tasks): "+
+				"null or empty clientname passed in.");
 		_initCmdStateInvalidated = true;
-    TaskObjectsAsynchExecutionRequest req = new TaskObjectsAsynchExecutionRequest(originating_clients, tasks);
+    TaskObjectsAsynchExecutionRequest req = 
+      new TaskObjectsAsynchExecutionRequest(originating_clients, tasks);
+    _oos.reset();  // force object to be written anew
     _oos.writeObject(req);
     _oos.flush();
     Object response = _ois.readObject();
@@ -241,7 +328,8 @@ public class PDAsynchBatchTaskExecutorClt {
       return;
     }
     else if (response instanceof NoWorkerAvailableResponse)
-      throw new PDAsynchBatchTaskExecutorNWAException("no worker was available...");
+      throw new PDAsynchBatchTaskExecutorNWAException(
+				"no worker was available...");
 		else if (response instanceof FailedReply) 
 			throw new PDAsynchBatchTaskExecutorException("worker failed...");
     throw new PDAsynchBatchTaskExecutorException("cannot parse response...");
@@ -262,10 +350,13 @@ public class PDAsynchBatchTaskExecutorClt {
 	 * issued from this client before.
 	 */
 	public synchronized void sendInitCmd(PDAsynchInitCmd initcmd) 
-		throws IOException, ClassNotFoundException, PDAsynchBatchTaskExecutorException {
+		throws IOException, ClassNotFoundException, 
+		       PDAsynchBatchTaskExecutorException {
 		if (_initCmdStateInvalidated) 
-			throw new PDAsynchBatchTaskExecutorException("PDAsynchBatchTaskExecutorClt.sendInitCmd(): "+
-				                                           "invalid state for sending init-cmd to server.");
+			throw new PDAsynchBatchTaskExecutorException(
+				"PDAsynchBatchTaskExecutorClt.sendInitCmd(): "+
+				"invalid state for sending init-cmd to server.");
+		_oos.reset();  // force object to be written anew
 		_oos.writeObject(initcmd);
 		_oos.flush();
 		_initCmdStateInvalidated = true;
@@ -279,14 +370,44 @@ public class PDAsynchBatchTaskExecutorClt {
 	 * @throws PDAsynchBatchTaskExecutorException 
 	 * @throws ClassNotFoundException
 	 */
-	public synchronized void awaitServerWorkers() throws IOException, PDAsynchBatchTaskExecutorException, ClassNotFoundException {
+	public synchronized void awaitServerWorkers() 
+		throws IOException, PDAsynchBatchTaskExecutorException, 
+		       ClassNotFoundException {
 		if (!_initCmdStateInvalidated) 
-			throw new PDAsynchBatchTaskExecutorException("PDAsynchBatchTaskExecutorClt.awaitServerWorkers(): must first call sendInitCmd()");
+			throw new PDAsynchBatchTaskExecutorException(
+				"PDAsynchBatchTaskExecutorClt.awaitServerWorkers(): "+
+				"must first call sendInitCmd()");
+		// no need to call _oos.reset() first
 		_oos.writeObject(new PDAsynchBatchTaskExecutorSrvAwaitWrksRequest());
 		_oos.flush();
 		Object response = _ois.readObject();
 		if (response instanceof OKReply) return;
-		else throw new PDAsynchBatchTaskExecutorException("PDAsynchBatchTaskExecutorClt.awaitServerWorkers(): srv failed to send OKreply");
+		else throw new PDAsynchBatchTaskExecutorException(
+			"PDAsynchBatchTaskExecutorClt.awaitServerWorkers(): "+
+			"srv failed to send OKreply");
+	}
+	
+	
+	/**
+	 * get the current number of active workers for the server that this client
+	 * is connected to.
+	 * @return int
+	 * @throws IOException
+	 * @throws PDAsynchBatchTaskExecutorException
+	 * @throws ClassNotFoundException 
+	 */
+	public synchronized int getNumWorkers() 
+		throws IOException, PDAsynchBatchTaskExecutorException, 
+		       ClassNotFoundException {
+		// no need to call _oos.reset() first
+		_oos.writeObject(new PDAsynchBatchTaskExecutorSrvGetNumWrksRequest());
+		_oos.flush();
+		Object response = _ois.readObject();
+		if (response instanceof OKReplyData) 
+			return ((Integer)(((OKReplyData) response).getData())).intValue();
+		else throw new PDAsynchBatchTaskExecutorException(
+			"PDAsynchBatchTaskExecutorClt.getNumWorkers(): "+
+			"srv failed to send OKreply");		
 	}
 	
 	
@@ -304,6 +425,14 @@ public class PDAsynchBatchTaskExecutorClt {
 				_instance._s = null;
 			}
 		}
+	}
+	
+	
+	private static boolean contains(TaskObject[] array, TaskObject obj) {
+		for (int i=0; i<array.length; i++) {
+			if (array[i].equals(obj)) return true;
+		}
+		return false;
 	}
 	
 }

@@ -5,7 +5,9 @@ import java.io.Serializable;
 
 
 /**
- * defines vectors in R^n
+ * defines vectors in R^n.
+ * Extends the <CODE>java.io.Serializable</CODE> interface so that implementing 
+ * objects can be transported across JVMs in distributed computation.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>

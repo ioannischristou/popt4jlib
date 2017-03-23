@@ -44,12 +44,18 @@ public class DConditionCounterIncrRequest implements DMsgIntf {
   public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
     DConditionCounter.getInstance().increment(_num);
     // ok, handling thread on server increased the associated unique CondCounter
+		// no need for reset
     oos.writeObject(new OKReply());
     oos.flush();
   }
 
+	
+	/**
+	 * return a String containing the <CODE>_num</CODE> of this object.
+	 * @return String
+	 */
   public String toString() {
-    return "DConditionCounterIncrRequest()";
+    return "DConditionCounterIncrRequest("+_num+")";
   }
 
 }

@@ -49,10 +49,12 @@ public class DRLockReleaseRequest implements DMsgIntf {
 		try {
 	    FairDMCoordinator.getInstance(_rwlname).releaseReadAccess();
 		  // ok, handling thread on server added
+			// no need for oos.reset()
 			oos.writeObject(new OKReply());
 			oos.flush();
 		}
     catch (ParallelException e) {
+			// no need for oos.reset()
       oos.writeObject(new FailedReply());
       oos.flush();
       // throw e;  // don't throw as this would destroy the long-lived socket
@@ -60,6 +62,11 @@ public class DRLockReleaseRequest implements DMsgIntf {
     }
   }
 
+	
+	/**
+	 * return String containing <CODE>_rwlname</CODE> data member.
+	 * @return String
+	 */
   public String toString() {
     return "DRLockReleaseRequest("+_rwlname+")";
   }

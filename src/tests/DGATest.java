@@ -1,5 +1,6 @@
 package tests;
 
+import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.*;
 import popt4jlib.GA.*;
 import popt4jlib.GradientDescent.*;
@@ -48,13 +49,13 @@ public class DGATest {
    * <li> class,dga.observerlocaloptimizer, &lt;fullclassname&gt; optional, the
    * full class name of the java class implementing the <CODE>ObserverIntf</CODE>
    * in the popt4jlib pacakge as well as the <CODE>LocalOptimizerIntf</CODE> in
-   * popt4jlib.GradientDescent package. Used for constructing ensembles of
+   * the popt4jlib package. Used for constructing ensembles of
    * optimizers exchanging (sub-)optimal incumbent solutions as they are found.
    * Can only be used with functions accepting as arguments <CODE>double[]</CODE>
    * or <CODE>VectorIntf</CODE>.
    * <li> class,dga.localoptimizer, &lt;fullclassname&gt; optional, the full class
    * name of the java class implementing the <CODE>LocalOptimizerIntf</CODE> in
-   * popt4jlib.GradientDescent package. Used as a final post-optimization step.
+   * the popt4jlib package. Used as a final post-optimization step.
    * Can only be used with functions accepting as arguments <CODE>double[]</CODE>
    * or <CODE>VectorIntf</CODE>.
    * <li> class,dga.randomchromosomemaker,&lt;fullclassname&gt; mandatory, the
@@ -67,7 +68,7 @@ public class DGATest {
    * Objects. It is the responsibility of the operator to always return NEW Objects.
    * <li> class,dga.mutationop, &lt;fullclassname&gt; optional, the full class name
    * of the class implementing the MutationOpIntf interface in the popt4jlib.GA
-   * pavkage. If present, the operator will always be applied to the resulting
+   * package. If present, the operator will always be applied to the resulting
    * Objects that the XoverOpIntf will produce.
    * <li> class,dga.c2amaker, &lt;fullclassname&gt; optional, the full class name
    * of the class implementing the Chromosome2ArgMakerIntf interface in package
@@ -109,6 +110,9 @@ public class DGATest {
    * <li> In addition, the various operators (xover, mutation, a2cmaker,
    * c2amaker, randomchromosomemaker etc.) may require additional parameters as
    * they are defined and documented in their respective class file definitions.
+	 * For example, usually, the line
+	 * &lt;dga.chromosomelength, $num$&gt; is required for the chromosome makers 
+	 * to know what chromosome lengths to produce.
    * </ul>
    * <p> The optional second argument, if present, overrides the initial random
    * seed specified in the params_file.
@@ -158,13 +162,13 @@ public class DGATest {
         arg = (double[]) p.getArg();
       }
       catch (ClassCastException e) {
-	try {
+				try {
           DblArray1Vector y = (DblArray1Vector) p.getArg();
           arg = y.getDblArray1();
-	}
-	catch (ClassCastException e2) {
-	  // no-op
-	}
+				}
+				catch (ClassCastException e2) {
+					// no-op
+				}
       }
 			utils.PairObjDouble p2 = null;
       if (arg!=null) {

@@ -181,6 +181,15 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
       if (Double.compare(_x[i], o.getCoord(i)) != 0)return false;
     return true;
   }
+	
+	
+	/**
+	 * returns the integer part of the first element of this vector.
+	 * @return int
+	 */
+	public int hashCode() {
+		return (int) _x[0];
+	}
 
 
   /**

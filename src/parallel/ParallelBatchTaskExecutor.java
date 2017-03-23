@@ -112,8 +112,10 @@ public final class ParallelBatchTaskExecutor {
 		// setting the _batchSize above, would undo any explicit specification done
 		// by the 2-argument newParallelBatchTaskExecutor() method.
     // get refs to MsgPassingCoordinator's
-    _mpcFwd = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+_id);
-    _mpcBak = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+_id); 		
+    _mpcFwd = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+
+			                                          _id);
+    _mpcBak = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+
+			                                          _id); 		
 		final int numthreads = _threads.length;
     for (int i=0; i<numthreads; i++) {
       _threads[i] = new PBTEThread(this);
@@ -138,7 +140,8 @@ public final class ParallelBatchTaskExecutor {
    * to this call
    * @return int the number of successfully executed tasks.
    */
-  public synchronized int executeBatch(Collection tasks) throws ParallelException {
+  public synchronized int executeBatch(Collection tasks) 
+		throws ParallelException {
     if (tasks==null) return 0;
     if (_isRunning==false)
       throw new ParallelException("thread-pool is not running");
@@ -153,7 +156,6 @@ public final class ParallelBatchTaskExecutor {
         Object task = it.next();
         int id = getNextId();
         ids.add(new Integer(id));
-        //MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+_id).sendDataBlocking(id, task);
         _mpcFwd.sendDataBlocking(id, task);
         if (++batch_counter==_batchSize) {
           batch_counter = 0;
@@ -165,10 +167,8 @@ public final class ParallelBatchTaskExecutor {
       while (itback.hasNext()) {
         int id = ( (Integer) itback.next()).intValue();
         // acknowledgement to be received on the "back-channel"
-        Object task =
-            // MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+_id).recvData(-1, id);
-            _mpcBak.recvData(-1, id);
-        if (task instanceof TaskObject && ( (TaskObject) task).isDone() == false)
+        Object task = _mpcBak.recvData(-1, id);
+        if (task instanceof TaskObject && ((TaskObject) task).isDone() == false)
           ++failedtasks;
         else ++runtasks;
       }
@@ -216,7 +216,7 @@ public final class ParallelBatchTaskExecutor {
    * return the number of threads in the thread-pool.
    * @return int
    */
-  public int getNumThreads() {
+  public synchronized int getNumThreads() {
     if (_threads!=null)
       return _threads.length;
     else return 0;
@@ -283,8 +283,10 @@ final class PBTEThread extends Thread {
 	 */
 	public void run() {
 		final int pbteid = _e.getObjId();
-		final MsgPassingCoordinator _mpcFwd = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+pbteid);
-		final MsgPassingCoordinator _mpcBak = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+pbteid);
+		final MsgPassingCoordinator _mpcFwd = 
+			MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+pbteid);
+		final MsgPassingCoordinator _mpcBak = 
+			MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+pbteid);
 		while (isRunning()) {
 			// get the "sender" id: notice that it is not sufficient for each thread
 			// to simply increment a local id variable, as this would cause every 
@@ -294,13 +296,14 @@ final class PBTEThread extends Thread {
 			int id = getNextId(_e);
 			try {
 				// threads all use the same receiver id
-				// Object data = MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor"+pbteid).
 				Object data = _mpcFwd.recvData(0, id);
 				try {
 					if (data instanceof TaskObject) ( (TaskObject) data).run();
 					else if (data instanceof Runnable) ( (Runnable) data).run();
-					else if (data instanceof ParallelBatchTaskExecutor.PoissonPill) break;  // done
-					else if (data instanceof ParallelBatchTaskExecutor.OldPill) stopRunning();  // done
+					else if (data instanceof ParallelBatchTaskExecutor.PoissonPill) 
+						break;  // done
+					else if (data instanceof ParallelBatchTaskExecutor.OldPill) 
+						stopRunning();  // done
 					else throw new ParallelException("data object cannot be run");
 				}
 				catch (Exception e) {
@@ -308,7 +311,6 @@ final class PBTEThread extends Thread {
 				}
 				// send back the data object as acknowledgement on the "back-channel"
 				// any results may be written in the data object itself
-				// MsgPassingCoordinator.getInstance("ParallelBatchTaskExecutor_ack"+pbteid).
 				_mpcBak.sendDataBlocking(id, -1, data);
 			}
 			catch (ParallelException e) {

@@ -1,5 +1,6 @@
 package popt4jlib.GradientDescent;
 
+import popt4jlib.LocalOptimizerIntf;
 import java.util.*;
 import utils.*;
 import analysis.*;
@@ -18,12 +19,13 @@ import parallel.*;
  * @version 1.0
  */
 public class RandomDescents implements LocalOptimizerIntf {
-  private static int _nextId = 0;
+  //private static long serialVersionUID=...L;
+	private static int _nextId = 0;
   private int _id;
   private HashMap _params;
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
-  private RDThread[] _threads=null;
+  private transient RDThread[] _threads=null;
   protected FunctionIntf _f;
 
 

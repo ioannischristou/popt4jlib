@@ -15,7 +15,8 @@ public class DConditionCounterLLCSrv {
 
 
   /**
-   * invoke as <CODE>java -cp &lt;classpath&gt; parallel.distributed.DConditionCounterLLCSrv [port(7899)]</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; 
+	 * parallel.distributed.DConditionCounterLLCSrv [port(7899)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -27,9 +28,12 @@ public class DConditionCounterLLCSrv {
         System.exit(-1);
       }
     }
-    DActiveMsgPassingCoordinatorLongLivedConnSrv coord = new DActiveMsgPassingCoordinatorLongLivedConnSrv(_port);
+    DActiveMsgPassingCoordinatorLongLivedConnSrv coord = 
+			new DActiveMsgPassingCoordinatorLongLivedConnSrv(_port);
     try {
-      utils.Messenger.getInstance().msg("DConditionCounterLLCSrv.main(): running DActiveMsgPassingCoordinatorLongLivedConnSrv",0);
+      utils.Messenger.getInstance().msg(
+				"DConditionCounterLLCSrv.main(): "+
+				"running DActiveMsgPassingCoordinatorLongLivedConnSrv",0);
       coord.run();
     }
     catch (Exception e) {
@@ -38,7 +42,9 @@ public class DConditionCounterLLCSrv {
   }
 
   private static void usage() {
-    System.err.println("usage: java -cp <classpath> parallel.distributed.DConditionCounterLLCSrv [port(7899, must be > 1024)]");
+    System.err.println("usage: java -cp <classpath> "+
+			                 "parallel.distributed.DConditionCounterLLCSrv "+
+			                 "[port(7899, must be > 1024)]");
   }
 }
 

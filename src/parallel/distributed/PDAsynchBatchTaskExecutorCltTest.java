@@ -17,7 +17,7 @@ import java.io.IOException;
  * default ports.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2016</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -39,7 +39,8 @@ public class PDAsynchBatchTaskExecutorCltTest {
     long start = System.currentTimeMillis();
     final int numdims = 100;
     final int numtasks = 200;
-    PDAsynchBatchTaskExecutorClt client = PDAsynchBatchTaskExecutorClt.getInstance();
+    PDAsynchBatchTaskExecutorClt client = 
+			PDAsynchBatchTaskExecutorClt.getInstance();
     // thread-1 tasks
     TNLAsynchEvalTask[] tasks1 = new TNLAsynchEvalTask[numtasks];
 		for (int i=0; i<tasks1.length; i++) {
@@ -110,11 +111,13 @@ public class PDAsynchBatchTaskExecutorCltTest {
 
   /**
    * invoke with no args as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDAsynchBatchTaskExecutorCltTest</CODE>
+   * <CODE>java -cp &lt;classpath&gt; 
+	 * parallel.distributed.PDAsynchBatchTaskExecutorCltTest</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {
-    PDAsynchBatchTaskExecutorCltTest test = new PDAsynchBatchTaskExecutorCltTest();
+    PDAsynchBatchTaskExecutorCltTest test = 
+			new PDAsynchBatchTaskExecutorCltTest();
 		try {
 			test.run();
 		}
@@ -144,12 +147,14 @@ public class PDAsynchBatchTaskExecutorCltTest {
   class PDABTECTThread extends Thread {
     PDAsynchBatchTaskExecutorClt _client;
     TNLAsynchEvalTask[] _tasks;
-    PDABTECTThread(PDAsynchBatchTaskExecutorClt client, TNLAsynchEvalTask[] tasks) {
+    PDABTECTThread(PDAsynchBatchTaskExecutorClt client, 
+			             TNLAsynchEvalTask[] tasks) {
       _client = client;
       _tasks = tasks;
     }
 		public void run() {
-			TNLAsynchEvalTask[] tasks = new TNLAsynchEvalTask[100];  // send 100 tasks at a time
+			TNLAsynchEvalTask[] tasks = new TNLAsynchEvalTask[100];  
+      // send 100 tasks at a time
 			int j=0;
 			for (int i=0; i<_tasks.length; i++) {
 				if (j==100) {
@@ -167,7 +172,7 @@ public class PDAsynchBatchTaskExecutorCltTest {
         System.out.println("CltTest: submitting tasks of size "+tasks.length);
         _client.submitWorkFromSameHost(tasks);
 				//Thread.sleep(1000);  // itc: HERE rm asap to prevent socket problems due to the submitXXX() call opening/closing sockets
-        System.out.println("CltTest: got results.");
+        System.out.println("CltTest: submitted tasks.");
       }
       catch (PDAsynchBatchTaskExecutorException e) {
         e.printStackTrace();
@@ -180,7 +185,8 @@ public class PDAsynchBatchTaskExecutorCltTest {
             return;
           }
           catch (PDAsynchBatchTaskExecutorException e2) {
-            System.err.println("oops, failed again with exception msg \""+e2.getMessage()+"\"");
+            System.err.println("oops, failed again with exception msg \""+
+							                 e2.getMessage()+"\"");
           }
           catch (Exception e3) {
             e3.printStackTrace();

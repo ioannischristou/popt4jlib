@@ -16,11 +16,13 @@ import java.util.*;
  * runs by calling its <CODE>runProtocol(null,null,null)</CODE> method, meaning 
  * that during execution, this method must not engage in any communication with 
  * the server object (and will not send any response back); then it starts 
- * listening in for <CODE>parallel.distributed.TaskObjectsExecutionRequest</CODE> 
+ * listening for <CODE>parallel.distributed.TaskObjectsExecutionRequest</CODE> 
  * requests, which it then processes and returns the results wrapped in a
  * <CODE>parallel.distributed.TaskObjectsExecutionResults</CODE> object via the
- * connecting socket to the server.
- *
+ * connecting socket to the server. One exception to the above is when the 
+ * initialization command (received first) for the workers is a
+ * <CODE>OKReplyRequestedPDBTExecWrkInitCmd</CODE> in which case, the worker
+ * will submit an <CODE>OKReply</CODE> to the server upon ewxecution of the cmd.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2015</p>
@@ -29,7 +31,7 @@ import java.util.*;
  * @version 1.0
  */
 public class PDBTExecInitedWrk {
-  private int _numthreads = 10;  // default number of threads of PDBatchTaskExecutor
+  private int _numthreads = 10;  // default #threads of PDBatchTaskExecutor
   private String _host = "localhost";  // default host
   private int _port = 7890;  // default worker port
   static Socket _s = null;
@@ -58,7 +60,7 @@ public class PDBTExecInitedWrk {
 
 
   /**
-   * auxiliary method called by main()
+   * auxiliary method called by main().
    * @throws IOException
    */
   private void run() throws IOException {
@@ -68,7 +70,8 @@ public class PDBTExecInitedWrk {
     PDBatchTaskExecutor executor=null;
 		utils.Messenger mger = utils.Messenger.getInstance();
     try {
-      mger.msg("Wrk: About to Connect to Srv at address(host,port)=("+_host+","+_port+")",0);
+      mger.msg("Wrk: About to Connect to Srv at address(host,port)=("+
+				       _host+","+_port+")",0);
       _s = new Socket(_host, _port);
       mger.msg("Wrk: socket created",0);
 			mger.msg("Wrk: if not first worker to connect to server, "+
@@ -76,32 +79,50 @@ public class PDBTExecInitedWrk {
       oos = new ObjectOutputStream(_s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(_s.getInputStream());
-      mger.msg("Wrk: Connected to Srv at address(host,port)=("+_host+","+_port+")",0);
+      mger.msg("Wrk: Connected to Srv at address(host,port)=("+
+				       _host+","+_port+")",0);
 			// first, read and execute the initialization command
 			mger.msg("Wrk: Waiting to read initialization command...",0);
 			RRObject init_cmd = (RRObject) ois.readObject();
 			init_cmd.runProtocol(null, null, null);
 			mger.msg("Wrk: Executed the initialization command received",0);
+			if (init_cmd instanceof OKReplyRequestedPDBTExecWrkInitCmd) {
+				oos.writeObject(new OKReply());
+				oos.flush();
+			}
 			// next, continue as usual
       executor = PDBatchTaskExecutor.newPDBatchTaskExecutor(_numthreads);
       while (true) {
         try {
           // get a request
-          mger.msg("Wrk: waiting to read a TaskObjectsExecutionRequest",2);
-          TaskObjectsExecutionRequest req = (TaskObjectsExecutionRequest) ois.readObject();
+          mger.msg("Wrk: waiting to read a TaskObjectsExecutionRequest "+
+						       "or PDBTExecCmd",2);
+					RRObject rr = (RRObject) ois.readObject();
+					if (rr instanceof PDBTExecCmd) {  // execute on this thread
+						mger.msg("Wrk: got a PDBTExecCmd",2);
+						rr.runProtocol(null, null, null);
+						oos.writeObject(new OKReply());  // no need for oos.reset() here
+            mger.msg("Wrk: finished processing the PDBTExecCmd",2);
+						continue;
+					}
+          TaskObjectsExecutionRequest req = (TaskObjectsExecutionRequest) rr;
           mger.msg("Wrk: got a TaskObjectsExecutionRequest",2);
           if (req!=null) {
             Vector tasks = new Vector();
-            for (int i=0; i<req._tasks.length; i++)
+            for (int i=0; i<req._tasks.length; i++) {
               tasks.addElement(req._tasks[i]);
+						}
             //  process the request and get back results
             Vector results = executor.executeBatch(tasks);
-            mger.msg("Wrk: finished processing the TaskObjectsExecutionRequest",2);
+            mger.msg("Wrk: finished processing the TaskObjectsExecutionRequest",
+							       2);
             Object[] arr = new Object[results.size()];
             for (int i=0; i<results.size(); i++) {
-              arr[i] = results.elementAt(i);
+              arr[i] = results.get(i);
             }
-            TaskObjectsExecutionResults res = new TaskObjectsExecutionResults(arr);
+            TaskObjectsExecutionResults res = 
+							new TaskObjectsExecutionResults(arr);
+						oos.reset();  // force object to be written anew
             oos.writeObject(res);
             oos.flush();
             mger.msg("Wrk: sent a TaskObjectsExecutionResults response",2);
@@ -126,7 +147,8 @@ public class PDBTExecInitedWrk {
     catch (Exception e) {
       // e.printStackTrace();
 			mger.msg("PDBTExecInitedWrk.run(): Exception '"+e+
-				       "' was thrown. Will close connection, shutdown executor, and exit. ", 0);
+				       "' was thrown. Will close connection, shutdown executor, "+
+				       "and exit. ", 0);
     }
     finally {
       if (ois!=null) ois.close();
@@ -140,14 +162,16 @@ public class PDBTExecInitedWrk {
           e2.printStackTrace();
         }
       }
-      mger.msg("Wrk: Closed Connection to Srv at address(host,port)=("+_host+","+_port+")",0);
+      mger.msg("Wrk: Closed Connection to Srv at address(host,port)=("+
+				       _host+","+_port+")",0);
     }
   }
 
 
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBTExecInitedWrk [numthreads(10)] [host(localhost)] [port(7890)] [dbglvl(0)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBTExecInitedWrk 
+	 * [numthreads(10)] [host(localhost)] [port(7890)] [dbglvl(0)]</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -200,7 +224,10 @@ public class PDBTExecInitedWrk {
 
 
   private static void usage() {
-    System.err.println("usage: java -cp <classpath> parallel.distributed.PDBTExecInitedWrk [numthreads(10)] [host(localhost)] [port(7890)] [dbglvl(0)]");
+    System.err.println("usage: java -cp <classpath> "+
+			                 "parallel.distributed.PDBTExecInitedWrk "+
+			                 "[numthreads(10)] [host(localhost)] "+
+			                 "[port(7890)] [dbglvl(0)]");
   }
 
 }

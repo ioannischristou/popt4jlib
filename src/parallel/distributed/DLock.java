@@ -84,7 +84,7 @@ public class DLock {
       LockRequest lr = new LockRequest();
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
-      oos.writeObject(lr);
+      oos.writeObject(lr);  // no need for reset
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
       Object res = ois.readObject();
@@ -132,7 +132,7 @@ public class DLock {
 				LockIfAvailableRequest lr = new LockIfAvailableRequest();
 				oos = new ObjectOutputStream(s.getOutputStream());
 				oos.flush();
-				oos.writeObject(lr);
+				oos.writeObject(lr);  // no need for reset
 				oos.flush();
 				ois = new ObjectInputStream(s.getInputStream());
 				Object res = ois.readObject();
@@ -184,7 +184,7 @@ public class DLock {
       UnlockRequest lr = new UnlockRequest();
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
-      oos.writeObject(lr);
+      oos.writeObject(lr);  // no need for reset
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
       Object res = ois.readObject();

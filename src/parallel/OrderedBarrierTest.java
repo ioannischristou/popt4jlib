@@ -3,10 +3,13 @@ package parallel;
 import java.io.Serializable;
 
 /**
- * test-driver for <CODE>OrderedBarrier</CODE>.
+ * test-driver for <CODE>OrderedBarrier</CODE>. The test spawns a number of 
+ * threads and for a number of times, each thread must print its id, in the 
+ * same order it was registered in the OrderedBarrier, which is in increasing
+ * order from 0 to numthreads-1.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -20,13 +23,17 @@ public class OrderedBarrierTest {
 
 	/**
 	 * invoke as:
-	 * <CODE>java -cp &lt;classpath&gt; parallel.OrderedBarrierTest</CODE>.
+	 * <CODE>java -cp &lt;classpath&gt; parallel.OrderedBarrierTest [numthreads(10)] [numiters(10)]</CODE>.
 	 * @param args 
 	 */
   public static void main(String[] args) {
-    OBThread arr[] = new OBThread[10];
+		int nt = 10;
+		if (args.length>0) nt = Integer.parseInt(args[0]);
+		int niters=10;
+		if (args.length>1) niters = Integer.parseInt(args[1]);
+    OBThread arr[] = new OBThread[nt];
     for (int i=0; i<arr.length; i++) {
-      arr[i] = new OBThread(i);
+      arr[i] = new OBThread(i,niters);
       OrderedBarrier.addThread(arr[i], "mitsos");
     }
     for (int i=0; i<arr.length; i++) {
@@ -40,9 +47,10 @@ public class OrderedBarrierTest {
 	 */
 	static class OBThread extends Thread {
 		private int _id;
-		public OBThread(int id) { _id = id; }
+		private int _niters;
+		public OBThread(int id, int niters) { _id = id; _niters=niters; }
 		public void run() {
-			for (int i=0; i<10; i++) {
+			for (int i=0; i<_niters; i++) {
 				//System.out.println("t-id="+_id+" i="+i);
 				try {
 					OrderedBarrier.getInstance("mitsos").orderedBarrier(new TO(_id, i));

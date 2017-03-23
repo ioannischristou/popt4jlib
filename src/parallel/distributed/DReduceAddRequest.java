@@ -38,10 +38,16 @@ public class DReduceAddRequest implements DMsgIntf {
   public void execute(ObjectOutputStream oos) throws ParallelException, IOException {
     ReduceOpBase.addThread(_bname, Thread.currentThread());
     // ok, handling thread on server added
-    oos.writeObject(new OKReply());
+    oos.writeObject(new OKReply());  // no need for oos.reset() first
     oos.flush();
   }
 
+	
+	/**
+	 * return a String containing the name of the barrier for which this 
+	 * request is.
+	 * @return String
+	 */
   public String toString() {
     return "DReduceAddRequest("+_bname+")";
   }

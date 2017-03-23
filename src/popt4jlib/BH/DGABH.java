@@ -17,18 +17,22 @@ import popt4jlib.Arg2ChromosomeMakerIntf;
 import popt4jlib.Chromosome2ArgMakerIntf;
 import popt4jlib.Constants;
 import popt4jlib.FunctionEvaluationTask;
+import popt4jlib.LocalSearchFunctionEvaluationTask;
 import popt4jlib.FunctionIntf;
 import popt4jlib.GLockingObservableObserverBase;
+import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.ImmigrationIslandOpIntf;
 import popt4jlib.ObserverIntf;
 import popt4jlib.OptimizerException;
 import popt4jlib.OptimizerIntf;
 import popt4jlib.RandomChromosomeMakerIntf;
 import popt4jlib.SubjectIntf;
+import popt4jlib.LocalSearch.IdentitySearchOptimizer;
 import utils.DataMgr;
 import utils.Debug;
 import utils.Messenger;
 import utils.PairObjDouble;
+import utils.Params;
 import utils.RndUtil;
 
 
@@ -76,7 +80,7 @@ import utils.RndUtil;
 public class DGABH extends GLockingObservableObserverBase implements OptimizerIntf {
   private static int _nextId=0;
   private int _id;
-  private HashMap _params;
+  private Params _params;
   double _incValue=Double.MAX_VALUE;
   Object _inc;  // incumbent chromosome
   FunctionIntf _f;
@@ -121,7 +125,7 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
    * @return HashMap
    */
   public synchronized HashMap getParams() {
-    return new HashMap(_params);
+    return new HashMap(_params.getParamsMap());
   }
 
 
@@ -134,11 +138,11 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
    * <CODE>minimize(f)</CODE> method of this object.
    */
   public synchronized void setParams(HashMap p) throws OptimizerException {
-    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
-    _params = null;
-    _params = new HashMap(p);  // own the params
+    if (_f!=null) 
+			throw new OptimizerException("cannot modify parameters while running");
+    _params = new Params(p);  // own the params
 		// set the distributed computing mode init cmd, if any is specified
-		_pdbtInitCmd = (RRObject) _params.get("dgabh.pdbtexecinitedwrkcmd");
+		_pdbtInitCmd = (RRObject) _params.getObject("dgabh.pdbtexecinitedwrkcmd");
   }
 
 
@@ -147,17 +151,17 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
    * function. The ObserverIntf objects would need this method to get the
    * current incumbent (and use it as they please). Note: even though the
    * method is not synchronized, it still executes atomically, and is in synch
-   * with its counterpart, setIncumbent().
+   * with its counterpart, <CODE>setIncumbent()</CODE>.
    * @return Object
    */
   protected Object getIncumbentProtected() {
     try {
       Chromosome2ArgMakerIntf c2amaker =
-          (Chromosome2ArgMakerIntf) _params.get("dgabh.c2amaker");
+          (Chromosome2ArgMakerIntf) _params.getObject("dgabh.c2amaker");
       Object arg = null;
       try {
         if (c2amaker == null) arg = _inc;
-        else arg = c2amaker.getArg(_inc, _params);
+        else arg = c2amaker.getArg(_inc, _params.getParamsMap());
       }
       catch (OptimizerException e) {
         e.printStackTrace(); // no-op
@@ -186,27 +190,34 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
    * setParams(p) to do that).
    * These parameters are:
    * <ul>
-   * <li> &lt;"dgabh.randomparticlemaker",RandomChromosomeMakerIntf maker&gt; mandatory,
-   * the RandomChromosomeMakerIntf Object responsible for creating valid random
-   * chromosome Objects to populate the islands.
-   * <li> &lt;"dgabh.numthreads",Integer nt&gt; optional, how many threads will be used,
-   * default is 1. Each thread corresponds to an island in the DGA model.
-   * <li> &lt;"dgabh.c2amaker",Chromosome2ArgMakerIntf c2a&gt; optional, the object that is
-   * responsible for tranforming a chromosome Object to a function argument
-   * Object. If not present, the default identity transformation is assumed.
-   * <li> &lt;"dgabh.a2cmaker",Arg2ChromosomeMakerIntf a2c&gt; optional, the object that is
-   * responsible for transforming a FunctionIntf argument Object to a chromosome
-   * Object. If not present, the default identity transformation is assumed. The
-   * a2c object is only useful when other ObserverIntf objects register for this
-   * SubjectIntf object and also add back solutions to it (as FunctionIntf args)
+   * <li> &lt;"dgabh.randomparticlemaker",RandomChromosomeMakerIntf maker&gt; 
+	 * mandatory, the RandomChromosomeMakerIntf Object responsible for creating 
+	 * valid random chromosome Objects to populate the islands.
+   * <li> &lt;"dgabh.numthreads",Integer nt&gt; optional, how many threads will 
+	 * be used, default is 1. Each thread corresponds to an island in the DGA 
+	 * model.
+   * <li> &lt;"dgabh.c2amaker",Chromosome2ArgMakerIntf c2a&gt; optional, the 
+	 * object that is responsible for tranforming a chromosome Object to a 
+	 * function argument Object. If not present, the default identity 
+	 * transformation is assumed.
+   * <li> &lt;"dgabh.a2cmaker",Arg2ChromosomeMakerIntf a2c&gt; optional, the 
+	 * object that is responsible for transforming a FunctionIntf argument Object 
+	 * to a chromosome Object. If not present, the default identity transformation 
+	 * is assumed. The a2c object is not only useful when other ObserverIntf 
+	 * objects register for this SubjectIntf object and also add back solutions to 
+	 * it (as FunctionIntf args), but also because the local-optimization process 
+	 * that is part of the Basin-Hopping algorithm, may work on a different 
+	 * representation space than the one the Basin-Hopping works (though there 
+	 * does not seem to be any benefit from such a transformation).
    * <li> &lt;"dgabh.numgens",Integer ng&gt; optional, the number of generations 
 	 * to run the DGABH, default is 1.
    * <li> &lt;"dgabh.immprob",Double prob&gt; optional, the probability with 
 	 * which a sub-population will send some of its members to migrate to another 
-	 * (island) sub-population, default is 0.01
+	 * (island) sub-population, default is 0.01.
    * <li> &lt;"dgabh.numinitpop",Integer ip&gt; optional, the initial population 
 	 * number for each island, default is 10.
-	 * <li> &lt;"dgabh.immigrationrouteselector", popt4jlib.ImmigrationIslandOpIntf route_selector&gt;
+	 * <li> &lt;"dgabh.immigrationrouteselector", 
+	 *           popt4jlib.ImmigrationIslandOpIntf route_selector&gt;
 	 * optional, if present defines the routes of immigration from island to 
 	 * island; default is null, which forces the built-in unidirectional ring 
 	 * routing topology.
@@ -230,6 +241,22 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
    * </CODE>
 	 * </PRE>
    * series of calls.
+	 * <p>Notice that for all keys above if the exact key of the form "dgabh.X" is 
+	 * not found in the params, then the params will be searched for key "X" alone
+	 * so that if key "X" exists in the params, it will be assumed that its value
+	 * corresponds to the value of "dgabh.X" originally sought.
+	 * </p>
+	 * <li>&lt;"dgabh.chromosomeperturber", ChromosomePerturberIntf perturber&gt; 
+	 * mandatory, the object responsible for producing new individuals that are 
+	 * (presumably small) perturbations of an original starting individual. Extra
+	 * parameters that the implementing perturber object requires must also be 
+	 * present.
+	 * <li>&lt;"dgabh.localoptimizer", popt4jlib.LocalOptimizerIntf locOpt&gt; 
+	 * optional, the object responsible for performing a local-search around a 
+	 * starting point and returning the best individual found by local-search. 
+	 * Default is null which implies no local-search process. As with above, any
+	 * additional parameters that the implementing locOpt object requires must 
+	 * also be present.
 	 * <li>&lt;"dgabh.pdbtexecinitedwrkcmd", RRObject cmd &gt; optional, the 
 	 * initialization command to send to the network of workers to run function
 	 * evaluation tasks, default is null, indicating no distributed computation.
@@ -240,50 +267,51 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
 	 * </ul>
    * @param f FunctionIntf
    * @throws OptimizerException if the process fails
-   * @return PairObjDouble // Pair&lt;Object arg, Double val&gt;
+   * @return PairObjDouble  // Pair&lt;Object arg, Double val&gt;
    */
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
 		if (f==null) throw new OptimizerException("DGABH.minimize(f): null f");
     try {
       synchronized (this) {
-				if (_f != null) throw new OptimizerException("DGABH.minimize(): "+
-          "another thread is concurrently executing the method on the same object");
+				if (_f != null) 
+					throw new OptimizerException("DGABH.minimize(): another thread is "+
+						                           "concurrently executing the method "+
+						                           "on the same object");
         _f = f;
       }
       // add the function itself onto the parameters hashtable for possible use
       // by operators. The function has to be reentrant in any case for multiple
       // concurrent evaluations to be possible in the first place so there is no
       // new issue raised here
-      if (_params.get("dgabh.function") == null)
-        _params.put("dgabh.function", f);
+      if (_params.getObject("dgabh.function") == null)
+        _params.getParamsMap().put("dgabh.function", f);
       int nt = 1;
-			try {
-				Integer ntI = (Integer) _params.get("dgabh.numthreads");
-				if (ntI != null) nt = ntI.intValue();
-			}
-			catch (ClassCastException e) {
-				throw new OptimizerException("DGABH.minimize(): dgabh.numthreads not an integer in params");
-			}
+			Integer ntI = (Integer) _params.getInteger("dgabh.numthreads");
+			if (ntI != null) nt = ntI.intValue();
       if (nt < 1)throw new OptimizerException(
           "DGABH.minimize(): invalid number of threads specified");
       RndUtil.addExtraInstances(nt);  // not needed
 			// set immigration topology router if it exists
 			try {
-				_immigrationTopologySelector = (ImmigrationIslandOpIntf) _params.get("dgabh.immigrationrouteselector");
+				_immigrationTopologySelector = 
+					(ImmigrationIslandOpIntf) _params.getObject(
+						                                  "dgabh.immigrationrouteselector");
 			}
 			catch (ClassCastException e) {
-				throw new OptimizerException("DGABH.minimize(): invalid ImmigrationIslandOpIntf object specified in params");
+				throw new OptimizerException("DGABH.minimize(): invalid "+
+					                           "ImmigrationIslandOpIntf object specified"+
+					                           " in params");
 			}
       // check if this object will participate in an ensemble
-      String ensemble_name = (String) _params.get("ensemblename");
+      String ensemble_name = _params.getString("ensemblename");
       _threads = new DGABHThread[nt];
       _islandsPop = new int[nt];
       for (int i = 0; i < nt; i++) _islandsPop[i] = 0; // init.
-      // the _XXX data members are correctly protected since this method executes
+      // the _XXX data members are correctly protected since the method executes
       // atomically, and the working threads are started below. FindBugs
       // complains unjustly here...
       try {
-        parallel.Barrier.setNumThreads("dgabh." + _id, nt); // init the Barrier obj.
+        parallel.Barrier.setNumThreads("dgabh." + _id, nt); // init Barrier obj.
       }
       catch (parallel.ParallelException e) {
         e.printStackTrace();
@@ -292,7 +320,8 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
 
       for (int i = 0; i < nt; i++) {
         _threads[i] = new DGABHThread(this, i);
-        OrderedBarrier.addThread(_threads[i], "dgabh."+_id); // for use in synchronizing/ordering
+				// call below is for use in synchronizing/ordering
+        OrderedBarrier.addThread(_threads[i], "dgabh."+_id); 
         if (ensemble_name!=null) {
           ComplexBarrier.addThread(ensemble_name, _threads[i]);
         }
@@ -304,13 +333,14 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
           Barrier.getInstance(ensemble_name + "_master").barrier();
         }
         catch (NullPointerException e) {
-          e.printStackTrace();
-          utils.Messenger.getInstance().msg("this DGABH.minimize(f) method must "+
-                                            "be invoked from within the minimize(f)"+
-                                            " method of an ensemble optimizer "+
-                                            "that has properly called the "+
-                                            "Barrier.setNumThreads(<name>_master,<num>)"+
-                                            " method.",0);
+          e.printStackTrace();  // itc: HERE rm asap
+					Messenger mger = utils.Messenger.getInstance();
+          mger.msg("this DGABH.minimize(f) method must "+
+                   "be invoked from within the minimize(f)"+
+                   " method of an ensemble optimizer "+
+                   "that has properly called the "+
+                   "Barrier.setNumThreads(<name>_master,<num>)"+
+                   " method.",0);
           throw new OptimizerException("DGABH.minimize(f): ensemble broken");
         }
       }
@@ -325,10 +355,11 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
 
       // done
       synchronized (this) {
-        Chromosome2ArgMakerIntf c2amaker = (Chromosome2ArgMakerIntf) _params.
-            get("dgabh.c2amaker");
+        Chromosome2ArgMakerIntf c2amaker = 
+					(Chromosome2ArgMakerIntf) _params.getObject("dgabh.c2amaker");
         Object arg = _inc;
-        if (c2amaker != null) arg = c2amaker.getArg(_inc, _params);
+        if (c2amaker != null) 
+					arg = c2amaker.getArg(_inc, _params.getParamsMap());
         return new PairObjDouble(arg, _incValue);
       }
     }
@@ -375,21 +406,20 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
    * @return int if -1 indicates no migration
    */
   synchronized int getImmigrationIsland(int myid, int gen) {
-		if (_immigrationTopologySelector!=null) {  // migration topology selector exists, use it.
-			return _immigrationTopologySelector.getImmigrationIsland(myid, gen, _islandsPop, _params);
+		if (_immigrationTopologySelector!=null) {  // migration topology selector 
+			                                         // exists, use it.
+			return _immigrationTopologySelector.getImmigrationIsland(
+				                                    myid, gen, 
+				                                    _islandsPop,_params.getParamsMap());
 		}
     for (int i=0; i<_islandsPop.length; i++)
-      if (myid!=i && (_islandsPop[i]==0 || _islandsPop[myid]>2.5*_islandsPop[i])) return i;
+      if (myid!=i && (_islandsPop[i]==0 || 
+				  _islandsPop[myid]>2.5*_islandsPop[i])) return i;
     // populations are more or less the same size, so immigration will occur
     // with some small probability to an immediate neighbor
     double immprob = 0.01;
-    try {
-      Double ipD = (Double) _params.get("dgabh.immprob");
-      if (ipD!=null && ipD.doubleValue()>=0) immprob = ipD.doubleValue();
-    }
-    catch (Exception e) {
-      e.printStackTrace();  // no-op
-    }
+    Double ipD = _params.getDouble("dgabh.immprob");
+    if (ipD!=null && ipD.doubleValue()>=0) immprob = ipD.doubleValue();
     if (_islandsPop.length>1) {
       double r = RndUtil.getInstance(myid).getRandom().nextDouble();
       if (r < immprob) {
@@ -412,7 +442,7 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
 
 
   /**
-   * get the DGABHThread with the given id
+   * get the DGABHThread with the given id.
    * @param id int
    * @return DGABHThread
    */
@@ -422,7 +452,7 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
 
 
   /**
-   * get the current incumbent value
+   * get the current incumbent value.
    * @return double
    */
   synchronized double getIncValue() {
@@ -440,22 +470,22 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
   void setIncumbent(DGABHIndividual ind) throws OptimizerException {
     // method used to be synchronized but doesn't need to be
     try {
+			Messenger mger = utils.Messenger.getInstance();
       DMCoordinator.getInstance("popt4jlib").getWriteAccess();
       if (_incValue > ind.getValue()) {  // minimization problems only
-        System.err.println("Updating Incumbent w/ val=" + ind.getValue());
+        mger.msg("Updating Incumbent w/ val=" + ind.getValue(),0);
         if (Debug.debug(Constants.DGABH) != 0) {
           // sanity check
           Object arg = ind.getChromosome(); // assume the chromosome Object is
           // the same used for function evals.
-          Chromosome2ArgMakerIntf c2amaker = (Chromosome2ArgMakerIntf) _params.
-                                               get("dgabh.c2amaker");
+          Chromosome2ArgMakerIntf c2amaker = 
+						(Chromosome2ArgMakerIntf) _params.getObject("dgabh.c2amaker");
           if (c2amaker != null) // oops, no it wasn't
-            arg = c2amaker.getArg(ind.getChromosome(), _params);
-          double incval = _f.eval(arg, _params);
+            arg = c2amaker.getArg(ind.getChromosome(), _params.getParamsMap());
+          double incval = _f.eval(arg, _params.getParamsMap());
           if (Math.abs(incval - ind.getValue()) > 1.e-25) {
-            Messenger.getInstance().msg("DGABH.setIncumbent(): ind-val=" +
-                                        ind.getValue() + " fval=" + incval +
-                                        " ???", 0);
+            mger.msg("DGABH.setIncumbent(): ind-val=" +
+                     ind.getValue() + " fval=" + incval +" ???", 0);
             throw new OptimizerException(
                 "DGABH.setIncumbent(): insanity detected; " +
                 "most likely evaluation function is " +
@@ -472,7 +502,8 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
     }
     catch (ParallelException e) {
       e.printStackTrace();
-      throw new OptimizerException("DGABH.setIncumbent(): double lock somehow failed...");
+      throw new OptimizerException("DGABH.setIncumbent(): double lock "+
+				                           "somehow failed...");
     }
     finally {
       try {
@@ -490,10 +521,9 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
    * _individuals List&lt;DGABHIndividual&gt; of the DGABHThread with id 0, and 
 	 * clears the solutions from the _observers and _subjects map.
    * @param tinds List  // List&lt;DGABHIndividual&gt;
-   * @param params HashMap the optimization params
    * @param funcParams HashMap the function parameters
    */
-  synchronized void transferSolutionsTo(List tinds, HashMap params, HashMap funcParams) {
+  synchronized void transferSolutionsTo(List tinds, HashMap funcParams) {
     // 1. observers
     int ocnt = 0;
     Iterator it = getObservers().keySet().iterator();
@@ -504,18 +534,20 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
       for (int i=0; i<solssz; i++) {
         try {
           Object chromosomei = null;
-          Arg2ChromosomeMakerIntf a2cmaker = (Arg2ChromosomeMakerIntf) params.get("dgabh.a2cmaker");
+          Arg2ChromosomeMakerIntf a2cmaker = 
+						(Arg2ChromosomeMakerIntf) _params.getObject("dgabh.a2cmaker");
           if (a2cmaker != null)
-            chromosomei = a2cmaker.getChromosome(sols.elementAt(i), params);
-          else chromosomei = sols.elementAt(i); // assume chromosome and arg are the same
+            chromosomei = a2cmaker.getChromosome(sols.elementAt(i), 
+							                                   _params.getParamsMap());
+          else chromosomei = sols.elementAt(i); // chromosome,arg are the same
           DGABHIndividual indi = new DGABHIndividual(chromosomei,
-                                                     this, params, funcParams);
+                                                     this, _params, funcParams);
           tinds.add(indi);
           ++ocnt;
         }
         catch (OptimizerException e) {
-          e.printStackTrace();  // report failure to create individual out of the
-                                // provided chromosome Object
+          e.printStackTrace();  // report failure to create individual out of 
+                                // the provided chromosome Object
         }
       }
       sols.clear();
@@ -530,18 +562,20 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
       for (int i=0; i<solssz; i++) {
         try {
           Object chromosomei = null;
-          Arg2ChromosomeMakerIntf a2cmaker = (Arg2ChromosomeMakerIntf) params.get("dgabh.a2cmaker");  // itc: used to be dga.a2cmaker
+          Arg2ChromosomeMakerIntf a2cmaker = 
+						(Arg2ChromosomeMakerIntf) _params.getObject("dgabh.a2cmaker");
           if (a2cmaker != null)
-            chromosomei = a2cmaker.getChromosome(sols.elementAt(i), params);
-          else chromosomei = sols.elementAt(i); // assume chromosome and arg are the same
+            chromosomei = a2cmaker.getChromosome(sols.elementAt(i), 
+							                                   _params.getParamsMap());
+          else chromosomei = sols.elementAt(i); // chromosome, arg are the same
           DGABHIndividual indi = new DGABHIndividual(chromosomei,
-                                                     this, params, funcParams);
+                                                     this, _params, funcParams);
           tinds.add(indi);
           ++scnt;
         }
         catch (OptimizerException e) {
-          e.printStackTrace();  // report failure to create individual out of the
-                                // provided chromosome Object
+          e.printStackTrace();  // report failure to create individual out of
+                                // the provided chromosome Object
         }
       }
       sols.clear();
@@ -563,14 +597,14 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
 
 
   /**
-   * get the id of this object
+   * get the id of this object.
    * @return int
    */
   synchronized int getId() { return _id; }
 
 
   /**
-   * auxiliary method providing unique ids for objects of this class
+   * auxiliary method providing unique ids for objects of this class.
    * @return int
    */
   synchronized private static int incrID() {
@@ -584,7 +618,7 @@ public class DGABH extends GLockingObservableObserverBase implements OptimizerIn
  * auxiliary class not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -593,12 +627,12 @@ class DGABHThread extends Thread {
   private DGABHThreadAux _aux;
 
 
-  public DGABHThread(DGABH master, int id) throws OptimizerException {
+  DGABHThread(DGABH master, int id) throws OptimizerException {
     _aux = new DGABHThreadAux(master, id);
   }
 
 
-  public DGABHThreadAux getDGABHThreadAux() {
+  DGABHThreadAux getDGABHThreadAux() {
     return _aux;
   }
 
@@ -634,10 +668,11 @@ class DGABHThreadAux {
   private Object _incarg=null;  // the best position for the island-swarm
 	
 	private ChromosomePerturberIntf _chromosomePerturber;
+	private LocalOptimizerIntf _locOpt;
 
 	private PDBTExecInitedClt _pdbtExecInitedClt = null;
 
-  public DGABHThreadAux(DGABH master, int id) throws OptimizerException {
+  DGABHThreadAux(DGABH master, int id) throws OptimizerException {
     _master = master;
     _id = id;
     _uid = (int) DataMgr.getUniqueId();
@@ -691,13 +726,19 @@ class DGABHThreadAux {
 				                          2);
 			_pdbtExecInitedClt = null;
 		}
+		// set-up extra members that are needed
 		_chromosomePerturber = 
 			(ChromosomePerturberIntf) _p.get("dgabh.chromosomeperturber");
+		LocalOptimizerIntf locOpt = 
+			(LocalOptimizerIntf) _p.get("dgabh.localoptimizer");
+		if (locOpt==null) _locOpt = new IdentitySearchOptimizer();
+		else _locOpt = locOpt.newInstance();  // each thread must have its own
+		                                      // LocalOptimizerIntf object to call
     _immigrantsPool = new Vector();
   }
 
 
-  public void runTask() {
+  void runTask() {
     // start: do the DGABH
     try {
       initPopulation();
@@ -715,10 +756,11 @@ class DGABHThreadAux {
     }
     catch (ClassCastException e) { e.printStackTrace(); }
     for (int gen = 0; gen < numgens; gen++) {
-      Barrier.getInstance("dgabh."+_master.getId()).barrier();  // synchronize with other threads
+			// synchronize with other threads
+      Barrier.getInstance("dgabh."+_master.getId()).barrier();  
       try {
-        if (ensemble_name!=null)
-          ComplexBarrier.getInstance(ensemble_name).barrier();  // synchronize with other optimizers' threads
+        if (ensemble_name!=null)  // synchronize with other optimizers' threads
+          ComplexBarrier.getInstance(ensemble_name).barrier();  
       }
       catch (ParallelException e) {
         e.printStackTrace();  // no-op
@@ -739,7 +781,8 @@ class DGABHThreadAux {
       }
       sendInds(gen);
       _master.setIslandPop(_id, _individuals.size());
-      Barrier.getInstance("dgabh."+_master.getId()).barrier();  // synchronize with other threads
+			// synchronize with other threads
+      Barrier.getInstance("dgabh."+_master.getId()).barrier();  
     }
     if (ensemble_name!=null) {  // remove thread from ensemble barrier
       try {
@@ -762,18 +805,18 @@ class DGABHThreadAux {
   }
 
 
-  public synchronized boolean getFinish() {
+  synchronized boolean getFinish() {
     return _finish;
   }
 
 
-  public synchronized void setFinish() {
+  synchronized void setFinish() {
     _finish = true;
     notify();
   }
 
 
-  public synchronized void waitForTask() {
+  synchronized void waitForTask() {
     while (_finish==false) {
       try {
         wait();  // wait as other operation is still running
@@ -789,13 +832,15 @@ class DGABHThreadAux {
   int getId() { return _id; }
 
 
-  private void initPopulation() throws OptimizerException, InterruptedException {
-    int initpopnum = 10;
-    Integer initpopnumI = ((Integer) _p.get("dgabh.numinitpop"));
+  private void initPopulation() 
+		throws OptimizerException, InterruptedException {
+    Params p2 = new Params(_p);
+		int initpopnum = 10;
+    Integer initpopnumI = p2.getInteger("dgabh.numinitpop");
     if (initpopnumI!=null) initpopnum = initpopnumI.intValue();
     _individuals = new ArrayList();  // used to be Vector<DGABHIndividual>
     RandomChromosomeMakerIntf amaker = 
-			(RandomChromosomeMakerIntf) _p.get("dgabh.randomparticlemaker");
+			(RandomChromosomeMakerIntf) p2.getObject("dgabh.randomparticlemaker");
     // if no such makers are provided, can only throw exception		
 		if (amaker==null) 
 			throw new OptimizerException("DGABHThreadAux.initPopulation(): "+
@@ -804,7 +849,7 @@ class DGABHThreadAux {
 		if (_pdbtExecInitedClt!=null) {  // function evaluations go distributed
 			TaskObject[] tasks = new TaskObject[initpopnum];
       Chromosome2ArgMakerIntf c2amaker =
-          (Chromosome2ArgMakerIntf) _p.get("dgabh.c2amaker");
+          (Chromosome2ArgMakerIntf) p2.getObject("dgabh.c2amaker");
 			Object[] chromosomes = new Object[initpopnum];
 			for (int i=0; i<initpopnum; i++) {
 				Object chromosome = amaker.createRandomChromosome(_fp);
@@ -815,11 +860,11 @@ class DGABHThreadAux {
 			}
 			try {
 				Object[] results = _pdbtExecInitedClt.submitWorkFromSameHost(tasks, 1);
-				// results are the same tasks, but with values for the function evaluations
+				// results are same tasks, but with values for the function evaluations
 				for (int i=0; i<initpopnum; i++) {
 					double val = ((FunctionEvaluationTask) results[i]).getObjValue();
 					Object chromosome = chromosomes[i];
-					DGABHIndividual indi = new DGABHIndividual(chromosome, val, _master, _p, _fp);
+					DGABHIndividual indi = new DGABHIndividual(chromosome, val, _master);
 					_individuals.add(indi);
 				}
 				run_locally = false;
@@ -832,8 +877,8 @@ class DGABHThreadAux {
 		if (run_locally) {
 			for (int i=0; i<initpopnum; i++) {
 				Object chromosome = amaker.createRandomChromosome(_p);
-				DGABHIndividual indi = new DGABHIndividual(chromosome, _master, _p, _fp);
-				//System.out.println("Individual-"+i+"="+indi);
+				DGABHIndividual indi = new DGABHIndividual(chromosome, _master, 
+					                                         p2, _fp);
 				_individuals.add(indi);
 			}
 		}
@@ -848,7 +893,8 @@ class DGABHThreadAux {
         best = indi;
       }
     }
-    if (best!=null) _master.setIncumbent(best);  // update master's best soln found if needed
+    if (best!=null) 
+			_master.setIncumbent(best);  // update master's best soln found if needed
   }
 
 
@@ -873,8 +919,8 @@ class DGABHThreadAux {
       _immigrantsPool.clear();
     }
     // if it's the thread w/ id=0, add any solutions from the obervers
-    if (_id==0) {  // used to be ((DGABHThread) Thread.currentThread()).getId()==0
-      _master.transferSolutionsTo(_individuals, _p, _fp);
+    if (_id==0) {  // was ((DGABHThread) Thread.currentThread()).getId()==0
+      _master.transferSolutionsTo(_individuals, _fp);
     }
   }
 
@@ -900,76 +946,137 @@ class DGABHThreadAux {
 
   // used to be synchronized
   private void recvIndsAux(Vector immigrants) {
-    // guarantee the order in which the immigrants are placed in the _individuals
+    // guarantee the order in which the immigrants are placed in _individuals
     // so that all runs with same seed produce identical results
     try {
-      OrderedBarrier.getInstance("dgabh."+_master.getId()).orderedBarrier(new RecvIndTask(
-          _immigrantsPool, immigrants));
+      OrderedBarrier.getInstance("dgabh."+_master.getId()).
+				orderedBarrier(new RecvIndTask(_immigrantsPool, immigrants));
     }
     catch (ParallelException e) {
       e.printStackTrace();  // cannot reach this point
     }
-    // _immigrantsPool.addAll(immigrants);
   }
 
 
   private void nextGeneration(int gen) throws OptimizerException {
+		Params p3 = new Params(_p);
     // 0. update each individual
 		boolean compute_val_locally = _master.getPDBTInitCmd()==null;
-		Object[] tasks = null; 
+    Chromosome2ArgMakerIntf c2amaker = 
+			(Chromosome2ArgMakerIntf) p3.getObject("dgabh.c2amaker");
+		Arg2ChromosomeMakerIntf a2cmaker = 
+			(Arg2ChromosomeMakerIntf) p3.getObject("dgabh.a2cmaker");
+		Object[] newchromosomes = null; 
 		if (!compute_val_locally) {  // function evaluations go run distributed!
-			tasks = new Object[_individuals.size()];
+			newchromosomes = new Object[_individuals.size()];
 			for (int i=0; i<_individuals.size(); i++) {
 				DGABHIndividual indi = (DGABHIndividual) _individuals.get(i);
 				try {
-					Object newchromosomei = _chromosomePerturber.perturb(indi.getChromosome(), _p);
-					// itc: HERE must now apply local-search to the newchromosomei
-					// and then finally, decide whether to maintain the new population 
-					// or to keep the previous one.
-					tasks[i] = newchromosomei;					
+					Object newchromosomei = 
+						_chromosomePerturber.perturb(indi.getChromosome(), _p);
+					newchromosomes[i] = newchromosomei;					
 				}
 				catch (Exception e) {
 					e.printStackTrace();  // no-op
 				}
 			}			
-			TaskObject[] tasksarr = new TaskObject[tasks.length];
-			for (int i=0; i<tasksarr.length; i++) 
-				tasksarr[i] = new FunctionEvaluationTask(_master._f, tasks[i], _fp);
+			TaskObject[] tasksarr = new TaskObject[newchromosomes.length];
+			for (int i=0; i<tasksarr.length; i++) { 
+				// each task is a request for a local-search starting from the perturbed
+				// individual
+				Object x0 = c2amaker==null ? newchromosomes[i] : 
+					                           c2amaker.getArg(newchromosomes[i],_p);
+				tasksarr[i] = 
+					new LocalSearchFunctionEvaluationTask(_locOpt.newInstance(), 
+						                                    _master._f, x0, _p);
+			}
 			try {
-				Object[] results = _pdbtExecInitedClt.submitWorkFromSameHost(tasksarr, 1);
+				Object[] results = 
+					_pdbtExecInitedClt.submitWorkFromSameHost(tasksarr, 1);
+				// now, decide whether to keep the old or the new population
+				// according to best value: if the new population contains an individual
+				// strictly dominating all in the old, replace old, else leave old.
+				boolean replace=false;
 				for (int i=0; i<results.length; i++) {
-					DGABHIndividual indi = (DGABHIndividual) _individuals.get(i);
-					double vali = ((FunctionEvaluationTask) results[i]).getObjValue();
-					indi.setValues(tasks[i], vali, _p, _fp);
-					// update island and total best
-					if (indi.getValue()<_inc) {
-						_inc = indi.getValue();
-						_incarg = indi.getChromosome();
-						_master.setIncumbent(indi);
+					double vi = 
+						((LocalSearchFunctionEvaluationTask) results[i]).getObjValue();
+					if (vi<_inc) {
+						replace=true;
+						break;
+					}
+				}
+				String do_rep = replace ? " replace " : " not replace ";
+				System.err.println("Thread-"+_id+", Generation-"+gen+": will "+do_rep+" existing population");  // itc: HERE rm asap
+				if (replace) {
+					for (int i=0; i<results.length; i++) {
+						DGABHIndividual indi = (DGABHIndividual) _individuals.get(i);
+						double vali = 
+							((LocalSearchFunctionEvaluationTask) results[i]).getObjValue();
+						Object chromoi = 
+							a2cmaker==null ? 
+							  ((LocalSearchFunctionEvaluationTask)results[i]).getArgMin() :
+							  a2cmaker.getChromosome(
+									((LocalSearchFunctionEvaluationTask)results[i]).getArgMin(), 
+									_p);
+						indi.setValues(chromoi, vali);
+						// update island and total best
+						if (indi.getValue()<_inc) {
+							_inc = indi.getValue();
+							_incarg = indi.getChromosome();
+							_master.setIncumbent(indi);
+						}
 					}
 				}
 			}
 			catch (Exception e) {
+				e.printStackTrace();  // itc: HERE rm asap
 				// must do the work locally
-				utils.Messenger.getInstance().msg("failed to send function evaluation tasks over the network, will resort to local computations", 2);
+				utils.Messenger.getInstance().msg("failed to send function evaluation "+
+					                                "tasks over the network, will resort"+
+					                                " to local computations", 0);
 				compute_val_locally = true;
 			}			
 		}
 		if (compute_val_locally) {
+			HashMap p2 = new HashMap(_p);
+			List new_pop = new ArrayList();  // List<PairObjDouble> >
+			boolean replace = false;
 			for (int i=0; i<_individuals.size(); i++) {
 				DGABHIndividual indi = (DGABHIndividual) _individuals.get(i);
 				try {
-					Object newchromosomei = _chromosomePerturber.perturb(indi.getChromosome(), _p);
-					indi.setValues(newchromosomei, _p, _fp);
+					Object newchromosomei = 
+						_chromosomePerturber.perturb(indi.getChromosome(), _p);
+					Object x0i = c2amaker==null ? newchromosomei :
+						                           c2amaker.getArg(newchromosomei, _p);
+					p2.put("x0", x0i);
+					_locOpt.setParams(p2);
+					PairObjDouble pair = _locOpt.minimize(_master._f);
+					if (pair.getDouble()<_inc) replace=true;
+					new_pop.add(pair);
+				}
+				catch (Exception e) {
+				  e.printStackTrace();  
+					new_pop.add(null);  // ignore exception
+				}
+			}
+			if (replace) {
+				for (int i=0; i<_individuals.size(); i++) {
+					DGABHIndividual indi = (DGABHIndividual) _individuals.get(i);
+					PairObjDouble p = (PairObjDouble) new_pop.get(i);
+					if (p==null) continue;
+					Object newchromosomei = p.getArg();
+					// does it need conversion?
+					newchromosomei = a2cmaker==null ? 
+						                 newchromosomei : 
+						                 a2cmaker.getChromosome(newchromosomei, _p);
+					double vali = p.getDouble();
+					indi.setValues(newchromosomei, vali);
 					// update island and total best
 					if (indi.getValue()<_inc) {
 						_inc = indi.getValue();
 						_incarg = indi.getChromosome();
 						_master.setIncumbent(indi);
 					}
-				}
-				catch (Exception e) {
-					e.printStackTrace();  // no-op
 				}
 			}
 		}
@@ -994,7 +1101,8 @@ class DGABHThreadAux {
       imms.add(_individuals.get(best_ind));
       _individuals.remove(best_ind);
     }
-    // repeat for second guy, only if there is someone to leave behind in this island
+    // repeat for second guy, only if there is someone to leave behind in this 
+		// island
     if (_individuals.size()>1) {
       best_val = Double.MAX_VALUE;
       best_ind = -1;
@@ -1031,8 +1139,8 @@ class DGABHIndividual {
   private DGABH _master;  // ref. back to master DGABH object
 
 
-  public DGABHIndividual(Object chromosome, DGABH master,
-                        HashMap params, HashMap funcparams)
+  DGABHIndividual(Object chromosome, DGABH master,
+                         Params params, HashMap funcparams)
       throws OptimizerException {
     _x = chromosome;
     _master = master;
@@ -1041,8 +1149,7 @@ class DGABHIndividual {
   }
 
 	
-  public DGABHIndividual(Object chromosome, double val, 
-		                    DGABH master, HashMap params, HashMap funcparams)
+  DGABHIndividual(Object chromosome, double val, DGABH master)
       throws OptimizerException {
     _x = chromosome;
     _master = master;
@@ -1057,33 +1164,32 @@ class DGABHIndividual {
     r += "] val="+_val;
     return r;
   }
-  public Object getChromosome() { return _x; }
-  public double getValue() { return _val; }
+  Object getChromosome() { return _x; }
+  double getValue() { return _val; }
 
 
-  void setValues(Object chromosome, HashMap params, HashMap funcParams)
+  void setValues(Object chromosome, Params params, HashMap funcParams)
     throws OptimizerException {
     _x = chromosome;
     Chromosome2ArgMakerIntf c2amaker =
-        (Chromosome2ArgMakerIntf) params.get("dgabh.c2amaker");
+        (Chromosome2ArgMakerIntf) params.getObject("dgabh.c2amaker");
     Object arg = null;
     if (c2amaker == null) arg = _x;
-    else arg = c2amaker.getArg(_x, params);
+    else arg = c2amaker.getArg(_x, params.getParamsMap());
     _val = _f.eval(arg, funcParams);  // was _master._f which is also safe
   }
-  void setValues(Object chromosome, double val, HashMap params, HashMap funcParams)
-    throws OptimizerException {
+  void setValues(Object chromosome, double val) throws OptimizerException {
     _x = chromosome;
 		_val = val;
   }
-  private void computeValue(HashMap params, HashMap funcParams)
+  private void computeValue(Params params, HashMap funcParams)
       throws OptimizerException {
     if (_val==Double.MAX_VALUE) {  // don't do the computation if already done
       Chromosome2ArgMakerIntf c2amaker =
-          (Chromosome2ArgMakerIntf) params.get("dgabh.c2amaker");
+        (Chromosome2ArgMakerIntf) params.getObject("dgabh.c2amaker");
       Object arg = null;
       if (c2amaker == null) arg = _x;
-      else arg = c2amaker.getArg(_x, params);
+      else arg = c2amaker.getArg(_x, params.getParamsMap());
       _val = _f.eval(arg, funcParams);  // was _master._f which is also safe
     }
   }

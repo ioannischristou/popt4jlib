@@ -1,5 +1,6 @@
 package popt4jlib.GradientDescent;
 
+import popt4jlib.LocalOptimizerIntf;
 import java.util.*;
 import utils.*;
 import analysis.*;
@@ -86,7 +87,7 @@ public class PolakRibiereConjugateGradientST extends GLockingObserverBase implem
    * <ul>
 	 * <li>&lt;"prcg.x0", VectorIntf x&gt; optional, the initial starting point.
    * If this pair does not exist or if x is null, then it becomes mandatory that
-   * a pair &lt;"gradientdescent.x0", VectorIntf x&gt; pair with a non-null x is
+   * a pair &lt;"[gradientdescent.]x0", VectorIntf x&gt; pair with a non-null x is
    * in the parameters that have been set.
    * <li>&lt;"prcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f,
    * the function to be minimized. If this param-value pair does not exist, the
@@ -178,9 +179,12 @@ public class PolakRibiereConjugateGradientST extends GLockingObserverBase implem
   private PairObjDouble min(FunctionIntf f, HashMap p) throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("prcg.gradient");
     if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
-    final VectorIntf x0 = p.get("prcg.x0") == null ?
-                          (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
-                          (VectorIntf) p.get("prcg.x0");
+    final VectorIntf x0 = 
+			p.containsKey("prcg.x0")==false ?
+         p.containsKey("gradientdescent.x0") ? 
+			    (VectorIntf) p.get("gradientdescent.x0") : 
+			      p.containsKey("x0") ? (VectorIntf) p.get("x0") : null // attempt to retrieve generic point
+			: (VectorIntf) p.get("prcg.x0");
     if (x0==null) throw new OptimizerException("no prcg.x0"+
                                                " initial point in _params passed");
     VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln

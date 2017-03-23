@@ -101,6 +101,7 @@ public class DAccumulatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+			// no need for reset here
       oos.writeObject(new DAccNumberRequest(num));
       oos.flush();
       Object reply = ois.readObject();
@@ -135,7 +136,8 @@ public class DAccumulatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
-      oos.writeObject(new DAccNumbersRequest(nums));
+      // no need for reset here, as oos was just created
+			oos.writeObject(new DAccNumbersRequest(nums));
       oos.flush();
       Object reply = ois.readObject();
       if (reply instanceof OKReply) {
@@ -170,6 +172,7 @@ public class DAccumulatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+			// no need for reset, as oos was just created
       oos.writeObject(new DAccSerDblPairRequest(arg, num));
       oos.flush();
       Object reply = ois.readObject();
@@ -204,6 +207,7 @@ public class DAccumulatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+			// no need for reset
       oos.writeObject(new DGetMinNumberRequest());
       oos.flush();
       Object reply = ois.readObject();
@@ -239,7 +243,8 @@ public class DAccumulatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
-      oos.writeObject(new DGetMaxNumberRequest());
+      // no need for reset as oos was just created
+			oos.writeObject(new DGetMaxNumberRequest());
       oos.flush();
       Object reply = ois.readObject();
       if (reply instanceof OKReplyData) {
@@ -273,6 +278,7 @@ public class DAccumulatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+			// no need for reset as oos was just created
       oos.writeObject(new DGetSumOfNumbersRequest());
       oos.flush();
       Object reply = ois.readObject();
@@ -307,6 +313,7 @@ public class DAccumulatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+			// no need for reset as oos was just created
       oos.writeObject(new DGetArgMinObjectRequest());
       oos.flush();
       Object reply = ois.readObject();
@@ -341,6 +348,7 @@ public class DAccumulatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+			// no need for reset as oos was just created
       oos.writeObject(new DGetArgMaxObjectRequest());
       oos.flush();
       Object reply = ois.readObject();
@@ -395,6 +403,7 @@ public class DAccumulatorClt {
       oos = new ObjectOutputStream(s.getOutputStream());
       oos.flush();
       ois = new ObjectInputStream(s.getInputStream());
+			// no need for reset
       oos.writeObject(new DShutDownSrvRequest());
       oos.flush();
       Object reply = ois.readObject();
@@ -423,7 +432,7 @@ public class DAccumulatorClt {
 	static class AsynchUpdateThread extends Thread implements SubjectIntf {
 		private final int _type;
 		private final ObserverIntf _observer;
-		private Double _inc = Double.NaN;
+		private Double _inc = new Double(Double.NaN);
 		private Socket _s = null;
 		private boolean _cont = true;
 		
@@ -431,7 +440,8 @@ public class DAccumulatorClt {
 		/**
 		 * sole constructor.
 		 * @param observer ObserverIntf
-		 * @param type int must only be one of DAccumulatorNotificationType.[_MIN|_MAX]
+		 * @param type int must only be one of 
+		 * DAccumulatorNotificationType.[_MIN|_MAX]
 		 */
 		AsynchUpdateThread(ObserverIntf observer, int type) {
 			_type = type;
@@ -458,6 +468,7 @@ public class DAccumulatorClt {
 				ObjectOutputStream oos = new ObjectOutputStream(_s.getOutputStream());
 				oos.flush();
 				ObjectInputStream ois = new ObjectInputStream(_s.getInputStream());
+				// no need for reset
 				oos.writeObject(new DAccumulatorNotificationType(_type));
 				oos.flush();
 				while (getCont()) {
@@ -470,8 +481,8 @@ public class DAccumulatorClt {
 			}
 			catch (Exception e) {
 				utils.Messenger mger = utils.Messenger.getInstance();
-				mger.msg("DAccumulatorClt.AsynchUpdateThread.run(): received exception '"+
-					       e+"': thread exits.", 0);
+				mger.msg("DAccumulatorClt.AsynchUpdateThread.run(): "+
+					       "received exception '"+e+"': thread exits.", 0);
 			}
 		}
 			

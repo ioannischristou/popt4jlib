@@ -47,7 +47,7 @@ public class SocketEvalTestFunction {
         if ("quit".equals(input) || input==null || input.length()==0)
           return;  // close socket
         double num = Double.parseDouble(input);
-        oos.writeObject(new Double(num));
+        oos.writeObject(new Double(num));  // no need to call oos.reset() here
         oos.flush();
       }
     }

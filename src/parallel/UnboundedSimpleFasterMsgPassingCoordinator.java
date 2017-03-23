@@ -21,11 +21,12 @@ public class UnboundedSimpleFasterMsgPassingCoordinator {
    */
   private UnboundedBufferArrayUnsynchronized _data;
   private static UnboundedSimpleFasterMsgPassingCoordinator _instance=null;
-  private static HashMap _instances=new HashMap();  // map<String name, USFMPC instance>
+  private static HashMap _instances=new HashMap();  // map<String name, 
+	                                                  //     USFMPC instance>
 
 
   /**
-   * private constructor in accordance with the Singleton Design Pattern
+   * private constructor in accordance with the Singleton Design Pattern.
    */
   private UnboundedSimpleFasterMsgPassingCoordinator() {
     _data = new UnboundedBufferArrayUnsynchronized(1024);  // arg. is init. size
@@ -36,7 +37,8 @@ public class UnboundedSimpleFasterMsgPassingCoordinator {
    * return the default UnboundedSimpleFasterMsgPassingCoordinator object.
    * @return UnboundedSimpleFasterMsgPassingCoordinator
    */
-  public synchronized static UnboundedSimpleFasterMsgPassingCoordinator getInstance() {
+  public synchronized static UnboundedSimpleFasterMsgPassingCoordinator 
+	  getInstance() {
     if (_instance==null) {
       _instance = new UnboundedSimpleFasterMsgPassingCoordinator();
     }
@@ -45,11 +47,12 @@ public class UnboundedSimpleFasterMsgPassingCoordinator {
 
 
   /**
-   * return the unique UnboundedSimpleFasterMsgPassingCoordinator object associated
-   * with a given name.
+   * return the unique UnboundedSimpleFasterMsgPassingCoordinator object 
+   * associated with a given name.
    * @return UnboundedSimpleFasterMsgPassingCoordinator
    */
-  public synchronized static UnboundedSimpleFasterMsgPassingCoordinator getInstance(String name) {
+  public synchronized static UnboundedSimpleFasterMsgPassingCoordinator 
+	  getInstance(String name) {
     UnboundedSimpleFasterMsgPassingCoordinator instance = 
 						(UnboundedSimpleFasterMsgPassingCoordinator) _instances.get(name);
     if (instance==null) {
@@ -96,14 +99,16 @@ public class UnboundedSimpleFasterMsgPassingCoordinator {
 			final int dsz = _data.size();
       if (dsz>0) {
 				try {
-          RegisteredParcel p = (RegisteredParcel) _data.elementAt(0);  // pick the first datum
+          // pick the first datum
+          RegisteredParcel p = (RegisteredParcel) _data.elementAt(0);  
           res = p.getData();
 					int i=0;
 					boolean found=true;
 					while (res instanceof ThreadSpecificTaskObject) {
 						ThreadSpecificTaskObject tsto = (ThreadSpecificTaskObject) res;
 						final int tstoid = tsto.getThreadIdToRunOn();
-						if (tstoid!=myid && tstoid!=Integer.MAX_VALUE && (sameSign(tstoid,myid) || tstoid==-myid)) {
+						if (tstoid!=myid && tstoid!=Integer.MAX_VALUE && 
+							  (sameSign(tstoid,myid) || tstoid==-myid)) {
 							found = false;
 							if (i<dsz-1) {
 								p = (RegisteredParcel) _data.elementAt(++i);
@@ -135,6 +140,21 @@ public class UnboundedSimpleFasterMsgPassingCoordinator {
       }
     }
   }
+	
+	
+	/**
+	 * removes and returns the last data that entered this coordinator, regardless 
+	 * of ids of sender or intended receiver.
+	 * @return Object may be null if no object exists in the _data queue.
+	 */
+	public synchronized Object recvLastDataSent() {
+		final int sz = _data.size();
+		if (sz>0) {
+			RegisteredParcel p = (RegisteredParcel) _data.remove(sz-1);
+			return p.getData();
+		}
+		return null;
+	}
 
 	
 	/**
@@ -149,14 +169,16 @@ public class UnboundedSimpleFasterMsgPassingCoordinator {
     final int dsz = _data.size();
     if (dsz>0) {
 	    try {
-	      RegisteredParcel p = (RegisteredParcel) _data.elementAt(0);  // pick the first datum
+				// pick the first datum
+	      RegisteredParcel p = (RegisteredParcel) _data.elementAt(0);  
         res = p.getData();
 				int i=0;
 				boolean found=true;
 				while (res instanceof ThreadSpecificTaskObject) {
 					ThreadSpecificTaskObject tsto = (ThreadSpecificTaskObject) res;
 					final int tstoid = tsto.getThreadIdToRunOn();
-					if (tstoid!=myid && tstoid!=Integer.MAX_VALUE && (sameSign(tstoid,myid) || tstoid==-myid)) {
+					if (tstoid!=myid && tstoid!=Integer.MAX_VALUE && 
+						  (sameSign(tstoid,myid) || tstoid==-myid)) {
 						found = false;
 						if (i<dsz-1) {
 							p = (RegisteredParcel) _data.elementAt(++i);

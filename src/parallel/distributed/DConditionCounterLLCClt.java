@@ -20,6 +20,8 @@ public class DConditionCounterLLCClt {
   private int _port = 7899;
 	private String _coordname = "DCondCntCoord_"+_host+"_"+_port;
 	private DActiveMsgPassingCoordinatorLongLivedConnClt _coordclt;
+	private int _decrsNotYetSent=0;  // lazy decrements to avoid comm-costs
+	
 
   /**
    * no-arg constructor (no-op) assumes the following defaults:
@@ -31,7 +33,8 @@ public class DConditionCounterLLCClt {
 	 * @throws IOException
    */
   public DConditionCounterLLCClt() throws UnknownHostException, IOException {
-		_coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, _coordname);
+		_coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, 
+			                                                           _coordname);
   }
 
 
@@ -50,7 +53,8 @@ public class DConditionCounterLLCClt {
     _host = host;
     _port = port;
     _coordname = coordname;
-		_coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, _coordname);
+		_coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, 
+			                                                           _coordname);
   }
 
 	
@@ -60,7 +64,9 @@ public class DConditionCounterLLCClt {
 	 * @throws ClassNotFoundException
 	 * @throws ParallelException 
 	 */
-	public synchronized void increment() throws IOException, ClassNotFoundException, ParallelException {
+	public synchronized void increment() throws IOException, 
+		                                          ClassNotFoundException, 
+																							ParallelException {
 		_coordclt.sendData(-1, new DConditionCounterIncrRequest());
 	}
 
@@ -72,7 +78,9 @@ public class DConditionCounterLLCClt {
 	 * @throws ClassNotFoundException
 	 * @throws ParallelException 
 	 */
-	public synchronized void increment(int num) throws IOException, ClassNotFoundException, ParallelException {
+	public synchronized void increment(int num) throws IOException, 
+		                                                 ClassNotFoundException, 
+																										 ParallelException {
 		_coordclt.sendData(-1, new DConditionCounterIncrRequest(num));
 	}
 
@@ -83,8 +91,36 @@ public class DConditionCounterLLCClt {
 	 * @throws ClassNotFoundException
 	 * @throws ParallelException 
 	 */
-	public synchronized void decrement() throws IOException, ClassNotFoundException, ParallelException {
+	public synchronized void decrement() throws IOException, 
+		                                          ClassNotFoundException, 
+																							ParallelException {
 		_coordclt.sendData(-1, new DConditionCounterDecrRequest());
+	}
+	
+	
+	/**
+	 * increases the local cache of lazy-decrements. Must be followed by an 
+	 * eventual <CODE>sendLazyDecrements()</CODE>.
+	 */
+	public synchronized void lazyDecrement() {
+		++_decrsNotYetSent;
+	}
+	
+	
+	/**
+	 * sends to the distributed condition-counter any not-yet-submitted (lazy)
+	 * decrements.
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws ParallelException 
+	 */
+	public synchronized void sendLazyDecrements() throws IOException,
+		                                                   ClassNotFoundException,
+																											 ParallelException {
+		if (_decrsNotYetSent>0) {
+			_coordclt.sendData(-1,new DConditionCounterDecrRequest(_decrsNotYetSent));
+			_decrsNotYetSent = 0;  // reset counter of lazy decrements
+		}
 	}
 
 	
@@ -94,7 +130,9 @@ public class DConditionCounterLLCClt {
 	 * @throws ClassNotFoundException
 	 * @throws ParallelException 
 	 */
-	public synchronized void reset() throws IOException, ClassNotFoundException, ParallelException {
+	public synchronized void reset() throws IOException, 
+		                                      ClassNotFoundException, 
+																					ParallelException {
 		_coordclt.sendData(-1, new DConditionCounterResetRequest());
 	}
 	
@@ -105,10 +143,13 @@ public class DConditionCounterLLCClt {
 	 * @throws ClassNotFoundException
 	 * @throws ParallelException 
 	 */
-	public void await() throws IOException, ClassNotFoundException, ParallelException {
+	public void await() throws IOException, 
+		                         ClassNotFoundException, 
+														 ParallelException {
 		// notice the use (valid) of the DMsgPassingCoordinatorClt to connect to a
 		// DActiveMsgPassingLongLivedConnSrv!
-		DMsgPassingCoordinatorClt coordclt = new DMsgPassingCoordinatorClt(_host,_port,_coordname);
+		DMsgPassingCoordinatorClt coordclt = 
+			new DMsgPassingCoordinatorClt(_host,_port,_coordname);
 		coordclt.sendData(new DConditionCounterAwaitRequest());
 	}
 

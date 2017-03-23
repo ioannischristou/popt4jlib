@@ -1,5 +1,6 @@
 package popt4jlib.GradientDescent;
 
+import popt4jlib.LocalOptimizerIntf;
 import java.util.*;
 import utils.*;
 import parallel.*;
@@ -85,7 +86,7 @@ public class ArmijoSteepestDescentST extends GLockingObserverBase implements Loc
    * a later call to setParams(p). These are:
    * &lt;"asd.x0", VectorIntf x&gt; optional, the initial starting point. If this
    * pair does not exist, or if x is null, then it becomes mandatory that
-   * a pair &lt;"gradientdescent.x0", VectorIntf x&gt; pair with a non-null x is
+   * a pair &lt;"[gradientdescent.]x0", VectorIntf x&gt; pair with a non-null x is
    * in the parameters that have been set.
    * &lt;"asd.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
    * function to be minimized. If this param-value pair does not exist, the
@@ -172,9 +173,12 @@ public class ArmijoSteepestDescentST extends GLockingObserverBase implements Loc
   private PairObjDouble min(FunctionIntf f, HashMap p) throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("asd.gradient");
     if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
-    final VectorIntf x0 = p.get("asd.x0") == null ?
-                          (VectorIntf) p.get("gradientdescent.x0") :  // attempt to retrieve generic point
-                          (VectorIntf) p.get("asd.x0");
+    final VectorIntf x0 = 
+			_params.containsKey("asd.x0")==false ?
+         _params.containsKey("gradientdescent.x0") ? 
+			    (VectorIntf) _params.get("gradientdescent.x0") : 
+			      _params.containsKey("x0") ? (VectorIntf) _params.get("x0") : null // attempt to retrieve generic point
+			: (VectorIntf) _params.get("asd.x0");
     if (x0==null) throw new OptimizerException("no asd.x0"+" initial point in _params passed");
     VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
     final int n = x.getNumCoords();

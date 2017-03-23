@@ -10,15 +10,17 @@ import java.io.Serializable;
  * executed in separate threads in a thread-pool for a limited time so as to
  * avoid "locking-up" the minimization process by function evaluations that
  * take too long to complete (such evaluations are "lost" by the minimization
- * process even if they eventually complete). For more details, see the
- * <CODE>LimitedTimeTaskExecutor</CODE> class in the parallel package, and the
+ * process even if they eventually complete). The class is also useful for 
+ * wrapping up function evaluation requests to be executed in a remote JVM
+ * (distributed). For more details, see the
+ * <CODE>parallel.LimitedTimeTaskExecutor</CODE> class and the
  * <CODE>LimitedTimeEvalFunction</CODE> class in this package. The class and its
  * methods are of course thread-safe (as long as the underlying function object
  * that implements the FunctionIntf interface to be evaluated also happens to be
  * thread-safe).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -32,16 +34,18 @@ public class FunctionEvaluationTask implements TaskObject {
   private boolean _isDone=false;
 
   /**
-   * constructor
+   * sole constructor. When the constructed object is to be used to submit a
+	 * request for distributed computation to a remote JVM, all args passed in 
+	 * this constructor must implement the <CODE>java.io.Serializable</CODE>
+	 * interface.
    * @param f FunctionIntf
-   * @param arg Object
+   * @param arg Object 
    * @param params HashMap
    */
   public FunctionEvaluationTask(FunctionIntf f, Object arg, HashMap params) {
     _f = f;
     _arg = arg;
     _params = new HashMap(params);  // keep FindBugs happy
-    // interestingly, FindBugs doesn't complain about the previous asgnmnt...
   }
 
 
@@ -79,7 +83,7 @@ public class FunctionEvaluationTask implements TaskObject {
    */
   public synchronized double getObjValue() { return _val; }
 
-
+	
   /**
    * copy state from the input argument.
    * @param t TaskObject
@@ -117,19 +121,46 @@ public class FunctionEvaluationTask implements TaskObject {
 		return res;
 	}
 
+	
+	/**
+	 * return the objective function.
+	 * @return FunctionIntf
+	 */
+	protected FunctionIntf getFunction() {
+		return _f;
+	}
+	
+	
+	/**
+	 * return the argument.
+	 * @return Object
+	 */
+	protected Object getArg() {
+		return _arg;
+	}
 
+	
+	/**
+	 * return the parameters with which this object was constructed.
+	 * @return HashMap
+	 */
+	protected HashMap getParams() {
+		return _params;
+	}
+	
+	
   /**
    * set the objective value.
    * @param v double
    */
-  void setObjValue(double v) { _val = v; }
+  protected void setObjValue(double v) { _val = v; }
 
 
   /**
    * indicate the evaluation is done (or the opposite).
    * @param v boolean
    */
-  void setDone(boolean v) { _isDone = v; }
+  protected void setDone(boolean v) { _isDone = v; }
 
 }
 

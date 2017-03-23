@@ -1,5 +1,6 @@
 package tests;
 
+import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.*;
 import popt4jlib.PS.*;
 import popt4jlib.PS.FA.*;

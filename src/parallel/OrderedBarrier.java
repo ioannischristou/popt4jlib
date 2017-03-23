@@ -191,7 +191,8 @@ public class OrderedBarrier {
         hold = false;  // it's my time to exit
         break;
       }
-      else notifyAll();  // it's not my time to exit yet, but I have to tell others to wake up
+      else notifyAll();  // it's not my time to exit yet, 
+			                   // but I have to tell others to wake up
       try {
         wait();
       }
@@ -207,8 +208,8 @@ public class OrderedBarrier {
     notifyAll();
     if (t!=null) t.run();  // guaranteed that the tasks will execute completely
                            // in start-order of the threads, unless they are
-                           // threads themselves in which case execution completion
-                           // cannot be guaranteed
+                           // threads themselves in which case execution 
+                           // completion cannot be guaranteed
                            // this is because of the synchronized method.
     return true;
   }
