@@ -1,0 +1,19 @@
+class,mcs.function,tests.RastriginFastDefFunction
+mcs.arglength,1000
+mcs.maxargvalue,5.12
+mcs.minargvalue,-5.12
+rndgen,7,8
+mcs.numthreads,8
+mcs.numtries,10000000
+# to compare Thread-Local Object-Pool performance:
+# FIRST: run the tests.MonteCarloTest class with this file as the single argument.
+# java should run without any VM args set, to see default performance.
+# SECOND: comment out the first line below and uncomment the second line below,
+# ensuring that the _USE_POOLS constants in DblArray1Vector and MCS classes are 
+# both false. The arguments will now be non-pooled double[] objects.
+# The differences should increase with increased mcs.arglength values
+# or increased mcs.numtries values.
+#Test #1
+class,mcs.randomargmaker,popt4jlib.MonteCarlo.FastDblArray1VectorArgMaker
+#Test #2
+#class,mcs.randomargmaker,popt4jlib.MonteCarlo.FastDblArray1ArgMaker

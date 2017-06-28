@@ -24,18 +24,20 @@ public class MonteCarloTest {
 
 
   /**
-   * invoke as <CODE>java -cp &lt;classpath&gt; tests.MonteCarloTest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>
-   * where params_file must contain the following lines:
+   * invoke as 
+	 * <CODE>java -cp &lt;classpath&gt; tests.MonteCarloTest &lt;params_file&gt; 
+	 * [random_seed] [maxfuncevals]</CODE>.
+   * The params_file must contain the following lines:
 	 * <ul>
-   * <li> class,mcs.function, &lt;fullclassname&gt; mandatory, the full class name
-   * of the function to be minimized.
+   * <li> class,mcs.function, &lt;fullclassname&gt; mandatory, the full class 
+	 * name of the function to be minimized.
    * <li> mcs.numtries, $num$ mandatory, the number of random attempts
    * to perform in total (these attempts will be distributed among the number
    * of threads that will be created.)
-   * <li> class,mcs.randomargmaker, &lt;fullclassname&gt; mandatory, the full class
-   * name of an object that implements the <CODE>popt4jlib.RandomArgMakerIntf</CODE>
-   * interface so that it can produce function arguments for the function f to
-   * be minimized.
+   * <li> class,mcs.randomargmaker, &lt;fullclassname&gt; mandatory, the full 
+	 * class name of an object that implements the 
+	 * <CODE>popt4jlib.RandomArgMakerIntf</CODE> interface so that it can produce 
+	 * function arguments for the function f to be minimized.
    * <li> mcs.numthreads, $num$ optional, the number of threads to use,
    * default is 1.
    * <li> rndgen,$num$,$num2$ mandatory, specifies the starting random
@@ -59,7 +61,7 @@ public class MonteCarloTest {
       HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       if (args.length>1) {
         long seed = Long.parseLong(args[1]);
-        RndUtil.getInstance().setSeed(seed);  // updates all extra instances too!
+        RndUtil.getInstance().setSeed(seed);  // updates all extra instances too
       }
       if (args.length>2) {
         long num = Long.parseLong(args[2]);
@@ -81,12 +83,15 @@ public class MonteCarloTest {
 			} else if (p.getArg() instanceof DblArray1Vector) {
 				DblArray1Vector arg = (DblArray1Vector) p.getArg();
 				System.out.print("best soln found:[");
-				for (int i=0;i<arg.getNumCoords();i++) System.out.print(arg.getCoord(i)+" ");
+				for (int i=0;i<arg.getNumCoords();i++) 
+					System.out.print(arg.getCoord(i)+" ");
 			}
       System.out.println("] VAL="+p.getDouble());
       long dur = System.currentTimeMillis()-start_time;
       System.out.println("total time (msecs): "+dur);
-      System.out.println("VVV,"+p.getDouble()+",TTT,"+dur+",NNN,"+wrapper_func.getEvalCount()+",PPP,MCS,FFF,"+args[0]);  // for parser program to extract from output
+      System.out.println("VVV,"+p.getDouble()+",TTT,"+dur+",NNN,"+
+				                 wrapper_func.getEvalCount()+",PPP,MCS,FFF,"+
+				                 args[0]);  // for parser program to extract from output
     }
     catch (Exception e) {
       e.printStackTrace();

@@ -47,7 +47,8 @@ public class RandomGraphMaker {
   }
 
 
-  private Graph buildUniformRandomDualGraph(String jplotfilename) throws GraphException, ParallelException, FileNotFoundException {
+  private Graph buildUniformRandomDualGraph(String jplotfilename) 
+		throws GraphException, ParallelException, FileNotFoundException {
     PrintWriter pw = null;
 		Random rnd = RndUtil.getInstance().getRandom();
     if (jplotfilename!=null && !jplotfilename.equals("null")) {
@@ -159,12 +160,16 @@ public class RandomGraphMaker {
   /**
    * invoke as:
    * <CODE>java -cp &lt;classpath&gt; utils.RandomGraphMaker &lt;numnodes&gt;
-   * &lt;xdim&gt; &lt;ydim&gt; &lt;radius&gt; &lt;filename&gt; [uniform(false)] [rndseed(0)] [jplotfilename(null)] [createMWIS(false)]</CODE>.
+   * &lt;xdim&gt; &lt;ydim&gt; &lt;radius&gt; &lt;filename&gt; [uniform(false)] 
+	 * [rndseed(0)] [jplotfilename(null)] [createMWIS(false)]</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {
     if (args.length<5) {
-      System.err.println("usage: java -cp <classpath> utils.RandomGraphMaker <numnodes> <xdim> <ydim> <radius> <filename> [uniformr] [rndseed] [jplotfilename(null)] [createMWIS(false)]");
+      System.err.println("usage: java -cp <classpath> utils.RandomGraphMaker "+
+				                 "<numnodes> <xdim> <ydim> <radius> <filename> "+
+				                 "[uniformr] [rndseed] [jplotfilename(null)] "+
+				                 "[createMWIS(false)]");
       System.exit(-1);
     }
     try {

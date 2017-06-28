@@ -19,6 +19,12 @@ import java.util.*;
  * connects to it, the workers will have to wait indefinitely until the client 
  * connects and sends its initialization command which will then be forwarded to 
  * all waiting workers and all new ones coming afterwards.
+ * Further, the unique client may also send special command objects of type 
+ * <CODE>PDBTExecCmd</CODE> to this server which the server will then forward to 
+ * every connected worker (as well as to any worker that will be connected later 
+ * to this server). Each worker has to return then an "OKReply" object to the 
+ * server. The server will reply to the client with an "OKReply" command once it 
+ * has received OKReply from each connected worker. It's a synchronous protocol.
  * Notice also that this server achieves load-balancing among connected workers
  * by dividing equally the load of the multiple TaskObject objects submitted in 
  * each client request, among many <CODE>WrkSubmissionThread</CODE> threads 
@@ -49,6 +55,8 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
 	private RRObject _initCmd=null;  // the init. cmd to be sent to all workers
 	                                 // attached to this server before any other
 	                                 // job.
+	private PDBTExecCmd _cmd=null;  // the current cmd to be sent to all workers
+	                                // attached to this server.
 
 	
   /**
@@ -223,6 +231,52 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
 	private synchronized void setInitCmd(RRObject obj) {
 		_initCmd = obj;
 		notifyAll();
+	}
+
+
+	/**
+	 * sets the command to be forwarded to each connected worker, and does the
+	 * forwarding if appropriate.
+	 * @param obj PDBTExecCmd
+	 */
+	private synchronized void setCmd(PDBTExecCmd obj) {
+		if (obj!=null && !obj.equals(_cmd)) {  // do the forwarding
+			fwdCmd(obj);
+		}
+		_cmd = obj;
+	}
+	
+	
+	/**
+	 * get the latest command set by a client to be forwarded to workers.
+	 * @return PDBTExecCmc
+	 */
+	private synchronized PDBTExecCmd getCmd() {
+		return _cmd;
+	}
+	
+	
+	private synchronized void fwdCmd(PDBTExecCmd cmd) {
+		HashMap workers = getWorkers();
+		Iterator it = workers.keySet().iterator();
+		Set workers2rm = new HashSet();
+		while (it.hasNext()) {
+			Socket s = (Socket) it.next();
+			PDBTEW2Listener t = (PDBTEW2Listener) workers.get(s);
+			if (!t.isConnectionLost()) {  // send cmd to worker
+				try {
+					t.fwdCmd(cmd);
+				}
+				catch (Exception e) {
+					workers2rm.add(s);
+				}
+			} else workers2rm.add(s);
+		}
+		Iterator sit = workers2rm.iterator();
+		while (sit.hasNext()) {
+			Socket s = (Socket) sit.next();
+			workers.remove(s);
+		}
 	}
 
 
@@ -448,6 +502,16 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
           mger.msg("PDBTEC2ListenerThread.run(): RRObject read",2);
           // 2. take appropriate action
           try {
+						if (obj instanceof PDBTExecCmd) {
+							setCmd((PDBTExecCmd)obj);  // sets & sends if appropriate the cmd
+							mger.msg("PDBTEC2ListenerThread: done sending PDBTExecCmd", 2);
+							// send back to the clt an "ACK" message
+							_oos.writeObject(new OKReply());  // no need to call _oos.reset()
+							_oos.flush();
+							mger.msg("PDBTEC2ListenerThread: done sending OKReply "+
+								       "to client", 2);
+							continue;
+						}
             obj.runProtocol(_srv, _ois, _oos);
           }
           catch (PDBatchTaskExecutorException e) {
@@ -560,11 +624,31 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
 			_oos.reset();  // force object to be written anew
 			_oos.writeObject(_initCmd);
 			_oos.flush();
+			if (_cmd!=null) {  // send latest cmd as well.
+				_oos.reset();  // force object to be written anew
+				_oos.writeObject(_cmd);
+				_oos.flush();
+				try {
+					Object res = _ois.readObject();
+					if (!(res instanceof OKReply)) 
+						throw new PDBatchTaskExecutorException("Wrk failed to execute cmd");
+				}
+				catch (Exception e) {
+					throw new IOException("Wrk failed to initialize correctly");
+				}
+			}
 			utils.Messenger.getInstance().msg(
 						"PDBTExecSingleCltWrkInitSrv.PDBTEW2Listener.init(): done.", 1);
 		}
 
 		
+		/**
+		 * sends the tasks execution request object o through the wire to the worker.
+		 * @param o TaskObjectsExecutionRequest
+		 * @return TaskObjectsExecutionResults
+		 * @throws IOException
+		 * @throws PDBatchTaskExecutorException 
+		 */
     private TaskObjectsExecutionResults runObject(TaskObjectsExecutionRequest o) 
 			throws IOException, PDBatchTaskExecutorException {
       Object res = null;
@@ -596,6 +680,41 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
 				}
 				_isPrevRunSuccess=false;
 				_prevFailedBatch = o._tasks;
+				throw e;
+			}
+    }
+
+		
+		/**
+		 * forwards the command object through the socket to the worker, and waits
+		 * for an OKReply from the worker.
+		 * @param o PDBTExecCmd
+		 * @throws IOException
+		 * @throws PDBatchTaskExecutorException 
+		 */
+    private void fwdCmd(PDBTExecCmd o) 
+			throws IOException, PDBatchTaskExecutorException {
+      Object res = null;
+      try {
+        setAvailability(false);
+        _oos.reset();  // force writing object anew
+        _oos.writeObject(o);
+        _oos.flush();
+        res = _ois.readObject();
+        setAvailability(true);
+      }
+      catch (IOException e) {  // worker closed connection
+        throw e;
+      }
+      catch (ClassNotFoundException e) {
+        throw new IOException("stream has failed");
+      }
+      if (res instanceof OKReply) {
+				return;  // OK
+			}
+      else {
+				PDBatchTaskExecutorException e = 
+					new PDBatchTaskExecutorException("worker failed to run command");
 				throw e;
 			}
     }

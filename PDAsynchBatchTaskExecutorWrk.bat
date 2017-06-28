@@ -1,2 +1,2 @@
 REM PDAsynchBatchTaskExecutorWrk [num_threads(10)] [host(localhost)] [port(7980)] [run_init_cmd(false)]
-java -Xmx1500m -cp ./dist/popt4jlib.jar;./dist/lib/colt.jar; parallel.distributed.PDAsynchBatchTaskExecutorWrk %1 %2 %3 %4
+java -Xmx3000m -cp ./dist/popt4jlib.jar;./dist/lib/colt.jar; parallel.distributed.PDAsynchBatchTaskExecutorWrk %1 %2 %3 %4

@@ -156,10 +156,12 @@ class DBBNode0 extends DBBNodeBase {
 				}
 				if (cur_counter % 100 == 0) {
 					mger.msg(msg, 1);
+					/*
 					String wgts_distr = getSolnWgtsHistogram();
 					msg = "Solution Weights Histogram: \n";
 					msg += wgts_distr;
 					mger.msg(msg, 1);
+					*/
 					/*
 					msg="DBBNode0.getBestNodes2Add() Statistics: ";
 					Iterator it = _BN2ASizeDistr.keySet().iterator();

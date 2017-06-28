@@ -42,8 +42,8 @@ import java.util.*;
  * @version 1.0
  */
 public class PDBatchTaskExecutorSrv {
-  private HashMap _workers;  // map<Socket s, PDBTEListener listener>
-  private HashSet _working;  // Set<PDBTEListener listener>
+  private HashMap _workers;  // map<Socket s, PDBTEW[2]Listener listener>
+  private HashSet _working;  // Set<PDBTEW[2]Listener listener>
   private int _workersPort = 7890;  // default port
   private int _clientsPort = 7891;  // default port
   private static final int _NUM_ATTEMPTS = 10;  // num attempts to iterate over
@@ -150,7 +150,7 @@ public class PDBatchTaskExecutorSrv {
 	/**
 	 * return the <CODE>_workers</CODE> hash-table of the currently known 
 	 * connected workers to this server.
-	 * @return HashMap
+	 * @return HashMap // map&lt;Socket s, PDBTEW[2]Listener listener&gt;
 	 */
 	protected HashMap getWorkers() {
 		return _workers;
@@ -169,7 +169,7 @@ public class PDBatchTaskExecutorSrv {
 	/**
 	 * return the <CODE>_working</CODE> hash-set of the workers that are currently
 	 * known to this server to be busy.
-	 * @return HashSet
+	 * @return HashSet  // Set&lt;PDBTEW[2]Listener listener&gt;
 	 */
 	protected HashSet getWorking() {
 		return _working;

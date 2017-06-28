@@ -101,6 +101,35 @@ public class VecUtil {
     return z;
   }
 
+	
+  /**
+   * return a new VectorIntf object that is the component-wise product of the 
+	 * two arguments.
+   * @param x VectorIntf
+   * @param y VectorIntf
+   * @throws IllegalArgumentException if any arg is null or if the dimensions
+   * of the two args don't match
+   * @return VectorIntf
+   */
+  public static VectorIntf componentProduct(VectorIntf x, VectorIntf y) 
+		throws IllegalArgumentException {
+    if (x==null) throw new IllegalArgumentException("1st arg is null");
+    if (y==null) throw new IllegalArgumentException("2nd arg is null");
+    final int n = x.getNumCoords();
+    if (n!=y.getNumCoords())
+      throw new IllegalArgumentException("dimensions don't match");
+    VectorIntf z = x.newInstance();  // x.newCopy();
+    try {
+      for (int i = 0; i < n; i++) {
+        z.setCoord(i, x.getCoord(i) * y.getCoord(i));
+      }
+    }
+    catch (parallel.ParallelException e) {
+      e.printStackTrace();  // can never get here
+    }
+    return z;
+  }
+
 
   /**
    * return the k-th norm of the vector x.
