@@ -73,8 +73,7 @@ public class MsgPassingCoordinator {
 
 
   /**
-   * return the unique MsgPassingCoordinator object associated
-   * with a given name.
+   * return the unique MsgPassingCoordinator object associated with given name.
    * @return MsgPassingCoordinator
    */
   public synchronized static MsgPassingCoordinator getInstance(String name) {
@@ -88,7 +87,7 @@ public class MsgPassingCoordinator {
 
 
   /**
-   * return the _maxSize data member
+   * return the _maxSize data member.
    * @return int
    */
   public synchronized static int getMaxSize() { return _maxSize; }
@@ -102,7 +101,8 @@ public class MsgPassingCoordinator {
 	 * methods occurred before this call.
 	 * @throws IllegalArgumentException if the argument is &le; 0. 
 	 */
-	public synchronized static void setMaxSize(int num) throws ParallelException, IllegalArgumentException {
+	public synchronized static void setMaxSize(int num) 
+		throws ParallelException, IllegalArgumentException {
 		if (_instance!=null || _instances.size()>0)
 			throw new ParallelException(
 							"MsgPassingCoordinator.setMaxSize(num): call is only allowed "+
@@ -131,7 +131,7 @@ public class MsgPassingCoordinator {
    * @throws ParallelException if there are more data than _maxSize in the queue
    */
   public synchronized void sendData(int myid, Object data)
-      throws ParallelException {
+    throws ParallelException {
     if (_data.size()>=_maxSize)
       throw new ParallelException("MsgPassingCoordinator queue is full");
     // Pair p = new Pair(null, data);
@@ -190,7 +190,7 @@ public class MsgPassingCoordinator {
    * or if the thread tries to send smth to itself
    */
   public synchronized void sendData(int myid, int threadId, Object data)
-      throws ParallelException {
+    throws ParallelException {
     if (myid==threadId) throw new ParallelException("cannot send to self");
     if (_data.size()>=_maxSize)
       throw new ParallelException("MsgPassingCoordinator queue is full");
@@ -262,7 +262,7 @@ public class MsgPassingCoordinator {
         int toid = p.getToId();
         if (toid==Integer.MAX_VALUE || toid==myid) {  // toid==null || toid.intValue()==myid
           res = p.getData();
-          _data.remove(i);
+					_data.remove(i);
           notifyAll();
 					// idiom below cannot be safely used. See RegisteredParcelPool documentation.
           // p.release();

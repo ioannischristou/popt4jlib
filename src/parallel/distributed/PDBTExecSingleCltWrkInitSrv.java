@@ -256,7 +256,15 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
 	}
 	
 	
-	private synchronized void fwdCmd(PDBTExecCmd cmd) {
+	/**
+	 * only called from <CODE>setCmd(cmd)</CODE> method, this method iterates
+	 * over all connected workers to this server, and submits to each one the
+	 * command passed in the parameter of this method, then waits for the 
+	 * worker to respond with <CODE>OKReply</CODE> before continuing to the next
+	 * worker.
+	 * @param cmd PDBTExecCmd
+	 */
+	private void fwdCmd(PDBTExecCmd cmd) {
 		HashMap workers = getWorkers();
 		Iterator it = workers.keySet().iterator();
 		Set workers2rm = new HashSet();

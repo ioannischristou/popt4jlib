@@ -22,7 +22,17 @@ import java.util.*;
  * connecting socket to the server. One exception to the above is when the 
  * initialization command (received first) for the workers is a
  * <CODE>OKReplyRequestedPDBTExecWrkInitCmd</CODE> in which case, the worker
- * will submit an <CODE>OKReply</CODE> to the server upon ewxecution of the cmd.
+ * will submit an <CODE>OKReply</CODE> to the server upon execution of the cmd.
+ * Also, the worker may receive from the server command objects of type
+ * <CODE>PDBTExecCmd</CODE>. In this case, it executes the method
+ * <CODE>runProtocol(null,null,null)</CODE> on the thread that listens on the 
+ * socket connected to the server. If the command happens to be of type
+ * <CODE>PDBTExecOnAllThreadsCmd</CODE>, then the worker thread listening on
+ * the socket connected to the server, instead calls the 
+ * <CODE>PDBatchTaskExecutor.executeTaskOnAllThreads(cmd)</CODE> method on the
+ * associated PDBatchTaskExecutor with it. In both cases, after the command
+ * executes, an <CODE>OKReply</CODE> is sent back to the server that issued the
+ * commands.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2015</p>
@@ -100,7 +110,11 @@ public class PDBTExecInitedWrk {
 					RRObject rr = (RRObject) ois.readObject();
 					if (rr instanceof PDBTExecCmd) {  // execute on this thread
 						mger.msg("Wrk: got a PDBTExecCmd",2);
-						rr.runProtocol(null, null, null);
+						if (rr instanceof PDBTExecOnAllThreadsCmd) {
+							executor.executeTaskOnAllThreads((PDBTExecOnAllThreadsCmd) rr);
+						} else {
+							rr.runProtocol(null, null, null);
+						}
 						oos.writeObject(new OKReply());  // no need for oos.reset() here
             mger.msg("Wrk: finished processing the PDBTExecCmd",2);
 						continue;

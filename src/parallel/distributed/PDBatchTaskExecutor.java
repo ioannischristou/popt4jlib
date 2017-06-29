@@ -126,7 +126,7 @@ public final class PDBatchTaskExecutor {
         MsgPassingCoordinator.getInstance("PDBatchTaskExecutor_ack"+_id);		
 		final int numthreads = _threads.length;
     for (int i=0; i<numthreads; i++) {
-      _threads[i] = new PDBTEThread(this);
+      _threads[i] = new PDBTEThread(this,i);  // let the thread know its id=i
       _threads[i].setDaemon(true);  // thread will end when main thread ends
       _threads[i].start();
     }
@@ -207,7 +207,49 @@ public final class PDBatchTaskExecutor {
     }
     return results;
   }
+	
 
+	/**
+	 * executes the task passed as parameter on each thread in this executor's
+	 * thread-pool. The threads in the thread-pool execute the task sequentially
+	 * in the order the threads were constructed. 
+	 * Useful when a special-command (such as a request for all threads to load or 
+	 * update some data) must be issued to the executor. As the 
+	 * <CODE>executeBatch(tasks)</CODE> method, this method executes synchronously 
+	 * and atomically.
+	 * @param task TaskObject 
+	 * @throws ParallelException
+	 */
+	public synchronized void executeTaskOnAllThreads(TaskObject task) 
+		throws ParallelException {
+		if (task==null) return;
+    if (_isRunning==false)
+      throw new ParallelException("thread-pool is not running");
+    try {
+      _rwLocker.getWriteAccess();
+      _isIdle = false;
+      _rwLocker.releaseWriteAccess();
+    }
+    catch (Exception e) {  // can never get here
+      e.printStackTrace();
+    }
+		// ask task to execute on each thread sequentially
+		for (int i=0; i<_threads.length; i++) {
+			_mpc_for.sendDataBlocking(-1, i, task);
+			// get results back and ignore them
+			_mpc_bak.recvData(-1, i);
+		}
+    // declare availability
+    try {
+      _rwLocker.getWriteAccess();
+      _isIdle = true;
+      _rwLocker.releaseWriteAccess();
+    }
+    catch (Exception e) {  // can never get here
+      e.printStackTrace();
+    }
+	}
+	
 
   /**
    * shut-down all the threads in this executor's thread-pool.
@@ -316,17 +358,20 @@ public final class PDBatchTaskExecutor {
 		private static HashMap _ids = new HashMap();  // map<PDBTE e, Integer curId>
 		private PDBatchTaskExecutor _e;  // unnecessary now
 		private boolean _doRun=true;
+		private int _id;
 
 		/**
 		 * sole constructor.
 		 * @param e PDBatchTaskExecutor was needed before class became nested.
+		 * @param id int the id of the thread, starts in {0,...threadpool_size-1}.
 		 */
-		PDBTEThread(PDBatchTaskExecutor e) {
+		PDBTEThread(PDBatchTaskExecutor e, int id) {
 			synchronized (PDBTEThread.class) {
 				if (_ids.get(e)==null)
 					_ids.put(e, new Integer(0));
 			}
 			_e = e;
+			_id = id;
 		}
 
 
@@ -348,7 +393,10 @@ public final class PDBatchTaskExecutor {
 				int id = getNextId(_e);
 				try {
 					// threads all use the same receiver id
-					Object data = mpc_fwd.recvData(0, id);
+					// Object data = mpc_fwd.recvData(0, id);
+					// itc20170629: threads now use their own receiver id to support
+					// the new method executeTaskOnAllThreads
+					Object data = mpc_fwd.recvData(_id, id);
 					try {
 						if (data instanceof TaskObject) {
 							Serializable result = ( (TaskObject) data).run();
