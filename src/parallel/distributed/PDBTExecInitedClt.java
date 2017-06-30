@@ -3,7 +3,7 @@ package parallel.distributed;
 import parallel.*;
 import java.io.*;
 import java.net.*;
-import java.util.*;
+
 
 /**
  * thread-safe class implements the "Client" for networks of 
@@ -256,7 +256,8 @@ public class PDBTExecInitedClt {
 		}
 		// submit a request for parallel/distributed execution of the tasks
 		TaskObjectsParallelExecutionRequest req = 
-			new TaskObjectsParallelExecutionRequest(_client_addr_port,tasks,grainsize);
+			new TaskObjectsParallelExecutionRequest(_client_addr_port,
+				                                      tasks,grainsize);
 		_oos.reset();  // force object to be written anew
 		_oos.writeObject(req);
 		_oos.flush();
@@ -387,9 +388,15 @@ public class PDBTExecInitedClt {
 	 * same as <CODE>submitInitCmd(RRObject)</CODE> except it may be called at any
 	 * time during a program execution, instructing the server to whom it sends 
 	 * the command, to forward it to all connected workers (and to-be-connected
-	 * workers) for execution. The workers will execute 
-	 * <CODE>task.runProtocol(null, null, null)</CODE> and send back to the server
-	 * an <CODE>OKReply</CODE> for this cmd.
+	 * workers) for execution. The workers will normally execute 
+	 * <CODE>cmd.runProtocol(null, null, null)</CODE> and send back to the server
+	 * an <CODE>OKReply</CODE> for this cmd. If however the command is of sub-type
+	 * <CODE>PDBTExecOnAllThreadsCmd</CODE>, then each worker will execute instead
+	 * the method <CODE>PDBatchTaskExecutor.executeTaskOnAllThreads(cmd)</CODE>
+	 * which will cause the <CODE>cmd.run()</CODE> method of same command object
+	 * on each thread in the executor's thread-pool, and will then send the
+	 * <CODE>OKReply</CODE> back to the server for the server to eventually send 
+	 * back to this client the <CODE>OKReply</CODE> too.
 	 * @param task PDBTExecCmd
 	 * @throws IOException
 	 * @throws ClassNotFoundException
