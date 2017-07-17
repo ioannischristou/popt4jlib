@@ -9,7 +9,8 @@ import java.io.Serializable;
  * Class implements thread-pooling to allow its users to execute
  * concurrently a batch of tasks implementing the <CODE>TaskObject</CODE> 
  * interface. The <CODE>run()</CODE> method of each task must clearly
- * be thread-safe!, and also, after calling executeBatch(tasks), no thread
+ * be thread-safe!, must return non-null value under normal execution, and also, 
+ * after calling <CODE>executeBatch(tasks)</CODE>, no thread
  * should be able to manipulate in any way the submitted tasks or their
  * container (the Collection argument to the call). Unfortunately, there is no
  * mechanism in the java programming language to enforce this constraint; the
@@ -126,7 +127,7 @@ public final class PDBatchTaskExecutor {
         MsgPassingCoordinator.getInstance("PDBatchTaskExecutor_ack"+_id);		
 		final int numthreads = _threads.length;
     for (int i=0; i<numthreads; i++) {
-      _threads[i] = new PDBTEThread(this,i);  // let the thread know its id=i
+      _threads[i] = new PDBTEThread(this,-(i+1));  // thread-id=-(i+1)
       _threads[i].setDaemon(true);  // thread will end when main thread ends
       _threads[i].start();
     }
@@ -211,12 +212,24 @@ public final class PDBatchTaskExecutor {
 
 	/**
 	 * executes the task passed as parameter on each thread in this executor's
-	 * thread-pool. The threads in the thread-pool execute the task sequentially
-	 * in the order the threads were constructed. 
+	 * thread-pool. The threads will execute the task concurrently, so if 
+	 * sequential execution is needed, the task must be properly synchronized.
 	 * Useful when a special-command (such as a request for all threads to load or 
 	 * update some data) must be issued to the executor. As the 
 	 * <CODE>executeBatch(tasks)</CODE> method, this method executes synchronously 
-	 * and atomically.
+	 * and atomically. Notice that a special trick is utilized to achieve this
+	 * functionality: the threads in this executor all have negative ids (starting
+	 * from -1); when this method submits the task to the thread-pool via the 
+	 * associated forward <CODE>MsgPassingCoordinator</CODE> queue, it sends the 
+	 * same task via a call to the 
+	 * <CODE>sendDataBlocking(nexttaskid, threadid, task)</CODE> method of the 
+	 * forward msg-passing coordinator for threadid=-1...-#threads_in_pool. The 
+	 * fact that the threadid is a negative number causes the threads receiving
+	 * tasks to only be interested in matching their id (negative number) with the
+	 * threadid designated in the call mentioned above, and thus guarantee that 
+	 * each of the threads in the thread-pool will execute the task submitted to 
+	 * it. Notice that it is not possible to try to sequentially execute this task 
+	 * on the various threads in the pool.
 	 * @param task TaskObject 
 	 * @throws ParallelException
 	 */
@@ -233,12 +246,30 @@ public final class PDBatchTaskExecutor {
     catch (Exception e) {  // can never get here
       e.printStackTrace();
     }
-		// ask task to execute on each thread sequentially
+		// ask task to execute on each thread.
+		// Notice that trying to execute both the sendDataBlocking, and the 
+		// recvData on the back-channel in the same iteration of a single for-loop
+		// below is not possible (will not work correctly as there will be in 
+		// general problems on the id waited on on the back-channel in the 
+		// same-loop case).
+		TreeSet ids = new TreeSet();
 		for (int i=0; i<_threads.length; i++) {
-			_mpc_for.sendDataBlocking(-1, i, task);
-			// get results back and ignore them
-			_mpc_bak.recvData(-1, i);
+			int id = getNextId();
+			ids.add(new Integer(id));
+			//System.err.println("PDBTExecutor: sending task with myid="+id+
+			//                   " threadId="+(-i-1));
+			_mpc_for.sendDataBlocking(id, -(i+1), task);
+			//System.err.println("PDBTExecutor: task sent successfully. "+
+			//                   "Now waiting to recvData with myid=-1 fromId="+id);
 		}
+		// get results back and ignore them
+		Iterator it = ids.iterator();
+		while (it.hasNext()) {
+			int id = ((Integer)it.next()).intValue();
+			_mpc_bak.recvData(-1, id);
+			//System.err.println("PDBTExecutor: result with id="+id+" received.");
+		}
+		
     // declare availability
     try {
       _rwLocker.getWriteAccess();
@@ -396,7 +427,7 @@ public final class PDBatchTaskExecutor {
 					// Object data = mpc_fwd.recvData(0, id);
 					// itc20170629: threads now use their own receiver id to support
 					// the new method executeTaskOnAllThreads
-					Object data = mpc_fwd.recvData(_id, id);
+					Object data = mpc_fwd.recvDataIgnoringFromIdOnNegativeMyId(_id, id);
 					try {
 						if (data instanceof TaskObject) {
 							Serializable result = ( (TaskObject) data).run();

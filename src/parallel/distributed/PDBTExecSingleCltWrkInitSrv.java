@@ -73,7 +73,7 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
    * invoke as:
    * <CODE>java -cp &lt;classpath&gt; 
 	 * parallel.distributed.PDBTExecSingleCltWrkInitSrv 
-	 * [workers_port(7890)] [client_port(7891)] </CODE>.
+	 * [workers_port(7890)] [client_port(7891)] [debuglvl(0)]</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -97,6 +97,10 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
           usage();
           System.exit(-1);
         }
+				if (args.length>2) {
+					int dbglvl = Integer.parseInt(args[2]);
+					utils.Messenger.getInstance().setDebugLevel(dbglvl);
+				}
       }
     }
     PDBTExecSingleCltWrkInitSrv server = new PDBTExecSingleCltWrkInitSrv(wport, 
@@ -276,9 +280,19 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
 					t.fwdCmd(cmd);
 				}
 				catch (Exception e) {
+					utils.Messenger.getInstance().msg(
+						"PDBTExecSingleCltWrkInitSrv.fwdCmd(): "+
+						"PDBTEW2Listener.fwdCmd() threw exception "+e+
+						". Will remove worker from list of workers", 0);
 					workers2rm.add(s);
 				}
-			} else workers2rm.add(s);
+			} else {
+					utils.Messenger.getInstance().msg(
+						"PDBTExecSingleCltWrkInitSrv.fwdCmd(): "+
+						"PDBTEW2Listener.isConnectionLost() returned true"+
+						". Will remove worker from list of workers", 0);				
+				workers2rm.add(s);
+			}
 		}
 		Iterator sit = workers2rm.iterator();
 		while (sit.hasNext()) {
@@ -319,7 +333,7 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
   private static void usage() {
     System.err.println("usage: java -cp <classpath> "+
 			                 "parallel.distributed.PDBTExecSingleCltWrkInitSrv "+
-			                 "[workersport] [clientport]");
+			                 "[workersport] [clientport] [debuglvl]");
   }
 
 

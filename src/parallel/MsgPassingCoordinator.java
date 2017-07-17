@@ -43,12 +43,14 @@ public class MsgPassingCoordinator {
   /**
    * maintains the RegisteredParcel objects to be exchanged between threads
    */
-  private BoundedBufferArrayUnsynchronized _data;  // used to be Vector<RegisteredParcel>
+  private BoundedBufferArrayUnsynchronized _data;  // used to be 
+	                                                 // Vector<RegisteredParcel>
 	private boolean _selectiveReceiveOn;  // used to block receiver threads from
 	                                      // reading data when a selective receive
 	                                      // operation is under way
   private static MsgPassingCoordinator _instance=null;
-  private static HashMap _instances=new HashMap();  // map<String name, MPC instance>
+  private static HashMap _instances=new HashMap();  // map<String name, 
+	                                                  //     MPC instance>
 
 
   /**
@@ -77,7 +79,8 @@ public class MsgPassingCoordinator {
    * @return MsgPassingCoordinator
    */
   public synchronized static MsgPassingCoordinator getInstance(String name) {
-    MsgPassingCoordinator instance = (MsgPassingCoordinator) _instances.get(name);
+    MsgPassingCoordinator instance = 
+			(MsgPassingCoordinator) _instances.get(name);
     if (instance==null) {
       instance = new MsgPassingCoordinator();
       _instances.put(name, instance);
@@ -136,8 +139,9 @@ public class MsgPassingCoordinator {
       throw new ParallelException("MsgPassingCoordinator queue is full");
     // Pair p = new Pair(null, data);
     RegisteredParcel p = new RegisteredParcel(myid, Integer.MAX_VALUE, data);
-		// idiom below cannot be safely used. See RegisteredParcelPool documentation.
-    // RegisteredParcel p = RegisteredParcel.newInstance(myid, Integer.MAX_VALUE, data);
+		// idiom below cannot be safely used. See RegisteredParcelPool doc.
+    // RegisteredParcel p = RegisteredParcel.newInstance(myid,Integer.MAX_VALUE, 
+		//                                                   data);
     _data.addElement(p);
     notifyAll();
   }
@@ -156,16 +160,21 @@ public class MsgPassingCoordinator {
   public synchronized void sendDataBlocking(int myid, Object data) {
     /*
     if (utils.Debug.debug(popt4jlib.Constants.MPC)>0) {
-      utils.Messenger.getInstance().msg("MsgPassingCoordinator.sendDataBlocking(): _data.size()="+_data.size(),2);
+      utils.Messenger.getInstance().msg(
+		    "MsgPassingCoordinator.sendDataBlocking(): _data.size()="+
+		    _data.size(),2);
     }
     */
     while (_data.size()>= _maxSize) {
       try {
-				utils.Messenger.getInstance().msg("WARNING: MsgPassingCoordinator.sendDataBlocking(myid,data): data queue is full.",0);
+				utils.Messenger.getInstance().msg(
+					"WARNING: MsgPassingCoordinator.sendDataBlocking(myid,data): "+
+					"data queue is full.",0);
         wait();
       }
       catch (InterruptedException e) {
-        Thread.currentThread().interrupt();  // no interruptions allowed, so e is not re-thrown
+        Thread.currentThread().interrupt();  // no interruptions allowed, 
+				                                     // so e is not re-thrown
       }
     }
     // Pair p = new Pair(null, data);
@@ -196,7 +205,7 @@ public class MsgPassingCoordinator {
       throw new ParallelException("MsgPassingCoordinator queue is full");
     // Pair p = new Pair(new Integer(threadId), data);
     RegisteredParcel p = new RegisteredParcel(myid, threadId, data);
-		// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+		// idiom below cannot be safely used. See RegisteredParcelPool doc.
     // RegisteredParcel p = RegisteredParcel.newInstance(myid, threadId, data);
     _data.addElement(p);
     notifyAll();
@@ -219,16 +228,19 @@ public class MsgPassingCoordinator {
     if (myid==threadId) throw new ParallelException("cannot send to self");
     while (_data.size()>= _maxSize) {
       try {
-				utils.Messenger.getInstance().msg("WARNING: MsgPassingCoordinator.sendDataBlocking(myid,tid,data): data queue is full.",0);
+				utils.Messenger.getInstance().msg(
+					"WARNING: MsgPassingCoordinator.sendDataBlocking(myid,tid,data): "+
+					"data queue is full.",0);
         wait();
       }
       catch (InterruptedException e) {
-        Thread.currentThread().interrupt();  // no interruptions allowed, so e is not re-thrown
+        Thread.currentThread().interrupt();  // no interruptions allowed, 
+				                                     // so e is not re-thrown
       }
     }
     // Pair p = new Pair(new Integer(threadId), data);
     RegisteredParcel p = new RegisteredParcel(myid, threadId, data);
-		// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+		// idiom below cannot be safely used. See RegisteredParcelPool doc.
     //RegisteredParcel p = RegisteredParcel.newInstance(myid, threadId, data);
     _data.addElement(p);
     notifyAll();
@@ -260,11 +272,11 @@ public class MsgPassingCoordinator {
         RegisteredParcel p = (RegisteredParcel) _data.elementAt(i);
         // Integer toid = p.getToId();
         int toid = p.getToId();
-        if (toid==Integer.MAX_VALUE || toid==myid) {  // toid==null || toid.intValue()==myid
+        if (toid==Integer.MAX_VALUE || toid==myid) { 
           res = p.getData();
 					_data.remove(i);
           notifyAll();
-					// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+					// idiom below cannot be safely used. See RegisteredParcelPool doc.
           // p.release();
           return res;
         }
@@ -303,11 +315,11 @@ public class MsgPassingCoordinator {
       RegisteredParcel p = (RegisteredParcel) _data.elementAt(i);
       // Integer id = p.getToId();
       int id = p.getToId();
-      if (id==Integer.MAX_VALUE || id==myid) {  // id==null || id.intValue()==myid
+      if (id==Integer.MAX_VALUE || id==myid) { 
         res = p.getData();
         _data.remove(i);
         notifyAll();
-				// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+				// idiom below cannot be safely used. See RegisteredParcelPool doc.
         // p.release();
         break;
       }
@@ -335,7 +347,8 @@ public class MsgPassingCoordinator {
     if (myid==fromid) throw new ParallelException("cannot receive from self");
     /*
     if (utils.Debug.debug(popt4jlib.Constants.MPC)>0) {
-      utils.Messenger.getInstance().msg("MsgPassingCoordinator.recvData(): _data.size()="+_data.size(),2);
+      utils.Messenger.getInstance().msg(
+		    "MsgPassingCoordinator.recvData(): _data.size()="+_data.size(),2);
     }
     */
 		while (_selectiveReceiveOn) {
@@ -354,11 +367,11 @@ public class MsgPassingCoordinator {
         int toid = p.getToId();
         // Integer fId = (Integer) p.getFromId();
         int fId = p.getFromId();
-        if (fId==fromid && (toid==Integer.MAX_VALUE || toid==myid)) {  // fId.intValue()==fromid && (toid==null || toid.intValue()==myid)
+        if (fId==fromid && (toid==Integer.MAX_VALUE || toid==myid)) {  
           res = p.getData();
           _data.remove(i);
           notifyAll();
-					// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+					// idiom below cannot be safely used. See RegisteredParcelPool doc.
           // p.release();
           return res;
         }
@@ -371,8 +384,75 @@ public class MsgPassingCoordinator {
       }
     }
   }
-
-
+	
+	
+  /**
+   * retrieves the first data Object that has been stored via a call to
+   * sendData(fromid, data) or sendData(fromid, threadId, data), unless the 
+	 * sender specified as their id a negative number, in which case the threadId
+	 * value is ignored. In other words, we wait for a msg from a particular 
+	 * thread (fromid) unless myid is negative, and also the sender of the object
+	 * sent this negative number. This feature is only used to implement the 
+	 * <CODE>parallel.distributed.PDBatchTaskExecutor.
+	 *         runTaskOnAllThreads(TaskObject task)</CODE>
+	 * method that requires guarantee that a task will be executed on all threads
+	 * in the executor's thread-pool.
+   * If no such data exists, the calling thread will wait until the right thread
+   * stores an appropriate datum.
+	 * This implementation will invoke wait() first if a selective receive
+	 * operation is currently under way by another thread, and will
+	 * be notified when the selective receive finishes.
+   * @param myid int
+   * @param fromid int the sender's id
+   * @return Object
+   * @throws ParallelException if myid==fromid
+   */
+  public synchronized Object recvDataIgnoringFromIdOnNegativeMyId(int myid, 
+		                                                              int fromid)
+      throws ParallelException {
+    if (myid==fromid) throw new ParallelException("cannot receive from self");
+    /*
+    if (utils.Debug.debug(popt4jlib.Constants.MPC)>0) {
+      utils.Messenger.getInstance().msg(
+		    "MsgPassingCoordinator.recvData(): _data.size()="+_data.size(),2);
+    }
+    */
+		while (_selectiveReceiveOn) {
+			try {
+				wait();
+			}
+			catch (InterruptedException e) {  // do not allow interruptions!
+				Thread.currentThread().interrupt();  // recommended, but of no use
+			}
+		}
+    while (true) {
+      Object res = null;
+      for (int i=0; i<_data.size(); i++) {
+        RegisteredParcel p = (RegisteredParcel) _data.elementAt(i);
+        // Integer toid = (Integer) p.getToId();
+        int toid = p.getToId();
+        // Integer fId = (Integer) p.getFromId();
+        int fId = p.getFromId();
+        if ((fId==fromid && (toid==Integer.MAX_VALUE || toid==myid)) ||
+					  (toid<0 && myid==toid)) {  // 2nd case: when toid<0, ignore fromid.  
+          res = p.getData();
+          _data.remove(i);
+          notifyAll();
+					// idiom below cannot be safely used. See RegisteredParcelPool doc.
+          // p.release();
+          return res;
+        }
+      }
+      try {
+        wait();
+      }
+      catch (InterruptedException e) {  // don't allow interruptions
+        Thread.currentThread().interrupt();  // recommended action
+      }
+    }
+  }
+	
+	
   /**
    * the method has the same semantics as the recvData(tid) method except that
    * it returns immediately with null if no appropriate data exist at the time
@@ -403,11 +483,11 @@ public class MsgPassingCoordinator {
       int id = p.getToId();
       // Integer fId = p.getFromId();
       int fId = p.getFromId();
-      if (fId==fromid && (id==Integer.MAX_VALUE || id==myid)) {  // fId.intValue()==fromid && (id==null || id.intValue()==myid)
+      if (fId==fromid && (id==Integer.MAX_VALUE || id==myid)) {
         res = p.getData();
         _data.remove(i);
         notifyAll();
-				// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+				// idiom below cannot be safely used. See RegisteredParcelPool doc.
         // p.release();
         break;
       }
@@ -448,17 +528,18 @@ public class MsgPassingCoordinator {
 					int toid = p.getToId();
 					// Integer fId = (Integer) p.getFromId();
 					int fId = p.getFromId();
-					if (fromids.contains(new Integer(fId)) && (toid==Integer.MAX_VALUE || toid==myid)) {
+					if (fromids.contains(new Integer(fId)) && 
+						  (toid==Integer.MAX_VALUE || toid==myid)) {
 						// found it
 						res = p.getData();
 						_data.remove(i);
 						notifyAll();
-						// idiom below cannot be safely used. See RegisteredParcelPool documentation.
+						// idiom below cannot be safely used. See RegisteredParcelPool doc.
 						// p.release();
 						return new PairObjDouble(res, fId);
 					}
 				}
-				// 3. oops, not done, go on and wait for some data, unless we're interrupted
+				// 3. oops, not done, go on and wait for some data, unless interrupted
 				wait();
 			}
 		}

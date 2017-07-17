@@ -111,10 +111,14 @@ public class PDBTExecInitedWrk {
 					if (rr instanceof PDBTExecCmd) {  // execute on this thread
 						mger.msg("Wrk: got a PDBTExecCmd",2);
 						if (rr instanceof PDBTExecOnAllThreadsCmd) {
+							mger.msg("Wrk: PDBTExecCmd is a PDBTExecOnAllThreadsCmd, "+
+								       "executing on all threads", 2);
 							executor.executeTaskOnAllThreads((PDBTExecOnAllThreadsCmd) rr);
 						} else {
+							mger.msg("Wrk: executing PDBTExecCmd on main Wrk thread", 2);
 							rr.runProtocol(null, null, null);
 						}
+						mger.msg("Wrk: sending OKReply as response to PDBTExecCmd to Srv", 2);
 						oos.writeObject(new OKReply());  // no need for oos.reset() here
             mger.msg("Wrk: finished processing the PDBTExecCmd",2);
 						continue;
@@ -148,7 +152,7 @@ public class PDBTExecInitedWrk {
           break;
         }
         catch (IOException e2) {
-          //e2.printStackTrace();
+          e2.printStackTrace();  // itc: HERE rm asap
           mger.msg("I/O Exception caught.Exiting.",0);
           break;
         }

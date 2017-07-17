@@ -21,7 +21,7 @@ public class DRWLockSrv {
    */
   public static void main(String[] args) {
     if (args.length>0) {
-      int port = Integer.parseInt(args[1]);
+      int port = Integer.parseInt(args[0]);
       if (port > 1024) _port = port;
       else {
         usage();

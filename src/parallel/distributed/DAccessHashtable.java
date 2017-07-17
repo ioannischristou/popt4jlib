@@ -120,7 +120,7 @@ public class DAccessHashtable {
 	/**
 	 * implements the classical operation <CODE>put(key,value)</CODE>, with the 
 	 * twist that in case the particular key is locked, the operation will throw.
-	 * @param key Object must be Serializable and obey the ruls for keys in the
+	 * @param key Object must be Serializable and obey the rules for keys in the
 	 * standard Collections framework
 	 * @param value Object must be Serializable
 	 * @throws IllegalStateException if key is locked when attempting to put new 
