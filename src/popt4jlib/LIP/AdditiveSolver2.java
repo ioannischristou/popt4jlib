@@ -390,14 +390,21 @@ public class AdditiveSolver2 implements Runnable {
 	 * updates the argument's <CODE>_z</CODE> value, as well as
 	 * <CODE>_zstar,_zbar,_optimal</CODE> members if appropriate. Synchronized
 	 * operation.
+	 * Notice that the current node will always be complete (will have no free 
+	 * variables) when this method is invoked.
 	 * @param current Node
 	 */
 	private synchronized static void updateZ(Node current) {
 		IntArray1SparseVector xc = current._x;
-		int z = (int) VecUtil.innerProduct(_c, xc);
+		//int z = (int) VecUtil.innerProduct(_c, xc);
+		// faster inner-product computation as we know xc' non-zeros are 1s.
+		int z = 0;
+		int xnz = xc.getNumNonZeros();
+		for (int i=0; i<xnz; i++) z += _c.getCoord(xc.getIthNonZeroPos(i));
+		// end z computation
 		current._z = z;
-		if (z <= _zbar) _zbar=z;
-		if (z <= _zstar) {
+		if (z < _zbar) _zbar=z;
+		if (z < _zstar) {
 			_zstar=z;
 			_optimal=current;
 			System.err.println("found new better solution z="+z+" (xc="+xc+")");
@@ -512,10 +519,11 @@ public class AdditiveSolver2 implements Runnable {
 	 * @param current Node 
 	 */
 	private void fixSumTestVars(Node current) {
-		int cxnz = current._x.getNumNonZeros();
+		IntArray1SparseVector copy = (IntArray1SparseVector) current._x.newInstance();
+		int cxnz = copy.getNumNonZeros();
 		for (int j=0; j<cxnz; j++) {
-			int jpos = current._x.getIthNonZeroPos(j);
-			int jval = current._x.getIthNonZeroVal(j);
+			int jpos = copy.getIthNonZeroPos(j);
+			int jval = copy.getIthNonZeroVal(j);
 			if (jval==-1) {  // j-var is free
 				int pplusnz = _Pplus.getNumNonZeros();
 				for (int i=0; i<pplusnz; i++) {
