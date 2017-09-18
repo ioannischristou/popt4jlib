@@ -12,7 +12,16 @@ import java.io.*;
 
 /**
  * Convert a graph (1- or 2-) packing problem to a MIP, in lp format.
- * @author itc
+ * Notice: in case the parameter -1 is passed as the command line's 2nd argument
+ * the program outputs the MWIS problem in the Additive Algorithm's format (for
+ * details see the documentation of the 
+ * <CODE>popt4jlib.LIP.AdditiveSolver2</CODE> class.)
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2015</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
  */
 public class GraphPacking2MIPConverter {
 	private Graph _g;
@@ -96,6 +105,48 @@ public class GraphPacking2MIPConverter {
 	
 	
 	/**
+	 * creates the data file for the MWIS corresponding to the graph passed in the
+	 * 1st argument, and saves it in the file named in the 2nd argument.
+	 * @param g Graph
+	 * @param file String
+	 * @throws IOException
+	 */
+	private static void createMWIS4AdditiveAlgorithm(Graph g, String file) 
+		throws IOException {
+		PrintWriter pw = new PrintWriter(new FileWriter(file));
+		int m = g.getNumArcs()+1;
+		pw.println(m);
+		int n = g.getNumNodes();
+		pw.println(n);
+		// print A
+		for (int i=0; i<n; i++) {
+			Node ni = g.getNode(i);
+			Set nibors = ni.getNborsUnsynchronized();
+			Iterator it = nibors.iterator();
+			while (it.hasNext()) {
+				Node nbor = (Node) it.next();
+				int j = nbor.getId();
+				if (j>i) {
+					for (int k=0; k<n; k++) {
+						int kj = (k!=i && k!=j) ? 0 : -1;
+						pw.print(kj+" ");
+					}
+					pw.println();
+				}
+			}
+		}
+		// print b
+		for (int i=0; i<m-1; i++) pw.print("-1 ");
+		pw.println("0");
+		// print c
+		for (int i=0; i<n; i++) pw.print(-g.getNode(i).getWeightValueUnsynchronized("value").intValue() + " ");
+		pw.println();
+		pw.flush();
+		pw.close();
+	}
+	
+	
+	/**
 	 * invoke as
 	 * java -cp &lt;classpath&gt; utils.GraphPacking2MIPConverter &lt;graphfile&gt; &lt;k&gt; &lt;lpfile&gt;
 	 * @param args String[] 
@@ -110,8 +161,13 @@ public class GraphPacking2MIPConverter {
 			Graph g = DataMgr.readGraphFromFile2(gfile);
 			int k = Integer.parseInt(args[1]);
 			String lpfile = args[2];
-			GraphPacking2MIPConverter c = new GraphPacking2MIPConverter(g,k);
-			c.createMIP(lpfile);
+			if (k>=1) {
+				GraphPacking2MIPConverter c = new GraphPacking2MIPConverter(g,k);
+				c.createMIP(lpfile);
+			}
+			else if (k==-1) {
+				createMWIS4AdditiveAlgorithm(g,lpfile);
+			}
 		}
 		catch (Exception e) {
 			e.printStackTrace();

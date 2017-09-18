@@ -59,10 +59,16 @@ public class DBBNode0ComparatorGWMIN2 implements DBBNodeComparatorIntf {
 				double sum = 0.0;
 				while (it.hasNext()) {
 					Node nbor = (Node) it.next();
+					/* itc20170728: the commented code essentially "lets free" those
+					   nodes that have nbors that are also hit by other nodes in the 
+					   solution. In new code, we count these "conflicts" appropriately. 
 					if (nbor_hit_counts[nbor.getId()]<=1) { // adding ni forbids nbor
 						Double nbor_wD = nbor.getWeightValueUnsynchronized("value");
 						sum += (nbor_wD==null ? 1.0 : nbor_wD.doubleValue());
 					}
+					*/
+					Double nbor_wD = nbor.getWeightValueUnsynchronized("value");
+					sum += (nbor_wD==null ? 1.0 : nbor_wD.doubleValue()/nbor_hit_counts[nbor.getId()]);
 				}
 				if (Double.compare(sum, 0.0)==0) sum=1;
 				sct += wi / sum;
@@ -90,10 +96,14 @@ public class DBBNode0ComparatorGWMIN2 implements DBBNodeComparatorIntf {
 				double sum = 0.0;
 				while (it.hasNext()) {
 					Node nbor = (Node) it.next();
+					/* itc20170728: same as above comment
 					if (nbor_hit_counts[nbor.getId()]<=1) { // adding ni forbids nbor
 						Double nbor_wD = nbor.getWeightValueUnsynchronized("value");
 						sum += (nbor_wD==null ? 1.0 : nbor_wD.doubleValue());
 					}
+					*/
+					Double nbor_wD = nbor.getWeightValueUnsynchronized("value");
+					sum += (nbor_wD==null ? 1.0 : nbor_wD.doubleValue()/nbor_hit_counts[nbor.getId()]);
 				}
 				if (Double.compare(sum, 0.0)==0) sum=1;
 				osct += wi / sum;

@@ -2,7 +2,7 @@ echo off
 REM runBatchModeDBBGASPTest.bat <graph_file> <params_file> [maxnodesallowed(+Inf)]
 REM T530 WLAN IP (home):
 REM Compaq cq 58 IP (home): 
-REM T530 IP (work): 10.100.208.248
+REM T530 IP (work): 10.100.209.143
 REM DeLL OPTIPLEX 790 IP (work): 10.100.208.98
 REM DeLL OPTIPLEX 790 (2) IP (work): 10.100.209.187
 REM DeLL OPTIPLEX 755 IP (work): 10.100.208.99
@@ -17,7 +17,7 @@ call start PDAsynchBatchTaskExecutorSrv.bat 7980 7981 true
 REM PDAsynchBatchTaskExecutorWrk [num_threads(10)] [pdasrvhost(localhost)] [pdasrvport(7980)] [run_init_cmd(false)] 
 call start PDAsynchBatchTaskExecutorWrk.bat 3 localhost 7980 true
 call start PDAsynchBatchTaskExecutorWrk.bat 3 localhost 7980 true
-call start PDAsynchBatchTaskExecutorWrk.bat 3 localhost 7980 true
+REM call start PDAsynchBatchTaskExecutorWrk.bat 3 localhost 7980 true
 REM call start PDAsynchBatchTaskExecutorWrk.bat 8 localhost 7980 true
 echo Verify all servers are started before you press any key...
 pause

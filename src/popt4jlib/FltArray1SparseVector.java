@@ -81,12 +81,13 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    * @param indices int[] elements must be in ascending order
    * @param values double[]
    * @param n int total length of vector
+	 * @param ilen int
    * @param multFactor double
    * @throws IllegalArgumentException if indices or values are null, or if their
 	 * lengths differ, or if n&le;indices[indices.length-1] or if some component 
 	 * of values is zero
    */
-  public FltArray1SparseVector(int[] indices, double[] values, int n, double multFactor) throws IllegalArgumentException {
+  public FltArray1SparseVector(int[] indices, double[] values, int n, int ilen, double multFactor) throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
       throw new IllegalArgumentException("Arguments null or dimensions don't match");
     if (n<=indices[indices.length-1])
@@ -95,7 +96,7 @@ public class FltArray1SparseVector implements SparseVectorIntf {
 			_n = n;
 			return;
 		}
-    final int ilen = indices.length;
+    //final int ilen = indices.length;
     _indices = new int[ilen];
     for (int i=0; i<ilen; i++) _indices[i] = indices[i];
     _values = new float[ilen];
@@ -115,12 +116,13 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    * @param indices int[] elements must be in ascending order
    * @param values float[]
    * @param n int total length of vector
+	 * @param ilen int
    * @param multFactor float
    * @throws IllegalArgumentException if indices or values are null, or if their
 	 * lengths differ, or if n&le;indices[indices.length-1] or if some component 
 	 * of values is zero
    */
-  public FltArray1SparseVector(int[] indices, float[] values, int n, float multFactor) throws IllegalArgumentException {
+  public FltArray1SparseVector(int[] indices, float[] values, int n, int ilen, float multFactor) throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
       throw new IllegalArgumentException("Arguments null or dimensions don't match");
     if (n<=indices[indices.length-1])
@@ -129,7 +131,7 @@ public class FltArray1SparseVector implements SparseVectorIntf {
 			_n=n;
 			return;
 		}
-    final int ilen = indices.length;
+    //final int ilen = indices.length;
     _indices = new int[ilen];
     for (int i=0; i<ilen; i++) _indices[i] = indices[i];
     _values = new float[ilen];
@@ -149,7 +151,7 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    */
   public VectorIntf newCopy() {
     if (_indices==null) return new FltArray1SparseVector(_n);
-    return new FltArray1SparseVector(_indices, _values, _n, 1.0f);
+    return new FltArray1SparseVector(_indices, _values, _n, _ilen, 1.0f);
   }
 
 
@@ -161,7 +163,7 @@ public class FltArray1SparseVector implements SparseVectorIntf {
    */
   public VectorIntf newCopyMultBy(double multFactor) {
     if (_indices==null) return new FltArray1SparseVector(_n);
-    return new FltArray1SparseVector(_indices, _values, _n, (float) multFactor);
+    return new FltArray1SparseVector(_indices, _values, _n, _ilen, (float) multFactor);
   }
 	
 	
@@ -172,7 +174,7 @@ public class FltArray1SparseVector implements SparseVectorIntf {
 	 */
 	public VectorIntf newInstance() {
     if (_indices==null) return new FltArray1SparseVector(_n);
-    return new FltArray1SparseVector(_indices, _values, _n, 1.0f);		
+    return new FltArray1SparseVector(_indices, _values, _n, _ilen, 1.0f);		
 	}
 
 
@@ -286,6 +288,13 @@ public class FltArray1SparseVector implements SparseVectorIntf {
       _ilen=1;
       return;
     }
+		if (_ilen==0) {  // but _indices, _values not null
+			if (is_val_0) return;
+			_indices[0]=i;
+			_values[0]=(float)val;
+			_ilen=1;
+			return;
+		}    
     // binary search in indices
     final int ilen = _indices.length;
     int i1 = 0;

@@ -208,13 +208,20 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
   public void setCoord(int i, double val) throws IndexOutOfBoundsException {
     if (i<0 || i>=_n) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
     _x[i] = val;
+		final boolean is_val_0 = Double.compare(val,0.0)==0;
     if (_indices==null) {
-      if (Double.compare(val,0.0)==0) return;  // don't do anything
+      if (is_val_0) return;  // don't do anything
       _indices = new int[1];
       _indices[0] = i;
       _ilen=1;
       return;
     }
+		if (_ilen==0) {  // but _indices not null
+			if (is_val_0) return;
+			_indices[0]=i;
+			_ilen=1;
+			return;
+		}
     // binary search in indices
     final int ilen = _indices.length;
     int i1 = 0;
@@ -354,7 +361,9 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
   public String toString() {
     String x="[";
     for (int i=0; i<_ilen-1; i++) x += "("+_indices[i]+","+_x[_indices[i]]+")"+", ";
-    x += "("+_indices[_ilen-1]+","+_x[_indices[_ilen-1]]+")";
+    if (_ilen>0) {
+			x += "("+_indices[_ilen-1]+","+_x[_indices[_ilen-1]]+")";
+		}
     x += "]";
     return x;
   }

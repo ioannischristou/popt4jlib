@@ -165,7 +165,8 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 
   /**
    * public constructor making a copy of the vector passed in, and multiplying
-   * each element by the multFactor passed in.
+   * each element by the multFactor passed in. This constructor creates a vector
+	 * whose default values are zero.
    * @param indices int[] elements must be in ascending order
    * @param values double[] must not have any zero
    * @param n int
@@ -424,7 +425,7 @@ public class DblArray1SparseVector implements SparseVectorIntf {
   public double getCoord(int i) throws IndexOutOfBoundsException {
     if (i<0 || i>=_n) 
 			throw new IndexOutOfBoundsException("index "+i+" out of bounds");
-    if (_indices==null) return _defVal;
+    if (_indices==null || _ilen==0) return _defVal;
     // requires a binary search in the indices.
     if (i<_indices[0] || i>_indices[_ilen-1]) return _defVal;
     else if (i==_indices[0]) return _values[0];
@@ -471,6 +472,13 @@ public class DblArray1SparseVector implements SparseVectorIntf {
       _ilen=1;
       return;
     }
+		if (_ilen==0) {  // but _indices, _values not null
+			if (is_val_at_def) return;  // don't do anything
+			_indices[0]=i;
+			_values[0]=val;
+			_ilen=1;
+			return;
+		}
     // binary search in indices
     final int ilen = _indices.length;
     int i1 = 0;
@@ -543,14 +551,15 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 
 
   /**
-   * the purpose of this routine is to allow a traversal of the non-zeros of
+   * the purpose of this routine is to allow a traversal of the non-def vals of
    * this object as follows:
 	 * <br>
 	 * <pre>
    * <CODE>
    * for (int i=0; i&lt;sparsevector.getNumNonZeros(); i++) {
    *   int    pos = sparsevector.getIthNonZeroPos(i);
-   *   double val = sparsevector.getCoord(pos);
+	 *   double val = sparsevector.getIthNonZeroVal(i);
+   *   //double val = sparsevector.getCoord(pos);
    * }
    * </CODE>
 	 * </pre>.
@@ -568,6 +577,21 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 				                                  _ilen+"] Vector is: "+this);
     return _indices[i];
   }
+	
+	
+	/**
+	 * get the i-th non-default value of this vector.
+	 * @param i int
+	 * @return double
+	 * @throws IndexOutOfBoundsException if i is out-of-bounds. Always throws if
+	 * this is the default vector.
+	 */
+	public double getIthNonZeroVal(int i) throws IndexOutOfBoundsException {
+    if (i<0 || i>=_ilen) 
+			throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+
+				                                  _ilen+"] Vector is: "+this);
+    return _values[i];		
+	}
 
 
   /**
@@ -639,8 +663,8 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 
   /**
    * returns the number of non-zero elements in this vector. 
-	 * <p>If _defVal is other than zero, returns the number of non-default-valued 
-	 * elements. </p>
+	 * <p>If <CODE>_defVal</CODE> is other than zero, returns the number of 
+	 * non-default-valued elements. </p>
    * @return int
    */
   public int getNumNonZeros() {

@@ -49,7 +49,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
 
 
   /**
-   * public constructor.
+   * private constructor.
    * @param indices int[] must be in ascending order
    * @param values double[] corresponds to int values for each index in the indices array
    * @param n int total length of the vector
@@ -57,7 +57,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
 	 * null or if n is too small or if indices are not stored in ascending order 
 	 * or if values do not hold int values or if some of its components are zero
    */
-  public IntArray1SparseVector(int[] indices, double[] values, int n) throws IllegalArgumentException {
+  private IntArray1SparseVector(int[] indices, double[] values, int n) throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
       throw new IllegalArgumentException("Arguments null or dimensions don't match");
     if (n<=indices[indices.length-1])
@@ -83,10 +83,12 @@ public class IntArray1SparseVector implements SparseVectorIntf {
 
 
   /**
-   * public constructor representing the (sparse) vector that results from 
+   * private constructor representing the (sparse) vector that results from 
 	 * multiplying every element in the sparse-array representation given by the 
 	 * first three arguments with the value given in the fourth argument, and 
 	 * keeping only the integer part of the multiplication.
+	 * Note: this constructor assumes indices and values have length exactly as
+	 * much as the <CODE>_ilen</CODE> of the newly constructed vector should be.
    * @param indices int[] elements must be in ascending order
    * @param values double[]
    * @param n int
@@ -95,7 +97,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
 	 * null or if n is too small or if indices are not stored in ascending order
 	 * or if some component of values is zero
    */
-  public IntArray1SparseVector(int[] indices, double[] values, int n, 
+  private IntArray1SparseVector(int[] indices, double[] values, int n, 
 					                     double multFactor) 
 	    throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
@@ -109,7 +111,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
     final int ilen = indices.length;
     _indices = new int[ilen];
     for (int i=0; i<ilen; i++) {
-			if (i>0 && indices[i]<indices[i-1]) throw new IllegalArgumentException("indices not in ASC order");
+			if (i>0 && indices[i]<=indices[i-1]) throw new IllegalArgumentException("indices not in ASC order");
 			_indices[i] = indices[i];
 		}
     _values = new int[ilen];
@@ -130,22 +132,24 @@ public class IntArray1SparseVector implements SparseVectorIntf {
    * @param indices int[] elements must be in ascending order
    * @param values int[]
    * @param n int
+	 * @param ilen int
    * @param multFactor int
    * @throws IllegalArgumentException if indices and values don't match or are
 	 * null or if n is too small or if indices are not stored in ascending order
 	 * or if some component of i is zero
    */
-  public IntArray1SparseVector(int[] indices, int[] values, int n, 
+  public IntArray1SparseVector(int[] indices, int[] values, int n, int ilen,
 					                     int multFactor) 
 	    throws IllegalArgumentException {
     if (indices==null || values==null || indices.length!=values.length)
       throw new IllegalArgumentException("Arguments null or dimensions don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
-    final int ilen = indices.length;
+    //final int ilen = indices.length;
     _indices = new int[ilen];
     for (int i=0; i<ilen; i++) {
-			if (i>0 && indices[i]<indices[i-1]) throw new IllegalArgumentException("indices not in ASC order");
+			if (i>0 && indices[i]<=indices[i-1])
+				throw new IllegalArgumentException("indices not in ASC order");
 			_indices[i] = indices[i];
 		}
     _values = new int[ilen];
@@ -165,7 +169,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
    */
   public VectorIntf newCopy() {
     if (_indices==null) return new IntArray1SparseVector(_n);
-    return new IntArray1SparseVector(_indices, _values, _n, 1);
+    return new IntArray1SparseVector(_indices, _values, _n, _ilen, 1);
   }
 
 
@@ -177,7 +181,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
    */
   public VectorIntf newCopyMultBy(double multFactor) {
     if (_indices==null) return new IntArray1SparseVector(_n);
-    return new IntArray1SparseVector(_indices, _values, _n, (int) multFactor);
+    return new IntArray1SparseVector(_indices, _values, _n, _ilen, (int) multFactor);
   }
 	
 	
@@ -189,7 +193,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
 	 */
 	public VectorIntf newInstance() {
     if (_indices==null) return new IntArray1SparseVector(_n);
-    return new IntArray1SparseVector(_indices, _values, _n, 1);		
+    return new IntArray1SparseVector(_indices, _values, _n, _ilen, 1);		
 	}
 
 
@@ -243,6 +247,19 @@ public class IntArray1SparseVector implements SparseVectorIntf {
     for (int i=0; i<_ilen; i++) x[_indices[i]] = _values[i];
     return x;
   }
+	
+		
+	/**
+	 * return a copy of the portion of the <CODE>_values</CODE> array that 
+	 * corresponds to non-zero values.
+	 * @return int[] null if there are none.
+	 */
+	public int[] getNonDefValues() {
+		if (_ilen==0) return null;
+		int[] result = new int[_ilen];
+		for (int i=0; i<_ilen; i++) result[i]=_values[i];
+		return result;
+	}
 
 	
 	/**
@@ -265,7 +282,7 @@ public class IntArray1SparseVector implements SparseVectorIntf {
    */
   public double getCoord(int i) throws IndexOutOfBoundsException {
     if (i<0 || i>=_n) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
-    if (_indices==null) return 0.0;
+    if (_indices==null || _ilen==0) return 0.0;
     // requires a binary search in the indices.
     if (i<_indices[0] || i>_indices[_ilen-1]) return 0.0;
     else if (i==_indices[0]) return _values[0];
@@ -312,6 +329,13 @@ public class IntArray1SparseVector implements SparseVectorIntf {
       _ilen=1;
       return;
     }
+		if (_ilen==0) {  // but _indices, _values not null
+			if (is_val_0) return;
+			_indices[0]=i;
+			_values[0]=(int)val;
+			_ilen=1;
+			return;
+		}
     // binary search in indices
     final int ilen = _indices.length;
     int i1 = 0;
@@ -391,7 +415,8 @@ public class IntArray1SparseVector implements SparseVectorIntf {
 	 * <CODE>
    * for (int i=0; i&lt;sparsevector.getNumNonZeros(); i++) {
    *   int    pos = sparsevector.getIthNonZeroPos(i);
-   *   double val = sparsevector.getCoord(pos);
+	 *   int    val = sparsevector.getIthNonZeroVal(i);
+   *   // int val = (int) sparsevector.getCoord(pos);
    * }
 	 * </CODE>
    * </pre>
@@ -404,6 +429,18 @@ public class IntArray1SparseVector implements SparseVectorIntf {
     if (i<0 || i>=_ilen) throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+_ilen+"] Vector is: "+this);
     return _indices[i];
   }
+	
+	
+	/**
+	 * returns the i-th non-zero value of this vector.
+	 * @param i int
+	 * @return int
+	 * @throws IndexOutOfBoundsException if i is out-of-bounds.
+	 */
+	public int getIthNonZeroVal(int i) throws IndexOutOfBoundsException {
+    if (i<0 || i>=_ilen) throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+_ilen+"] Vector is: "+this);
+    return _values[i];		
+	}
 
 
   /**
@@ -449,6 +486,16 @@ public class IntArray1SparseVector implements SparseVectorIntf {
   public boolean isAtOrigin() {
     return _ilen==0;
   }
+	
+	
+	/**
+	 * reset the vector to all zeros.
+	 */
+	public void reset() {
+		//_indices=null;
+		//_values=null;
+		_ilen=0;
+	}
 
 
   /**
@@ -457,9 +504,11 @@ public class IntArray1SparseVector implements SparseVectorIntf {
    */
   public String toString() {
     String x="[";
-    for (int i=0; i<_ilen-1; i++) x += "("+_indices[i]+","+_values[i]+")"+", ";
-    x += "("+_indices[_ilen-1]+","+_values[_ilen-1]+")";
-    x += "]";
+		if (_ilen>0) {
+			for (int i=0; i<_ilen-1; i++) x += "("+_indices[i]+","+_values[i]+")"+", ";
+			x += "("+_indices[_ilen-1]+","+_values[_ilen-1]+")";
+		}
+    x += "](_n="+_n+"/ _ilen="+_ilen+")";
     return x;
   }
 

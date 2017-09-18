@@ -341,7 +341,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
       final double[] values = getValues();
       final int ilen = getILen();
       // requires a binary search in the indices.
-      if (i < indices[0] || i > indices[ilen - 1])return 0.0;
+      if (ilen==0 || i < indices[0] || i > indices[ilen - 1])return 0.0;
       else if (i == indices[0])return values[0];
       else if (i == indices[ilen - 1])return values[ilen - 1];
       int i1 = 0;
@@ -386,11 +386,13 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
 			throw new IndexOutOfBoundsException("index "+i+" out of bounds");
     boolean got_lock=false;
     try {
+			final boolean is_val_0 = Double.compare(val, 0.0)==0;
       _rwLocker.getWriteAccess();
       got_lock=true;
       // binary search in indices
       final int[] indices = getIndices();
       if (indices==null) {  // vector at origin
+				if (is_val_0) return;
         int[] indices2 = new int[1];
         indices2[0] = i;
         double[] values2 = new double[1];
@@ -400,6 +402,15 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
         incrILen();
         return;
       }
+			if (getILen()==0) {  // but _indices, _values not null
+	      if (is_val_0) return;
+				final int[] inds = getIndices();
+				final double[] values = getValues();
+				inds[0]=i;
+				values[0]=val;
+				incrILen();
+				return;
+			}
       final double[] values = getValues();
       final int ilen = getILen();
       int i1 = 0;
@@ -423,7 +434,7 @@ public class DblArray1SparseVectorMT extends DblArray1SparseVector {
         values[ih] = val;
         return;
       }
-      else if (Double.compare(val, 0.0) == 0) return; // no change
+      else if (is_val_0) return; // no change
       // change is necessary
       // if needed, create new arrays to insert the value for <i,val> pair.
       if (ilen == indices.length) { // increase arrays' capacity 20%

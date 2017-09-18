@@ -14,10 +14,12 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/PDAInitDBBTreeCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutorCltTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblVarArray1CMaker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/DGATest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/IntSetN2RXPAllMovesMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DObjCacheAddReq.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/NeighborhoodFilterIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/Node.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1SparseVector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DataMgr.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecSingleCltWrkInitSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/DBBTree.java</file>
@@ -42,22 +44,28 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/ParallelBatchTaskExecutor.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/stochastic/Adam.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/DDE.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SparseVectorIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/OneDStepQuantumOptimizer.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1SparseVectorMT.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/NewChromosomeMakerIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DMsgPassingCoordinatorSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/AlternatingVariablesDescent.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/IntSetNeighborhoodFilterIntf.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DGA.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionBase.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DObjCacheClearReq.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/FastDblArray1ArgMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DMsgPassingTest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DebugNR.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/MsgPassingCoordinator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/BCastSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DObjectsCacheSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecInitedCltTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionEvaluationTask.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/IntSetN21AllMovesMaker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/IntArray2SparseMatrix.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/WeierstrassFunction.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/IntArray1SparseVector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/DBBNodeBase.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutor.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/RandomArgMakerClonableIntf.java</file>
@@ -73,11 +81,14 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/DDETest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/IntSetN1RXPFirstImprovingGraphAllMovesMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/MonteCarloTest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/BBGASPPacker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/RandomGraphMaker3.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutorWrk.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/MsgPassingTest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/AdditiveSolver2.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/GRASPPackerIntSetNbrhoodFilter.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1Vector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/AlternateFunction.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/GRASPPacker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/NormInfinityFunction.java</file>
@@ -95,12 +106,15 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/RandomGraphMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDAsynchInitCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RastriginFastDefFunction.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FltArray1SparseVector.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/IntArray1Test.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DLockSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/PS/DblArray1StdVelocityMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/DblArray1ArgMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/FletcherConjugateGradient.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/BBTree.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DObjectsCacheClt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblVarArray1AlleleMutationOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/XoverOpIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDAsynchNoOpInitCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DAccumulatorSrv.java</file>
@@ -115,6 +129,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/GraphPacking2MIPConverter.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblVarArray1MAlleleMutationOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/VectorIntf.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1Vector1AlleleMutationOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalOptimizerIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/DefDBBNodeComparator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/IntSetN21GraphAllMovesMaker.java</file>
@@ -130,6 +145,8 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/IntSetN1AllMovesMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/ConstantFunction.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/UnboundedSimpleFasterMsgPassingCoordinator.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/AdditiveSolver.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1SparseVectorFE.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/ConstrainedOptimizerIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/PS/RandomVelocityMakerIntf.java</file>
         </group>

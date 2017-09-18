@@ -38,13 +38,23 @@ public class RandomGraphMaker2 {
     final int numarcs = (int) _aveNodeDegree*_numNodes/2;
     Graph g = Graph.newGraph(_numNodes, numarcs);
     for (int i=0; i<numarcs; i++) {
-      int starta = RndUtil.getInstance().getRandom().nextInt(_numNodes);
-      int enda=0;
+      try {
+				int starta = RndUtil.getInstance().getRandom().nextInt(_numNodes-1);
+				int enda = starta+
+					         RndUtil.getInstance().getRandom().nextInt(_numNodes-starta);
+				if (enda==starta) ++enda;
+			/*
+			int enda=0;
       while (true) {
         enda = RndUtil.getInstance().getRandom().nextInt(_numNodes);
         if (enda != starta) break;
       }
-      g.addLink(starta, enda, 1.0);
+			*/
+				g.addLink(starta, enda, 1.0);
+			}
+			catch (GraphException e) {  // addLink() will throw if arc already exists
+				--i;
+			}
     }
 		final Random r = RndUtil.getInstance().getRandom();
     for (int i=0; i<_numNodes; i++) {  
@@ -71,7 +81,9 @@ public class RandomGraphMaker2 {
 
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; utils.RandomGraphMaker2 &lt;numnodes&gt; &lt;avgnodedegree&gt; &lt;filename&gt; [rndseed] [nodeweightsvariance]</CODE>.
+   * <CODE>java -cp &lt;classpath&gt; utils.RandomGraphMaker2 
+	 * &lt;numnodes&gt; &lt;avgnodedegree&gt; &lt;filename&gt; 
+	 * [rndseed] [nodeweightsvariance]</CODE>.
 	 * If the randomnodeweightsvariance option is set to some positive number then
 	 * the graph will have weights assigned to its nodes that will be random 
 	 * numbers drawn from the gaussian distribution, with mean equal to the 
