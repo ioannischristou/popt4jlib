@@ -114,11 +114,11 @@ public class Adam implements LocalOptimizerIntf {
    * Integer.MAX_VALUE.
 	 * <li> &lt;"adam.a", Double val&gt; optional, the alpha step-size parameter 
 	 * of the Adam algorithm. Default is 0.001.
-	 * <li> &lt;"adam.b1", Double val&gt; optional the &beta_1 exponential decay
+	 * <li> &lt;"adam.b1", Double val&gt; optional the &beta;_1 exponential decay
 	 * rate for moment estimates. Default is 0.9.
-	 * <li> &lt;"adam.b2", Double val&gt; optional the &beta_2 exponential decay
+	 * <li> &lt;"adam.b2", Double val&gt; optional the &beta;_2 exponential decay
 	 * rate for moment estimates. Default is 0.999.
-	 * <li> &lt;"adam.eps", Double val&gt; optional the &epsilon factor in update
+	 * <li> &lt;"adam.eps", Double val&gt; optional the &epsilon; factor in update
 	 * parameter estimation. Default is 1.e-8.
    * </ul>
    * @param f FunctionIntf the function to minimize

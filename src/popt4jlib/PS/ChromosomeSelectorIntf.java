@@ -24,7 +24,7 @@ interface ChromosomeSelectorIntf {
 	 * value among those individuals that are in the "topological neighborhood"
 	 * of the individual in the i-th position (specified in the 2nd argument) in 
 	 * the list specified in the 1st argument that represents the entire island.
-	 * @param individuals List  // List&lt;DPSOIndividual&gt
+	 * @param individuals List  // List&lt;DPSOIndividual&gt;
 	 * @param pos int the position of the chromosome for which we want the "guiding" 
 	 * solution (found among its "topological neighbors" specified by the 
 	 * implementing classes)

@@ -758,6 +758,7 @@ class DBBNode0 extends DBBNodeBase {
    * return Set&lt;BoolVector&gt; of all maximal nodesets that can be added
 	 * together to the current active <CODE>_nodeIds</CODE> set.
    * @return Set // Set&lt;BoolVector&gt;
+	 * @throws ParallelException never
    */
   protected Set getBestNodeSets2Add() throws ParallelException {
 		DBBTree master = DBBTree.getInstance();

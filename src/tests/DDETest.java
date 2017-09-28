@@ -113,14 +113,16 @@ public class DDETest {
 	 * parameters set up so that the flow of migration forms an exact ring, e.g.
 	 * for a 3-process DDE we have that DDE_0 sends migrants to DDE_1 which sends 
 	 * migrants to DDE_2 which sends migrants to DDE_0. 
-	 * <li> The constraint dde.numgensbetweenmigrations &le; dde.numtries must hold.
+	 * <li> The constraint dde.numgensbetweenmigrations &le; dde.numtries must 
+	 * hold.
 	 * </ul>
 	 * Otherwise, there is no way for processes to block in at least one migration 
 	 * cycle (and thereby have the DReduceSrv know the total number of processes 
 	 * before the final reduce operation), and therefore the distributed reduce 
-	 * operation afterwards is not guaranteed to work properly.</p>
+	 * operation afterwards is not guaranteed to work properly.
    * <p> if the second optional argument is passed in, it overrides the random
-   * seed specified in the params_file (specified as the 1st arg in cmd-line).</p>
+   * seed specified in the params_file (specified as the 1st arg in cmd-line).
+	 * </p>
    * <p> The optional third argument, if present, overrides any max. limit set
    * on the number of function evaluations allowed. After this limit, the
    * function will always return Double.MAX_VALUE instead, and won't increase

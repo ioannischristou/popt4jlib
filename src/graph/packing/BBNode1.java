@@ -498,6 +498,7 @@ class BBNode1 extends BBNodeBase {
 	 * <br>2015-02-09 root node returns immediately with collection of singleton
 	 * free nodes as sets to enhance multi-threading speed.
    * @return Set // Set&lt;Set&lt;Node&gt; &gt;
+	 * @throws ParallelException never
    */
   private Set getBestNodeSets2Add() throws ParallelException {
     final int kmax = getMaster().getMaxAllowedItersInGBNS2A();

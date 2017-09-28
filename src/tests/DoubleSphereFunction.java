@@ -35,12 +35,12 @@ public class DoubleSphereFunction implements FunctionIntf {
    * return the value of the Double-Sphere function.
    * The params map may contain following parameters:
    * <ul>
-	 * <li>&lt;"m1", Double val&gt; the value of the &miu;_1 parameter, default is
+	 * <li>&lt;"m1", Double val&gt; the value of the &mu;_1 parameter, default is
 	 * 2.5
    * <li>&lt;"s", Double val&gt; the value of the s parameter, default is 0.7
    * <li>&lt;"d", Double val&gt; the value of the d parameter, default is 1.0
-	 * <li>&lt;"m2", Double val&gt; the value of the &miu;_2 paremeter, default is
-	 * -((&miu;_1^2-d)/s)^0.5
+	 * <li>&lt;"m2", Double val&gt; the value of the &mu;_2 parameter, default is
+	 * -((&mu;_1^2-d)/s)^0.5
 	 * </ul>
    * @param arg Object may be either a <CODE>double[]</CODE> or a
    * <CODE>VectorIntf</CODE> object.

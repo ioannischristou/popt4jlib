@@ -212,7 +212,7 @@ public class DDE implements OptimizerIntf {
 	 * Otherwise, there is no way for processes to block in at least one migration 
 	 * cycle (and thereby have the DReduceSrv know the total number of processes 
 	 * before the final reduce operation), and therefore the distributed reduce 
-	 * operation afterwards is not guaranteed to work properly.</p>
+	 * operation afterwards is not guaranteed to work properly.
    * @param f FunctionIntf the function to be minimized
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> method of this object or if the optimization
