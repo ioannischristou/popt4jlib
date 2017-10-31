@@ -34,14 +34,14 @@ import popt4jlib.OptimizerException;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class IntSetN2RXPFirstImprovingGraphAllMovesMakerFaster 
+public class IntSetN2RXPAllImprovingGraphAllMovesMakerFaster 
   implements AllChromosomeMakerClonableIntf {
 	
 	
   /**
    * no-arg constructor.
    */
-  public IntSetN2RXPFirstImprovingGraphAllMovesMakerFaster() {
+  public IntSetN2RXPAllImprovingGraphAllMovesMakerFaster() {
 		// no-op
   }
 	
@@ -74,11 +74,15 @@ public class IntSetN2RXPFirstImprovingGraphAllMovesMakerFaster
 	 * contain the key-value pair 
 	 * &lt;"dls.graph", Graph g&gt; unless this object was constructed with the 
 	 * 1-arg constructor
-	 * @return Vector  // Vector&lt;Set&lt;Integer&gt;&gt; with vector size &le;1.
+	 * @return Vector  // Vector&lt;Set&lt;Integer&gt;&gt; with vector size &ge;0.
 	 * @throws OptimizerException 
 	 */
-  public Vector createAllChromosomes(Object chromosome, HashMap params) throws OptimizerException {
-    if (chromosome==null) throw new OptimizerException("IntSetN2RXPFirstImprovingGraphAllMovesMakerFaster.createAllChromosomes(): null chromosome"); 
+  public Vector createAllChromosomes(Object chromosome, HashMap params) 
+		throws OptimizerException {
+    if (chromosome==null) 
+			throw new OptimizerException(
+				"IntSetN2RXPAllImprovingGraphAllMovesMakerFaster."+
+				"createAllChromosomes(): null chromosome"); 
 		Graph _g = (Graph) params.get("dls.graph");
 		try {
 			Vector result = new Vector();
@@ -130,23 +134,23 @@ public class IntSetN2RXPFirstImprovingGraphAllMovesMakerFaster
 					if (satisfying.size()>=2) {
 						// found it.
 						// remove H[start] from sol.
+						BoolVector sol_bv2 = new BoolVector(sol_bv);
 						for (int k=bv_start.nextSetBit(0); k>=0; 
 								 k=bv_start.nextSetBit(k+1)) {
-							sol_bv.unset(k);
+							sol_bv2.unset(k);
 						}
 						// add start, satisfying to the solution
-						sol_bv.set(Hs[start]._i);
+						sol_bv2.set(Hs[start]._i);
 						Iterator s_it = satisfying.iterator();
 						while (s_it.hasNext()) {
 							Integer y = (Integer) s_it.next();
-							sol_bv.set(y.intValue());
+							sol_bv2.set(y.intValue());
 						}
 						Set res = new HashSet();
-						for (int k=sol_bv.nextSetBit(0); k>=0; k=sol_bv.nextSetBit(k+1)) {
+						for (int k=sol_bv2.nextSetBit(0); k>=0; k=sol_bv2.nextSetBit(k+1)) {
 							res.add(new Integer(k));
 						}
 						result.add(res);
-						return result;
 					}
 				}  // for j0				
 			}  // for start

@@ -370,7 +370,7 @@ public final class GRASPPacker1 {
 	 * <li> args[5] max_allowed_time optional, if present, sets the max. allowed 
 	 * time for the process to run (in milliseconds). Default is +infinity.
 	 * <li> args[6] use_N2RXP_4_DLS optional, if present and true, will force
-	 * the use of the <CODE>IntSetN2RXPGraphAllMovesMakerFaster</CODE> move-maker 
+	 * the use of the <CODE>IntSetN2RXP*GraphAllMovesMakerFaster</CODE> move-maker 
 	 * in the local search (if args[3] evaluates to true). Otherwise, if 
 	 * local-search is asked for, the 
 	 * <CODE>IntSetN1RXPFirstImprovingGraphAllMovesMakerMT</CODE> class will be 
@@ -474,7 +474,7 @@ public final class GRASPPacker1 {
           DLS dls = new DLS();
           AllChromosomeMakerIntf movesmaker;
 					if (use_N2RXP_4_ls) movesmaker = 
-						new IntSetN2RXPFirstImprovingGraphAllMovesMakerFaster();
+						new IntSetN2RXPAllImprovingGraphAllMovesMakerFaster();
 					else movesmaker = 
 						new IntSetN1RXPFirstImprovingGraphAllMovesMakerMT(1);
           IntSetNeighborhoodFilterIntf filter = 
