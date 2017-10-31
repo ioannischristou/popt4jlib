@@ -543,6 +543,14 @@ class DBBNode0 extends DBBNodeBase {
 									}
 								}
               }
+							// itc: HERE rm asap
+							if (movesmaker instanceof GRASPPacker1SingleMoveMaker) {
+								mger.msg("GRASPPackerSingleMoveMaker: #successes="+
+									       GRASPPacker1SingleMoveMaker.getNumImprovements()+
+									       " #failures="+
+									       GRASPPacker1SingleMoveMaker.getNumFailures(),0);
+							}
+							// itc: HERE rm up to here asap
 							long dur = System.currentTimeMillis()-start_time;
 							_master.incrTimeSpentOnDLS(dur);
             }

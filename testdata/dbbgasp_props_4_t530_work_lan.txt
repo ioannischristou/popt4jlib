@@ -12,12 +12,14 @@ pdahost,localhost
 pdaport,7981
 #localsearch,false
 localsearch,true
-class,localsearchtype,graph.packing.IntSetN2RXPFirstImprovingGraphAllMovesMaker,1
+#class,localsearchtype,graph.packing.IntSetN2RXPFirstImprovingGraphAllMovesMaker,1
+class,localsearchtype,graph.packing.IntSetN2RXPFirstImprovingGraphAllMovesMakerFaster
 sortmaxsubsets,true
 #maxnodechildren,10
-maxnodechildren,10
-maxitersinGBNS2A,10000000
+maxnodechildren,5
+maxitersinGBNS2A,100000
 #maxnodesallowed,533333
+maxnodesallowed,100000
 #class,dbbnodecomparator,graph.packing.DefDBBNodeComparator
 class,dbbnodecomparator,graph.packing.DBBNode0ComparatorGWMIN2
 #ff,0.85
@@ -29,6 +31,6 @@ ff,0.87
 expandlocalsearchfactor,0.97
 #minknownbound,Double.NEGATIVE_INFINITY
 #rndgen,<seed>
-rndgen,117
+rndgen,11
 dbglvl,1
 k,1

@@ -22,8 +22,8 @@ import java.io.*;
  * @version 1.0
  */
 public final class GRASPPacker {
-  private Graph _g;
-  private int _k;  // can be 1 or 2, indicates type of problem.
+  final private Graph _g;
+  final private int _k;  // can be 1 or 2, indicates type of problem.
 	private TreeSet _nodesq=null;  // TreeSet<Node>
   private TreeSet _origNodesq=null;  // TreeSet<Node>
 	private double _alphaFactor=0.9;  // fudge factor to allow near-optimal
@@ -113,6 +113,16 @@ public final class GRASPPacker {
     reset();  // return _nodesq to original situation
     return res;
   }
+	
+	
+	/**
+	 * set the alpha factor of the GRASP process. Should be called before the call
+	 * to <CODE>pack()</CODE>.
+	 * @param a double
+	 */
+	public void setAlphaFactor(double a) {
+		_alphaFactor = a;
+	}
 
 
   /**
@@ -129,12 +139,12 @@ public final class GRASPPacker {
 			Iterator it = active.iterator();
 			while (it.hasNext()) {
 				Integer nid = (Integer) it.next();
-				Node n = g.getNode(nid.intValue());
+				Node n = g.getNodeUnsynchronized(nid.intValue());
 				Set nbors = n.getNborsUnsynchronized();  // used to be n.getNbors();
 				Iterator it2 = nbors.iterator();
 				while (it2.hasNext()) {
 					Node n2 = (Node) it2.next();
-					if (active.contains(n2)) return false;
+					if (active.contains(new Integer(n2.getId()))) return false;
 				}
 			}
 			return true;
@@ -181,7 +191,7 @@ public final class GRASPPacker {
 			return true;
 			*/
 			// /* faster: no need for HashSet creation
-			Set nborsj = nj.getNborsUnsynchronized();  // no modification to take place
+			Set nborsj = nj.getNborsUnsynchronized();  // no modification takes place
 			Iterator itj = nborsj.iterator();
 			while (itj.hasNext()) {
 				Node nnj = (Node) itj.next();
@@ -200,16 +210,16 @@ public final class GRASPPacker {
 	 * @param first Node
 	 * @return true iff the two nodes are "nearly" equal (n's weight is no worse
 	 * than the first's times the fudge factor and the nbors' sizes are at least
-	 * equal)
+	 * equal to the first's times the same fudge factor)
 	 */
 	private boolean isApproximatelyEqual(Node n, Node first) {
 		Double nwD = n.getWeightValueUnsynchronized("value");
 		double nw = nwD==null ? 1.0 : nwD.doubleValue();
 		Double fwD = first.getWeightValueUnsynchronized("value");
 		double fw = fwD==null ? 1.0 : fwD.doubleValue();
-		if (fw*_alphaFactor > nw) return false;
-		if (first.getNborsUnsynchronized().size()<n.getNborsUnsynchronized().size()) return false;
-		return true;
+		return  fw*_alphaFactor <= nw &&
+			      first.getNborsUnsynchronized().size()*_alphaFactor >= 
+			      n.getNborsUnsynchronized().size();
 	}
 
 
@@ -253,16 +263,17 @@ public final class GRASPPacker {
 			// nnnbors are all the nodes at distance 3 from the node n for _k==2, distance 2 for _k==1
 			// Update the _nnbors data member of those nodes.
 			_nodesq.removeAll(nnnbors);
-			if (_k==2) {
+			//if (_k==2) {
 				Iterator it2 = nnnbors.iterator();
 				while (it2.hasNext()) {
 					Node nb = (Node) it2.next();
 					nb.getNNbors().removeAll(nnbors);
 					nb.getNNbors().remove(n);
 				}
-			}
+			//}
 			_nodesq.addAll(nnnbors);
-			if (_k==2) nnbors.clear();  // clear n's NNbors
+			//if (_k==2) 
+			  nnbors.clear();  // clear n's NNbors
 		}
   }
 
@@ -326,7 +337,7 @@ public final class GRASPPacker {
 			_origNodesq = new TreeSet(comp);
 		}
     for (int i=0; i<gsz; i++) {
-      _origNodesq.add(_g.getNode(i));
+      _origNodesq.add(_g.getNodeUnsynchronized(i));  // used to be _g.getNode(i)
     }
     _nodesq = new TreeSet(_origNodesq);
     //System.err.println("done sorting");
@@ -650,6 +661,14 @@ final class NodeComparator3 implements Comparator, Serializable {
 final class NodeComparator4 implements Comparator, Serializable {
   // private static final long serialVersionUID = ...L;
 
+	/**
+	 * the Node with the heaviest weight wins. Ties are broken according to weight
+	 * of neighbors (lightest neighbors win). Ties at this final level are broken
+	 * by Node-id in the containing Graph.
+	 * @param o1 Object  // Node
+	 * @param o2 Object  // Node
+	 * @return int -1 if o1 is "smaller" than o2, 0 if equal, +1 else.
+	 */
   public int compare(Object o1, Object o2) {
     Node n1 = (Node) o1;
     Node n2 = (Node) o2;
@@ -682,3 +701,56 @@ final class NodeComparator4 implements Comparator, Serializable {
   }
 }
 
+/**
+ * auxiliary class comparing <CODE>graph.Node</CODE> objects, for use with the 
+ * <CODE>graph.packing.GRASPPacker</CODE> class, not part of the public API.
+ * Implements the opposite strategy of <CODE>NodeComparator4</CODE>.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+final class NodeComparator_4 implements Comparator, Serializable {
+  // private static final long serialVersionUID = ...L;
+
+	/**
+	 * the Node with the lightest weight wins. Ties are broken according to weight
+	 * of neighbors (heaviest neighbors win). Ties at this final level are broken
+	 * by Node-id in the containing Graph.
+	 * @param o1 Object  // Node
+	 * @param o2 Object  // Node
+	 * @return int -1 if o1 is "smaller" than o2, 0 if equal, +1 else.
+	 */
+  public int compare(Object o1, Object o2) {
+    Node n1 = (Node) o1;
+    Node n2 = (Node) o2;
+		Double n1wD = n1.getWeightValueUnsynchronized("value");  // used to be n1.getWeightValue("value");
+		Double n2wD = n2.getWeightValueUnsynchronized("value");  // used to be n2.getWeightValue("value);
+		double n1w = n1wD == null ? 1.0 : n1wD.doubleValue();
+		double n2w = n2wD == null ? 1.0 : n2wD.doubleValue();
+		if (n1w<n2w) return -1;
+		else if (Double.compare(n2w, n1w)==0) {
+			double n1sz = n1.getNborsUnsynchronized().size();
+			double n2sz = n2.getNborsUnsynchronized().size();
+			try {
+				double n1szaux = n1.getNborWeights("value");
+				double n2szaux = n2.getNborWeights("value");
+				n1sz = n1szaux;
+				n2sz = n2szaux;
+			}
+			catch (ParallelException e) {
+				e.printStackTrace();
+			}
+			if (n1sz > n2sz) return -1;
+			else if (n1sz == n2sz) {
+				if (n1.getId() < n2.getId())return -1;
+				else if (n1.getId() == n2.getId())return 0;
+				else return 1;
+			}
+			else return 1;
+		}
+		else return 1;
+  }
+}

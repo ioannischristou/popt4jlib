@@ -2,6 +2,40 @@
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group/>
+        <group>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/IntSetNeighborhoodFilterIntf.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/AdditiveSolver2.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/AdditiveSolver3.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/MWISEvaluator.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/GRASPAddSlvr2Packer1.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/GRASPPacker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/GraphPackingEvalFunction.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/DBBGASPPacker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/IntSetN2RXPAllMovesMaker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/AllChromosomeMakerIntf.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/SetWeightEvalFunction.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/IntArray2SparseMatrix.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/BoolVector.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/NeighborhoodFilterIntf.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/Node.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DataMgr.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/TimerThread.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/DBBNode0.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/DBBTree.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/GRASPPacker1.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/DBBNode1.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/IntSetN2RXPFirstImprovingGraphAllMovesMakerFaster.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/AddSlvrFac.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/IntSetN2RXPFirstImprovingGraphAllMovesMaker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/AllChromosomeMakerClonableIntf.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/GASPPacker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/GRASPPackerIntSetNbrhoodFilter3.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/BoundedMinHeapUnsynchronized.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/GRASPPacker1SingleMoveMaker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/DLS.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/IntSetN1RXPFirstImprovingGraphAllMovesMaker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/Graph.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/IntSetN2RXPGraphAllMovesMaker.java</file>
+        </group>
     </open-files>
 </project-private>

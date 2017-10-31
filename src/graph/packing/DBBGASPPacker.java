@@ -30,7 +30,8 @@ public final class DBBGASPPacker {
 
 
   /**
-   * run as <CODE>java -cp &lt;classpath&gt; graph.packing.DBBGASPPacker &lt;graphfilename&gt; &lt;paramsfilename&gt; [maxnumBBnodes]</CODE>.
+   * run as <CODE>java -cp &lt;classpath&gt; graph.packing.DBBGASPPacker 
+	 * &lt;graphfilename&gt; &lt;paramsfilename&gt; [maxnumBBnodes]</CODE>.
    * <br>args[0]: graph file name must adhere to the format specified in the
    * description of the method <CODE>utils.DataMgr.readGraphFromFile2(String file)</CODE>
    * <br>args[1]: params file name may define parameters in lines of the following
@@ -287,6 +288,18 @@ public final class DBBGASPPacker {
 				DBBTree t = DBBTree.getInstance();
         t.run();
         int orsoln[] = t.getSolution();
+				Set sol_node_ids = new HashSet();
+				for (int i=0; i<orsoln.length; i++) {
+					if (orsoln[i]==1) {
+						sol_node_ids.add(new Integer(i));
+					}
+				}
+				if (!GRASPPacker.isFeasible(g, sol_node_ids, 1)) {
+					System.err.println("INSANITY: solution found is not feasible for MWIS");
+					pw.flush();
+					pw.close();
+					System.exit(-1);
+				}
 				double tanw = 0.0;
         for (int i = 0; i < orsoln.length; i++) {
           if (orsoln[i] == 1) {

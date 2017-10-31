@@ -22,6 +22,19 @@ public class IntArray2SparseMatrix {
 	}
 	
 	
+	/**
+	 * copy constructor performs deep copy of the argument passed in.
+	 * @param A 2D matrix
+	 */
+	public IntArray2SparseMatrix(IntArray2SparseMatrix A) {
+		int rows = A.getNumRows();
+		_rows = new IntArray1SparseVector[rows];
+		for (int i=0; i<rows; i++) {
+			_rows[i] = (IntArray1SparseVector) A.getIthRow(i).newInstance();
+		}
+	}
+	
+	
 	public int getCoord(int i, int j) {
 		return (int) _rows[i].getCoord(j);
 	}
@@ -40,5 +53,19 @@ public class IntArray2SparseMatrix {
 	
 	public IntArray1SparseVector getIthRow(int r) {
 		return _rows[r];
+	}
+	
+	
+	public String toString() {
+		String res = "";
+		for (int row=0; row<_rows.length; row++) {
+			res += "| ";
+			for (int col=0; col<_rows[0].getNumCoords(); col++) {
+				res += _rows[row].getCoord(col);
+				if (col<_rows[0].getNumCoords()-1) res += " ";
+				else res += " |\n";
+			}
+		}
+		return res;
 	}
 }

@@ -1,27 +1,22 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package parallel;
 
 /**
  * Utility class, similar (but simpler) to the ones found in concurrent utils.
  * The class is useful if one wishes to poll whether enough time has passed 
  * but without forcing busy-waiting kind of polling or query system time calls
- * on their basic thread of computation. See <CODE>graph.GRASPPacker</CODE>
- * for an example of use.
+ * on their basic thread of computation. See 
+ * <CODE>graph.packing.GRASPPacker</CODE> for an example of use.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2014</p>
+ * <p>Copyright: Copyright (c) 2014-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public final class TimerThread extends Thread {
 	private long _maxTimeAllowedMS;  // in milliseconds
 	private boolean _cont;
+	private Runnable _runAfterTimeElapses;
 	
 
 	/**
@@ -50,6 +45,22 @@ public final class TimerThread extends Thread {
 	
 	
 	/**
+	 * same as 2-arg constructor, except if the third argument is not-null, the 
+	 * object's <CODE>run()</CODE> method will execute in this thread as soon as 
+	 * the specified time interval elapses.
+	 * @param time long // ms
+	 * @param cont boolean
+	 * @param runAfterTimeElapses Runnable 
+	 */
+	public TimerThread(long time, boolean cont, Runnable runAfterTimeElapses) {
+		_maxTimeAllowedMS = time;
+		_cont = cont;
+		_runAfterTimeElapses = runAfterTimeElapses;
+		setDaemon(true);  // exit when the main thread exits.
+	}
+	
+	
+	/**
 	 * the main method of the thread.
 	 */
 	public void run() {
@@ -60,11 +71,16 @@ public final class TimerThread extends Thread {
 				synchronized (this) {
 					_cont = false;
 				}
+				if (_runAfterTimeElapses!=null) {
+					System.err.println("TimerThread: specified interval elapsed, "+
+						                 "now running Runnable passed-in");
+					_runAfterTimeElapses.run();
+				} 
 				return;
 			}
 			// sleep for a while
 			try {
-			Thread.currentThread().sleep(100);  // sleep for 1/10 of a second
+				Thread.sleep(100);  // sleep for 1/10 of a second
 			}
 			catch (InterruptedException e) {
 				e.printStackTrace();

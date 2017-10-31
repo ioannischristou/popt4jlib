@@ -56,6 +56,15 @@ public class BoundedMinHeapUnsynchronized {
 	}
 	
 	
+	private BoundedMinHeapUnsynchronized(BoundedMinHeapUnsynchronized other) {
+		_heap = new Object[other._heap.length];
+		for (int i=0; i<_heap.length; i++) _heap[i] = other._heap[i];
+		_positions = new HashMap(other._positions);
+		_comp = other._comp;
+		_curSize = other._curSize;
+	}
+	
+	
 	/**
 	 * returns the current number of objects held in this min-heap. Obviously
 	 * O(1) operation.
@@ -72,6 +81,16 @@ public class BoundedMinHeapUnsynchronized {
 	 */
 	public int getMaxSize() {
 		return _heap.length-1;
+	}
+	
+	
+	/**
+	 * resets this heap, letting the comparator as is.
+	 */
+	public void reset() {
+		for (int i=0; i<_heap.length; i++) _heap[i]=null;
+		_positions.clear();
+		_curSize = 0;
 	}
 	
 	
@@ -140,6 +159,17 @@ public class BoundedMinHeapUnsynchronized {
 		_positions.remove(key);
 		_positions.put(update, new Integer(hole));  // used to be put(key,hole);
 		_heap[0] = null;  // 0 position is only used for temporary storage
+	}
+	
+	
+	/**
+	 * provides an iterator interface to this min-heap. Construction of this 
+	 * iterator is quite expensive (O(N) where N is the number of objects in the 
+	 * min-heap.)
+	 * @return java.util.Iterator
+	 */
+	public java.util.Iterator iterator() {
+		return new BoundedMinHeapIterator(this);
 	}
 	
 	
@@ -217,6 +247,30 @@ public class BoundedMinHeapUnsynchronized {
 				else return 0;
 			}
 			else return r;
+		}
+	}
+	
+	
+	/**
+	 * auxiliary nested class to provide an <CODE>java.util.Iterator</CODE> 
+	 * interface for traversing this min-heap (in order). 
+	 */
+	static class BoundedMinHeapIterator implements java.util.Iterator {
+		private BoundedMinHeapUnsynchronized _queue;
+		
+		
+		public BoundedMinHeapIterator(BoundedMinHeapUnsynchronized queue) {
+			_queue = new BoundedMinHeapUnsynchronized(queue);
+		}
+		
+		
+		public boolean hasNext() {
+			return _queue.size()>0;
+		}
+		
+		
+		public Object next() {
+			return _queue.remove();
 		}
 	}
 }

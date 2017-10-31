@@ -5,7 +5,6 @@ import java.io.FileReader;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 import popt4jlib.*;
-import popt4jlib.GradientDescent.VecUtil;
 
 
 /**
@@ -17,6 +16,7 @@ import popt4jlib.GradientDescent.VecUtil;
  *      x &ge; 0
  *      x integer vector
  * where the matrix A, and the vectors b,c are given and contain integer values.
+ * The vector c should contain non-negative numbers in particular.
  * In case the vector x is not restricted to binary values, then the system
  * Ax &ge; b must be able to upper-bound each component of the vector x, so as
  * to bring the program into the so-called standard binary format. 
@@ -51,23 +51,27 @@ public class AdditiveSolver2 implements Runnable {
 	private IntArray1SparseVector _b, _bbar, _Pplus;
 	private IntArray2SparseMatrix _A;
 	
-	private static boolean _conversionNeeded=true;
+	private static volatile boolean _conversionNeeded=true;
 
 	private static boolean _inited=false;
 	private static boolean _inprogress=false;
+	
+	private static Object _classLock = new Object();  // needed when invoked using
+	                                                  // runMain().
 	
 	
 	/**
 	 * auxiliary inner class holding nodes in the Branch-and-Bound Tree of the
 	 * algorithm.
 	 */
-	private static class Node {
+	static class Node {
 		private int _id;                   // node id
 		private IntArray1SparseVector _x;  // node vars
 		//private Node _l;                   // link to the 0-branch
 		//private Node _r;                   // link to the 1-branch
 		private int _z=Integer.MAX_VALUE;  // lower bound
 		private boolean _status=true;      // open<--T, closed<--F
+		protected IntArray1SparseVector getX() { return _x; }
 	}
 	
 	
@@ -286,6 +290,33 @@ public class AdditiveSolver2 implements Runnable {
 	}
 	
 	
+	/**
+	 * auxiliary getter method for sub-classes needing access to <CODE>_c</CODE>.
+	 * @return IntArray1SparseVector
+	 */
+	static IntArray1SparseVector getCVector() {
+		return _c;
+	}
+	
+	
+	/**
+	 * auxiliary getter method for sub-classes needing access to <CODE>_b</CODE>.
+	 * @return IntArray1SparseVector
+	 */
+	protected IntArray1SparseVector getBVector() {
+		return _b;
+	}
+	
+	
+	/**
+	 * auxiliary getter method for sub-classes needing access to <CODE>_A</CODE>.
+	 * @return IntArray2SparseMatrix
+	 */	
+	protected IntArray2SparseMatrix getAMatrix() {
+		return _A;
+	}
+	
+	
 	// routines for node selection 
 	
 	
@@ -355,7 +386,7 @@ public class AdditiveSolver2 implements Runnable {
 	 * Constant-time (synchronized) operation.
 	 * @return Node
 	 */
-	private synchronized static Node select() {
+	private synchronized static Node selectNode() {
 		while (_head==null && ON.getNumOpenNodes()>0) {
 			try {
 				AdditiveSolver2.class.wait();
@@ -401,7 +432,7 @@ public class AdditiveSolver2 implements Runnable {
 		int z = 0;
 		int xnz = xc.getNumNonZeros();
 		for (int i=0; i<xnz; i++) z += _c.getCoord(xc.getIthNonZeroPos(i));
-		// end z computation
+    // end z computation
 		current._z = z;
 		if (z < _zbar) _zbar=z;
 		if (z < _zstar) {
@@ -553,8 +584,8 @@ public class AdditiveSolver2 implements Runnable {
 	 * @param current 
 	 */
 	private void LU(Node current) {
-		int L=0;
-		int U=_n+1;  // or is it n?
+		int L=0;  // L <- max(Li)
+		int U=_n+1;  // U <- min(Ui) // or is it n?
 		for (int i=0; i<_m; i++) {
 			IntArray1SparseVector s = sortDesc(_A.getIthRow(i));
 			int Li=0;
@@ -587,18 +618,23 @@ public class AdditiveSolver2 implements Runnable {
 			if (Ui<U) U=Ui;
 		}  // for i
 		
-		if (L>U) close(current);  // infeasible
+		if (L>U) {
+			close(current);
+			return;
+		}  // infeasible
 		if (L==U) {
 			int f = countFreeVars(current._x);
 			if (f==L) {
 				setFreeVars(current._x,1);  // set all free vars to 1
 				updateZ(current);
 				close(current);
+				return;
 			}
 			if (L==0) {
 				setFreeVars(current._x,0);  // set all free vars to 0
 				updateZ(current);
 				close(current);
+				return;
 			}
 		}
 		if (L>0) {
@@ -610,6 +646,18 @@ public class AdditiveSolver2 implements Runnable {
 				close(current);  // current is useless
 			}
 		}
+	}
+	
+	
+	/**
+	 * protected method used to select a free variable given an open node.
+	 * Current method chooses the free variable that setting to 1 provides the 
+	 * least "infeasibility" in the program, i.e. it's a greedy method.
+	 * @param current
+	 * @return int the index of the chosen variable (in [0,num_vars-1))
+	 */
+	protected int selectVariable(Node current) {
+		return infSum(current);
 	}
 	
 	
@@ -952,7 +1000,88 @@ public class AdditiveSolver2 implements Runnable {
 		// debug
 		System.err.println("initialize() routine completed.");
 	}
+
+
+	/**
+	 * initialize the data structures for the solver. Each thread participating in 
+	 * the program execution calls this method to read the matrix A and the vector 
+	 * b in its own memory. 
+	 * @param A matrix A
+	 * @param b RHS vector b
+	 * @param c cost vector c
+	 */
+	private void initialize(IntArray2SparseMatrix A, 
+		                      IntArray1SparseVector b,
+		                      IntArray1SparseVector c) {
+		synchronized (AdditiveSolver2.class) {
+			while (_inprogress) {
+				try {
+					AdditiveSolver2.class.wait();
+				}
+				catch(InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+			if (!_inited) _inprogress=true;
+			else if (_inited) {
+				// still need to set _A and _b for this object
+				_A = new IntArray2SparseMatrix(A);
+				// read-in constraints rhs vector b
+				_b = (IntArray1SparseVector) b.newInstance();
+				// debug 
+				System.err.println("Thread completed initialize() routine.");
+				return;
+			}
+		}
+		_m = A.getNumRows();
+		_n = A.getNumCols();
+		_A = new IntArray2SparseMatrix(A);
+		_b = (IntArray1SparseVector) b.newInstance();
+		_c = (IntArray1SparseVector) c.newInstance();
+		
+		_co = new IntArray1SparseVector(_n);
+		_l = new IntArray1SparseVector(_m);
+		
+		Node current = new Node();
+		current._id = 0;  // redundant
+		//_current._l = null;  // redundant
+		//_current._r = null;  // redundant
+		current._z = Integer.MAX_VALUE;
+		current._status = true;
+		ON.incrNumOpenNodes();
+		current._x = new IntArray1SparseVector(_n);
+		for (int i=0; i<_n; i++) 
+			current._x.setCoord(i, -1);  // initially, all vars are free
+		
+		_head = new ON();
+		_head._v = current;
+		_head._next = null;  // redundant
+		_head._prev = null;  // redundant
+		
+		_maxnum = 0;  // redundant
+		_optimal = current;
+		_zbar = Integer.MAX_VALUE;
+		_zstar = Integer.MAX_VALUE;
+		
+		synchronized (AdditiveSolver2.class) {
+			_inprogress=false;
+			_inited=true;
+			AdditiveSolver2.class.notifyAll();
+		}
+		
+		// debug
+		System.err.println("initialize() routine completed.");
+	}
 	
+	
+	/**
+	 * used with repeated invocations of the runMain() method.
+	 */
+	public static synchronized void setup() {
+		_inited=false;
+		_inprogress=false;
+	}
+
 
 	/**
 	 * prints results.
@@ -966,7 +1095,7 @@ public class AdditiveSolver2 implements Runnable {
 			System.out.println(" Optimal nodeid="+_optimal._id);
 		} else {
 			System.out.println("***PROBLEM INFEASIBLE***");
-		}
+		}		
 	}
 	
 	
@@ -1018,7 +1147,7 @@ public class AdditiveSolver2 implements Runnable {
 			_csum += _c.getIthNonZeroVal(i);
 		}
 		do {
-			Node current = select();
+			Node current = selectNode();
 			if (current==null) break;
 			IntArray1SparseVector x = current._x;
 			_cstar = 0;
@@ -1031,19 +1160,63 @@ public class AdditiveSolver2 implements Runnable {
 			}
 			imposeConstraint(current);
 			_cstar = computeNode(current, _bbar);
-			//System.err.println("processing node "+current._id +" x="+x);
+			/*
+			if (current._id % 10 == 0)  {// itc: HERE rm asap
+				System.err.println("processing node "+current._id +" x="+x+". Remaining #nodes="+ON.getNumOpenNodes());
+			}
+			*/
 			boolean feasible = sumTest(current);
 			if (feasible) {
 				fixSumTestVars(current);
 				if (current._status) {
 					LU(current);
 					if (current._status) {
-						int column = infSum(current);
+						int column = selectVariable(current);
 						branch(column, current);						
 					}
 				}
 			}
 		} while (true);  // _head!=null
+	}
+	
+	
+	/**
+	 * API method to invoke the algorithm, for Binary Programming only (no needing
+	 * of any kind of conversion.)
+	 * @param A the _m &times; _n augmented matrix
+	 * @param b the _m &times; 1 augmented RHS vector
+	 * @param c the _n &times; 1 cost vector
+	 * @param nt the number of threads to use
+	 * @param solverFac AddSlvrFac maybe null
+	 * @return IntArray1SparseVector the best solution found
+	 */
+	public static IntArray1SparseVector runMain(IntArray2SparseMatrix A, 
+		                                          IntArray1SparseVector b, 
+																							IntArray1SparseVector c,
+														                  int nt,
+																							AddSlvrFac solverFac) {
+		synchronized (_classLock) {
+			Thread[] threads = new Thread[nt];
+			try {
+				_conversionNeeded = false;
+				for (int i=0; i<nt; i++) {
+					AdditiveSolver2 as2 = solverFac==null ? 
+						new AdditiveSolver2() : solverFac.newInstance();
+					as2.initialize(A,b,c);
+					threads[i] = new Thread(as2);
+					threads[i].setDaemon(true);
+					threads[i].start();
+				}
+				for (int i=0; i<nt; i++) 
+					threads[i].join();
+				//AdditiveSolver2.printResults();
+				return _optimal._x;
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+				return null;
+			}		
+		}
 	}
 	
 	
@@ -1056,30 +1229,33 @@ public class AdditiveSolver2 implements Runnable {
 	 * @param args 
 	 */
 	public static void main(String[] args) {
-		String datafile = args[0];
-		if (args.length>1) {
-			_conversionNeeded = Boolean.parseBoolean(args[1]);
+		synchronized (_classLock) {
+			String datafile = args[0];
+			if (args.length>1) {
+				_conversionNeeded = Boolean.parseBoolean(args[1]);
+			}
+			int nt = 1;
+			if (args.length>2) {
+				nt = Integer.parseInt(args[2]);
+			}
+			Thread[] threads = new Thread[nt];
+			try {
+				for (int i=0; i<nt; i++) {
+					AdditiveSolver2 as2 = new AdditiveSolver2();
+					as2.initialize(datafile);
+					threads[i] = new Thread(as2);
+					threads[i].setDaemon(true);
+					threads[i].start();
+				}
+				for (int i=0; i<nt; i++) 
+					threads[i].join();
+				AdditiveSolver2.printResults();
+				if (_conversionNeeded) AdditiveSolver2.printFinalResults();
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				System.exit(-1);
+			}		
 		}
-		int nt = 1;
-		if (args.length>2) {
-			nt = Integer.parseInt(args[2]);
-		}
-		Thread[] threads = new Thread[nt];
-		try {
-		  for (int i=0; i<nt; i++) {
-			  AdditiveSolver2 as2 = new AdditiveSolver2();
-			  as2.initialize(datafile);
-			  threads[i] = new Thread(as2);
-			  threads[i].start();
-		  }
-			for (int i=0; i<nt; i++) 
-				threads[i].join();
-			AdditiveSolver2.printResults();
-			if (_conversionNeeded) AdditiveSolver2.printFinalResults();
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}		
 	}
 }

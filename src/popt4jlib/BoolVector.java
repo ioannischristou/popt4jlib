@@ -79,6 +79,24 @@ public class BoolVector implements Serializable, Comparable {
 
 	
 	/**
+	 * public constructor, allowing to set all bits in this vector if the 2nd 
+	 * argument is true.
+	 * @param sizeinbits in
+	 * @param set_all boolean
+	 */
+	public BoolVector(int sizeinbits, boolean set_all) {
+		this(sizeinbits);
+		if (set_all) {
+			_numSetBits=sizeinbits;
+			_lastSetBit=_numSetBits-1;
+			for (int i=0; i<sizeinbits; i++) {
+				set(i);
+			}
+		}
+	}
+	
+	
+	/**
 	 * public constructor, specifying both the max number of bits this vector may
 	 * hold, and the initial bits set for it, held as integers in the first 
 	 * argument.
@@ -702,5 +720,5 @@ public class BoolVector implements Serializable, Comparable {
     BVAux getBVAux() {
       return _r;
     }
-  }
+  }	
 }
