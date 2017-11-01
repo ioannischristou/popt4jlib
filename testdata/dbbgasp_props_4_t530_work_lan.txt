@@ -16,10 +16,10 @@ localsearch,true
 class,localsearchtype,graph.packing.IntSetN2RXPFirstImprovingGraphAllMovesMakerFaster
 sortmaxsubsets,true
 #maxnodechildren,10
-maxnodechildren,5
+maxnodechildren,6
 maxitersinGBNS2A,100000
 #maxnodesallowed,533333
-maxnodesallowed,100000
+maxnodesallowed,1000000
 #class,dbbnodecomparator,graph.packing.DefDBBNodeComparator
 class,dbbnodecomparator,graph.packing.DBBNode0ComparatorGWMIN2
 #ff,0.85
@@ -28,7 +28,8 @@ class,dbbnodecomparator,graph.packing.DBBNode0ComparatorGWMIN2
 ff,0.87
 #expandlocalsearchfactor,1.0
 #expandlocalsearchfactor,0.98
-expandlocalsearchfactor,0.97
+#expandlocalsearchfactor,0.97
+expandlocalsearchfactor,0.9
 #minknownbound,Double.NEGATIVE_INFINITY
 #rndgen,<seed>
 rndgen,11

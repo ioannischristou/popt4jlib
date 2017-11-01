@@ -35,6 +35,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/GRASPPacker1SingleMoveMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/DLS.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/IntSetN1RXPFirstImprovingGraphAllMovesMaker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/IntSetN2RXPAllImprovingGraphAllMovesMakerFaster.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/Graph.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/IntSetN2RXPGraphAllMovesMaker.java</file>
         </group>

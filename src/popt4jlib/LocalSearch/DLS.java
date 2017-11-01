@@ -23,7 +23,7 @@ import java.util.*;
  * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 2.0
+ * @version 3.0
  */
 public class DLS implements LocalOptimizerIntf {
 	// private static final long serialVersionUID=...
@@ -39,6 +39,8 @@ public class DLS implements LocalOptimizerIntf {
   Object _inc=null;  // incumbent chromosome
   FunctionIntf _f=null;
 
+	private ParallelBatchTaskExecutor _executor = null;  // executor to use when
+	                                                     // 1-int-arg ctor is used
 
   /**
    * public constructor of a DLS OptimizerIntf. Assigns unique id among all DLS
@@ -47,6 +49,25 @@ public class DLS implements LocalOptimizerIntf {
   public DLS() {
     _id = incrID();
   }
+	
+	
+	/**
+	 * public 1-arg constructor allows the one-time creation of an executor 
+	 * object, so that thread creation/destruction doesn't occur every time the  
+	 * method is called from the same object.
+	 * @param num_threads int the number of threads this optimizer will use in its
+	 * unique executor.
+	 */
+	public DLS(int num_threads) {
+		this();
+		try {
+			_executor = 
+				ParallelBatchTaskExecutor.newParallelBatchTaskExecutor(num_threads);
+		}
+		catch (ParallelException e) {
+			throw new IllegalArgumentException("DLS object failed creation");
+		}
+	}
 
 
   /**
@@ -171,7 +192,8 @@ public class DLS implements LocalOptimizerIntf {
 	 * <CODE>Integer.MAX_VALUE</CODE>.
    * <li> &lt;"dls.numthreads", Integer nt&gt; optional, the number of threads 
 	 * in the threadpool to be used for exploring each possible move in the 
-	 * neighborhood. Default is 1.
+	 * neighborhood. Default is 1. Only used if this object was not constructed
+	 * via the 1-int-arg constructor.
    * <li> &lt;"dls.a2cmaker", Arg2ChromosomeMakerIntf a2cmaker&gt; optional, an 
 	 * object implementing the Arg2ChromosomeMakerIntf that transforms objects 
 	 * that can be passed directly to the FunctionIntf being minimized to 
@@ -231,8 +253,10 @@ public class DLS implements LocalOptimizerIntf {
       try {
         ParallelBatchTaskExecutor executor = null;
         try {
-          executor = ParallelBatchTaskExecutor.
+          if (_executor==null)
+						executor = ParallelBatchTaskExecutor.
 										   newParallelBatchTaskExecutor(Math.max(nt,1));
+					else executor = _executor;
         }
         catch (ParallelException e) {
           // no-op: never happens
@@ -287,8 +311,8 @@ public class DLS implements LocalOptimizerIntf {
             }
           }
         }
-        // shutdown the executor
-        executor.shutDown();
+        // shutdown the executor if it was created within this method call
+        if (_executor==null) executor.shutDown();
         mger.msg("LocalSearch: completed after "+i+" iterations.",1);
       }
       catch (Exception e) {
@@ -311,6 +335,27 @@ public class DLS implements LocalOptimizerIntf {
       }
     }
   }
+	
+	
+	/**
+	 * shuts down the <CODE>_executor</CODE> data member, if it's not null.
+	 * @throws OptimizerException 
+	 */
+	public synchronized void shutDownExecutor() throws OptimizerException {
+		if (_f!=null) 
+			throw new OptimizerException("minimize() is currently running.");
+		if (_executor!=null) {
+			try {
+				_executor.shutDown();
+			}
+			catch (ParallelException e) {
+				e.printStackTrace();
+				throw new OptimizerException("_executor.shutDown() failed;"+
+					                           " probably due to another thread having "+
+					                           "terminated it already");
+			}
+		}
+	}
 
 
   /**

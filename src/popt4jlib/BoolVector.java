@@ -171,7 +171,7 @@ public class BoolVector implements Serializable, Comparable {
     if (sizeinbits > _data.length * 64) {
       //_data = Arrays.copyOf(_data, (sizeinbits + 63) / 64);  // JDK 1.6 method
       long[] tmp = new long[ (sizeinbits + 63) / 64];
-      for (int i = 0; i < _data.length; i++) tmp[i] = _data[i]; // the rest is zero
+      for (int i = 0; i < _data.length; i++) tmp[i] = _data[i]; // rest is zero
       _data = tmp;
       // _numSetBits = -1;  // no reason invalidate cache
     }
@@ -345,7 +345,8 @@ public class BoolVector implements Serializable, Comparable {
     if (other == null)throw new IllegalArgumentException(
         "null argument passed in");
     if (_data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP &&
-        other._data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP && _threads != null) {
+        other._data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP && 
+			  _threads != null) {
       andParallel2(other);
       return;
     }
@@ -379,8 +380,8 @@ public class BoolVector implements Serializable, Comparable {
    * @throws IllegalStateException if the thread-pool has been shut-down.
    */
   private void andParallel2(BoolVector other) throws IllegalStateException {
-    if (_threads == null)throw new IllegalStateException(
-        "pool has been shut-down");
+    if (_threads == null)
+			throw new IllegalStateException("pool has been shut-down");
     final int chunk_size = _data.length / _NUM_THREADS;
     final int min_len = Math.min(_data.length, other._data.length);
     int start = 0;

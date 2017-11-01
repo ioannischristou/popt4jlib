@@ -15,7 +15,7 @@ call start DConditionCounterLLCSrv.bat
 REM PDAsynchBatchTaskExecutorSrv.bat [workers_port(7980)] [clients_port(7981)] [send_init_cmd(false)] [other_host,other_port()]
 call start PDAsynchBatchTaskExecutorSrv.bat 7980 7981 true
 REM PDAsynchBatchTaskExecutorWrk [num_threads(10)] [pdasrvhost(localhost)] [pdasrvport(7980)] [run_init_cmd(false)] 
-call start PDAsynchBatchTaskExecutorWrk.bat 3 localhost 7980 true
+call start PDAsynchBatchTaskExecutorWrk.bat 8 localhost 7980 true
 REM call start PDAsynchBatchTaskExecutorWrk.bat 3 localhost 7980 true
 REM call start PDAsynchBatchTaskExecutorWrk.bat 3 localhost 7980 true
 REM call start PDAsynchBatchTaskExecutorWrk.bat 8 localhost 7980 true

@@ -64,6 +64,12 @@ class DBBNode0 extends DBBNodeBase {
       return null;
     }
   };
+	
+	private static ThreadLocal _dlsObjs = new ThreadLocal() {
+		protected Object initialValue() {
+			return new DLS(4);  // DLS with 4 threads
+		}
+	};
 
 	
 	/**
@@ -494,7 +500,8 @@ class DBBNode0 extends DBBNodeBase {
 								mger.msg(msg, 1);
 							}
               // now do the local search
-              DLS dls = new DLS();
+              // DLS dls = new DLS();
+							DLS dls = (DLS) _dlsObjs.get();
               AllChromosomeMakerIntf movesmaker = 
 								_master.getNewLocalSearchMovesMaker();
 							if (movesmaker==null)  // use default
@@ -510,7 +517,7 @@ class DBBNode0 extends DBBNodeBase {
               HashMap dlsparams = new HashMap();
               dlsparams.put("dls.movesmaker", movesmaker);
               dlsparams.put("dls.x0", nodeids);
-              dlsparams.put("dls.numthreads", new Integer(10));  
+              //dlsparams.put("dls.numthreads", new Integer(10));  
               // itc: HERE parameterize above asap
               dlsparams.put("dls.maxiters", new Integer(100)); 
               // itc: HERE rm above asap
