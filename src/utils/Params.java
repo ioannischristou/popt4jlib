@@ -44,7 +44,7 @@ public class Params implements Serializable {
 	public HashMap getParamsMap() {
 		return _p;
 	}
-	
+
 
   /**
    * get an Integer object corresponding to the passed &lt;name&gt; argument.
@@ -78,17 +78,17 @@ public class Params implements Serializable {
     }
     if (val==null) return null;
     if (val instanceof Integer) return (Integer) val;
-		else if (val instanceof Long) return new Integer((int) val);
+		else if (val instanceof Long) return new Integer(((Long) val).intValue());
 		else if (val instanceof Double) {
       double v = ((Double) val).doubleValue();
-      if (Double.compare(Math.rint(v),v)==0) 
+      if (Double.compare(Math.rint(v),v)==0)
 				return new Integer((int) Math.round(v));
       else throw new IllegalArgumentException("double argument is not an int");
     }
     else throw new IllegalArgumentException("argument is not an int");
   }
 
-	
+
   /**
    * same logic as in <CODE>getInteger(name)</CODE> but for longs this time.
    * @param name String
@@ -122,7 +122,7 @@ public class Params implements Serializable {
 				long r = Math.round(v);
 				return new Long(r);
 			}
-      else throw new IllegalArgumentException("double argument is not a long");			
+      else throw new IllegalArgumentException("double argument is not a long");
 		}
     else throw new IllegalArgumentException("argument is not a long");
   }
@@ -189,13 +189,13 @@ public class Params implements Serializable {
     if (val==null) return null;
     else if (val instanceof Boolean) return (Boolean) val;
     else if (val instanceof Integer) {
-      return ((Integer) val).intValue()==0 ? 
+      return ((Integer) val).intValue()==0 ?
 				       new Boolean(false) : new Boolean(true);
     }
     else throw new IllegalArgumentException("argument is not a boolean");
   }
 
-	
+
   /**
    * same logic as in <CODE>getInteger(name)</CODE> but for strings this time.
    * @param name String
@@ -228,7 +228,7 @@ public class Params implements Serializable {
 
 
   /**
-   * same logic as in <CODE>getInteger(name)</CODE>, but this time it just 
+   * same logic as in <CODE>getInteger(name)</CODE>, but this time it just
 	 * returns whatever object best matches the input &lt;name&gt;.
    * @param name String
    * @return Object null if no ending part of name that is separated from the

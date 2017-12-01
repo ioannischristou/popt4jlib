@@ -23,9 +23,9 @@ import java.io.Serializable;
  * Clients must ensure no race-conditions exist when using this class.
  * <li> 2016-01-27: The <CODE>and(BoolVector), or(BoolVector)</CODE> operations
  * execute in parallel in the face of very large data lengths (above 1mio bits
- * stored in both vectors to be and-ed). The implementation is modeled after the 
- * pattern in <CODE>popt4jlib.MSSC.GMeansMTClusterer</CODE> which turned out to 
- * be almost twice as fast as the generic 
+ * stored in both vectors to be and-ed). The implementation is modeled after the
+ * pattern in <CODE>popt4jlib.MSSC.GMeansMTClusterer</CODE> which turned out to
+ * be almost twice as fast as the generic
  * <CODE>parallel.ParallelBatchTaskExecutor</CODE>.
  * <li> 2017-02-10: The class is made serializable so that it can be used with
  * <CODE>graph.packing.DBBNode*</CODE> to store the node-ids of a partial soln
@@ -45,7 +45,7 @@ public class BoolVector implements Serializable, Comparable {
   private int _numSetBits = -1; // cache to cardinality
 	private int _lastSetBit = -1;  // cache to last set bit
 
-	
+
   private volatile static BVThread[] _threads = new BVThread[_NUM_THREADS];
   static {
     for (int i = 0; i < _NUM_THREADS; i++) {
@@ -55,7 +55,7 @@ public class BoolVector implements Serializable, Comparable {
     }
   }
 
-	
+
   /**
    * shut-down this class's thread-pool. Method is not thread-safe, and clients
    * must ensure that the method is called in a safe manner.
@@ -67,7 +67,7 @@ public class BoolVector implements Serializable, Comparable {
     _threads = null;
   }
 
-	
+
   /**
    * public constructor, specifying the max number of bits this vector may hold.
    * @param sizeinbits int
@@ -77,9 +77,9 @@ public class BoolVector implements Serializable, Comparable {
     _numSetBits = 0;
   }
 
-	
+
 	/**
-	 * public constructor, allowing to set all bits in this vector if the 2nd 
+	 * public constructor, allowing to set all bits in this vector if the 2nd
 	 * argument is true.
 	 * @param sizeinbits in
 	 * @param set_all boolean
@@ -94,14 +94,14 @@ public class BoolVector implements Serializable, Comparable {
 			}
 		}
 	}
-	
-	
+
+
 	/**
 	 * public constructor, specifying both the max number of bits this vector may
-	 * hold, and the initial bits set for it, held as integers in the first 
+	 * hold, and the initial bits set for it, held as integers in the first
 	 * argument.
 	 * @param bits Set  // Set&lt;Integer&gt;
-	 * @param sizeinbits int 
+	 * @param sizeinbits int
 	 */
 	public BoolVector(Set bits, int sizeinbits) {
 		this(sizeinbits);
@@ -112,7 +112,7 @@ public class BoolVector implements Serializable, Comparable {
 		}
 	}
 
-	
+
   /**
    * public copy constructor.
    * @param other BoolVector
@@ -123,8 +123,8 @@ public class BoolVector implements Serializable, Comparable {
 		_numSetBits = other._numSetBits;
 		_lastSetBit = other._lastSetBit;
   }
-	
-	
+
+
   /**
    * resets all bits in this vector.
    */
@@ -134,7 +134,7 @@ public class BoolVector implements Serializable, Comparable {
 		_lastSetBit = -1;
   }
 
-	
+
   /**
    * copy the contents of the other BoolVector into this object.
    * @param other BoolVector
@@ -153,7 +153,7 @@ public class BoolVector implements Serializable, Comparable {
 		_lastSetBit = other._lastSetBit;
   }
 
-	
+
   /**
    * returns the maximum number of bits this vector may hold.
    * @return int
@@ -162,7 +162,7 @@ public class BoolVector implements Serializable, Comparable {
     return _data.length * 64;
   }
 
-	
+
   /**
    * resize this vector to hold at least as many bits as the argument.
    * @param sizeinbits int
@@ -177,7 +177,7 @@ public class BoolVector implements Serializable, Comparable {
     }
   }
 
-	
+
   /**
    * returns the number of set bits in this vector.
    * @return int the number of set bits in this vector.
@@ -195,7 +195,7 @@ public class BoolVector implements Serializable, Comparable {
     return sum;
   }
 
-	
+
   /**
    * return true iff the i-th bit is set in this vector.
    * @param i int
@@ -206,7 +206,7 @@ public class BoolVector implements Serializable, Comparable {
     return (_data[i / 64] & (1l << (i % 64))) != 0;
   }
 
-	
+
   /**
    * set the i-th bit of this vector.
    * @param i int
@@ -218,7 +218,7 @@ public class BoolVector implements Serializable, Comparable {
 		if (i>_lastSetBit && _lastSetBit>=0) _lastSetBit = i;
   }
 
-	
+
   /**
    * unset the i-th bit of this vector.
    * @param i int
@@ -230,7 +230,7 @@ public class BoolVector implements Serializable, Comparable {
 		if (i==_lastSetBit) _lastSetBit = -1;  // invalidate cache
   }
 
-	
+
   /**
    * set the i-th bit of this vector to the value b.
    * @param i int
@@ -242,8 +242,8 @@ public class BoolVector implements Serializable, Comparable {
     else unset(i);
     // no reason to invalidate caches here again: set/unset do that already
   }
-	
-	
+
+
 	/**
 	 * set the bits of all indices contained in the argument.
 	 * @param bits Set  // Set&lt;Integer&gt;
@@ -258,7 +258,7 @@ public class BoolVector implements Serializable, Comparable {
 		}
 	}
 
-	
+
   /**
    * method used to iterate over the set-bits in this vector. Use as in the
    * following example:
@@ -290,8 +290,8 @@ public class BoolVector implements Serializable, Comparable {
     }
     return -1;
   }
-	
-	
+
+
 	/**
 	 * get the last bit position that is currently set.
 	 * @return int will return -1 if no bit is set
@@ -308,12 +308,12 @@ public class BoolVector implements Serializable, Comparable {
 		return _lastSetBit;
 	}
 
-	
+
 	/**
 	 * check if all bits set in other are also set in this bit-vector.
 	 * @param other BoolVector
 	 * @return boolean
-	 * @throws IllegalArgumentException if other is null 
+	 * @throws IllegalArgumentException if other is null
 	 */
 	public boolean containsAll(BoolVector other) throws IllegalArgumentException {
     if (other == null)throw new IllegalArgumentException(
@@ -325,7 +325,7 @@ public class BoolVector implements Serializable, Comparable {
 			long oi = one[i] & two[i];
 			int coi = bitCount(oi);
 			int toi = bitCount(two[i]);
-			if (coi < toi) return false; 
+			if (coi < toi) return false;
 		}
 		if (one.length>=two.length) return true;
 		for (int i=one.length; i<two.length-1; i++) {
@@ -333,8 +333,8 @@ public class BoolVector implements Serializable, Comparable {
 		}
 		return true;
 	}
-	
-	
+
+
   /**
    * equivalent to the retainAll(set) operation on Set. Utilizes parallel
    * processing when the _data array length is long enough.
@@ -345,7 +345,7 @@ public class BoolVector implements Serializable, Comparable {
     if (other == null)throw new IllegalArgumentException(
         "null argument passed in");
     if (_data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP &&
-        other._data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP && 
+        other._data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP &&
 			  _threads != null) {
       andParallel2(other);
       return;
@@ -371,7 +371,7 @@ public class BoolVector implements Serializable, Comparable {
     }
   }
 
-	
+
   /**
    * parallel version of the <CODE>and()</CODE> operation, with the
    * same semantics and signature (except exceptions thrown) as the serial
@@ -406,7 +406,7 @@ public class BoolVector implements Serializable, Comparable {
 		_lastSetBit = -1;  // invalidate cache
   }
 
-	
+
   /**
    * equivalent to the addAll(set) operation on Set. Utilizes parallel
    * processing when the _data array length is long enough. The _data array will
@@ -419,7 +419,7 @@ public class BoolVector implements Serializable, Comparable {
         "null argument passed in");
     if (other._data.length > _data.length) resize(other.capacity());
     if (_data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP &&
-        other._data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP && 
+        other._data.length >= _MIN_CAPACITY_REQD_4_PARALLEL_OP &&
 			  _threads != null) {
       orParallel2(other);
       return;
@@ -435,7 +435,7 @@ public class BoolVector implements Serializable, Comparable {
 		_lastSetBit = -1;  // invalidata cache
   }
 
-	
+
   /**
    * parallel version of the <CODE>or()</CODE> operation. The BoolVector must
    * have enough capacity to hold the result of the union with the other object.
@@ -465,8 +465,8 @@ public class BoolVector implements Serializable, Comparable {
     _numSetBits = -1;  // invalidate cache
 		_lastSetBit = -1;  // invalidate cache
   }
-	
-	
+
+
 	/**
 	 * returns true if and only if the <CODE>_data</CODE> data members of this
 	 * vector and the argument are exactly equal, both in length, and in element
@@ -483,10 +483,10 @@ public class BoolVector implements Serializable, Comparable {
 		}
 		return true;
 	}
-	
-	
+
+
 	/**
-	 * returns the integer part of the sum of the first and last element of the 
+	 * returns the integer part of the sum of the first and last element of the
 	 * <CODE>_data</CODE> array.
 	 * @return int  // (int) (_data[0]+_data[_data.length-1])
 	 */
@@ -494,13 +494,13 @@ public class BoolVector implements Serializable, Comparable {
 		return (int) (_data[0]+_data[_data.length-1]);
 	}
 
-	
+
 	/**
 	 * element-wise comparison between two bit-vectors. empty vector comes first.
 	 * If the argument has different size, then assuming the common data are the
 	 * same, the vector with the less data-length comes first.
 	 * @param o Object  // BoolVector
-	 * @return int -1 if this vector comes before o in element-wise number order, 
+	 * @return int -1 if this vector comes before o in element-wise number order,
 	 * 0 if they are the same
 	 */
 	public int compareTo(Object o) {
@@ -509,14 +509,17 @@ public class BoolVector implements Serializable, Comparable {
 		for (int i=0; i<min_len; i++) {
 			long di = _data[i];
 			long oi = other._data[i];
-			int comp = Long.compare(di, oi);
+			int comp = di < oi ? -1 : (di==oi ? 0 : 1); //Long.compare(di, oi);
 			if (comp!=0) return comp;
 		}
 		// check lengths
-		return Integer.compare(_data.length, other._data.length);
+                int dlen = _data.length;
+                int olen = other._data.length;
+                int cmp = dlen < olen ? -1 : (dlen==olen ? 0 : 1);
+		return cmp; // Integer.compare(_data.length,other._data.length);
 	}
 
-	
+
 	/**
 	 * prints out the elements of _data as long values. Mostly used for debugging
 	 * purposes.
@@ -531,8 +534,8 @@ public class BoolVector implements Serializable, Comparable {
 		result += "]";
 		return result;
 	}
-	
-	
+
+
   /*
     private static int bitCountSlow(long l) {
    // this loop takes time proportional to the number of bits set in l.
@@ -567,7 +570,7 @@ public class BoolVector implements Serializable, Comparable {
     return (int) i & 0x7f;
   }
 
-	
+
   /**
    * method exists because we need the library to compile under JDK 1_4.
    * Code directly copied from OpenJDK 1.6.
@@ -609,7 +612,7 @@ public class BoolVector implements Serializable, Comparable {
     return n - ( (x << 1) >>> 31);
   }
 
-	
+
   /**
    * auxiliary nested class, not part of the public API.
    */
@@ -617,7 +620,7 @@ public class BoolVector implements Serializable, Comparable {
     static final int _AND_OP = 0;
     static final int _OR_OP = 1;
     // ... other ops enumerated here
-		
+
     private int _starti = -1;
     private int _endi = -1;
     private boolean _finish = false;
@@ -704,7 +707,7 @@ public class BoolVector implements Serializable, Comparable {
     }
   }
 
-	
+
   /**
    * auxiliary nested class not part of the public API.
    */
@@ -721,5 +724,5 @@ public class BoolVector implements Serializable, Comparable {
     BVAux getBVAux() {
       return _r;
     }
-  }	
+  }
 }

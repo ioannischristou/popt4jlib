@@ -701,6 +701,7 @@ final class NodeComparator4 implements Comparator, Serializable {
   }
 }
 
+
 /**
  * auxiliary class comparing <CODE>graph.Node</CODE> objects, for use with the 
  * <CODE>graph.packing.GRASPPacker</CODE> class, not part of the public API.

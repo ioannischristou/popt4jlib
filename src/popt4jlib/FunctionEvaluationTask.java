@@ -82,7 +82,7 @@ public class FunctionEvaluationTask implements TaskObject {
    * @return double
    */
   public synchronized double getObjValue() { return _val; }
-
+	
 	
   /**
    * copy state from the input argument.

@@ -4,15 +4,38 @@ import graph.*;
 import popt4jlib.VectorIntf;
 import popt4jlib.DblArray1Vector;
 import java.util.*;
-//import clustering.Document;
 
+/**
+ * edge-based hyper-coarsener. Class is not thread-safe, and so should be 
+ * protected by clients when used in a multi-threaded context.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
 public class HCoarsenerIEC extends HCoarsener {
 
+	/**
+	 * single public constructor.
+	 * @param g HGraph
+	 * @param partition int[]
+	 * @param props HashMap
+	 */
   public HCoarsenerIEC(HGraph g, int[] partition, HashMap props) {
     super(g, partition, props);
   }
 
 
+	/**
+	 * implementation of base class method, this factory method constructs a new 
+	 * instance of this class.
+	 * @param g HGraph
+	 * @param partition int[]
+	 * @param properties HashMap
+	 * @return HCoarsener  // HCoarsenerIEC
+	 */
   public HCoarsener newInstance(HGraph g, int[] partition, HashMap properties) {
     return new HCoarsenerIEC(g, partition, properties);
   }
@@ -21,10 +44,14 @@ public class HCoarsenerIEC extends HCoarsener {
   /**
    * coarsen() performs the following loop until the number of unmatched
    * nodes is less than a ratio of the orinigal nodes:
-   * we visit an unvisited node randomly;
-   * we match it with the neighbor that yields the maximum value of
-   * arcs connecting weight * lamda + (1-lamda)*sum_of_weights_of_arcs_conn_common_nbors
-   * we mark as visited both nodes that were matched of course
+   * (1) we visit an unvisited node randomly;
+   * (2) we match it with the "best" neighbor according to the result of the 
+	 * method <CODE>getBestNbor(id)</CODE>;
+   * (3) we mark as visited both nodes that were matched of course.
+	 * The properties map for this object must contain the key-value pair
+	 * &lt;"coarsening.HCoarsener.HCoarsenerIEC.ratio", Double ratio&gt;.
+	 * Must also contain a pair 
+	 * &lt;"coarsening.HCoarsener.HCoarsenerIEC.max_allowed_card",Integer num&gt;.
    * @throws GraphException
    * @throws CoarsenerException if coarsening couldn't proceed satisfactorily
    */
@@ -144,7 +171,7 @@ public class HCoarsenerIEC extends HCoarsener {
     }
 
     _coarseG = new HGraph(new_nodes, new_arcs);
-    Iterator new_arcs_table_iter = new_arcs_table.keySet().iterator();  // .keys();
+    Iterator new_arcs_table_iter = new_arcs_table.keySet().iterator();
     while (new_arcs_table_iter.hasNext()) {
       Integer new_start = (Integer) new_arcs_table_iter.next();
       Set linkpairs = (Set) new_arcs_table.get(new_start);
@@ -196,7 +223,8 @@ public class HCoarsenerIEC extends HCoarsener {
           throw new CoarsenerException("failed to create coarseNodeDocumentArray");
         }
       }
-      setProperty("coarsening.HCoarsener.HCoarsenerIEC.coarseNodeDocumentArray", coarse_doc_array);
+      setProperty("coarsening.HCoarsener.HCoarsenerIEC.coarseNodeDocumentArray", 
+				          coarse_doc_array);
     }
     // else System.err.println("coarsen(): nodeDocumentArray was null or not found...");
 
@@ -209,7 +237,8 @@ public class HCoarsenerIEC extends HCoarsener {
         Integer xi_first_id = (Integer) xi.iterator().next();
         coarse_graph_partition[i] = _graphPartition[xi_first_id.intValue()];
       }
-      setProperty("coarsening.HCoarsener.HCoarsenerIEC.coarsePartition", coarse_graph_partition);
+      setProperty("coarsening.HCoarsener.HCoarsenerIEC.coarsePartition", 
+				          coarse_graph_partition);
     }
 
     // System.err.println("coarsen(): _coarseG.numnodes="+getCoarseGraph().getNumNodes());
@@ -218,7 +247,7 @@ public class HCoarsenerIEC extends HCoarsener {
 
 
   /**
-   * find the best neighbor that should be matched with the node at position pos.
+   * find the best neighbor that should be matched with node at position pos.
    * The best neighbor is the one maximizing the value
    * sum_{f(conn_arcs_weight)} as implemented in getCommonWeight()
    * @param pos Integer
@@ -249,7 +278,7 @@ public class HCoarsenerIEC extends HCoarsener {
         Iterator it = si2.iterator();
         while (it.hasNext()) {
           Integer oid = (Integer) it.next();
-          Double val = _g.getHNode(oid.intValue()).getWeightValue("cardinality");
+          Double val=_g.getHNode(oid.intValue()).getWeightValue("cardinality");
           nw += val.doubleValue();
         }
       }
@@ -260,8 +289,9 @@ public class HCoarsenerIEC extends HCoarsener {
         Iterator it = si.iterator();
         while (it.hasNext()) {
           Integer oid = (Integer) it.next();
-          if (si2!=null && si2.contains(oid)) continue;  // don't count oid's weight twice
-          Double val = _g.getHNode(oid.intValue()).getWeightValue("cardinality");
+          if (si2!=null && si2.contains(oid)) continue;  // don't count oid's 
+					                                               // weight twice
+          Double val=_g.getHNode(oid.intValue()).getWeightValue("cardinality");
           nodewgt2 += val.doubleValue();
         }
       }
@@ -295,6 +325,11 @@ public class HCoarsenerIEC extends HCoarsener {
   }
 
 
+	/**
+	 * returns a string describing the size of the map of properties of this 
+	 * object.
+	 * @return String
+	 */
   public String toString() {
     HashMap props = getProperties();
     String ret = "props=";

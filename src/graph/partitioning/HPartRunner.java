@@ -10,7 +10,7 @@ public class HPartRunner {
 
   public static void main(String[] args) {
     if (args.length!=3) {
-      System.err.println("usage: java -cp <classpath> partitioning.HPartRunner <hgraphfile> <numparts> <propsfile>");
+      System.err.println("usage: java -cp <classpath> graph.partitioning.HPartRunner <hgraphfile> <numparts> <propsfile>");
       return;
     }
     long start_time = System.currentTimeMillis();

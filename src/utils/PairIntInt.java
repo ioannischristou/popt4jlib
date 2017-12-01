@@ -17,7 +17,7 @@ public class PairIntInt implements Comparable, Serializable {
   private int _first;
   private int _second;
 
-	
+
   /**
    * public constructor.
    * @param f int
@@ -81,7 +81,15 @@ public class PairIntInt implements Comparable, Serializable {
   public int compareTo(Object o) {
     if (o==this) return 0;
     PairIntInt c = (PairIntInt) o;
-		int fc = Integer.compare(_first, c._first);
-		return fc==0 ? Integer.compare(_second, c._second) : fc;
+		int fc =  // Integer.compare(_first, c._first);
+                    _first < c._first ? -1 :
+                                        (_first==c._first ? 0 : 1);
+		//return fc==0 ? Integer.compare(_second, c._second) : fc;
+                if (fc!=0) return fc;
+                else {
+                  int fs = _second < c._second ? -1 :
+                                                 (_second==c._second ? 0 : 1);
+                  return fs;
+                }
   }
 }

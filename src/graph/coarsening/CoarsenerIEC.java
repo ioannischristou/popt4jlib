@@ -7,13 +7,37 @@ import popt4jlib.DblArray1Vector;  // double[] impl of VectorIntf
 import java.util.*;
 
 
+/**
+ * edge-based coarsener. Class is not thread-safe, and so should be protected
+ * by clients when used in a multi-threaded context.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 2.0
+ */
 public class CoarsenerIEC extends Coarsener {
 
+	/**
+	 * single public constructor.
+	 * @param g Graph
+	 * @param partition int[]
+	 * @param props HashMap
+	 */
   public CoarsenerIEC(Graph g, int[] partition, HashMap props) {
     super(g, partition, props);
   }
 
 
+	/**
+	 * implementation of base class method, this factory method constructs a new 
+	 * instance of this class.
+	 * @param g Graph
+	 * @param partition int[]
+	 * @param properties HashMap
+	 * @return Coarsener  // CoarsenerIEC
+	 */
   public Coarsener newInstance(Graph g, int[] partition, HashMap properties) {
     return new CoarsenerIEC(g, partition, properties);
   }
@@ -21,33 +45,48 @@ public class CoarsenerIEC extends Coarsener {
 
   /**
    * coarsen() performs the following loop until the number of unmatched
-   * nodes is less than a ratio of the orinigal nodes:
-   * we visit an unvisited node randomly;
-   * we match it with the neighbor that yields the maximum value of
-   * arcs connecting weight * lamda + (1-lamda)*sum_of_weights_of_arcs_conn_common_nbors
-   * we mark as visited both nodes that were matched of course
+   * nodes is less than a ratio of the original nodes:
+   * (1) we visit an unvisited node randomly;
+   * (2) we match it with the neighbor that yields the maximum value of
+   *     arcs connecting weight * lamda + 
+	 *                     (1-lamda)*sum_of_weights_of_arcs_conn_common_nbors
+   * (3) we mark as visited both nodes that were matched of course.
+	 * The result is a new "coarse" graph that can be accessed by a call to 
+	 * <CODE>getCoarseGraph()</CODE> (after this method completes).
+	 * Notice that the pair &lt;"ratio",Double val&gt; must be in the 
+	 * <CODE>_properties</CODE> map of this object, defining the ratio of coarse
+	 * nodes over fine nodes that must be reached for the process to stop. Same 
+	 * for the pair &lt;"max_allowed_card",Integer num&gt; that specifies the 
+	 * maximum cardinality allowed for any "fine-level" node in order to be 
+	 * considered for coarsening with other nodes. Same for the pair 
+	 * &lt;"lamda",Double val&gt; that specifies the value lambda in the 
+	 * expression in step (2) above.
    * @throws GraphException
-   * @throws CoarsenerException if coarsening couldn't proceed satisfactorily
+   * @throws CoarsenerException if coarsening couldn't proceed satisfactorily,
+	 * ie couldn't reach desired compression ratio as specified in "ratio" key's
+	 * value in properties
    */
-  public void coarsen() throws GraphException, CoarsenerException, ParallelException {
+  public void coarsen() 
+		throws GraphException, CoarsenerException, ParallelException {
     System.err.println("CoarsenerIEC.coarsen() entered");
     // System.err.println("coarsen(): _g.numnodes="+getOriginalGraph().getNumNodes());
     reset();  // remove old data
-    Vector l = new Vector();
+    List l = new ArrayList();  // used to be Vector
     for (int i=0; i<getOriginalGraph().getNumNodes(); i++)
-      l.addElement(new Integer(i));
-    Collections.shuffle(l, utils.RndUtil.getInstance().getRandom());  // get a random permutation
-    // main loop
-    double ratio = ((Double) getProperty("ratio")).doubleValue();
+			l.add(new Integer(i));
+    Collections.shuffle(l, utils.RndUtil.getInstance().getRandom());  
+    // get a random permutation
+    final double ratio = ((Double) getProperty("ratio")).doubleValue();
     final int min_allowed_nodes = (int) (ratio*_g.getNumNodes());
     int num_seen = 0;
     int new_nodes = 0;
     int j;
+    // main loop
     for (j=0; j<l.size(); j++) {
       // check to see if coarsening has exceeded thresholds
       if (new_nodes+_g.getNumNodes()-num_seen<=min_allowed_nodes)
         break;
-      Integer pos = (Integer) l.elementAt(j);
+      Integer pos = (Integer) l.get(j);
       if (_map.get(pos)==null) {  // OK, not mapped yet
         // find best nbor
         Node best = getBestNbor(pos);
@@ -82,7 +121,8 @@ public class CoarsenerIEC extends Coarsener {
     }
     // check if coarsening reached desired level
     if (new_nodes+_g.getNumNodes()-num_seen>min_allowed_nodes) {
-      throw new CoarsenerException("CoarsenerIEC.coarsen(): cannot proceed further");
+      throw new CoarsenerException(
+				          "CoarsenerIEC.coarsen(): cannot proceed further");
     }
     // System.err.println("_map.size()="+_map.size()+" num_seen="+num_seen+" new_nodes="+new_nodes+" j="+j);
     // OK, go on
@@ -102,7 +142,8 @@ public class CoarsenerIEC extends Coarsener {
     // and finally create the arcs for the new graph
     // for each old arc, if it connects two new nodes, connect the new nodes.
     // if there's already an arc, add the weight of this one to the new one.
-    HashMap new_arcs_table = new HashMap();  // map<Integer new_startid, Set<LinkPair> >
+    HashMap new_arcs_table = new HashMap();  
+    // map<Integer new_startid, Set<LinkPair> >
     int new_arcs=0;
     for (int i=0; i<_g.getNumArcs(); i++) {
       Link ll = _g.getLink(i);
@@ -110,9 +151,10 @@ public class CoarsenerIEC extends Coarsener {
       Integer lle = new Integer(ll.getEnd());
       Integer new_lls = (Integer) _map.get(lls);
       Integer new_lle = (Integer) _map.get(lle);
-      if (new_lls.intValue()== new_lle.intValue()) continue;  // the arc is hidden
+      if (new_lls.intValue()== new_lle.intValue()) continue;  // arc is hidden
       else {
-        LinkPair lp = new LinkPair(new_lls.intValue(), new_lle.intValue(), ll.getWeight());
+        LinkPair lp = new LinkPair(new_lls.intValue(), new_lle.intValue(), 
+					                         ll.getWeight());
         Set lps = (Set) new_arcs_table.get(new_lls);
         if (lps!=null && lps.contains(lp)) {
           Iterator iter = lps.iterator();
@@ -135,7 +177,7 @@ public class CoarsenerIEC extends Coarsener {
     }
 
     _coarseG = Graph.newGraph(new_nodes, new_arcs);
-    Iterator new_arcs_table_iter = new_arcs_table.keySet().iterator(); //.keys();
+    Iterator new_arcs_table_iter = new_arcs_table.keySet().iterator(); 
     while (new_arcs_table_iter.hasNext()) {
       Integer new_start = (Integer) new_arcs_table_iter.next();
       Set linkpairs = (Set) new_arcs_table.get(new_start);
@@ -146,11 +188,22 @@ public class CoarsenerIEC extends Coarsener {
       }
     }
 
-    // set the right "cardinality" values for the _coarseG nodes
+    // set the right "cardinality" and "value" values for the _coarseG nodes
     for (int i=0; i<_coarseG.getNumNodes(); i++) {
-      Node ni = _coarseG.getNode(i);
+      Node ni = _coarseG.getNodeUnsynchronized(i);
       Set si = (Set) _rmap.get(new Integer(i));
-      ni.setWeight("cardinality", new Double(si.size()));  // shallow value of "cardinality"
+      ni.setWeight("cardinality", new Double(si.size()));  // shallow value of 
+			                                                     // "cardinality"
+			// value gets deep value
+			Iterator sit = si.iterator();
+			double wgtval = 0.0;
+			while (sit.hasNext()) {
+				Integer oid = (Integer) sit.next();
+				Node no = _g.getNodeUnsynchronized(oid.intValue());
+				Double ov = no.getWeightValueUnsynchronized("value");
+				wgtval += ov==null ? 1.0 : ov.doubleValue();
+			}
+			ni.setWeight("value", new Double(wgtval));  // deep value of "value"
     }
 
     // if there is a mapping for each node in _g to a Document, compute
@@ -176,12 +229,13 @@ public class CoarsenerIEC extends Coarsener {
         }
         catch (Exception ce) {
           ce.printStackTrace();
-          throw new CoarsenerException("failed to create coarseNodeDocumentArray");
+          throw new CoarsenerException(
+						          "failed to create coarseNodeDocumentArray");
         }
       }
       setProperty("coarseNodeDocumentArray", coarse_doc_array);
     }
-    else System.err.println("coarsen(): nodeDocumentArray was null or not found...");
+    else System.err.println("coarsen():nodeDocumentArray null or not found...");
 
     if (_graphPartition!=null) {
       // finally create a coarse_graph_partition array and put it into the
@@ -201,22 +255,27 @@ public class CoarsenerIEC extends Coarsener {
 
 
   /**
-   * find the best neighbor that should be matched with the node at position pos.
+   * find the best neighbor that should be matched with node at position pos.
    * The best neighbor is the one maximizing the value
    * lamda*conn_arcs_weight + (1-lamda)*conn_nbors_weight
    * where the second term takes into account the common nbors of the two
-   * neighboring nodes, and sums the weights along their connecting arcs.
-   * (second order effect)
+   * neighboring nodes, and sums the weights along their connecting arcs
+   * (second order effect) assuming partition constraints and cardinality 
+	 * constraints are satisfied.
    * @param pos Integer
    * @return Node
+	 * @throws NullPointerException if a value for the key "lamda" (not "lambda")
+	 * or for the key "max_allowed_card" is not present in the properties map of 
+	 * this object.
    */
   private Node getBestNbor(Integer pos) {
-    Node node = _g.getNode(pos.intValue());
+    Node node = _g.getNodeUnsynchronized(pos.intValue());
     int node_part = -1;
     if (_graphPartition != null)
       node_part = _graphPartition[pos.intValue()];
     Node bestnode = null;
     final double lamda = ((Double) getProperty("lamda")).doubleValue();
+		final double mac = ((Double)getProperty("max_allowed_card")).doubleValue();
     Link bestlink = null;
     double bestwgt = 0.0;
     // first work with node's inlinks (node is the end of the arc)
@@ -226,16 +285,29 @@ public class CoarsenerIEC extends Coarsener {
       Link l = _g.getLink(linkid.intValue());
       double wgt = l.getWeight();
       // get node at starta
-      Node en = _g.getNode(l.getStart());
+      Node en = _g.getNodeUnsynchronized(l.getStart());
       int en_part = -1;
       if (_graphPartition!=null)
         en_part = _graphPartition[l.getStart()];
       if (node_part!=en_part) continue;  // respect partition
       // check if en node is overweight
-      if (en.getWeightValue("cardinality").doubleValue()>=
-          ((Double)getProperty("max_allowed_card")).doubleValue())
+      if (en.getWeightValueUnsynchronized("cardinality").doubleValue()>=mac)
         continue;
-      // see if en also has an outgoing arc to node
+			// check also if en belongs to a new coarse node, the weight of the new
+			// coarse node
+			Integer new_en_id = (Integer) _map.get(new Integer(en.getId()));
+			if (new_en_id!=null) {
+				Set bundle_ids = (Set) _rmap.get(new_en_id);
+				double t_wgt = 0.0;
+				Iterator bit = bundle_ids.iterator();
+				while (bit.hasNext()) {
+					Integer nid = (Integer) bit.next();
+					Node n = _g.getNodeUnsynchronized(nid.intValue());
+					t_wgt += n.getWeightValueUnsynchronized("cardinality").doubleValue();
+				}
+				if (t_wgt>=mac) continue;
+			}
+      // see if en also has an incoming arc from node
       Set en_inlinks = en.getInLinks();
       Iterator iter_en_in = en_inlinks.iterator();
       while (iter_en_in.hasNext()) {
@@ -248,8 +320,8 @@ public class CoarsenerIEC extends Coarsener {
         }
       }
       // get common neighbors
-      Set en_nbors = new HashSet(en.getNbors());
-      en_nbors.retainAll(node.getNbors());
+      Set en_nbors = new HashSet(en.getNborsUnsynchronized());
+      en_nbors.retainAll(node.getNborsUnsynchronized());
       Iterator cniter = en_nbors.iterator();
       double conn_wgt = 0.0;
       while (cniter.hasNext()) {
@@ -290,15 +362,28 @@ public class CoarsenerIEC extends Coarsener {
       Link l = _g.getLink(linkid.intValue());
       double wgt = l.getWeight();
       // get node at enda
-      Node en = _g.getNode(l.getEnd());
+      Node en = _g.getNodeUnsynchronized(l.getEnd());
       int en_part = -1;
       if (_graphPartition!=null)
         en_part = _graphPartition[l.getEnd()];
       if (node_part!=en_part) continue;  // respect partition
       // check if en node is overweight
-      if (en.getWeightValue("cardinality").doubleValue()>=
-          ((Double)getProperty("max_allowed_card")).doubleValue())
+      if (en.getWeightValueUnsynchronized("cardinality").doubleValue()>=mac)
         continue;
+			// check also if en belongs to a new coarse node, the weight of the new
+			// coarse node
+			Integer new_en_id = (Integer) _map.get(new Integer(en.getId()));
+			if (new_en_id!=null) {
+				Set bundle_ids = (Set) _rmap.get(new_en_id);
+				double t_wgt = 0.0;
+				Iterator bit = bundle_ids.iterator();
+				while (bit.hasNext()) {
+					Integer nid = (Integer) bit.next();
+					Node n = _g.getNodeUnsynchronized(nid.intValue());
+					t_wgt += n.getWeightValueUnsynchronized("cardinality").doubleValue();
+				}
+				if (t_wgt>=mac) continue;
+			}
       // see if en also has an outgoing arc to node
       Set en_outlinks = en.getOutLinks();
       Iterator iter_en_out = en_outlinks.iterator();
@@ -313,8 +398,8 @@ public class CoarsenerIEC extends Coarsener {
         }
       }
       // get common neighbors
-      Set en_nbors = new HashSet(en.getNbors());
-      en_nbors.retainAll(node.getNbors());
+      Set en_nbors = new HashSet(en.getNborsUnsynchronized());
+      en_nbors.retainAll(node.getNborsUnsynchronized());
       Iterator cniter = en_nbors.iterator();
       double conn_wgt = 0.0;
       while (cniter.hasNext()) {
@@ -353,6 +438,11 @@ public class CoarsenerIEC extends Coarsener {
   }
 
 
+	/**
+	 * returns a string describing the size of the map of properties of this 
+	 * object.
+	 * @return String
+	 */
   public String toString() {
     HashMap props = getProperties();
     String ret = "props=";

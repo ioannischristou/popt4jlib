@@ -74,6 +74,9 @@ public final class GRASPPacker1 {
           updateQueue(n);
         }
       }
+			System.err.println("pack(init): added "+res.size()+
+				                 " nodes from init list of "+addfirstfrom.size()+
+				                 " nodes.");
     }
     boolean cont = true;
     while (cont) {
@@ -485,7 +488,8 @@ public final class GRASPPacker1 {
           dlsparams.put("dls.movesmaker",movesmaker);
           dlsparams.put("dls.x0", nodeids);
           dlsparams.put("dls.numthreads", new Integer(num_threads));
-          dlsparams.put("dls.maxiters", new Integer(10));   // itc: HERE rm asap
+          dlsparams.put("dls.maxiters", new Integer(100));   // itc: HERE rm asap
+					dlsparams.put("dls.maxsize", new Integer(10000));
           dlsparams.put("dls.graph", g);
           dlsparams.put("dls.intsetneighborhoodfilter", filter);
           //dlsparams.put("dls.createsetsperlevellimit", new Integer(100));

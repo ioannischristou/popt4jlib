@@ -8,10 +8,10 @@ import parallel.*;
 
 /**
  * builds random graphs that are "staged" between a source and a sink node.
- * The graph has user-defined "stages" that communicate with the previous and 
+ * The graph has user-defined "stages" that communicate with the previous and
  * the next stage. The nodes within a stage may also have edges connecting them.
  * The user defines the "depth" of the graph (number of stages), then "width"
- * of the graph (expected number of nodes in each stage), and the expected 
+ * of the graph (expected number of nodes in each stage), and the expected
  * number of connections between stages, as well as within any stage.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -37,10 +37,10 @@ public class RandomStageGraphMaker {
 	 * i to stage i+1
 	 * @param enews int the expected number of edges connecting nodes within a
 	 * stage
-	 * @param seed int random number seed 
+	 * @param seed int random number seed
 	 */
-	public RandomStageGraphMaker(int depth, int width, 
-		                           double enebs, double enews, 
+	public RandomStageGraphMaker(int depth, int width,
+		                           double enebs, double enews,
 															 long seed) {
 		_depth=depth;
 		_width=width;
@@ -50,9 +50,9 @@ public class RandomStageGraphMaker {
 		_r.setSeed(seed);
 	}
 
-	
+
 	/**
-	 * constructs the <CODE>graph.Graph</CODE> object corresponding to the 
+	 * constructs the <CODE>graph.Graph</CODE> object corresponding to the
 	 * specifications of the constructor.
 	 * @return Graph
 	 */
@@ -72,13 +72,13 @@ public class RandomStageGraphMaker {
 			System.err.print("working on stage-"+i+" having "+nn_i+" nodes...");
 			int end_node_i = start_node_i+nn_i-1;
 			numnodes += nn_i;
-			num_nodes_per_stage.add(nn_i);
+			num_nodes_per_stage.add(new Integer(nn_i));
 			// edges from previous stage to this stage
 			int nebs = (int) (_r.nextDouble()*2*_expNumArcsBetweenStages);
 			for (int j=0; j<nebs; j++) {
 				int s = _r.nextInt(start_node_i-prev_start_node_i)+prev_start_node_i;
 				int t = _r.nextInt(end_node_i+1-start_node_i)+start_node_i;
-				edges_from_stage.add(new PairIntInt(s,t));				
+				edges_from_stage.add(new PairIntInt(s,t));
 			}
 			System.err.print(nebs+" edges created between stage-"+(i-1)+" & stage-"+i+"...");
 			// edges within this stage
@@ -142,16 +142,16 @@ public class RandomStageGraphMaker {
 		}
 		return g;
 	}
-	
-	
+
+
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; utils.RandomStageGraphMaker 
+   * <CODE>java -cp &lt;classpath&gt; utils.RandomStageGraphMaker
 	 * &lt;depth&gt;
-   * &lt;width&gt; 
-	 * &lt;expected_num_edges_between_stages&gt; 
-	 * &lt;expected_num_edges_within_stage&gt; 
-	 * &lt;filename&gt; 
+   * &lt;width&gt;
+	 * &lt;expected_num_edges_between_stages&gt;
+	 * &lt;expected_num_edges_within_stage&gt;
+	 * &lt;filename&gt;
 	 * [rndseed(0)]
 	 * </CODE>.
    * @param args String[]

@@ -19,12 +19,12 @@ import popt4jlib.BoolVector;
 import popt4jlib.OptimizerException;
 
 /**
- * class is an implementation of the <CODE>AllChromosomeMakerIntf</CODE> 
+ * class is an implementation of the <CODE>AllChromosomeMakerIntf</CODE>
  * interface, and implements local search in the N_{-2+P} neighborhood of ints:
  * a set of integers S1 is a neighbor of another set S, if S1 is the result of
- * subtracting two members of S, and then augmenting S by as many integers as 
- * possible without violating feasibility of the solution. The implementation 
- * works for the 1-packing UNWEIGHTED problem (MIS), but should also be 
+ * subtracting two members of S, and then augmenting S by as many integers as
+ * possible without violating feasibility of the solution. The implementation
+ * works for the 1-packing UNWEIGHTED problem (MIS), but should also be
  * expected to work with MWIS when weights are nearly uniform distributed and
  * always positive.
  * <p>Title: popt4jlib</p>
@@ -34,18 +34,18 @@ import popt4jlib.OptimizerException;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class IntSetN2RXPAllImprovingGraphAllMovesMakerFaster 
+public class IntSetN2RXPAllImprovingGraphAllMovesMakerFaster
   implements AllChromosomeMakerClonableIntf {
-	
-	
+
+
   /**
    * no-arg constructor.
    */
   public IntSetN2RXPAllImprovingGraphAllMovesMakerFaster() {
 		// no-op
   }
-	
-	
+
+
 	/**
 	 * return a new IntSetN2RXFirstImprovingGraphPAllMovesMakerFaster instance.
 	 * @return IntSetN2RXPFirstImprovingGraphAllMovesMaker
@@ -57,32 +57,32 @@ public class IntSetN2RXPAllImprovingGraphAllMovesMakerFaster
 
 	/**
 	 * the major method of the class, implements a simple fast logic.
-	 * (0) for each node x NOT in the current solution, consider the set H(x) of 
-	 * nodes IN the solution that are neighbors of x (thus "hit" the node x); 
+	 * (0) for each node x NOT in the current solution, consider the set H(x) of
+	 * nodes IN the solution that are neighbors of x (thus "hit" the node x);
 	 * (1) order these nodes x in descending order in the size of H(x) and remove
-	 * all nodes that have H(x) size &gt; 2; 
-	 * (2) for each node x in this (cut) sorted array, consider all nodes below it 
-	 * to see if there are at least two more such nodes y whose set H(y) is a 
+	 * all nodes that have H(x) size &gt; 2;
+	 * (2) for each node x in this (cut) sorted array, consider all nodes below it
+	 * to see if there are at least two more such nodes y whose set H(y) is a
 	 * subset of H(x). If such a node x is found, then the set H(x) is the set
 	 * to remove from the current solution, and the node x plus the two nodes y
-	 * below it that match, are the entering nodes (assuming that the sum of 
-	 * weights of the entering nodes is greater than the sum of weights of the 
-	 * leaving nodes). Node accesses are unsynchronized and assume that the 
+	 * below it that match, are the entering nodes (assuming that the sum of
+	 * weights of the entering nodes is greater than the sum of weights of the
+	 * leaving nodes). Node accesses are unsynchronized and assume that the
 	 * underlying graph object is not modified in any way.
 	 * @param chromosome Object  // Set&lt;Integer&gt;
-	 * @param params HashMap  // Map&lt;String key, Object val&gt; that must 
-	 * contain the key-value pair 
-	 * &lt;"dls.graph", Graph g&gt; unless this object was constructed with the 
+	 * @param params HashMap  // Map&lt;String key, Object val&gt; that must
+	 * contain the key-value pair
+	 * &lt;"dls.graph", Graph g&gt; unless this object was constructed with the
 	 * 1-arg constructor
 	 * @return Vector  // Vector&lt;Set&lt;Integer&gt;&gt; with vector size &ge;0.
-	 * @throws OptimizerException 
+	 * @throws OptimizerException
 	 */
-  public Vector createAllChromosomes(Object chromosome, HashMap params) 
+  public Vector createAllChromosomes(Object chromosome, HashMap params)
 		throws OptimizerException {
-    if (chromosome==null) 
+    if (chromosome==null)
 			throw new OptimizerException(
 				"IntSetN2RXPAllImprovingGraphAllMovesMakerFaster."+
-				"createAllChromosomes(): null chromosome"); 
+				"createAllChromosomes(): null chromosome");
 		Graph _g = (Graph) params.get("dls.graph");
 		try {
 			Vector result = new Vector();
@@ -109,7 +109,7 @@ public class IntSetN2RXPAllImprovingGraphAllMovesMakerFaster
 			}
 			// 1. order array Hs
 			Arrays.sort(Hs);
-			// 2. consider all nodes x whose H[x].size()<=2, and see if there are 
+			// 2. consider all nodes x whose H[x].size()<=2, and see if there are
 			// at least 3 other nodes y below with H[y] subset of H[x].
 			int start = 0;
 			for (; start < num_nodes; start++) {
@@ -119,7 +119,7 @@ public class IntSetN2RXPAllImprovingGraphAllMovesMakerFaster
 			if (start>=num_nodes-2) return result;  // search cut-short, no solution
 			for (; start<num_nodes-2; start++) {
 				BoolVector bv_start = Hs[start]._bv;
-				Set satisfying = new HashSet();  // Set<Integer>				
+				Set satisfying = new HashSet();  // Set<Integer>
 				for (int j0=start+1; j0<num_nodes; j0++) {
 					satisfying.clear();
 					for (int j=j0; j<num_nodes; j++) {
@@ -135,7 +135,7 @@ public class IntSetN2RXPAllImprovingGraphAllMovesMakerFaster
 						// found it.
 						// remove H[start] from sol.
 						BoolVector sol_bv2 = new BoolVector(sol_bv);
-						for (int k=bv_start.nextSetBit(0); k>=0; 
+						for (int k=bv_start.nextSetBit(0); k>=0;
 								 k=bv_start.nextSetBit(k+1)) {
 							sol_bv2.unset(k);
 						}
@@ -152,7 +152,7 @@ public class IntSetN2RXPAllImprovingGraphAllMovesMakerFaster
 						}
 						result.add(res);
 					}
-				}  // for j0				
+				}  // for j0
 			}  // for start
 			return result;
 		}
@@ -161,8 +161,8 @@ public class IntSetN2RXPAllImprovingGraphAllMovesMakerFaster
 			throw new OptimizerException("createAllChromosomes() failed");
 		}
 	}
-	
-	
+
+
 	/**
 	 * check whether node with id j is neighbor of start, or any of the nodes
 	 * whose ids are in the set satisfying. If so, return true.
@@ -186,28 +186,35 @@ public class IntSetN2RXPAllImprovingGraphAllMovesMakerFaster
 		}
 		return false;
 	}
-	
-	
+
+
 	/**
 	 * auxiliary helper class used for sorting.
 	 */
 	static class BVI implements Comparable {
 		BoolVector _bv;
 		int _i;
-		
-		
+
+
 		BVI(BoolVector bv, int i) {
 			_bv = bv;
 			_i = i;
 		}
-		
-		
+
+
 		public int compareTo(Object other) {
 			BVI o = (BVI) other;
-			int res = -Integer.compare(_bv.cardinality(), o._bv.cardinality());
-			if (res==0) return Integer.compare(_i, o._i);
+			int res =  // -Integer.compare(_bv.cardinality(),
+                                   //                  o._bv.cardinality());
+                                   _bv.cardinality() < o._bv.cardinality() ?
+                                     1 :
+                                       _bv.cardinality()==o._bv.cardinality() ?
+                                         0 : -1;
+			if (res==0) {  // return Integer.compare(_i, o._i);
+                          return _i < o._i ? -1 : _i==o._i ? 0 : 1;
+                        }
 			else return res;
 		}
 	}
-	
+
 }

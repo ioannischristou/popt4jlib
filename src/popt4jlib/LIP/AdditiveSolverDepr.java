@@ -23,11 +23,11 @@ import popt4jlib.GradientDescent.VecUtil;
  * <p>Copyright: Copyright (c) 2011-2017</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @deprecated 
+ * @deprecated
  * @version 1.0
  */
 public class AdditiveSolverDepr {
-	
+
 	private Node _current, _optimal;
 	private ON _head;
 	private int _maxnum;
@@ -40,10 +40,10 @@ public class AdditiveSolverDepr {
 	private boolean _feasible;
 	private IntArray1SparseVector _b, _bbar, _Pplus, _c, _co, _l;
 	private IntArray2SparseMatrix _A;
-	
+
 	private static boolean _conversionNeeded=true;
-	
-	
+
+
 	static class Node {
 		private int _id;                   // node id
 		private IntArray1SparseVector _x;  // node vars
@@ -52,21 +52,21 @@ public class AdditiveSolverDepr {
 		private Node _p;                   // link to the parent node
 		private int _z=Integer.MAX_VALUE;  // lower bound
 		private boolean _status=true;      // open<--T, closed<--F
-		
+
 	}
-	
-	
+
+
 	static class ON {
 		private ON _prev;
 		private ON _next;
 		private Node _v;
-		
+
 	}
-	
-	
+
+
 	// general purpose routines
-	
-	
+
+
 	private static boolean complete(IntArray1SparseVector x) {
 		int nz=x.getNumNonZeros();
 		for(int i=0; i<nz; i++) {
@@ -74,9 +74,9 @@ public class AdditiveSolverDepr {
 		}
 		return true;
 	}
-	
-	
-	private static IntArray1SparseVector multiply(IntArray2SparseMatrix A, 
+
+
+	private static IntArray1SparseVector multiply(IntArray2SparseMatrix A,
 		                                            IntArray1SparseVector x) {
 		IntArray1SparseVector result = new IntArray1SparseVector(A.getNumRows());
 		for (int i=0; i<result.getNumCoords(); i++) {
@@ -87,14 +87,14 @@ public class AdditiveSolverDepr {
 				System.err.println("i="+i);
 				System.err.println("Ai="+A.getIthRow(i));
 				System.err.println("x="+x);
-				throw e;
+				throw new IllegalStateException("multiply() failed");
 			}
 		}
 		return result;
 	}
-	
-	
-	private static boolean check(IntArray1SparseVector Ax, 
+
+
+	private static boolean check(IntArray1SparseVector Ax,
 		                           IntArray1SparseVector b) {
 		if (Ax.getNumCoords()!=b.getNumCoords())
 			throw new IllegalArgumentException("Ax and b dims don't match");
@@ -114,8 +114,8 @@ public class AdditiveSolverDepr {
 		}
 		return true;
 	}
-	
-	
+
+
 	private static int countFreeVars(IntArray1SparseVector x) {
 		int n=0;
 		int nz = x.getNumNonZeros();
@@ -127,7 +127,7 @@ public class AdditiveSolverDepr {
 		return n;
 	}
 
-	
+
 	static IntArray1SparseVector sortAsc(IntArray1SparseVector x) {
 		IntArray1SparseVector result = new IntArray1SparseVector(x.getNumCoords());
 		int[] data = x.getNonDefValues();
@@ -147,11 +147,11 @@ public class AdditiveSolverDepr {
 		i = x.getNumCoords()-(data.length-firstPosPos);
 		for (int j=firstPosPos; j<data.length; j++) {
 			result.setCoord(i++, data[j]);
-		} 
+		}
 		return result;
 	}
 
-	
+
 	static IntArray1SparseVector sortDesc(IntArray1SparseVector x) {
 		IntArray1SparseVector result = new IntArray1SparseVector(x.getNumCoords());
 		int[] data = x.getNonDefValues();
@@ -177,25 +177,25 @@ public class AdditiveSolverDepr {
 		}
 		return result;
 	}
-	
-	
+
+
 	private static int sum(int start, int end, IntArray1SparseVector x) {
 		int res=0;
 		for (int i=start;i<=end;i++) res += x.getCoord(i);
 		return res;
 	}
-	
-	
+
+
 	private static void setVars(IntArray1SparseVector x, int l) {
-		for (int i=0; i<x.getNumCoords(); i++) 
+		for (int i=0; i<x.getNumCoords(); i++)
 			if (x.getCoord(i)==-1)
 				x.setCoord(i, l);
 	}
-	
-	
-	// routines for node selection 
-	
-	
+
+
+	// routines for node selection
+
+
 	private static ON putInOrder(Node nd, ON head) {
 		int z = nd._z;
 		ON t = head;
@@ -219,8 +219,8 @@ public class AdditiveSolverDepr {
 		}
 		return head;
 	}
-	
-	
+
+
 	private static ON remove(Node nd, ON head) {
 		ON t = head;
 		while (t._v!=nd) {
@@ -241,24 +241,24 @@ public class AdditiveSolverDepr {
 		// dispose(t);
 		return head;
 	}
-	
-	
+
+
 	private static Node select(ON head) {
 		return head._v;
 	}
-	
-	
+
+
 	private static ON close(Node current, ON head) {
 		current._status=false;
 		System.err.println("-- closing node "+current._id);
 		head = remove(current, head);
 		return head;
 	}
-	
-	
+
+
 	// computing routines
 
-	
+
 	private void updateZ(Node current) {
 		IntArray1SparseVector xc = current._x;
 		int z = (int) VecUtil.innerProduct(_c, xc);
@@ -270,21 +270,21 @@ public class AdditiveSolverDepr {
 			System.err.println("found new better solution z="+z+" (xc="+xc+")");
 		}
 	}
-	
-	
+
+
 	private void imposeConstraint(Node current, int cstar) {
 		if (_zbar<_csum) {
 			_b.setCoord(_m-1, cstar+1-_zbar);
 			for (int j=0;j<_n;j++) {
-				if (((int)current._x.getCoord(j))==-1) 
+				if (((int)current._x.getCoord(j))==-1)
 					_A.setCoord(_m-1, j, (int)(-_c.getCoord(j)));
 				else
 					_A.setCoord(_m-1, j, 0);
 			}
 		}
 	}
-	
-	
+
+
 	private int computeNode(Node current, IntArray1SparseVector bbar) {
 		int cstar = 0;
 		bbar.reset();
@@ -323,10 +323,10 @@ public class AdditiveSolverDepr {
 		}
 		return cstar;
 	}
-	
-	
-	private boolean sumTest(Node current, 
-		                      IntArray1SparseVector bbar, 
+
+
+	private boolean sumTest(Node current,
+		                      IntArray1SparseVector bbar,
 													IntArray1SparseVector Pplus) {
 		boolean feasible = true;
 		Pplus.reset();
@@ -353,10 +353,10 @@ public class AdditiveSolverDepr {
 		if (!feasible) _head = close(current, _head);
 		return feasible;
 	}
-	
-	
-	private void fixSumTestVars(Node current, 
-		                          IntArray1SparseVector bbar, 
+
+
+	private void fixSumTestVars(Node current,
+		                          IntArray1SparseVector bbar,
 															IntArray1SparseVector Pplus) {
 		int cxnz = current._x.getNumNonZeros();
 		for (int j=0; j<cxnz; j++) {
@@ -383,8 +383,8 @@ public class AdditiveSolverDepr {
 			if (feasible) updateZ(current);
 		}
 	}
-	
-	
+
+
 	private void LU(Node current, IntArray1SparseVector bbar, int cstar) {
 		int L=0;
 		int U=_n+1;  // or is it n?
@@ -419,7 +419,7 @@ public class AdditiveSolverDepr {
 			if (Li>L) L=Li;
 			if (Ui<U) U=Ui;
 		}  // for i
-		
+
 		if (L>U) _head = close(current,_head);  // infeasible
 		if (L==U) {
 			int f = countFreeVars(current._x);
@@ -443,8 +443,8 @@ public class AdditiveSolverDepr {
 			}
 		}
 	}
-	
-	
+
+
 	private int infSum(IntArray1SparseVector bbar, Node current) {
 		int col = 0;
 		int mi=Integer.MAX_VALUE;
@@ -469,8 +469,8 @@ public class AdditiveSolverDepr {
 		}
 		return col;
 	}
-	
-	
+
+
 	private ON branch(int col, Node current, ON head) {
 		// create and compute new Node 1-branch
 		Node t1 = new Node();
@@ -502,11 +502,11 @@ public class AdditiveSolverDepr {
 		head = close(current,head);
 		return head;
 	}
-	
-	
+
+
 	// miscellaneous routines
-	
-	
+
+
 	private void convertToBin() {
 		double[] bound = new double[_n];
 		boolean format = true;
@@ -516,9 +516,9 @@ public class AdditiveSolverDepr {
 			pass=false;
 			for (int j=0; j<_n; j++) {
 				int cn=0;
-				while (_A.getCoord(cn, j)>0 && cn<_m-1) { 
+				while (_A.getCoord(cn, j)>0 && cn<_m-1) {
 					++cn;
-				}	
+				}
 				if (cn==_m-1) {  // x_j has no upper bound
 					throw new IllegalArgumentException("Problem cannot be converted to Additive Format");
 					//System.err.println("Problem cannot be converted to Additive Format");
@@ -528,7 +528,7 @@ public class AdditiveSolverDepr {
 					int cni = cn;
 					for (cn=cni; cn<_m-1; cn++) {
 						double bsum = _b.getCoord(cn) / _A.getCoord(cn, j);
-						int k=0;  
+						int k=0;
 						boolean nobsum = false;
 						while (k<=_n-1) {  // or is it _n?
 							double coef = (double)_A.getCoord(cn, k) / (double)_A.getCoord(cn, j);
@@ -543,7 +543,7 @@ public class AdditiveSolverDepr {
 						}
 						if (!nobsum) {
 							double tbsum = Math.floor(bsum);
-							if (bound[j]>tbsum || 
+							if (bound[j]>tbsum ||
 								  Double.compare(bound[j], -1.0)==0) {
 								bound[j]=tbsum;
 								System.err.println("improving bound for j="+j+" bound="+bound[j]);
@@ -554,15 +554,15 @@ public class AdditiveSolverDepr {
 				}
 			}  // for xj vars
 		}  // while format and pass
-		
+
 		if (format) {
 			double cr = Math.log(2);
 			int vs = 0;  // #bin_vars
 			for (int k=0; k<_n; k++) {
 				double v = Math.log(bound[k])/cr;
 				int vi = (int)Math.ceil(v);
-				_l.setCoord(k, vi);  // #bin vars for x[k] 
-				vs += vi;	
+				_l.setCoord(k, vi);  // #bin vars for x[k]
+				vs += vi;
 			}
 			System.err.println("#bin vars="+vs);
 			// update vector c
@@ -618,7 +618,7 @@ public class AdditiveSolverDepr {
 			// update _b
 			for (int i=0; i<_m-1; i++) _b.setCoord(i, nb[i]);
 		}  // if format
-		
+
 		// debug
 		System.err.println("Binary Format:");
 		System.err.println("Constraints: ");
@@ -634,8 +634,8 @@ public class AdditiveSolverDepr {
 		System.err.println(_c);
 		System.err.println("Conversion Procedure Completed.");
 	}
-	
-	
+
+
 	private void initialize(String filename) throws Exception {
 		BufferedReader br = new BufferedReader(new FileReader(filename));
 		String line = br.readLine();
@@ -669,20 +669,20 @@ public class AdditiveSolverDepr {
 			_c.setCoord(j, cj);
 		}
 		br.close();
-		
+
 		_bbar = new IntArray1SparseVector(_m);
 		_Pplus = new IntArray1SparseVector(_m);
 		_co = new IntArray1SparseVector(_n);
 		_l = new IntArray1SparseVector(_m);
-		
+
 		if (_conversionNeeded) convertToBin();
-		
+
 		_csum = 0;
 		int cnz = _c.getNumNonZeros();
 		for (int i=0; i<cnz; i++) {
 			_csum += _c.getIthNonZeroVal(i);
 		}
-		
+
 		_current = new Node();
 		_current._p = null;  // redundant
 		_current._id = 0;  // redundant
@@ -691,24 +691,24 @@ public class AdditiveSolverDepr {
 		_current._z = Integer.MAX_VALUE;
 		_current._status = true;
 		_current._x = new IntArray1SparseVector(_n);
-		for (int i=0; i<_n; i++) 
+		for (int i=0; i<_n; i++)
 			_current._x.setCoord(i, -1);  // initially, all vars are free
-		
+
 		_head = new ON();
 		_head._v = _current;
 		_head._next = null;  // redundant
 		_head._prev = null;  // redundant
-		
+
 		_maxnum = 0;  // redundant
 		_optimal = _current;
 		_zbar = Integer.MAX_VALUE;
 		_zstar = Integer.MAX_VALUE;
-		
+
 		// debug
 		System.err.println("initialize() routine completed.");
 	}
-	
-	
+
+
 	private void printResults() {
 		if (_optimal!=null) {
 			System.out.println("***OPTIMAL SOLUTION FOUND***");
@@ -720,8 +720,8 @@ public class AdditiveSolverDepr {
 			System.out.println("***PROBLEM INFEASIBLE***");
 		}
 	}
-	
-	
+
+
 	private void printFinalResults() {
 		if (_optimal!=null) {
 			int z = _optimal._z - _remainder;
@@ -745,12 +745,12 @@ public class AdditiveSolverDepr {
 			System.out.println("]");
 		}
 	}
-	
-	
+
+
 	public static void main(String[] args) {
 		String datafile = args[0];
 		if (args.length>1) {
-			_conversionNeeded = Boolean.parseBoolean(args[1]);
+			_conversionNeeded = args[1].startsWith("t");
 		}
 		AdditiveSolverDepr solver = new AdditiveSolverDepr();
 		try {
@@ -768,8 +768,8 @@ public class AdditiveSolverDepr {
 				solver.imposeConstraint(solver._current, solver._cstar);
 				solver._cstar = solver.computeNode(solver._current, solver._bbar);
 				System.err.println("processing node "+solver._current._id+" x="+solver._current._x);
-				solver._feasible = solver.sumTest(solver._current, 
-					                                solver._bbar, 
+				solver._feasible = solver.sumTest(solver._current,
+					                                solver._bbar,
 																					solver._Pplus);
 				if (solver._feasible) {
 					solver.fixSumTestVars(solver._current, solver._bbar, solver._Pplus);
@@ -784,7 +784,7 @@ public class AdditiveSolverDepr {
 					}
 				}
 			} while (solver._head!=null);
-			
+
 			solver.printResults();
 			solver.printFinalResults();
 		}

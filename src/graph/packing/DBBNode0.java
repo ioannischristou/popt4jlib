@@ -12,8 +12,8 @@ import java.io.*;
 /**
  * represents a node in the distributed B &amp; B tree of the hybrid
  * B &amp; B - GASP scheme for the 1-packing problem (max weighted independent
- * set problem with non-negative node weights), using bit-vectors as implemented 
- * in the class <CODE>popt4jlib.BoolVector</CODE> to represent the node-ids of 
+ * set problem with non-negative node weights), using bit-vectors as implemented
+ * in the class <CODE>popt4jlib.BoolVector</CODE> to represent the node-ids of
  * the partial solution it contains. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -24,12 +24,12 @@ import java.io.*;
  */
 class DBBNode0 extends DBBNodeBase {
 
-	private final static long _MIN_REQ_ELAPSED_TIME_4_DISTRIBUTION = 10000L;  
+	private final static long _MIN_REQ_ELAPSED_TIME_4_DISTRIBUTION = 10000L;
   // represents 10 seconds
-	private static final double _BND_RATIO_4_EXEC_SUBMISSION = -1.0;  
-	// any positive number for the above constant may? have a race-condition in 
+	private static final double _BND_RATIO_4_EXEC_SUBMISSION = -1.0;
+	// any positive number for the above constant may? have a race-condition in
 	// the finish-line of DBBNode0 objects that would only be removed if lazy
-	// decrements were not used. After the conversion of children to be sent to 
+	// decrements were not used. After the conversion of children to be sent to
 	// the local executor with "migrant" status, this race-condition should no
 	// longer exist, but is not tested yet.
 	private static final double _LSFAC = 0.8;
@@ -45,7 +45,7 @@ class DBBNode0 extends DBBNodeBase {
 
 	// statistics book-keeping
 	private final static boolean _GATHER_STATS = true;  // compile-time constant
-	private final static HashMap _BN2ASizeDistr = new HashMap();  
+	private final static HashMap _BN2ASizeDistr = new HashMap();
   // map<Integer nodeidsize, Set<Integer> bestnodes2addsize>
 	private final static HashMap _DBBNode0WgtDistr = new HashMap();
 	// map<Double nodeids_wgt, Integer num_appearances>
@@ -56,30 +56,30 @@ class DBBNode0 extends DBBNodeBase {
 	private static volatile boolean _startRunTimeSet = false;
 	private static volatile long _kmaxInit = 0;
 	private static volatile long _lastQueueDistrTime = 0;
-	private static long _lastDistrTime = 0;  // is essentially the max of the 
+	private static long _lastDistrTime = 0;  // is essentially the max of the
 	                                         // thread-local values held below
-	
+
   private static ThreadLocal _lastDistributionTimes = new ThreadLocal() {
     protected Object initialValue() {
       return null;
     }
   };
-	
+
 	private static ThreadLocal _dlsObjs = new ThreadLocal() {
 		protected Object initialValue() {
 			return new DLS(4);  // DLS with 4 threads
 		}
 	};
 
-	
+
 	/**
 	 * comparator between node-sets used in sorting node-sets in the
 	 * <CODE>getBestNodeSets2Add()</CODE> method if the appropriate option in the
 	 * parameters of the calling program is set. This sorting only makes sense
-	 * when children DBBNode0 objects will be "cut" short due to flags set to 
+	 * when children DBBNode0 objects will be "cut" short due to flags set to
 	 * guide the search process.
 	 */
-	private static NodeSetWeightComparatorBV _nscomtor = 
+	private static NodeSetWeightComparatorBV _nscomtor =
 		new NodeSetWeightComparatorBV();
 
 
@@ -100,7 +100,7 @@ class DBBNode0 extends DBBNodeBase {
 
   /**
    * the main method of the class, that processes the partial solution
-   * represented by this object. 
+   * represented by this object.
    */
   public Serializable run() {
     DConditionCounterLLCClt cond_counter=null;
@@ -114,19 +114,19 @@ class DBBNode0 extends DBBNodeBase {
 			// see if worker we're working in, is in a closing state
 			boolean wrk_is_closing = PDAsynchBatchTaskExecutorWrk.isClosing();
 			if (wrk_is_closing) {  // stop computations here
-				return null;  
+				return null;
 			}
       // step 1.
       // see if limit has been reached
-			int cur_counter = _master.incrementCounter();  // increment this process's 
+			int cur_counter = _master.incrementCounter();  // increment this process's
 			                                               // #DBBNode0 objects
 			mger.msg("#DBBNode0 objects created by this process="+cur_counter, 3);
 			if (cur_counter > _master.getMaxNodesAllowed()) {
 				// don't accept any more requests from server
 				PDAsynchBatchTaskExecutorWrk.setServerRequestsDisabled(true);
 				return null;  // this worker is done
-      } 
-			//if (cur_counter % 100 == 0) 
+      }
+			//if (cur_counter % 100 == 0)
 			{
 				String msg = "#DBBNode0 objs="+cur_counter;
 				if (_GATHER_STATS) {
@@ -154,7 +154,7 @@ class DBBNode0 extends DBBNodeBase {
 							kmax = (int) (_RSFAC*kmax);  // throttle up kmax
 							if (kmax<_kmaxInit) {
 								_master.setMaxAllowedItersInGBNS2A(kmax);
-								msg += " kmax increased to "+kmax;							
+								msg += " kmax increased to "+kmax;
 							} else msg += " kmax="+kmax_cur;
 						}
 						else msg += " kmax="+kmax;
@@ -186,7 +186,7 @@ class DBBNode0 extends DBBNodeBase {
 					mger.msg(msg, 1);
 					*/
 				}
-				
+
 			}
       // step 2.
       // check for pruning
@@ -202,7 +202,7 @@ class DBBNode0 extends DBBNodeBase {
         if (candidates != null && candidates.size() == 1) {
           //_nodes.addAll( (Set) candidates.iterator().next());
 					BoolVector next_cand = (BoolVector) candidates.iterator().next();
-					for (int i=next_cand.nextSetBit(0); 
+					for (int i=next_cand.nextSetBit(0);
 						   i>=0; i=next_cand.nextSetBit(i+1)) {
 						_nodeids.set(i);
 					}
@@ -237,7 +237,7 @@ class DBBNode0 extends DBBNodeBase {
         foundincumbent = true;
       }
       // branch?
-      if (candidates != null && candidates.size()!=0) {  
+      if (candidates != null && candidates.size()!=0) {
         // candidates.size() is in fact > 1
         try {
 					// if i'm the root, send all children to the network
@@ -254,11 +254,11 @@ class DBBNode0 extends DBBNodeBase {
 						try {
 							if (_GATHER_STATS) {  // update statistics
 								synchronized (DBBNode0.class) {
-									long time_elapsed = _lastDistrTime==0 ? 0 : 
+									long time_elapsed = _lastDistrTime==0 ? 0 :
 								             System.currentTimeMillis() - _lastDistrTime;
 									_numTasksDistributed += tasks.length;
-									_avgTimeBetweenDistrCalls = 
-										(time_elapsed + 
+									_avgTimeBetweenDistrCalls =
+										(time_elapsed +
 										 _avgTimeBetweenDistrCalls*_numDistributedCalls)
 										/ ++_numDistributedCalls;
 									_lastDistrTime = System.currentTimeMillis();
@@ -271,15 +271,15 @@ class DBBNode0 extends DBBNodeBase {
 								e.printStackTrace();
 								System.exit(-1);
 							}
-							// the chunk size should probably be divided by the number of 
-							// workers the server knows about 
-							int chunk_size = tasks.length / 
+							// the chunk size should probably be divided by the number of
+							// workers the server knows about
+							int chunk_size = tasks.length /
 								               PDAsynchBatchTaskExecutorWrk.getNumThreads();
 							PDAsynchBatchTaskExecutorClt.getInstance().
 								submitWorkFromSameHostInParallel(tasks,chunk_size);
 							return null;
 						}
-						catch (PDAsynchBatchTaskExecutorNWAException e) {  
+						catch (PDAsynchBatchTaskExecutorNWAException e) {
               // execute the tasks locally: as the submit method is the
 							// submitWorkFromSameHostInParallel(tasks,sz), the tasks that
 							// managed to execute will be null, and only the rest need to
@@ -290,7 +290,7 @@ class DBBNode0 extends DBBNodeBase {
 								if (tasks[i]!=null) tasks[i].run();  // run each child locally
 							}
 							return null;
-						}						
+						}
 					}  // if _lvl==0
           Set children = new TreeSet();  // Set<DBBNode0>
           Iterator it = candidates.iterator();
@@ -328,13 +328,13 @@ class DBBNode0 extends DBBNodeBase {
 					boolean go_distr=false;
 					synchronized (DBBNode0.class) {
 						if (_GATHER_STATS) {
-							time_elapsed = _lastDistrTime==0 ? 0 : 
+							time_elapsed = _lastDistrTime==0 ? 0 :
 								             System.currentTimeMillis() - _lastDistrTime;
 						}
-						time_elapsed_4_queue = 
-							_lastQueueDistrTime == 0 ? 
+						time_elapsed_4_queue =
+							_lastQueueDistrTime == 0 ?
 							  0 : System.currentTimeMillis() - _lastQueueDistrTime;
-						go_distr = time_elapsed_4_queue > 
+						go_distr = time_elapsed_4_queue >
 							         10*_MIN_REQ_ELAPSED_TIME_4_DISTRIBUTION;
 						if (go_distr) _lastQueueDistrTime = System.currentTimeMillis();
 					}
@@ -342,7 +342,7 @@ class DBBNode0 extends DBBNodeBase {
 						// Cilk-style heuristic to keep (other) workers busy:
 						// figure out if tasks in worker's executor's queue must "go"
 						if (go_distr) {
-							int num_workers = 
+							int num_workers =
 								PDAsynchBatchTaskExecutorClt.getInstance().getNumWorkers();
 							if (num_workers>1) {  // else it doesn't make sense
 								TaskObject[] tasks =  // leave only first 100 tasks in worker
@@ -358,8 +358,8 @@ class DBBNode0 extends DBBNodeBase {
 														 " tasks to the network", 0);
 										PDAsynchBatchTaskExecutorClt.getInstance().
 											submitWorkFromSameHostInParallel(tasks, chunk_size);
-									}									
-									catch (PDAsynchBatchTaskExecutorNWAException e) {  
+									}
+									catch (PDAsynchBatchTaskExecutorNWAException e) {
 			              // execute the tasks locally
 										mger.msg("DBBNode0.run(): got tasks back due to workers'"+
 								             "UNAVAILABILITY, will run them locally", 1);
@@ -370,11 +370,11 @@ class DBBNode0 extends DBBNodeBase {
 								}
 							}
 						}
-						else if (_lastQueueDistrTime==0) 
+						else if (_lastQueueDistrTime==0)
 							_lastQueueDistrTime = System.currentTimeMillis();
 					}
 					if (mustKeepLocally()) {  // keep them locally
-						// run children, but decide based on size whether to run them 
+						// run children, but decide based on size whether to run them
 						// now, or submit them to this worker's executor
 						List tasks_2_submit = new ArrayList();  // List<TaskObject>
 						List tasks_2_keep = new ArrayList();  // same
@@ -401,7 +401,7 @@ class DBBNode0 extends DBBNodeBase {
 									e.printStackTrace();
 									System.exit(-1);
 								}
-								boolean ok = 
+								boolean ok =
 									PDAsynchBatchTaskExecutorWrk.executeBatch(tasks_2_submit);
 								if (!ok) {
 									run_here=true;
@@ -411,7 +411,7 @@ class DBBNode0 extends DBBNodeBase {
 								run_here=true;
 							}
 							if (run_here) {
-								mger.msg("DBBNode0.run(): failed to submit locally to executor", 
+								mger.msg("DBBNode0.run(): failed to submit locally to executor",
 									       0);
 								// tasks_2_keep = children;
 								tasks_2_keep.clear();
@@ -449,8 +449,8 @@ class DBBNode0 extends DBBNodeBase {
 							if (_GATHER_STATS) {  // update statistics
 								synchronized (DBBNode0.class) {
 									_numTasksDistributed += tasks.length;
-									_avgTimeBetweenDistrCalls = 
-										(time_elapsed + 
+									_avgTimeBetweenDistrCalls =
+										(time_elapsed +
 										 _avgTimeBetweenDistrCalls*_numDistributedCalls)
 										/ ++_numDistributedCalls;
 									_lastDistrTime = System.currentTimeMillis();
@@ -459,7 +459,7 @@ class DBBNode0 extends DBBNodeBase {
 							PDAsynchBatchTaskExecutorClt.getInstance().
 								submitWorkFromSameHost(tasks);
 						}
-						catch (PDAsynchBatchTaskExecutorNWAException e) {  
+						catch (PDAsynchBatchTaskExecutorNWAException e) {
               // execute the tasks locally: even if the submit method was the
 							// submitWorkFromSameHostInParallel(tasks), then the tasks that
 							// managed to execute would be null, and only the rest need to
@@ -489,7 +489,7 @@ class DBBNode0 extends DBBNodeBase {
             try {
 							//Set nodeids = new IntSet(_nodeids);
 							Set nodeids = new IntSet();
-							for (int i=_nodeids.nextSetBit(0); 
+							for (int i=_nodeids.nextSetBit(0);
 								   i>=0; i=_nodeids.nextSetBit(i+1)) {
 								nodeids.add(new Integer(i));
 							}
@@ -502,14 +502,14 @@ class DBBNode0 extends DBBNodeBase {
               // now do the local search
               // DLS dls = new DLS();
 							DLS dls = (DLS) _dlsObjs.get();
-              AllChromosomeMakerIntf movesmaker = 
+              AllChromosomeMakerIntf movesmaker =
 								_master.getNewLocalSearchMovesMaker();
 							if (movesmaker==null)  // use default
-								movesmaker = 
+								movesmaker =
 									new IntSetN1RXPFirstImprovingGraphAllMovesMakerMT(1);
               // AllChromosomeMakerIntf movesmaker = new
               //    IntSetN2RXPGraphAllMovesMaker(1);
-							// IntSetN2RXPGraphAllMovesMaker(1) gives better results on 
+							// IntSetN2RXPGraphAllMovesMaker(1) gives better results on
 							// G_{|V|,p} random graphs
               IntSetNeighborhoodFilterIntf filter = new
                   GRASPPackerIntSetNbrhoodFilter3(1,_master.getGraph());
@@ -517,12 +517,12 @@ class DBBNode0 extends DBBNodeBase {
               HashMap dlsparams = new HashMap();
               dlsparams.put("dls.movesmaker", movesmaker);
               dlsparams.put("dls.x0", nodeids);
-              //dlsparams.put("dls.numthreads", new Integer(10));  
+              //dlsparams.put("dls.numthreads", new Integer(10));
               // itc: HERE parameterize above asap
-              dlsparams.put("dls.maxiters", new Integer(100)); 
+              dlsparams.put("dls.maxiters", new Integer(100));
               // itc: HERE rm above asap
               int n10 = _master.getGraph().getNumNodes()/10 + 1;
-              dlsparams.put("dls.intsetneighborhoodmaxnodestotry", 
+              dlsparams.put("dls.intsetneighborhoodmaxnodestotry",
 								            new Integer(n10));
               dlsparams.put("dls.graph", _master.getGraph());
 							dlsparams.put("dls.lock_graph", Boolean.FALSE);
@@ -578,23 +578,23 @@ class DBBNode0 extends DBBNodeBase {
 			if (_immigrant && cond_counter!=null) {
 				try {
 					// decrement cond_counter
-					if (PDAsynchBatchTaskExecutorWrk.isClosing() || 
+					if (PDAsynchBatchTaskExecutorWrk.isClosing() ||
 						  PDAsynchBatchTaskExecutorWrk.getServerRequestsDisabled()) {
 						cond_counter.lazyDecrement();
 						if (PDAsynchBatchTaskExecutorWrk.getNumTasksInQueue() <=
 							  PDAsynchBatchTaskExecutorWrk.getNumThreads()) {  // take poison
-							                                                   // pills into 
+							                                                   // pills into
 							                                                   // account
 							cond_counter.sendLazyDecrements();
-						} 
-					} 
+						}
+					}
 					else cond_counter.decrement();
 				}
 				catch (Exception e) {
 					e.printStackTrace();
 					System.exit(-1);
 				}
-			} 
+			}
 			else if (_immigrant) {  // insanity
 				System.err.println("null cond_counter???");
 				System.exit(-1);
@@ -612,7 +612,7 @@ class DBBNode0 extends DBBNodeBase {
 		return _nodeids;
 	}
 
-	
+
 	/**
 	 * return the node-ids contained in the solution that this object represents
 	 * as a <CODE>java.util.HashSet</CODE>.
@@ -626,7 +626,7 @@ class DBBNode0 extends DBBNodeBase {
 		return result;
 	}
 
-	
+
   /**
    * compares this DBB-node with another DBB-node, via the master DBBTree's
    * DBBNodeComparator object for comparing DBB-nodes.
@@ -709,12 +709,12 @@ class DBBNode0 extends DBBNodeBase {
 			Node n = g.getNodeUnsynchronized(i);
 			forbidden.add(n);
       Set nnbors = n.getNborsUnsynchronized();
-      forbidden.addAll(nnbors);			
-		}		
+      forbidden.addAll(nnbors);
+		}
     return forbidden;
   }
-	
-	
+
+
 	/**
 	 * same as getForbiddenNodes() but returns BoolVector with node-ids set.
 	 * @return BoolVector
@@ -730,15 +730,15 @@ class DBBNode0 extends DBBNodeBase {
 				Node nbor = (Node) it.next();
 				forbidden.set(nbor.getId());
 			}
-		}				
+		}
 		return forbidden;
 	}
 
 
   /**
    * compute a max possible number of nodes weights this soln can have.
-   * One such bound is 
-	 * _nodes.sum_weights + 
+   * One such bound is
+	 * _nodes.sum_weights +
 	 * (gsz - getForbiddenNodes().size())*max_open_node_weight/2
    * @return double
    */
@@ -762,7 +762,7 @@ class DBBNode0 extends DBBNodeBase {
 		DBBTree master = DBBTree.getInstance();
 		Double max_node_weightD = g.getMaxNodeWeight("value",forbidden);
 		double mnw = max_node_weightD==null ? 1.0 : max_node_weightD.doubleValue();
-    res += (master.getGraphSize()-forbidden.size())*mnw/2.0;  
+    res += (master.getGraphSize()-forbidden.size())*mnw/2.0;
     // itc 2015-02-11: added the division by 2 above
     _bound = res;
     return res;
@@ -779,12 +779,12 @@ class DBBNode0 extends DBBNodeBase {
 		DBBTree master = DBBTree.getInstance();
 		final int num_nodes = master.getGraphSize();
     final int kmax = master.getMaxAllowedItersInGBNS2A();
-		final boolean limit_node_children = 
+		final boolean limit_node_children =
 			master.getMaxChildrenNodesAllowed() < Integer.MAX_VALUE;
     final Set ccands = getBestNodes2Add(_lvl==0);  // Set<Node>
 		if (_GATHER_STATS) {
 			synchronized (DBBNode0.class) {
-				Set distr = 
+				Set distr =
 					(Set) _BN2ASizeDistr.get(new Integer(_nodeids.cardinality()));
 				if (distr==null) {
 					distr = new TreeSet();
@@ -819,7 +819,7 @@ class DBBNode0 extends DBBNodeBase {
     // _nodeids.
     int cnt=0;  // used to stop the max subsets creation process from going wild
     while (temp.isEmpty()==false) {
-      if (++cnt>=kmax || 
+      if (++cnt>=kmax ||
 				  PDAsynchBatchTaskExecutorWrk.isClosing() ||
 				  PDAsynchBatchTaskExecutorWrk.getServerRequestsDisabled()) break;
       BoolVector t = (BoolVector) temp.pop();
@@ -827,7 +827,7 @@ class DBBNode0 extends DBBNodeBase {
       boolean expanded_t=false;
       while (cands_it.hasNext()) {
         Node n = (Node) cands_it.next();
-				if (!limit_node_children && n.getId()<t.lastSetBit()) 
+				if (!limit_node_children && n.getId()<t.lastSetBit())
 					continue;  // don't use middle ids when the children will not be cut
         if (isFree2Cover(n, t)) {
           BoolVector t2 = new BoolVector(t);
@@ -884,12 +884,12 @@ class DBBNode0 extends DBBNodeBase {
     result.addAll(store);
     return result;
   }
-	
-	
+
+
 	/**
 	 * check whether children nodes must be sent for distribution or not, based
-	 * on when the current thread sent children before. If it returns false, it 
-	 * also updates the time of the last distribution to now. Notice that the 
+	 * on when the current thread sent children before. If it returns false, it
+	 * also updates the time of the last distribution to now. Notice that the
 	 * method also checks whether the client is currently submitting tasks (from
 	 * an other thread). If so, then the method returns true so as to increase
 	 * throughput.
@@ -900,8 +900,8 @@ class DBBNode0 extends DBBNodeBase {
 		long now = System.currentTimeMillis();
 		long last_time = getLastDistributionTime();
 		if (now - last_time > _MIN_REQ_ELAPSED_TIME_4_DISTRIBUTION) {
-			PDAsynchBatchTaskExecutorClt clt = 
-				PDAsynchBatchTaskExecutorClt.getInstance();			
+			PDAsynchBatchTaskExecutorClt clt =
+				PDAsynchBatchTaskExecutorClt.getInstance();
 			if (!clt.isCurrentlySubmittingWork()) {
 				setLastDistributionTimeNow();
 				return false;
@@ -914,8 +914,8 @@ class DBBNode0 extends DBBNodeBase {
   /**
    * return the Set&lt;Node&gt; that are best node(s) to add given the current
    * active <CODE>_nodeids</CODE> set. This is the set of nodes that are free to
-	 * cover, have max. weight (within the fudge factor 
-	 * <CODE>DBBNodeBase._ff</CODE>), and have the least weight of "free" NBors() 
+	 * cover, have max. weight (within the fudge factor
+	 * <CODE>DBBNodeBase._ff</CODE>), and have the least weight of "free" NBors()
 	 * (again within same fudge factor).
 	 * Alternatively, if the "useGWMIN2criterion" flag is true, the "GWMIN2"
 	 * heuristic criterion is utilized, so that the free nodes that are within
@@ -941,7 +941,7 @@ class DBBNode0 extends DBBNodeBase {
       if (!forbidden.get(i)) {
         Double niwD = ni.getWeightValueUnsynchronized("value");
         double ni_weight = niwD==null ? 1.0 : niwD.doubleValue();
-				if (useGWMIN2) {  // ni_weight must be divided by the sum of all 
+				if (useGWMIN2) {  // ni_weight must be divided by the sum of all
 					                // free neighbors' weights plus its own
 					Set nibors = ni.getNborsUnsynchronized();
 					double denom = ni_weight;
@@ -980,7 +980,7 @@ class DBBNode0 extends DBBNodeBase {
           best.add(ni);
           best_node_cost = ni_weight;
         }
-        if (ni_weight >= ff*best_node_cost && !useGWMIN2) {  
+        if (ni_weight >= ff*best_node_cost && !useGWMIN2) {
           // is wrong to use "else if" in the above "if" stmt
           // check for "free" nbors
           // below is a valid but slow method to compute "free" nbors
@@ -1019,7 +1019,7 @@ class DBBNode0 extends DBBNodeBase {
             best.add(ni);
             bestcost = nisize;
           }
-          else if (nisize <= bestcost*(2.0-ff)) {  
+          else if (nisize <= bestcost*(2.0-ff)) {
             // approx. equal to best, add to set
             best.add(ni);
           }
@@ -1051,7 +1051,7 @@ class DBBNode0 extends DBBNodeBase {
           }
           double fitness = nisize > 0 ? bestcost / nisize : 1;
           double prob = num_extra_nodes2add * fitness / (gsz * Math.sqrt(lvl));
-          double ri = r.nextDouble();  
+          double ri = r.nextDouble();
           // used to be ri = RndUtil.getInstance().getRandom().nextDouble();
           if (ri<prob) {
             best.add(ni);
@@ -1080,7 +1080,7 @@ class DBBNode0 extends DBBNodeBase {
     return true;
   }
 
-	
+
   /**
    * check if node nj can be set to one when the nodes in active are also set.
    * @param nj Node
@@ -1148,7 +1148,7 @@ class DBBNode0 extends DBBNodeBase {
 		return true;
 	}
 
-	
+
   private static long getLastDistributionTime() {
     Long p = (Long) _lastDistributionTimes.get();
     if (p==null) {
@@ -1160,8 +1160,8 @@ class DBBNode0 extends DBBNodeBase {
 	private static void setLastDistributionTimeNow() {
 		_lastDistributionTimes.set(new Long(System.currentTimeMillis()));
 	}
-	
-	
+
+
 	private static void setStartTime() {
 		if (_startRunTimeSet) return;  // relies on _startRunTime* being volatile
 		synchronized (DBBNode0.class) {
@@ -1184,7 +1184,7 @@ class DBBNode0 extends DBBNodeBase {
 		res += "]";
     return res;
   }
-	
+
 
 	// debug routine
 	private static synchronized String getSolnWgtsHistogram() {
@@ -1213,15 +1213,15 @@ class DBBNode0 extends DBBNodeBase {
 		while (it.hasNext()) {
 			Double wgt = (Double) it.next();
 			Integer num_apps = (Integer) _DBBNode0WgtDistr.get(wgt);
-			int scaled_val = 10*(num_apps-min_num_apps)/(max_num_apps-min_num_apps);
+			int scaled_val = 10*(num_apps.intValue()-min_num_apps)/(max_num_apps-min_num_apps);
 			if (scaled_val==0) scaled_val=1;
-			int pos = (int) Math.floor(wgt);
+			int pos = (int) Math.floor(wgt.doubleValue());
 			if (pos>100) pos=100;
 			arr[pos]=scaled_val;
 		}
 		for (int i=0; i<10; i++) {
 			for (int j=1; j<=100; j++) {
-				if (arr[j]>=i+1) result += "*"; 
+				if (arr[j]>=i+1) result += "*";
 				else result += " ";
 			}
 			result += "\n";
