@@ -25,12 +25,18 @@ public class BarrierTest {
 	 */
   public static void main(String[] args) {
     try {
+			long start = System.currentTimeMillis();
       BThread arr[] = new BThread[10];
       Barrier.setNumThreads(arr.length);
       for (int i = 0; i < arr.length; i++) {
         arr[i] = new BThread(i);
         arr[i].start();
       }
+			for (int i = 0; i < arr.length; i++) {
+				arr[i].join();
+			}
+			long dur = System.currentTimeMillis()-start;
+			System.out.println("done in "+dur+" msecs");
     }
     catch (Exception e) {
       e.printStackTrace();
@@ -44,9 +50,10 @@ public class BarrierTest {
 		private int _id;
 		public BThread(int id) { _id = id; }
 		public void run() {
-			for (int i=0; i<10; i++) {
-				System.out.println("t-id="+_id+" i="+i);
-				Barrier.getInstance().barrier();
+			Barrier b = Barrier.getInstance();
+			for (int i=0; i<1000000; i++) {
+				//System.out.println("t-id="+_id+" i="+i);
+				b.barrier();
 			}
 		}
 	}

@@ -52,17 +52,17 @@ public class VectorIntfRndDeltaCPerturber
 	 * length of the vector.
    * <li> &lt;"[dgabh.]minallelevalue", $value$&gt; optional, the minimum value 
 	 * for any allele in the chromosome. Default -Infinity.
-   * <li> &lt;"[dgabh.]minallelevalue$i$", $value$&gt; optional, the minimum value 
-	 * for the i-th allele in the chromosome ($i$ must be in the range
+   * <li> &lt;"[dgabh.]minallelevalue$i$", $value$&gt; optional, the minimum 
+	 * value for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is less than the global value
    * specified by the "[dgabh.]minallelevalue" key, it is ignored.
    * <li> &lt;"[dgabh.]maxallelevalue", $value$&gt; optional, the maximum value 
 	 * for any allele in the chromosome. Default +Infinity.
-   * <li> &lt;"[dgabh.]maxallelevalue$i$", $value$&gt; optional, the maximum value 
+   * <li> &lt;"[dgabh.]maxallelevalue$i$", $value$&gt; optional, the max value 
 	 * for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is greater than the global value
    * specified by the "[dgabh.]maxallelevalue" key, it is ignored.
-   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of 
    * thread invoking this method; this number is used so as to look-up the right
    * random-number generator associated with the current thread.
 	 * </ul>

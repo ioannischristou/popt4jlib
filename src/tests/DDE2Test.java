@@ -7,24 +7,25 @@ import utils.RndUtil;
 
 /**
  * Test-driver class for the (Distributed) Differential Evolution algorithm
- * implemented in class <CODE>popt4jlib.DE.DDE</CODE>.
+ * implemented in class <CODE>popt4jlib.DE.DDE2</CODE>. Almost the same as 
+ * <CODE>DDETest</CODE>, but runs the <CODE>DDE2</CODE> class.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class DDETest {
+public class DDE2Test {
   /**
    * single public no-arg constructor
    */
-  public DDETest() {
+  public DDE2Test() {
   }
 
 
   /**
-   * run as <CODE> java -cp &lt;classpath&gt; tests.DDETest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>.
+   * run as <CODE> java -cp &lt;classpath&gt; tests.DDE2Test &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>.
    * The params_file must contain lines of the following form:
 	 * <ul>
    * <li> class,dde.function, &lt;fullclasspathname&gt;  mandatory, the java class
@@ -72,10 +73,15 @@ public class DDETest {
 	 * much faster in a multi-core setting if this flag is set to true (at the 
 	 * expense of deterministic results) getting the CPU utilization to reach 
 	 * almost 100% as opposed to around 60% otherwise, default is false
+	 * <li> dde2.numgensbetweenbarrier, $val$ optional, an integer
+	 * specifying the number of generations between two successive barrier calls
+	 * among the threads participating in the DDE2 process, default is 
+	 * <CODE>Integer.MAX_VALUE</CODE>; also notice that this parameter is 
+	 * meaningless when the "dde.nondeterminismok" flag is false.
 	 * <li> dde.countfuncevals, $bool_val$ optional, boolean value indicating 
 	 * whether or not the process should be counting the number of function 
 	 * evaluations it performs, default is false
-	 * <li> dde.dmpaddress, &lt;ipaddress&gt; optional, if existing, 
+	 * <li> dde.dmpaddress, $str_val$ optional, if existing, 
 	 * specifies the location of a distributed Msg-Passing server that implements
 	 * the basic send/recv operations as specified in 
 	 * <CODE>parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv[Clt]</CODE>
@@ -96,16 +102,16 @@ public class DDETest {
 	 * <li> dde.numgensbetweenmigrations, $num$ optional, if 
 	 * existing, it indicates the number of generations that must pass between two
 	 * successive "migrations" between DDE island-processes; default is 10
-	 * <li> dde.nummigrants, $num$ optional, if it exists, indicates
-	 * how many migrants will be sent and received from each dde process; default
+	 * <li> dde.nummigrants,$num$ optional, if it exists, indicates
+	 * how many migrants will be sent and received from each DDE2 process; default
 	 * is 10
-	 * <li> dde.reducerhost, &lt;ipaddress&gt; optional, if existing, it 
+	 * <li> dde.reducerhost, $str_val$ optional, if existing, it 
 	 * indicates the address in which the reducer server resides; default is null
 	 * <li> dde.reducerport, $num$ optional, if existing, it
 	 * indicates the address in which the reducer server process listens at; 
 	 * default is -1
    * </ul>
-	 * <p> Notice that in case of running DDE in a distributed manner, there are
+	 * <p> Notice that in case of running DDE2 in a distributed manner, there are
 	 * two important constraints: 
 	 * <ul>
 	 * <li> First of all, the various processes participating in the distributed 
@@ -138,12 +144,18 @@ public class DDETest {
       HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       if (args.length>1) {
         long seed = Long.parseLong(args[1]);
-        RndUtil.getInstance().setSeed(seed);  // updates all extra instances too
+        RndUtil.getInstance().setSeed(seed);  // update all extra instances too!
       }
       if (args.length>2) {
         long num = Long.parseLong(args[2]);
         params.put("maxfuncevalslimit",new Long(num));
       }
+			Integer popsizeI = (Integer) params.get("dde.popsize");
+			int popsize = popsizeI==null ? 10 : popsizeI.intValue();
+			Integer ntI = (Integer) params.get("dde.numthreads");
+			int nt = ntI==null ? 1 : ntI.intValue();
+			int poolsize = popsize/nt + 5;
+			popt4jlib.DblArray1VectorThreadLocalPools.setPoolSize(poolsize);
       FunctionIntf func = (FunctionIntf) params.get("dde.function");
       if (params.containsKey("dde.countfuncevals") && 
 					((Boolean) params.get("dde.countfuncevals")).booleanValue()==true) {
@@ -151,7 +163,7 @@ public class DDETest {
 				params.put("dde.function",wrapper_func);
 				func = wrapper_func;
 			}
-      DDE opter = new DDE(params);
+      DDE2 opter = new DDE2(params);
       utils.PairObjDouble p = opter.minimize(func);
       VectorIntf arg = (VectorIntf) p.getArg();
       System.out.print("best soln found:[");
@@ -182,10 +194,10 @@ public class DDETest {
 				             p.getDouble() : p2.getDouble();
 			System.out.println("total time (msecs): "+dur);
       if (func instanceof FunctionBase)
-			System.out.println("VVV,"+val+",TTT,"+dur+
-				                 ",NNN,"+((FunctionBase)func).getEvalCount()+
-				                 ",PPP,DDE,FFF,"+args[0]);  // for parser program to 
-			                                              // extract from output
+				System.out.println("VVV,"+val+",TTT,"+dur+
+					                 ",NNN,"+((FunctionBase)func).getEvalCount()+
+					                 ",PPP,DDE2,FFF,"+args[0]);  // for parser program to 
+			                                                 // extract from output
     }
     catch (Exception e) {
       e.printStackTrace();

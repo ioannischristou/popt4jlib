@@ -6,7 +6,8 @@ import java.util.ArrayList;
 /**
  * class that ensures First-In-First-Served lock acquisition among threads.
  * Again there is no mechanism to check whether a thread calling
- * <CODE>releaseLock()</CODE> actually had the lock prior to the call.
+ * <CODE>releaseLock()</CODE> actually had the lock prior to the call. Again the
+ * lock mechanism is NOT reentrant.
  * Uses the specific notification Design Pattern by Tom Cargill.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>

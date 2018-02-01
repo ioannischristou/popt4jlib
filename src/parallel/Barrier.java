@@ -108,7 +108,7 @@ public class Barrier {
    * first for all the other threads to exit and then will proceed.
    */
   public void barrier() {
-    while (passBarrier()==false) {
+    while (passBarrierFast()==false) {  // used to be passBarrier()
       // repeat: this is not busy-waiting behavior except for the case
       // when a thread has passed the barrier and is calling again
       // the barrier() method before all other threads exit the previous call
@@ -139,7 +139,9 @@ public class Barrier {
 
 
   private synchronized boolean passBarrier() {
-    if (_numThreads2Wait4 < 0) return false;  // thread just ran through to the next barrier point before reseting
+    if (_numThreads2Wait4 < 0) 
+			return false;  // thread just ran through to the next barrier point before 
+		                 // reseting
     --_numThreads2Wait4;
     while (_numThreads2Wait4>0) {
       try {
@@ -157,6 +159,33 @@ public class Barrier {
     notifyAll();  // wake them all up
     return true;
   }
+	
+
+	/**
+	 * the method is the same as <CODE>passBarrier()</CODE> except that it tries
+	 * to avoid "spurious" notifications that could slow the system down.
+	 * @return boolean true only when the barrier has passed
+	 */
+	private synchronized boolean passBarrierFast() {
+    if (_numThreads2Wait4 < 0) 
+			return false;  // thread just ran through to the next barrier point before 
+		                 // reseting
+    --_numThreads2Wait4;
+    while (_numThreads2Wait4>0) {
+      try {
+        wait();
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // recommended behavior
+        // no-op
+      }
+    }
+    if (--_numThreads2Wait4==-_origNumThreads) {
+      // I am the last thread to pass this point, so reset
+      _numThreads2Wait4 = _origNumThreads;  // reset
+    } else notify();  // there is still someone else to wake up
+    return true;
+	}
 
 }
 

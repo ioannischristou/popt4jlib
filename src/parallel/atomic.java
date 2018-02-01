@@ -19,7 +19,11 @@ import java.util.*;
  * thread to release the lock that another thread has acquired. If this
  * possibility is unacceptable, then the class Semaphore can be used
  * instead, which ensures that no release call can occur if the calling
- * thread does not have a permit.
+ * thread does not have a permit. Also notice the <CODE>start(long)</CODE> call
+ * is not re-entrant. In other words, if a thread that has called 
+ * <CODE>atomic.start(1);</CODE> calls <CODE>atomic.start(1);</CODE> within its
+ * critical section, it will hang forever (just like the <CODE>Lock</CODE> 
+ * class of which atomic is a wrapper, will hang.)
  *
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>

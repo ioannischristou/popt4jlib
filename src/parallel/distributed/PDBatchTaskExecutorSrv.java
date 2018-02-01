@@ -16,7 +16,7 @@ import java.util.*;
  * and if this is the case, then, whenever another client submits a request,
  * if the workers connected to this server are all busy, it will try submitting
  * the request to each of the other servers to which it is a client (unless
- * the other server is also the client that originated or forwarded the request),
+ * the other server is also the client that originated or forwarded the request)
  * until it gets a response.
  * Notice that in this implementation, if a worker fails twice in a sequence to 
  * run two different batch jobs, it is removed from the pool of available 
@@ -70,7 +70,11 @@ public class PDBatchTaskExecutorSrv {
 
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBatchTaskExecutorSrv [workers_port(7890)] [clients_port(7891)] [other_server_ip_address,otherserver_ip_port]* </CODE>
+   * <CODE>
+	 * java -cp &lt;classpath&gt; parallel.distributed.PDBatchTaskExecutorSrv 
+	 * [workers_port(7890)] [clients_port(7891)] 
+	 * [other_server_ip_address,otherserver_ip_port]* 
+	 * </CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -187,11 +191,15 @@ public class PDBatchTaskExecutorSrv {
   }
 
 
-  TaskObjectsExecutionResults submitWork(Vector originating_clients, TaskObject[] tasks) throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
-    Set workers2rm = new HashSet();  // Set<Socket s> for (Socket s, PDBTEWListener t) pair
+  TaskObjectsExecutionResults submitWork(Vector originating_clients, 
+		                                     TaskObject[] tasks) 
+		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+    Set workers2rm = new HashSet();  // Set<Socket s> for 
+		                                 // (Socket s, PDBTEWListener t) pair
     PDBTEWListener t = null;
 		utils.Messenger mger = utils.Messenger.getInstance();
-    mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks): finding an available worker connection",2);
+    mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks): "+
+			       "finding an available worker connection",2);
     // 1. find a worker (via Round-Robin)
     synchronized (this) {
       int count = 0;
@@ -221,7 +229,8 @@ public class PDBatchTaskExecutorSrv {
       }
     }  // synchronized (this)
     if (t==null) {  // failed to find an available thread
-      mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks): no available threads...",1);
+      mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks): "+
+				       "no available threads...",1);
       boolean didit = false;
       // no synchronization is needed for the following block of code:
 			// try for a number of times, to find a known server and sumbit the work
@@ -235,17 +244,20 @@ public class PDBatchTaskExecutorSrv {
           try {
             PDBatchTaskExecutorClt clienti = (PDBatchTaskExecutorClt)
                 _otherKnownServers.elementAt(i);
-            String clientipaddress_port = clienti.getHostIPAddress() + "_" + clienti.getPort();
+            String clientipaddress_port = 
+							clienti.getHostIPAddress() + "_" + clienti.getPort();
             if (contains(originating_clients,clientipaddress_port)) {
               mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks): "+
-                       "tasks have been created or forwarded from server being checked",1);
+                       "tasks have been created or forwarded from server "+
+								       "being checked",1);
               continue;
             }
             mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks): "+
                      "forwarding tasks to: "+clientipaddress_port,1);
             originating_clients.addElement(clientipaddress_port);
             Object[] results = clienti.submitWork(originating_clients, tasks);
-            TaskObjectsExecutionResults res = new TaskObjectsExecutionResults(results);
+            TaskObjectsExecutionResults res = 
+							new TaskObjectsExecutionResults(results);
             didit = true;  // not needed
             return res;
           }
@@ -256,26 +268,34 @@ public class PDBatchTaskExecutorSrv {
         }
       }
       if (!didit)  // failed completely
-        throw new PDBatchTaskExecutorException("no available worker or known srv could undertake work");
+        throw new PDBatchTaskExecutorException("no available worker or known "+
+					                                     "srv could undertake work");
     }
-    mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks): found an available worker",2);
+    mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks):"+
+			       " found an available worker",2);
     // 2. submit tasks and get back results
-    TaskObjectsExecutionRequest req = new TaskObjectsExecutionRequest(originating_clients, tasks);
-    mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks): created the TaskObjectsExecutionRequest to send",2);
+    TaskObjectsExecutionRequest req = 
+			new TaskObjectsExecutionRequest(originating_clients, tasks);
+    mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks): "+
+			       "created the TaskObjectsExecutionRequest to send",2);
     RRObject res = submitWork(req, t);
-    mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks): finished running submitWork(req,ois,oos)",2);
+    mger.msg("PDBatchTaskExecutorSrv.submitWork(tasks): "+
+			       "finished running submitWork(req,ois,oos)",2);
     synchronized (this) {
       _working.remove(t);  // declare worker's availability again
     }
     if (res instanceof TaskObjectsExecutionResults)
       return (TaskObjectsExecutionResults) res;
     else {
-      throw new PDBatchTaskExecutorException("PDBatchTaskExecutorSrv.submitWork(tasks): worker failed to process tasks.");
+      throw new PDBatchTaskExecutorException(
+				"PDBatchTaskExecutorSrv.submitWork(tasks): "+
+				"worker failed to process tasks.");
     }
   }
 
 
-  private TaskObjectsExecutionResults submitWork(TaskObjectsExecutionRequest req, PDBTEWListener t)
+  private TaskObjectsExecutionResults submitWork(
+		TaskObjectsExecutionRequest req, PDBTEWListener t)
       throws IOException, PDBatchTaskExecutorException {
     utils.Messenger mger = utils.Messenger.getInstance();
 		mger.msg("PDBatchTaskExecutorSrv.submitWork(req,t): sending request",2);
@@ -319,7 +339,10 @@ public class PDBatchTaskExecutorSrv {
 
 
   private static void usage() {
-    System.err.println("usage: java -cp <classpath> parallel.distributed.PDBatchTaskExecutorSrv [workersport] [clientsport] [other_srv_ipaddress,other_srv_port ]*");
+    System.err.println("usage: java -cp <classpath> "+
+			                 "parallel.distributed.PDBatchTaskExecutorSrv "+
+			                 "[workersport] [clientsport] "+
+			                 "[other_srv_ipaddress,other_srv_port ]*");
   }
 
 
@@ -361,7 +384,8 @@ public class PDBatchTaskExecutorSrv {
             Socket s = ss.accept();
             mger.msg("Srv: New Worker Added to the Network",0);
             addNewWorkerConnection(s);
-            mger.msg("Srv: finished adding new worker connection to the _workers",0);
+            mger.msg("Srv: finished adding new worker connection to _workers",
+							       0);
           }
           catch (Exception e) {
             e.printStackTrace();
@@ -405,7 +429,8 @@ public class PDBatchTaskExecutorSrv {
             mger.msg("Srv: finished adding new client connection",0);
           }
           catch (Exception e) {
-            mger.msg("Srv.CThread.run(): caught exception '"+e+"' that will be ignored.",0);
+            mger.msg("Srv.CThread.run(): caught exception '"+e+
+							       "' that will be ignored.",0);
           }
         }
       }

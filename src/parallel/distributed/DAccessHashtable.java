@@ -163,7 +163,7 @@ public class DAccessHashtable {
 	/**
 	 * first locks the given key and then returns the associated value. The lock
 	 * is not released, until the method <CODE>putAndUnlock()</CODE> is invoked
-	 * with the same key.
+	 * with the same key. The locks are NOT re-entrant.
 	 * @param key Object
 	 * @return Object value
 	 * @throws IllegalArgumentException if key does not exist
@@ -213,7 +213,7 @@ public class DAccessHashtable {
 	/**
 	 * same as <CODE>lockAndGet(key)</CODE> but works for multiple keys, which are
 	 * locked in ascending order of their unique id, and then their associated
-	 * value is added to the resulting array.
+	 * value is added to the resulting array. The locks are NOT re-entrant.
 	 * @param keys Object[]
 	 * @return Object[] values for each of the keys
 	 * @throws IllegalArgumentException if key doesn't exist

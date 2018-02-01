@@ -9,25 +9,22 @@ import popt4jlib.GradientDescent.VecUtil;
 
 /**
  * A parallel/distributed implementation of the Differential Evolution 
- * algorithm. The distribution of effort among threads is such so that each 
- * thread updates its own portion of the population. Implements both the 
- * DE/rand/1/bin and DE/best/1/bin variants. Also implements the island model of 
- * distributed computing, via the 
- * <CODE>
- * parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv[Clt]
- * </CODE>
- * mechanism.
- * It must be noted that DE applies only to functions with domain the space
- * R^n, and range the real axis R, and therefore cannot be applied to functions
- * with other domains.
+ * algorithm. Almost the same as <CODE>DDE</CODE> class, but much faster 
+ * when running with tens of threads on many-core CPUs, because of less 
+ * synchronization required on the _solXXX data members. On the other hand,
+ * this approach has the trade-off that the _solXXX elements are only updated
+ * for threads to see at the end of each generation. While threads execute a 
+ * generation, they don't see each other's updates. In fact, if non-determinism
+ * is OK (via the appropriate flag set in the parameters), then the threads may
+ * never see each other's updates (with the exception of the incumbent).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 2.0
+ * @version 1.0
  */
-public class DDE implements OptimizerIntf {
+public class DDE2 implements OptimizerIntf {
   private static int _nextId = 0;
   private int _id;
   private HashMap _params;
@@ -36,7 +33,7 @@ public class DDE implements OptimizerIntf {
   private double _incValue=Double.MAX_VALUE;
 	private int _incIndex;  // index to the current generation's best individual
   private VectorIntf _inc=null;  // incumbent vector
-  private DDEThread[] _threads=null;
+  private DDE2Thread[] _threads=null;
   FunctionIntf _f=null;
   VectorIntf[] _sols;  // the population of solutions
   double[] _solVals;
@@ -59,17 +56,17 @@ public class DDE implements OptimizerIntf {
   /**
    * default constructor. Assigns to the object a unique id.
    */
-  public DDE() {
+  public DDE2() {
     _id = incrID();
   }
 
 
   /**
-   * Constructor of a DDE object, that assigns a unique id plus the parameters
+   * Constructor of a DDE2 object, that assigns a unique id plus the parameters
    * passed into the argument.
    * @param params HashMap
    */
-  public DDE(HashMap params) {
+  public DDE2(HashMap params) {
     this();
     try {
       setParams(params);
@@ -81,13 +78,13 @@ public class DDE implements OptimizerIntf {
 
 
   /**
-   * Constructor of a DDE object, that assigns a unique id plus the parameters
+   * Constructor of a DDE2 object, that assigns a unique id plus the parameters
    * passed into the argument. Also, it prevents other threads from modifying
    * the parameters passed into this object if the second argument is true.
    * @param params HashMap
    * @param setParamsOnlyFromSameThread boolean
    */
-  public DDE(HashMap params, boolean setParamsOnlyFromSameThread) {
+  public DDE2(HashMap params, boolean setParamsOnlyFromSameThread) {
     this();
     try {
       setParams(params);
@@ -180,6 +177,11 @@ public class DDE implements OptimizerIntf {
 	 * much faster in a multi-core setting if this flag is set to true (at the 
 	 * expense of deterministic results) getting the CPU utilization to reach 
 	 * almost 100% as opposed to around 60% otherwise, default is false
+	 * <li> &lt;"dde2.numgensbetweenbarrier", Integer val&gt; optional, an integer
+	 * specifying the number of generations between two successive barrier calls
+	 * among the threads participating in the DDE2 process, default is 
+	 * <CODE>Integer.MAX_VALUE</CODE>; also notice that this parameter is 
+	 * meaningless when the "dde.nondeterminismok" flag is false.
 	 * <li> &lt;"dde.dmpaddress", String location&gt; optional, if existing, 
 	 * specifies the location of a distributed Msg-Passing server that implements
 	 * the basic send/recv operations as specified in 
@@ -282,7 +284,7 @@ public class DDE implements OptimizerIntf {
 			try {
 				if (_reducerPort>0)
 					red = new DReducer(_reducerHost, _reducerPort, 
-					                 "DDEReducer_"+_reducerHost+"_"+_reducerPort);
+						                 "DDEReducer_"+_reducerHost+"_"+_reducerPort);
 				// if running distributed, all will have to complete the above call
 				// before being able to proceed with the migration of individuals
 				// in the main DDE process and therefore when reducing, the server will
@@ -299,12 +301,12 @@ public class DDE implements OptimizerIntf {
         throw new OptimizerException("barrier init. failed");
       }
 
-      _threads = new DDEThread[numthreads];
+      _threads = new DDE2Thread[numthreads];
       RndUtil.addExtraInstances(numthreads);  // not needed
       int ntries = 100;
       try {
         Integer ntriesI = (Integer) _params.get("dde.numtries");
-        if (ntriesI != null && ntriesI.intValue() > 1)
+        if (ntriesI != null && ntriesI.intValue() >= 1)
           ntries = ntriesI.intValue();
       }
       catch (Exception e) {
@@ -314,12 +316,12 @@ public class DDE implements OptimizerIntf {
       int k = 0;
       int l = vecsperthread;
       for (int i = 0; i < numthreads - 1; i++) {
-        _threads[i] = new DDEThread(i, k, l - 1, ntries, this);
+        _threads[i] = new DDE2Thread(i, k, l - 1, ntries, this);
         k = l;
         l += vecsperthread;
       }
       _threads[numthreads-1] = 
-			    new DDEThread(numthreads - 1, k, popsize - 1, ntries, this);
+			    new DDE2Thread(numthreads - 1, k, popsize - 1, ntries, this);
       _maxthreadwork = popsize - k;
       for (int i = 0; i < numthreads; i++) {
         _threads[i].start();
@@ -424,20 +426,6 @@ public class DDE implements OptimizerIntf {
   synchronized FunctionIntf getFunction() { return _f; }  // keep FindBugs happy
 
 	
-  synchronized void setSol(int i, VectorIntf v) { 
-		VectorIntf si = _sols[i];
-		if (si instanceof PoolableObjectIntf) {
-			((PoolableObjectIntf) si).release();  // avoid pool leaks
-		}
-		_sols[i] = v;
-	}
-  synchronized VectorIntf getSol(int i) { return _sols[i]; }
-
-
-  synchronized void setSolVal(int i, double v) { _solVals[i] = v; }
-  synchronized double getSolVal(int i) { return _solVals[i]; }
-
-
   int getId() { return _id; }
 
 
@@ -467,9 +455,9 @@ public class DDE implements OptimizerIntf {
  * @author Ioannis T. Christou
  * @version 1.0
  */
-class DDEThread extends Thread {
+class DDE2Thread extends Thread {
 
-  private DDE _master;
+  private final DDE2 _master;
   private int _numtries;
 	private int _numthreads;
   private int _id;
@@ -496,9 +484,9 @@ class DDEThread extends Thread {
 	 * @param from int
 	 * @param to int
 	 * @param numtries int
-	 * @param master DDE  // redundant if class were to become inner-class of DDE
+	 * @param master DDE2  // redundant if class were to become inner-class of DDE
 	 */
-  public DDEThread(int id, int from, int to, int numtries, DDE master) {
+  public DDE2Thread(int id, int from, int to, int numtries, DDE2 master) {
     _id = id;
     _uid = (int) DataMgr.getUniqueId();
     _master=master;
@@ -572,6 +560,7 @@ class DDEThread extends Thread {
       }
     }
     // end creating _funcParams
+		int num_gens_between_barrier = Integer.MAX_VALUE;
 		try {
       Double wD = (Double) p.get("dde.w");
       if (wD != null && wD.doubleValue() >= 0 && wD.doubleValue() <= 2)
@@ -585,12 +574,17 @@ class DDEThread extends Thread {
 				Integer npId = (Integer) p.get("dde.dmpnextprocessid");
 				if (npId!=null) _master._nextProcessId = npId.intValue();
 			}
+			Integer ngbbI = (Integer) p.get("dde2.numgensbetweenbarrier");
+			if (ngbbI!=null && ngbbI.intValue()>0) 
+				num_gens_between_barrier = ngbbI.intValue();
     }
     catch (ClassCastException e) {
       e.printStackTrace();  // no-op
     }
     VectorIntf best = null;
     FunctionIntf f = _master.getFunction();  // was _master._f
+		double[] copy_vals = new double[_master._solVals.length];
+    VectorIntf[] copy_sols = new VectorIntf[_master._sols.length];  // vis. OK
     // initialize the [from,to] part of the population
     //DblArray1VectorRndMaker rvmaker = new DblArray1VectorRndMaker(p);
     FastDblArray1VectorURndMaker rvmaker = new FastDblArray1VectorURndMaker(p);
@@ -598,12 +592,14 @@ class DDEThread extends Thread {
 		for (int i=_from; i<=_to; i++) {
       try {
         VectorIntf rv = rvmaker.createNewRandomVector();
-        _master.setSol(i, rv);
+				_master._sols[i] = rv;  // _master.setSol(i, rv);
+				copy_sols[i] = rv;
 				double ival = f.eval(rv, _fp);
-        _master.setSolVal(i, ival);
+        _master._solVals[i] = ival;  // _master.setSolVal(i, ival);
+				copy_vals[i] = ival;
 				if (ival < cur_best) {
 					_bestInd = i;
-					_master.setIncumbent(rv.newInstance(), ival, _bestInd);  // was rv
+					_master.setIncumbent(rv.newInstance(), ival, _bestInd);
 					cur_best = ival;
 				}
       }
@@ -614,13 +610,16 @@ class DDEThread extends Thread {
     double bestval = cur_best;
     // main computation
 		Barrier b = Barrier.getInstance("dde."+_master.getId());
-    for (int i=0; i<_numtries; i++) {
+		for (int i=0; i<_numtries; i++) {
       try {
-        if (i==0 || 
-						(_numthreads>1 && _nonDeterminismOK)) b.barrier();  
+        if (i==0 || i % num_gens_between_barrier == 0 ||
+						(_numthreads>1 && _dmsgpassClient!=null && _nonDeterminismOK)) 
+					b.barrier();  
         // if _nonDeterminismOK==false, then the barriers in min(f,p) make the
 				// above barrier redundant: when i==0 though, the barrier is needed for
-				// population initialization correctness.
+				// population initialization correctness. Here, in DDE2, without 
+				// migration, we don't need the barrier as the updates don't get seen
+				// by the other threads very often any way
 				// handle migration stuff now
 				boolean is_migration_gen = i % _master._numGensBetweenMigrations == 0;
 				if (_dmsgpassClient!=null && is_migration_gen) { 
@@ -634,7 +633,56 @@ class DDEThread extends Thread {
 					b.barrier();
 				}
 				// done with migration handling
-        PairObjDouble pair = min(f, p);
+				{  // DDE2 is a different version of DDE: updates of the population 
+				   // are not instantly seen by the threads
+				   // 2nd update: as the barriers are too slow, use _master synch only
+				   // which results in different threads seeing different versions of
+				   // of the population, unless of course non-determinism is NOT ok.
+				   if (!_nonDeterminismOK && _numthreads>1) b.barrier();
+				   synchronized (_master) {
+						 if (_nonDeterminismOK || _numthreads==1) {
+							 for (int j=0; j<_from; j++) {  // read others' updates
+							   copy_sols[j] = _master._sols[j]; 
+							   // risk no-copy, if nondeterminimsm is not OK, copy will be 
+							   // enforced below
+							   copy_vals[j] = _master._solVals[j];
+						   }
+						 }
+						 for (int j=_from; j<=_to; j++) {  // write own updates
+							 _master._sols[j] = copy_sols[j];
+							 _master._solVals[j] = copy_vals[j];
+						 }
+						 if (_nonDeterminismOK || _numthreads==1) {
+						   for (int j=_to+1; j<copy_sols.length; j++) {  // read others'
+							   copy_sols[j] = _master._sols[j];
+  							 // risk no-copy, if nondeterminimsm is not OK, copy will be 
+	  						 // enforced below
+							   copy_vals[j] = _master._solVals[j];							 
+						   }
+						 }
+					 }
+					 if (!_nonDeterminismOK && _numthreads>1) {
+						 b.barrier();
+						 // read again the others' updates
+						 synchronized (_master) {
+						   for (int j=0; j<_from; j++) {
+							   if (copy_sols[j]!=null && 
+									   copy_sols[j] instanceof PoolableObjectIntf)
+									 ((PoolableObjectIntf) copy_sols[j]).release();  // avoid leak
+								 copy_sols[j] = _master._sols[j].newCopy();  // copy needed
+								 copy_vals[j] = _master._solVals[j];
+							 }
+							 for (int j=_to+1; j<copy_sols.length; j++) {
+							   if (copy_sols[j]!=null && 
+									   copy_sols[j] instanceof PoolableObjectIntf)
+									 ((PoolableObjectIntf) copy_sols[j]).release();  // avoid leak								 
+								 copy_sols[j] = _master._sols[j].newCopy();  // copy needed
+								 copy_vals[j] = _master._solVals[j];							 
+							 }
+						 }
+					 }
+			  }
+        PairObjDouble pair = min(f, p, copy_sols, copy_vals, b);
         if (pair==null) {
           continue;
         }
@@ -649,7 +697,7 @@ class DDEThread extends Thread {
         e.printStackTrace();
         // no-op
       }
-    }
+    }  // for i=0..._numtries-1 
   }
 
 
@@ -658,10 +706,14 @@ class DDEThread extends Thread {
 	 * thread.
 	 * @param f FunctionIntf
 	 * @param p HashMap
+	 * @param copySols VectorIntf[]
+	 * @param copyVals double[]
+	 * @param b Barrier
 	 * @return PairObjDouble  // Pair&lt;VectorIntf, Double&gt;
 	 * @throws OptimizerException 
 	 */
-  private PairObjDouble min(FunctionIntf f, HashMap p) 
+  private PairObjDouble min(FunctionIntf f, HashMap p, 
+		                        VectorIntf[] copySols, double[] copyVals, Barrier b) 
 		throws OptimizerException {
     final int popsize = _master._sols.length;  // no problem with unsync. access
                                                // as the _master._sols array
@@ -669,7 +721,6 @@ class DDEThread extends Thread {
                                                // worker thread creation
                                                // (FindBugs unjustly complains)
     Random rnd = RndUtil.getInstance(_uid).getRandom();  // used to be _id
-		Barrier b = Barrier.getInstance("dde."+_master.getId());
 		int cur_inc_ind = -1;
 		if (_doDEBestStrategy) {
 			if (_nonDeterminismOK==false && _numthreads > 1) 
@@ -687,7 +738,7 @@ class DDEThread extends Thread {
 		List indices = new ArrayList(popsize);  // indices used to be Vector
     for (int i=_from; i<=_to; i++) {
       ++count;
-      VectorIntf x = _master.getSol(i);  // // VectorIntf x = _master._sols[i];
+      VectorIntf x = copySols[i];  // VectorIntf x = _master._sols[i];
       // select random vectors a,b,c from _sols
       indices.clear();
       for (int j=0; j<popsize; j++) {
@@ -699,7 +750,7 @@ class DDEThread extends Thread {
       if (_doDEBestStrategy==false) {  // select xia in random
 				for (int k=0; k<indices.size(); k++) {
 					int ia = ((Integer) indices.get(k)).intValue();
-					xia = _master.getSol(ia);  // xia = _master._sols[ia];
+					xia = copySols[ia];  // xia = _master._sols[ia];
 					if (VecUtil.equal(x,xia)==false) {
 						found=true;
 						indices.remove(k);
@@ -708,7 +759,8 @@ class DDEThread extends Thread {
 				}
 			} else {  // do DE/best/... strategy: xia is always the cur. best indiv.
 				found = true;
-				xia = _master.getSol(cur_inc_ind);
+				// xia = _master._sols[cur_inc_ind];  // _master.getSol(cur_inc_ind);
+				xia = copySols[cur_inc_ind];
 				indices.remove(new Integer(cur_inc_ind));
 			}
       if (!found) 
@@ -716,7 +768,7 @@ class DDEThread extends Thread {
       found=false;
       for (int k=0; k<indices.size(); k++) {
         int ib = ((Integer) indices.get(k)).intValue();
-        xib = _master.getSol(ib);  // xib = _master._sols[ib];
+        xib = copySols[ib];  // xib = _master._sols[ib];
         if (VecUtil.equal(x,xib)==false && VecUtil.equal(xia,xib)==false) {
           found=true;
           indices.remove(k);
@@ -728,7 +780,7 @@ class DDEThread extends Thread {
       found=false;
       for (int k=0; k<indices.size(); k++) {
         int ic = ((Integer) indices.get(k)).intValue();
-        xic = _master.getSol(ic);  // xic = _master._sols[ic];
+        xic = copySols[ic];  // xic = _master._sols[ic];
         if (VecUtil.equal(x,xic)==false && VecUtil.equal(xia,xic)==false && 
 					  VecUtil.equal(xib,xic)==false) {
           found=true;
@@ -754,7 +806,7 @@ class DDEThread extends Thread {
           }
         }
       }
-      if (!_nonDeterminismOK && _numthreads>1) b.barrier();  
+      if (!_nonDeterminismOK && _numthreads>1) b.barrier();  // Barrier #1  
       // next call may throw IllegalArgumentException
       double ftry = Double.MAX_VALUE;
 			try {
@@ -763,13 +815,16 @@ class DDEThread extends Thread {
 			catch (IllegalArgumentException e) {
 				e.printStackTrace();  // ignore non-quietly
 			}
-			final double cur_val_i = _master.getSolVal(i);  // _master._solVals[i]
-      if (ftry < cur_val_i) {  // _master._solVals[i]
-				_master.setSol(i, xtry.newCopy());  // itc 2015-02-20: used to be: 
-				                                    // xtry.newInstance()
-                                            // even before, used to be: 
-				                                    // _master._sols[i] = xtry;
-        _master.setSolVal(i, ftry);  // _master._solVals[i] = ftry;
+			final double cur_val_i = copyVals[i];  // _master._solVals[i];
+      if (ftry < cur_val_i) {  // update master population
+				// _master._sols[i] = xtry.newCopy();
+				if (copySols[i] instanceof PoolableObjectIntf) {
+					// release previous population member
+					((PoolableObjectIntf) copySols[i]).release();
+				}
+				copySols[i] = xtry.newCopy();
+				// _master._solVals[i] = ftry;
+				copyVals[i] = ftry;
       }
       if (ftry < bestval) {
         best = xtry.newInstance();
@@ -779,17 +834,17 @@ class DDEThread extends Thread {
 			if (xtry instanceof PoolableObjectIntf) {
 				((PoolableObjectIntf) xtry).release();
 			}
-      if (!_nonDeterminismOK && _numthreads>1) b.barrier();  
+      if (!_nonDeterminismOK && _numthreads>1) b.barrier();  // Barrier #2
       // barrier had to come here too to ensure all changes are visible in next 
 			// iteration of the for-loop to all threads. Notice that even without the 
 			// barriers, threads still have memory visibility regarding the vectors in
 			// the solution pool, but the order in which the updates in the pool occur
 			// is undefined and therefore the results are non-deterministic.
-    }
+    }  // end for i in [_from..._to]
 		if (!_nonDeterminismOK && _numthreads>1) {
 			while (count<_master._maxthreadwork) {
-				b.barrier();
-				b.barrier();  // second barrier required 
+				b.barrier();  // barrier for Barrier #1 above
+				b.barrier();  // second barrier required for Barrier #2 above 
 				++count;
 			}
 		}
@@ -860,7 +915,8 @@ class DDEThread extends Thread {
 		Collections.shuffle(nums, rnd);
 		ArrayList imms = new ArrayList(nmigs);
 		for (int i=0; i<nmigs; i++) 
-			imms.add(_master.getSol(((Integer)nums.get(i)).intValue()));
+			// imms.add(_master.getSol(((Integer)nums.get(i)).intValue()));
+			imms.add(_master._sols[((Integer)nums.get(i)).intValue()]);
 		try {
 			// send to next process
 			mger.msg("gen "+gen+": sending data to "+_master._nextProcessId, 0);
@@ -880,8 +936,8 @@ class DDEThread extends Thread {
 					try {
 						final double valpos = _master._f.eval(nci, _fp);  // signature says 
 						                                                  // it may throw...
-						_master.setSol(pos, nci);
-						_master.setSolVal(pos, valpos);
+						_master._sols[pos] = nci;  // _master.setSol(pos, nci);
+						_master._solVals[pos] = valpos;  // _master.setSolVal(pos, valpos);
 						if (valpos<bestval) {
 							bestval = valpos;
 							bestmigrant = nci;

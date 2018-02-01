@@ -68,7 +68,8 @@ final class DblArray1VectorPool {
 	 * @return DblArray1Vector
 	 */
   static DblArray1Vector getObject(int n) {
-    DblArray1VectorPool pool = DblArray1VectorThreadLocalPools.getThreadLocalPool(n);
+    DblArray1VectorPool pool = 
+			DblArray1VectorThreadLocalPools.getThreadLocalPool(n);
     if (pool==null) return new DblArray1Vector(n);  // no pool for such size
 		DblArray1Vector p = pool.getObjectFromPool();
     try {
@@ -102,7 +103,8 @@ final class DblArray1VectorPool {
 	 */
   void returnObjectToPool(DblArray1Vector ind) {
 		if (_DO_RELEASE_SANITY_TEST) {
-			DblArray1VectorPool pool = DblArray1VectorThreadLocalPools.getThreadLocalPool(ind.getNumCoords());
+			DblArray1VectorPool pool = 
+				DblArray1VectorThreadLocalPools.getThreadLocalPool(ind.getNumCoords());
 			if (pool!=this) {
 				Integer yI = null;
 				System.err.println("null ref yI="+yI.intValue());  // force NullPointerException

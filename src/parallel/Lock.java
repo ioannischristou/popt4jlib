@@ -1,7 +1,13 @@
 package parallel;
 
 /**
- * Standard Lock mechanism for thread coordination.
+ * Standard Lock mechanism for thread coordination. This lock mechanism is NOT
+ * re-entrant, meaning that if a thread that has called <CODE>getLock()</CODE>
+ * on an object lock, calls again <CODE>lock.getLock()</CODE> before first 
+ * releasing the lock (via <CODE>lock.releaseLock()</CODE>), the thread will
+ * hang there forever (unless some other thread that doesn't have the lock(!), 
+ * actually calls <CODE>lock.releaseLock()</CODE>, which would be wrong in so 
+ * many ways.)
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>

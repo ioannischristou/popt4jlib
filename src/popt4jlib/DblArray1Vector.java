@@ -44,7 +44,7 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
 
 
   /**
-   * public constructor making a copy of the argument
+   * public constructor making a copy of the argument.
    * @param x double[]
    * @throws IllegalArgumentException
    */
@@ -330,7 +330,7 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
     }
   }
 	/**
-	 * true if this
+	 * true if this belongs to some pool.
 	 * @return true IFF this object belongs to some pool.
 	 */
 	public boolean isManaged() {

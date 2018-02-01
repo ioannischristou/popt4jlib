@@ -74,9 +74,9 @@ public final class GRASPPacker1 {
           updateQueue(n);
         }
       }
-			System.err.println("pack(init): added "+res.size()+
-				                 " nodes from init list of "+addfirstfrom.size()+
-				                 " nodes.");
+			//System.err.println("pack(init): added "+res.size()+
+			//	                 " nodes from init list of "+addfirstfrom.size()+
+			//	                 " nodes.");
     }
     boolean cont = true;
     while (cont) {
@@ -97,7 +97,7 @@ public final class GRASPPacker1 {
           }
           else if (!isApproximatelyEqualWeight(n,first)) break;
         }  // while it.hasNext()
-        System.err.println("candidates.size()=" + candidates.size());
+        //System.err.println("candidates.size()=" + candidates.size());
         // pick a candidate node at random
         int pos = rand.nextInt(candidates.size());
         Iterator it2 = candidates.iterator();
@@ -107,8 +107,8 @@ public final class GRASPPacker1 {
         updateQueue(n);
         // 3. add the element to the result set
         res.add(n);
-        System.err.println("added n=" + n.getId() + " res.size()=" +
-                           res.size() + " _nodesq.size()=" + _nodesq.size());
+        //System.err.println("added n=" + n.getId() + " res.size()=" +
+        //                   res.size() + " _nodesq.size()=" + _nodesq.size());
         cont = true;
       }
       else {
@@ -351,7 +351,13 @@ public final class GRASPPacker1 {
 	 * conflicting) nodes to choose randomly as an initial seed-set to grow from 
 	 * (default is zero).
    * The solution found is written in the file "sol.out" in the current 
-	 * directory.
+	 * directory. Also, in file "stats.out", a comma-separated-values formatted
+	 * file, the id of each node along with the number of its appearances in a 
+	 * final solution with its weight is printed, in decreasing order of final
+	 * solution weight (e.g. 34,89,2 means that node with id=34 appears in final
+	 * solutions of weight=89, 2 times in total.) Note that the stats file will 
+	 * only be printed if the program has finished before the designated amount of 
+	 * time has lapsed.
    * It contains one line for each node included in the solution, and the line
    * has the internal id of the node +1 (so the range of nodes is
    * [1,...Graph.getNumNodes()].
@@ -400,6 +406,9 @@ public final class GRASPPacker1 {
 			long max_time_ms = Long.MAX_VALUE;  // max allowed time to run (in millis)
       GRASPPacker1 p = new GRASPPacker1(g);
       Set init=null;
+			HashMap stats = new HashMap();  // map<Integer nid, 
+			                                //     Map<Double wgt, 
+			                                //         Integer num_appearances> > >
       int num_iters = 1;
       if (args.length>1) {
         int numinit = 0;
@@ -414,7 +423,7 @@ public final class GRASPPacker1 {
         int gsz = gp.getNumNodes();
         init = new TreeSet(new NodeComparator4());
 				Random rnd = RndUtil.getInstance().getRandom();
-        for (int i=0; i<numinit; i++) {
+				for (int i=0; i<numinit; i++) {
           int nid = rnd.nextInt(gsz);
           Node n = gp.getNodeUnsynchronized(nid);
           init.add(n);
@@ -519,6 +528,22 @@ public final class GRASPPacker1 {
         System.err.println("GRASPPacker1.main(): iter: "+i+
 					                 ": soln size found="+iter_best+" soln weight="+
 					                 iter_w_best);
+				// add to stats
+				Iterator sit = s.iterator();
+				while (sit.hasNext()) {
+					Node ns = (Node) sit.next();
+					HashMap nsmap = (HashMap) stats.get(new Integer(ns.getId()));
+					// Map<Double wgt, Integer num_apps>
+					if (nsmap==null) {
+						nsmap = new HashMap();
+						nsmap.put(new Double(iter_w_best), new Integer(0));
+						stats.put(new Integer(ns.getId()), nsmap);
+					}
+					Integer na = (Integer) nsmap.get(new Double(iter_w_best));
+					if (na==null) na = new Integer(0);
+					Integer na1 = new Integer(na.intValue()+1);
+					nsmap.put(new Double(iter_w_best), na1);
+				}
         if (iter_w_best > best) {
           best_found = s;
           best = iter_w_best;
@@ -542,6 +567,23 @@ public final class GRASPPacker1 {
       }
       pw.flush();
       pw.close();
+			// write stats to file id,soln_weight,#appearances
+			pw = new PrintWriter(new FileWriter("stats.out"));
+			for (int i=0; i<g.getNumNodes(); i++) {
+				Map m = (Map) stats.get(new Integer(i));
+				if (m==null) {
+					continue;
+				}
+				Set men = m.keySet();
+				Iterator menit = men.iterator();
+				while (menit.hasNext()) {
+					Double w = (Double) menit.next();
+					Integer napps = (Integer) m.get(w);
+					pw.println(i+","+w+","+napps);
+				}
+			}
+			pw.flush();
+			pw.close();
     }
     catch (Exception e) {
       e.printStackTrace();
