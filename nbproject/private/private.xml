@@ -5,8 +5,11 @@
         <group>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/FastDblArray1VectorURndMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/DDE2.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/BoolVector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/DDE.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/DDE2Test.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DataMgr.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/RndUtil.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1Vector.java</file>
         </group>
     </open-files>

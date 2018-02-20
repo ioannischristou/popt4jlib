@@ -113,5 +113,43 @@ public class FastDblArray1VectorURndMaker {
       throw new OptimizerException("createNewRandomVector() failed");
     }
   }
+
+	
+  /**
+   * returns a VectorIntf object whose dimensionality is equal to the parameter
+   * specified in the construction process by the key "dde.numdimensions". The
+   * returned VectorIntf will obey the bounding-box constraints specified in the
+   * construction process.
+	 * Note: it is not worth it to use pooling mechanisms in this class, as this
+	 * class and this method in particular is only used in the initialization 
+	 * phase of the DE algorithm (population initialization).
+	 * @param r Random the random number generator to use to generate the new
+	 * random vector
+   * @throws OptimizerException
+   * @return VectorIntf
+   */
+  public VectorIntf createNewRandomVector(Random r) throws OptimizerException {
+    int n = _arglen;
+    try {
+      double[] arr = new double[n];
+      for (int i=0; i<n; i++) {
+        double minval = _minargval;
+        Double mvD = (Double) _minargvali.get(i);
+        if (mvD!=null && mvD.doubleValue()>minval) minval = mvD.doubleValue();
+        double maxval = _maxargval;
+        Double MvD = (Double) _maxargvali.get(i);
+        if (MvD!=null && MvD.doubleValue()<maxval) maxval = MvD.doubleValue();
+        if (minval>maxval)
+          throw new OptimizerException("global min arg value > global max arg value");
+        arr[i] = minval + r.nextDouble()*(maxval-minval);
+      }
+      return new DblArray1Vector(arr);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("createNewRandomVector() failed");
+    }
+  }
+
 }
 

@@ -1,5 +1,4 @@
-#class,dde.function,tests.RosenbrockFunctionCEC20XXShifted
-class,dde.function,tests.RosenbrockFunction
+class,dde.function,tests.WeierstrassFunction
 #dde.countfuncevals,true
 dde.numdimensions,100
 dde.maxargval,100.0
@@ -12,4 +11,4 @@ dde.w,0.5
 rndgen,3,8
 dde.numthreads,8
 dde.de/best/1/binstrategy,true
-dde.nondeterminismok,false
+dde.nondeterminismok,true
