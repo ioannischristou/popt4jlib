@@ -247,8 +247,21 @@ public class IntArray1SparseVector implements SparseVectorIntf {
     for (int i=0; i<_ilen; i++) x[_indices[i]] = _values[i];
     return x;
   }
+
 	
-		
+	/**
+	 * return a copy of the portion of the <CODE>_indices</CODE> array that 
+	 * corresponds to non-zero values.
+	 * @return int[] null if there are none.
+	 */
+	public int[] getNonDefIndices() {
+		if (_ilen==0) return null;
+		int[] result = new int[_ilen];
+		for (int i=0; i<_ilen; i++) result[i]=_indices[i];
+		return result;		
+	}
+
+	
 	/**
 	 * return a copy of the portion of the <CODE>_values</CODE> array that 
 	 * corresponds to non-zero values.

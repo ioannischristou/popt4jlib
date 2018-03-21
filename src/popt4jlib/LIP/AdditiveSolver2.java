@@ -1,5 +1,6 @@
 package popt4jlib.LIP;
 
+import popt4jlib.IntArray2SparseMatrix;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Arrays;

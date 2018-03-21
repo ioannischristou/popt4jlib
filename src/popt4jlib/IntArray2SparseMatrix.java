@@ -1,6 +1,5 @@
-package popt4jlib.LIP;
+package popt4jlib;
 
-import popt4jlib.*;
 
 /**
  * sparse 2-D matrix class containing integers. The representation is row-based.

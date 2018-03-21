@@ -20,7 +20,7 @@ import java.io.Serializable;
  * Notes:
  * <ul>
  * <li>The class is not thread-safe (to avoid paying locking costs).
- * Clients must ensure no race-conditions exist when using this class.
+ * Clients must ensure no race-conditions exist when using this class. 
  * <li> 2016-01-27: The <CODE>and(BoolVector), or(BoolVector)</CODE> operations
  * execute in parallel in the face of very large data lengths (above 1mio bits
  * stored in both vectors to be and-ed). The implementation is modeled after the
@@ -206,7 +206,7 @@ public class BoolVector implements Serializable, Comparable {
     return (_data[i / 64] & (1l << (i % 64))) != 0;
   }
 
-
+	
   /**
    * set the i-th bit of this vector.
    * @param i int

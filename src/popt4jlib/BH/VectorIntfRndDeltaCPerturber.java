@@ -21,7 +21,7 @@ import java.util.Random;
  * represented as <CODE>popt4jlib.VectorIntf</CODE> objects, whereby every
  * component x_i of the argument, is perturbed by some value that is chosen 
  * uniformly at random from the interval [max(min(x_i),x_i-&delta;),
- * min(max(x_i),x_i+&delta;)].
+ * min(max(x_i),x_i+&delta;)], for use within the Basin Hopping algorithm.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2017</p>
@@ -29,8 +29,7 @@ import java.util.Random;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class VectorIntfRndDeltaCPerturber 
-    implements ChromosomePerturberIntf {
+public class VectorIntfRndDeltaCPerturber implements ChromosomePerturberIntf {
 	
 	/**
 	 * sole constructor (no-op).

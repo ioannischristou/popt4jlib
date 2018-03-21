@@ -77,7 +77,8 @@ import utils.RndUtil;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class DGABH extends GLockingObservableObserverBase implements OptimizerIntf {
+public class DGABH extends GLockingObservableObserverBase 
+  implements OptimizerIntf {
   private static int _nextId=0;
   private int _id;
   private Params _params;
@@ -929,13 +930,15 @@ class DGABHThreadAux {
     int sendTo = _master.getImmigrationIsland(_id, gen);
     if (sendTo>=0) {
       Vector immigrants = getImmigrants();
-      DGABHThreadAux receiverThreadAux = _master.getDGABHThread(sendTo).getDGABHThreadAux();
+      DGABHThreadAux receiverThreadAux = 
+				_master.getDGABHThread(sendTo).getDGABHThreadAux();
       receiverThreadAux.recvIndsAux(immigrants);
     }
     else {
       // synchronize order with null task
       try {
-        OrderedBarrier.getInstance("dgabh."+_master.getId()).orderedBarrier(null);
+        OrderedBarrier.getInstance("dgabh."+_master.getId()).
+					orderedBarrier(null);
       }
       catch (ParallelException e) {
         e.printStackTrace();  // cannot reach this point
@@ -1006,7 +1009,8 @@ class DGABHThreadAux {
 					}
 				}
 				String do_rep = replace ? " replace " : " not replace ";
-				System.err.println("Thread-"+_id+", Generation-"+gen+": will "+do_rep+" existing population");  // itc: HERE rm asap
+				System.err.println("Thread-"+_id+", Generation-"+gen+": will "+do_rep+
+					                 " existing population");  // itc: HERE rm asap
 				if (replace) {
 					for (int i=0; i<results.length; i++) {
 						DGABHIndividual indi = (DGABHIndividual) _individuals.get(i);

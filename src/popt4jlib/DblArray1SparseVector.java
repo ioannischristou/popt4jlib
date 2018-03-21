@@ -22,7 +22,7 @@ import java.util.ArrayList;
  * methods) in this package.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2017</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 2.0
@@ -643,6 +643,16 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 		}
 		return true;
   }
+
+	
+	/**
+	 * reset the vector to all default values.
+	 */
+	public void reset() {
+		//_indices=null;
+		//_values=null;
+		_ilen=0;
+	}
 
 
   /**

@@ -12,6 +12,7 @@ import popt4jlib.GradientDescent.VecUtil;
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.*;
+import popt4jlib.IntArray1SparseVector;
 
 
 /**
@@ -466,7 +467,8 @@ public class DataMgr {
    * </PRE>
    * dim is in [1...totaldimensions]
    * the documents are represented as a sparse vector representation of
-   * a vector in a vector space of dimension totaldimensions
+   * a vector in a vector space of dimension totaldimensions.
+	 * Notice that the sparse vectors have as default value, zero.
    * @param filename String
    * @return Vector // Vector&lt;DblArray1SparseVector&gt;
    * @throws IOException
@@ -507,6 +509,68 @@ public class DataMgr {
           v.addElement(d);
         }
       } else throw new IOException("readSparseVectorsFromFile("+filename+"): failed");
+      return v;
+    }
+    catch (ParallelException e) {  // can never get here
+      e.printStackTrace();
+      return null;
+    }
+    finally {
+      if (br!=null) br.close();
+    }
+  }
+
+	
+  /**
+   * reads int-valued vectors from a file of the form
+   * <PRE>
+   * numdocs totaldimensions
+   * dim,val [dim,val]
+   * [...]
+   * </PRE>
+   * dim is in [1...totaldimensions], val must always be integer
+   * the documents are represented as a sparse vector representation of
+   * a vector in a vector space of dimension totaldimensions.
+   * @param filename String
+   * @return Vector // Vector&lt;IntArray1SparseVector&gt;
+   * @throws IOException
+   */
+  public static Vector readIntSparseVectorsFromFile(String filename)
+      throws IOException {
+    BufferedReader br = new BufferedReader(new FileReader(filename));
+    try {
+      Vector v = new Vector();
+      if (br.ready()) {
+        String line = br.readLine();
+        StringTokenizer st = new StringTokenizer(line, " ");
+        int numdocs = Integer.parseInt(st.nextToken());  // unused
+        int totaldims = Integer.parseInt(st.nextToken());
+        Integer dim = null;
+        int val = 0;
+        while (true) {
+          line = br.readLine();
+          if (line == null) break;  // end-of-file
+          VectorIntf d = null;
+          st = new StringTokenizer(line, " ");
+          while (st.hasMoreTokens()) {
+            String pair = st.nextToken();
+            StringTokenizer st2 = new StringTokenizer(pair, ",");
+            dim = new Integer(Integer.parseInt(st2.nextToken()) - 1);
+            // dimension value is from 1...totdims
+            val = Integer.parseInt(st2.nextToken());  // value must be integer
+            if (d==null) {
+              int[] inds = new int[1];
+              int[] vals = new int[1];
+              inds[0] = dim.intValue();
+              vals[0] = val;
+              d = new IntArray1SparseVector(inds, vals, totaldims, 1, 1);
+            }
+            else d.setCoord(dim.intValue(), val);
+          }
+          if (d==null) d = new IntArray1SparseVector(totaldims);  // empty vector
+          v.addElement(d);
+        }
+      } else throw new IOException("readIntSparseVectorsFromFile("+filename+"): failed");
       return v;
     }
     catch (ParallelException e) {  // can never get here
@@ -1507,8 +1571,12 @@ public class DataMgr {
 
 
   /**
-   * writes the sparse vectors in the 1st argument to file specified in 3rd arg.
-   * according to the format specified in <CODE>readSparseVectorsFromFile()</CODE>.
+   * writes the sparse vectors in the 1st argument to file specified in 3rd 
+	 * argument according to the format specified in 
+	 * <CODE>readSparseVectorsFromFile()</CODE>.
+	 * Notice: it takes care of the case where the vectors are 
+	 * <CODE>IntArray1SparseVector</CODE> objects, and it also takes care of the
+	 * case where the default value of the sparse objects is non-zero.
    * @param docs Vector // Vector&lt;SparseVectorIntf&gt;
    * @param tot_dims int
    * @param filename String
@@ -1520,16 +1588,30 @@ public class DataMgr {
     pw.println(docs_size+" "+tot_dims);
     for (int i=0; i<docs_size; i++) {
       SparseVectorIntf di = (SparseVectorIntf) docs.elementAt(i);
+			boolean is_int = di instanceof IntArray1SparseVector;
+			final double def_val = di.getDefaultValue();
+			final boolean is_def_zero = Double.compare(def_val, 0.0)==0;
+			Set non_def_dims=null;
+			if (!is_def_zero) non_def_dims = new HashSet();
       StringBuffer lineb = new StringBuffer();
       for (int j=0; j<di.getNumNonZeros(); j++) {
         int posj = di.getIthNonZeroPos(j);
+				if (non_def_dims!=null) non_def_dims.add(new Integer(posj));
         double val = di.getCoord(posj);
         if (Double.compare(val,0.0)==0) continue;  // ignore zero values
         lineb.append((posj+1));
         lineb.append(",");
-        lineb.append(val);
+        if (is_int) lineb.append((int)val);
+				else lineb.append(val);
         lineb.append(" ");
       }
+			if (!is_def_zero) {
+				// write down the default value for each default coordinate
+				for (int j=0; j<di.getNumCoords(); j++) {
+					if (non_def_dims.contains(new Integer(j))) continue;
+					lineb.append(j+","+def_val+" ");
+				}
+			}
       String line = lineb.toString();
       pw.println(line);
     }
@@ -1537,7 +1619,7 @@ public class DataMgr {
     pw.close();
   }
 
-
+	
   /**
    * writes the int[] given in the first argument to the file given in the
    * second argument.

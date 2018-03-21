@@ -1,5 +1,6 @@
 package graph.packing;
 
+import popt4jlib.IntArray2SparseMatrix;
 import graph.*;
 import utils.*;
 import parallel.*;

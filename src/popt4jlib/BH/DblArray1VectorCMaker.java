@@ -6,7 +6,7 @@ import java.util.*;
 
 /**
  * creates random DblArray1Vector objects of fixed length, according to params
- * passed in a <CODE>HashMap</CODE> object.
+ * passed in a <CODE>HashMap</CODE> object for the Basin Hopping algorithm.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -42,7 +42,7 @@ public class DblArray1VectorCMaker implements RandomChromosomeMakerIntf {
 	 * for any allele in the chromosome.
    * <li> &lt;"[dgabh.]maxallelevalue$i$", $value$&gt; optional, the max value 
 	 * for the i-th allele in the chromosome ($i$ must be in the range
-   * {0,...,chromosome_length-1}). If this value is greater than the global value
+   * {0,...,chromosome_length-1}). If this is greater than the global value
    * specified by the "[dgabh.]maxallelevalue" key, it is ignored.
    * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of 
 	 * the thread invoking this method; this number is used so as to look-up the 
@@ -51,13 +51,16 @@ public class DblArray1VectorCMaker implements RandomChromosomeMakerIntf {
    * @throws OptimizerException if any of the params above are incorrectly set
    * @return Object // DblArray1Vector of length specified in the params.
    */
-  public Object createRandomChromosome(HashMap params) throws OptimizerException {
+  public Object createRandomChromosome(HashMap params) 
+		throws OptimizerException {
     try {
       final int id = ((Integer)params.get("thread.id")).intValue();
 			LightweightParams p = new LightweightParams(params);
       final int nmax = p.getInteger("dgabh.chromosomelength").intValue();
-      final double maxalleleval=p.getDouble("dgabh.maxallelevalue").doubleValue();
-      final double minalleleval=p.getDouble("dgabh.minallelevalue").doubleValue();
+      final double maxalleleval = 
+				p.getDouble("dgabh.maxallelevalue").doubleValue();
+      final double minalleleval = 
+				p.getDouble("dgabh.minallelevalue").doubleValue();
       DblArray1Vector vec = DblArray1Vector.newInstance(nmax);
       for (int i=0; i<nmax; i++) {
         // restore within bounds, if any
@@ -70,7 +73,8 @@ public class DblArray1VectorCMaker implements RandomChromosomeMakerIntf {
         if (maviD!=null && maviD.doubleValue()>minalleleval)
           minargvali = maviD.doubleValue();
         double vali = minargvali +
-            RndUtil.getInstance(id).getRandom().nextDouble()*(maxargvali-minargvali);
+                        RndUtil.getInstance(id).getRandom().nextDouble()*
+					              (maxargvali-minargvali);
 				vec.setCoord(i, vali);
       }
       return vec;

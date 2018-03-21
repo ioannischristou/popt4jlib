@@ -1,6 +1,8 @@
 package utils;
 
 import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -9,7 +11,7 @@ import java.util.*;
  * The class methods are all thread-safe (i.e. reentrant)
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2016</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 2.0
@@ -27,20 +29,27 @@ public class Messenger {
 	 */
   private volatile int _dbgLvl=Integer.MAX_VALUE;  // default: print all
 	/**
+	 * _showTimeStamp forces each message to print the timestamp in the beginning
+	 * of the message.
+	 */
+	private boolean _showTimeStamp;  // default: false
+	/**
 	 * all <CODE>Messenger</CODE> objects "live" in this map, which holds them by
 	 * name. Default messenger is named "default", and goes to 
 	 * <CODE>System.err</CODE> (stderr) print stream.
 	 */
-  private static HashMap _instances=new HashMap();  // map<String name, Messenger m>
+  private static final HashMap _instances=new HashMap();  // map<String name, 
+	                                                        //     Messenger m>
 
 
   /**
-   * private constructor in accordance with the Singleton(s) Design Pattern
+   * private constructor in accordance with the Singleton(s) Design Pattern.
    * @param os OutputStream
    * @throws IllegalArgumentException if the os argument is null
    */
   private Messenger(OutputStream os) throws IllegalArgumentException {
-    if (os==null) throw new IllegalArgumentException("Messenger.ctor(): null arg");
+    if (os==null) 
+			throw new IllegalArgumentException("Messenger.ctor(): null arg");
     _os = new PrintStream(os);
   }
 
@@ -146,7 +155,36 @@ public class Messenger {
 		return _dbgLvl;
 	}
 	
+	
+	/**
+	 * force this Messenger to print the current time when showing any message via
+	 * <CODE>msg(String)</CODE>.
+	 */
+	public synchronized void setShowTimeStamp() {
+		_showTimeStamp = true;
+	}
+	
+	
+	/**
+	 * set the value of the member <CODE>_showTimeStamp</CODE>, used in showing
+	 * time-stamps before every message.
+	 * @param v boolean
+	 */
+	public synchronized void setShowTimeStamp(boolean v) {
+		_showTimeStamp = v;
+	}
+	
 
+	/**
+	 * get the current value of the member <CODE>_showTimeStamp</CODE> of this
+	 * Messenger.
+	 * @return boolean
+	 */
+	public synchronized boolean getShowTimeStamp() {
+		return _showTimeStamp;
+	}
+	
+	
   /**
    * sends the msg to the PrintStream of this Messenger iff the debug level lvl
    * is less than or equal to the debug level set by a prior call to
@@ -160,6 +198,12 @@ public class Messenger {
     if (lvl <= _dbgLvl) {
 			synchronized (this) {
 				if (_os!=null) {
+					if (_showTimeStamp) {
+						Date date = new Date(System.currentTimeMillis());
+						DateFormat formatter = new SimpleDateFormat("HH:mm:ss:SSS");
+						String dateFormatted = formatter.format(date);
+						_os.print("["+dateFormatted+"]:");
+					}
 		      _os.println(msg);
 				  _os.flush();
 				}
