@@ -4,10 +4,16 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/FasterParallelAsynchBatchTaskExecutor.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/Messenger.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/network/AsgnAuctionMT.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/ParallelBatchTaskExecutor.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/network/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/IntArray1SparseVector.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/IntArray1SparseVectorTest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/VecUtil.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutor.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DataMgr.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/RandomAsgnMaker.java</file>
         </group>
     </open-files>
 </project-private>

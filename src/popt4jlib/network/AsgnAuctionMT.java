@@ -452,15 +452,16 @@ public class AsgnAuctionMT {
 						double max_vj_second = Double.NEGATIVE_INFINITY;
 						for (int j=0; j<_tasks.size(); j++) {
 							BidCalcTask bj = (BidCalcTask) _tasks.get(j);
-							if (bj._v_best>max_vj) {  // found new best
+							if (Double.compare(bj._v_best,max_vj)>=0) {  // new best; was >
 								if (j_star>=0) {  // current best exists
-									if (max_vj>bj._v_second_best) {  // make current best 2nd best
+									if (Double.compare(max_vj,bj._v_second_best)>0) {  
+                    // make current best 2nd best
 										j_second_star = j_star;
 										max_vj_second = max_vj;
 									} 
 									else if (j_second_star==-1 || // 2nd best doesn't exist yet
-										       bj._v_second_best>max_vj_second) {  // cur. 2nd best
-										                                           // not as good 
+										       Double.compare(bj._v_second_best,max_vj_second)>0) {  
+                    // cur. 2nd best not as good 
 										j_second_star = bj._j_second_best;
 										max_vj_second = bj._v_second_best;
 									} 
@@ -471,7 +472,8 @@ public class AsgnAuctionMT {
 								max_vj = bj._v_best;
 								j_star = bj._j_star;
 							} else {  // best in task not good for 1st pos
-								if (bj._v_best>max_vj_second) {  // best in task good for 2nd
+								if (Double.compare(bj._v_best,max_vj_second)>0) {
+									// best in task good for 2nd
 									max_vj_second = bj._v_best;
 									j_second_star = bj._j_second_best;
 								}
@@ -480,12 +482,16 @@ public class AsgnAuctionMT {
 						if (max_vj<_infThres) {  // infeasibility detected
 							_infeasibility=true;
 							mger.msg("INFEASIBILITY DETECTED:"+"user-id="+i+
-								       " max_vj="+max_vj+"j_star="+j_star+
-								       " p[j_star]="+_pj[j_star]+" _infThres="+_infThres,
-								       0);
+								       " max_vj="+max_vj+"j_star="+j_star,0);
+							if (j_star>=0) 
+								mger.msg(" p[j_star]="+_pj[j_star]+" _infThres="+_infThres,
+								         0);
+							else mger.msg("infinite bid placed so j_star==-1",0);
 							break;
 						}
-						final double bid_val = _pj[j_star]+max_vj-max_vj_second+_eps;
+						final double bid_val = ai_len==1 ? 
+							                       Double.POSITIVE_INFINITY : 
+							                       _pj[j_star]+max_vj-max_vj_second+_eps;
 						synchronized (_bidji.getIthRow(j_star)) {
 							_bidji.setCoord(j_star, i, bid_val);
 						}
@@ -500,7 +506,7 @@ public class AsgnAuctionMT {
 						double max_vj_second = Double.NEGATIVE_INFINITY;
 						for (int j=0; j<ai_len; j++) {
 							double vj = _aij[i][j]-_pj[_userObjects[i][j]];
-							if (vj>max_vj) {  // found new best
+							if (Double.compare(vj,max_vj)>=0) {  // found new best; was >
 								if (j_star>=0) {  // check current best
 									j_second_star = j_star;
 									max_vj_second = max_vj;
@@ -509,22 +515,26 @@ public class AsgnAuctionMT {
 								ji= j;
 								max_vj = vj;
 							} else {  // check for second best
-								if (vj>max_vj_second) {
+								if (Double.compare(vj,max_vj_second)>0) {
 									j_second_star = _userObjects[i][j];
 									max_vj_second = vj;
 								}
 							} 
-						}
+						}						
 						if (max_vj<_infThres) {  // infeasibility detected
-							_infeasibility=true;
+							_infeasibility=true;							
 							mger.msg("INFEASIBILITY DETECTED:"+"user-id="+i+
-								       " max_vj="+max_vj+"j_star="+j_star+
-								       " aij["+i+"]["+ji+"]="+_aij[i][ji]+
-								       " p[j_star]="+_pj[j_star]+" _infThres="+_infThres,
-								       0);
+								       " max_vj="+max_vj+"j_star="+j_star,0);
+							if (ji>=0) 
+								mger.msg(" aij["+i+"]["+ji+"]="+_aij[i][ji]+
+								         " p[j_star]="+_pj[j_star]+" _infThres="+_infThres,
+								         0);
+							else mger.msg("infinite bidding had occurred and thus ji=-1", 0);
 							break;  // no need to proceed
 						}
-						final double bid_val = _pj[j_star]+max_vj-max_vj_second+_eps;
+						final double bid_val = ai_len==1 ? 
+							                       Double.POSITIVE_INFINITY : 
+							                       _pj[j_star]+max_vj-max_vj_second+_eps;
 						synchronized (_bidji.getIthRow(j_star)) {
 							_bidji.setCoord(j_star, i, bid_val);
 						}
@@ -655,7 +665,7 @@ public class AsgnAuctionMT {
 		public void run() {
 			for (int j=_from; j<=_to; j++) {
 				double vj = _aij[_i][j]-_pj[_userObjects[_i][j]];
-				if (vj>_v_best) {  // found new best
+				if (Double.compare(vj,_v_best)>=0) {  // found new best; was >
 					if (_j_star>=0) {  // check current best
 						_j_second_best = _j_star;
 						_v_second_best = _v_best;
@@ -663,7 +673,7 @@ public class AsgnAuctionMT {
 					_j_star = _userObjects[_i][j];
 					_v_best = vj;
 				} else {  // check for second best
-					if (vj>_v_second_best) {
+					if (Double.compare(vj,_v_second_best)>=0) {  // was >
 						_j_second_best = _userObjects[_i][j];
 						_v_second_best = vj;
 					}
@@ -799,9 +809,9 @@ public class AsgnAuctionMT {
 				for (int i=0; i<n; i++) {
 					int[] ai = aij[i];
 					for (int j=0; j<ai.length; j++) {
-						int aij_new = trunc(ai[j]*(n+n+1)/Math.pow(2, M-m));  // |N| is the 
-						                                                      // total set 
-						                                                      // of nodes=2n
+						int aij_new = trunc(((double)ai[j])*(n+n+1.0) / 
+							                  Math.pow(2, M-m));  // |N| is the total set 
+						                                        // of nodes=2n
 						aij2[i][j] = aij_new;
 					}
 				}
@@ -817,7 +827,7 @@ public class AsgnAuctionMT {
 				result = auctionmt.maximize();
 			}	
 			// divide by n+1 the value of the assignment to get the real value
-			result = new PairObjDouble(result.getArg(), result.getDouble()/(n+n+1));
+			result = new PairObjDouble(result.getArg(), result.getDouble()/(n+n+1.0));
 			dur = System.currentTimeMillis()-start;
 			mger.msg("Done. Best asgn value="+result.getDouble()+" in "+dur+" msecs.", 
 				       0);

@@ -46,12 +46,19 @@ public class RandomAsgnMaker {
 						++num_edges;
 					}
 				}
+				if (di.isAtOrigin()) {  // set all objects at value 1
+					for (int j=0; j<n; j++) {
+						di.setCoord(j, 1);
+						++num_edges;
+					}
+				}
 				docs.add(di);
 			}
 			DataMgr.writeSparseVectorsToFile(docs, n, filename);
 			long dur = System.currentTimeMillis()-start;
 			System.out.println("Total of "+num_edges+
-				                 " created in assignment problem in "+dur+" msecs.");
+				                 " arcs created in assignment problem in "+
+				                 dur+" msecs.");
 		}
 		catch (Exception e) {
 			e.printStackTrace();
