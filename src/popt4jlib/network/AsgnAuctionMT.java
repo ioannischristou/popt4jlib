@@ -39,6 +39,12 @@ import utils.PairObjDouble;
  * Testing with sparse random assignment problems with problem size up to 50000
  * showed that the speedup obtained by using many threads is unfortunately very
  * small, almost always less than 1.5, even when 4 or 8 threads are utilized.
+ * <p> As a final notice, due to the sparse integer vector implementation used,
+ * the problem must be such that arc costs (value a person has for an object)
+ * can never be zero (as they are ignored, and the connection is not recorded).
+ * If needed, the user should add a constant to all the arc costs of their 
+ * problem, so that no zero arc value appears, and then subtract the constant
+ * times the size of the problem from the final assignment value.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2018</p>
