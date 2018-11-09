@@ -7,7 +7,7 @@
 package tests;
 
 import java.util.Random;
-import java.util.Vector;
+import java.util.List;
 import popt4jlib.VectorIntf;
 import utils.DataFileAccessClt;
 
@@ -53,7 +53,7 @@ public class DataFileMultiAccessTest {
 				long start = System.currentTimeMillis();
 				int st = startind + r.nextInt(endind+1-startind);
 				int en = st + r.nextInt(endind+1-st);
-				Vector data = clt.readVectorsFromRemoteFile(filename, st, en);
+				List data = clt.readVectorsFromRemoteFile(filename, st, en);
 				long dur = System.currentTimeMillis()-start;
 				System.out.println("Got total of "+data.size()+" VectorIntf objects (["+st+","+en+"]) in "+dur+" msecs");
 			}

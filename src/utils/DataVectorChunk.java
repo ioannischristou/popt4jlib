@@ -7,7 +7,7 @@
 package utils;
 
 import java.lang.ref.SoftReference;
-import java.util.Vector;
+import java.util.List;
 
 /**
  * implements a place-holder for ranges of <CODE>VectorIntf</CODE> objects, that
@@ -16,7 +16,7 @@ import java.util.Vector;
  * needed. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2014</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -24,9 +24,9 @@ import java.util.Vector;
 class DataVectorChunk {
 	private int _fromIndex;
 	private int _toIndex;
-	private SoftReference _data;  // _data is Vector<VectorIntf>
+	private SoftReference _data;  // _data is List<VectorIntf>
 	
-	DataVectorChunk(Vector data, int from, int to) {
+	DataVectorChunk(List data, int from, int to) {
 		_fromIndex = from;
 		_toIndex = to;
 		_data = new SoftReference(data);
@@ -34,8 +34,8 @@ class DataVectorChunk {
 	
 	int getFromIndex() { return _fromIndex; }
 	int getToIndex() { return _toIndex; }
-	Vector getData() {
-		return (Vector) _data.get();  // may be null
+	List getData() {
+		return (List) _data.get();  // may be null
 	}
 	
 }

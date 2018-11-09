@@ -39,11 +39,13 @@ public class SumOfVarianceEvaluator implements EvaluatorIntf {
     int[] asgnms = cl.getClusteringIndices();
     if (asgnms==null) {
       // no clustering has occured yet, or failed
+			System.err.println("SumOfVarianceEvaluator: clusterer returns "+
+				                 "null asgns...");
       return Double.NaN;
     }
     final int n = docs.size();
     final int k = centers.size();
-		ArrayList[] dists = new ArrayList[k];
+		ArrayList[] dists = new ArrayList[k];  // List<Double>[]
 		for (int i=0; i<k; i++) {
 			dists[i] = new ArrayList();
 		}
@@ -59,13 +61,19 @@ public class SumOfVarianceEvaluator implements EvaluatorIntf {
 			for (int j=0; j<di.size(); j++) {
 				dimean += ((Double) di.get(j)).doubleValue();
 			}
-			dimean /= di.size();
 			double vi = 0.0;
-			for (int j=0; j<di.size(); j++) {
-				double dij = ((Double) di.get(j)).doubleValue();
-				vi += (dij-dimean)*(dij-dimean);
+			if 
+				(dists[i].size()==0) System.err.println("cluster#"+i+" is empty...");
+			else if (dists[i].size()==1) 
+				System.err.println("cluster#"+i+" has only 1 pt");
+			else {
+				dimean /= di.size();
+				for (int j=0; j<di.size(); j++) {
+					double dij = ((Double) di.get(j)).doubleValue();
+					vi += (dij-dimean)*(dij-dimean);
+				}
+				vi /= ((double)di.size()-1.0);
 			}
-			vi /= ((double)di.size()-1.0);
 			ret += vi;
 		}
     return ret;

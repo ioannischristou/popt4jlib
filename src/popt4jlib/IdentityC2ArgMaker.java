@@ -3,7 +3,7 @@ package popt4jlib;
 import java.util.*;
 
 /**
- * class implements the identity Chromosome-&gt;;Arg transformation. The class is
+ * class implements the identity Chromosome-&gt;Arg transformation. The class is
  * simply an auxiliary class.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>

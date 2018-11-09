@@ -3,7 +3,7 @@ package utils;
 import parallel.*;
 import java.io.*;
 import java.net.*;
-import java.util.Vector;
+import java.util.List;
 import parallel.distributed.DFileAccessSrvStatsRequest;
 import parallel.distributed.DFileDataVectorReadRequest;
 import parallel.distributed.SimpleMessage;
@@ -13,7 +13,7 @@ import parallel.distributed.SimpleMessage;
  * in a remote file in a remote file-system.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2014</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -56,14 +56,14 @@ public class DataFileAccessClt {
 	 * file to read vectors from
 	 * @param fromind int the starting index of the range (inclusive, including zero)
 	 * @param toind int the ending index of the range (inclusive, including zero)
-	 * @return Vector Vector&lt;VectorIntf&gt;
+	 * @return List // List&lt;VectorIntf&gt;
 	 * @throws IOException
 	 * @throws ParallelException
 	 * @throws IllegalArgumentException
 	 * @throws IndexOutOfBoundsException
 	 * @throws ClassNotFoundException 
 	 */
-	public synchronized Vector readVectorsFromRemoteFile(String filename, int fromind, int toind)
+	public synchronized List readVectorsFromRemoteFile(String filename, int fromind, int toind)
 					throws IOException, ParallelException, IllegalArgumentException, 
 					       IndexOutOfBoundsException, ClassNotFoundException {
     if (filename==null || filename.length()==0) 
@@ -81,8 +81,8 @@ public class DataFileAccessClt {
       oos.writeObject(new DFileDataVectorReadRequest(filename, fromind, toind));
       oos.flush();
       Object reply = ois.readObject();
-      if (reply instanceof Vector) {
-        return (Vector) reply;
+      if (reply instanceof List) {
+        return (List) reply;
       }
       else {
 				SimpleMessage srvmsg = (SimpleMessage) reply;

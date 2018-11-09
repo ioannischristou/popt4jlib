@@ -3,20 +3,29 @@ package popt4jlib.MSSC;
 import popt4jlib.*;
 import popt4jlib.GradientDescent.VecUtil;
 import utils.RndUtil;
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Random;
 
 
 /**
  * implements the KMeans++ method for seeds initialization for the K-Means
  * algorithm.
+ * <p>Notes:
+ * <ul>
+ * <li>2018-11-01: modified the run-time type of getInitialCenters(k) method to
+ * return an ArrayList so as to avoid Vector whose methods are synchronized. 
+ * Also, now implements the ClustererInitIntf, which is also implemented by
+ * class KMeansCC in this package -implementing the K-Means|| algorithm.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2014</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 1.1
  */
-public class KMeansPP {
+public class KMeansPP implements ClustererInitIntf {
   private List _vectors;
 	private double[] _minDistCache;  // _minDistCache[i] is the current min. dist
 	                                 // of _vectors[i] from the current centers
@@ -24,10 +33,10 @@ public class KMeansPP {
 
   /**
    * public constructor.
-   * @param vectors List List&lt;VectorIntf&gt; objects.
+   * @param vectors List // List&lt;VectorIntf&gt; objects.
    * @throws IllegalArgumentException if arg is empty or null.
    */
-  public KMeansPP(List vectors) throws IllegalArgumentException {
+  public KMeansPP(List vectors) {
     if (vectors==null || vectors.size()==0)
       throw new IllegalArgumentException("KMeansPP.<init>: vectors arg must have at least one vector");
     _vectors = vectors;
@@ -39,14 +48,15 @@ public class KMeansPP {
   /**
    * the main method of the class.
    * @param k int
-   * @throws IllegalArgumentException
-   * @return Vector // Vector&lt;VectorIntf&gt;
+   * @throws IllegalArgumentException if the centers k, is higher than the 
+	 * total number of points to be clustered
+   * @return List // List&lt;VectorIntf&gt;
    */
-  public List getInitialCenters(int k) throws IllegalArgumentException {
+  public List getInitialCenters(int k) {
     final int n = _vectors.size();
     if (k>n)
       throw new IllegalArgumentException("KMeansPP.getInitialCenters("+k+"): more centers than data points requested.");
-    Vector centers = new Vector(k);  // reserve k seats in this vector
+    List centers = new ArrayList(k);  // reserve k seats in this list
 		Random rr = RndUtil.getInstance().getRandom();
     // 1. choose uniformly at random the first data-point
     int n0 = rr.nextInt(n);

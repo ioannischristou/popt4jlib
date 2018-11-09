@@ -14,7 +14,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
+//import java.util.Vector;
 import parallel.DMCoordinator;
 import parallel.DynamicAsynchTaskExecutor;
 import parallel.ParallelException;
@@ -36,7 +36,7 @@ import popt4jlib.VectorIntf;
  * via the SoftReference mechanism etc. 
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2014-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -47,10 +47,10 @@ public class DataFileAccessSrv {
   private long _countConns=0;
 	
 	private HashMap _dataCache;  // map<String filename, 
-	                               //     List<DataVectorChunk{
-	                               //            int start, 
-	                               //            int to, 
-	                               //            SoftRef<Vector<VectorIntf>> data}>>
+	                             //     List<DataVectorChunk{
+	                             //            int start, 
+	                             //            int to, 
+	                             //            SoftRef<Vector<VectorIntf>> data}>>
 	
 	private final static boolean _SCAN_FOR_PIECES=true;
 
@@ -141,11 +141,11 @@ public class DataFileAccessSrv {
 	 * method returns.
 	 * @param fadmsg DFileDataVectorReadRequest
 	 * @param oos ObjectOutputStream
-	 * @return Vector // Vector&lt;VectorIntf&gt;
+	 * @return List // List&lt;VectorIntf&gt;
 	 * @throws IOException 
 	 */
-	private Vector getData(DFileDataVectorReadRequest fadmsg, 
-		                     ObjectOutputStream oos) 
+	private List getData(DFileDataVectorReadRequest fadmsg, 
+		                   ObjectOutputStream oos) 
 					throws IOException, ParallelException {
 		String filename = fadmsg.getFileName();
 		DMCoordinator dvchunks_lock = DMCoordinator.getInstance(filename);
@@ -165,7 +165,7 @@ public class DataFileAccessSrv {
 		}
 		final int from = fadmsg.getFromIndex();
 		final int to = fadmsg.getToIndex();
-		Vector res = null;
+		List res = null;
 		// first, see if it's possible to collect all data from DataVectorChunks
 		if (_SCAN_FOR_PIECES) {
 			VectorIntf[] resA = new VectorIntf[to-from+1];  
@@ -210,7 +210,7 @@ public class DataFileAccessSrv {
 				}
 			}
 			if (num_added==to-from+1) {
-				res = new Vector();
+				res = new ArrayList();
 				for (int i=0; i<resA.length; i++) {
 					res.add(resA[i]);
 				}
@@ -225,7 +225,7 @@ public class DataFileAccessSrv {
         // chunk has all of the data
 				res = dvi.getData();
 				if (res!=null) {  // get the right part of the data
-					Vector rres = new Vector();
+					List rres = new ArrayList();
 					for (int j=from-dvi.getFromIndex(); j<=to-dvi.getFromIndex(); j++) {
 						rres.add(res.get(j));
 					}
@@ -242,7 +242,7 @@ public class DataFileAccessSrv {
 					if (from >= dvi.getFromIndex() && to <= dvi.getToIndex()) {
 						res = dvi.getData();
 						if (res!=null) {
-							Vector rres = new Vector();
+							List rres = new ArrayList();
 							for (int j=from-dvi.getFromIndex(); 
 								   j<=to-dvi.getFromIndex(); 
 									 j++) {
@@ -281,7 +281,7 @@ public class DataFileAccessSrv {
 					// another thread did the job for us
 					res = dvi.getData();
 					if (res!=null) {
-						Vector rres = new Vector();
+						List rres = new ArrayList();
 						for (int j=from-dvi.getFromIndex(); j<=to-dvi.getFromIndex(); j++) {
 							rres.add(res.get(j));
 						}							
@@ -354,7 +354,7 @@ public class DataFileAccessSrv {
         if (msg instanceof DFileDataVectorReadRequest) {
 					// fetch from cache or read and store in cache
 					DFileDataVectorReadRequest fadmsg = (DFileDataVectorReadRequest) msg;
-					Vector data = getData(fadmsg, oos);
+					List data = getData(fadmsg, oos);
 					if (data!=null) {
 						oos.reset();  // force object to be written anew
 						oos.writeObject(data);
@@ -383,7 +383,7 @@ public class DataFileAccessSrv {
 							DataVectorChunk dvi = (DataVectorChunk) dvchunks.get(i);
 							data[j++] = dvi.getFromIndex();
 							data[j++] = dvi.getToIndex();
-							Vector dvidata = dvi.getData();
+							List dvidata = dvi.getData();
 							data[j++] = dvidata==null ? 0 : dvidata.size();
 						}
 					}

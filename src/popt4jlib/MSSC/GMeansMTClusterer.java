@@ -3,7 +3,9 @@ package popt4jlib.MSSC;
 import parallel.ParallelException;
 import popt4jlib.VectorIntf;
 import popt4jlib.GradientDescent.VecUtil;
+import utils.Messenger;
 import java.util.*;
+import parallel.Barrier;
 
 /**
  * class implements multi-threaded version of the (hard) K-Means algorithm, in
@@ -33,7 +35,7 @@ import java.util.*;
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2016</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.1
@@ -51,6 +53,8 @@ final public class GMeansMTClusterer implements ClustererIntf {
   private int[] _clusterIndices;
   private List _intermediateClusters;  // Vector<Vector<Integer docid>>
   private List _centers;  // Vector<VectorIntf>, size=k
+	
+	private final Messenger _mger = Messenger.getInstance();
 
 
   /**
@@ -62,14 +66,16 @@ final public class GMeansMTClusterer implements ClustererIntf {
 
 
   /**
-   * returns a List&lt;List&lt;Integer docid&gt; &gt; representing the ids of the
-   * vectors in each cluster.
+   * returns a List&lt;List&lt;Integer docid&gt; &gt; representing the ids of
+   * the vectors in each cluster.
    * @return List  // List&lt;List&lt;Integer docid&gt; &gt;
    */
   public synchronized List getIntermediateClusters() {
     // store the final clustering in _intermediateClusters
     int prev_ic_sz = _intermediateClusters.size();
-    for (int i=0; i<_centers.size(); i++) _intermediateClusters.add(new ArrayList());
+    for (int i=0; i<_centers.size(); i++) {
+			_intermediateClusters.add(new ArrayList());
+		}
     for (int i=0; i<_clusterIndices.length; i++) {
       int c = _clusterIndices[i];
       List vc = (List) _intermediateClusters.get(prev_ic_sz+c);
@@ -100,29 +106,30 @@ final public class GMeansMTClusterer implements ClustererIntf {
    * that).
    * These are:
    * <ul>
-   * <li> &lt;"gmeansmt.TerminationCriteria",ClustererTerminationIntf&gt; the object that will
-   * decide when to stop the iterations. Mandatory.
-   * <li> &lt;"gmeansmt.evaluator",EvaluatorIntf&gt; the object that will evaluate a
-   * clustering. Mandatory.
-   * <li> &lt;"gmeansmt.movable",Vector&lt;Integer clusterind&gt; &gt; optional, indicates which
-   * clusters are allowed to exchange their documents, if it exists. Default is
-   * null.
-   * <li> &lt;"gmeansmt.numthreads",Integer nt&gt; optional, how many threads will be used
-   * to compute the clustering, default is 1.
-   * <li> &lt;"gmeansmt.projectonempty",Boolean&gt; optional, if true then whenever a
-   * cluster becomes empty the vector furthest away from any other center will
-   * become the new center, else the cluster center will remain
-   * the same, without any points attached to it for the next iteration
-   * (if any). Default is false.
-   * <li> &lt;"gmeansmt.trycompacting",Double factor&gt; optional, if it exists, indicates
-   * a factor by which (at what would be the normal end of a clustering process)
-   * the average distance of any data point from its assigned cluster center
-   * must be multiplied and be greater than the actual distance of a data point
-   * from its nearest cluster center in order for this point to be "broken away"
-   * from its assigned cluster; after all such "distant" points have been "freed",
-   * the cluster centers are re-computed, the free data points are re-assigned
-   * to their new nearest centers, and the stopping criteria are re-evaluated to
-   * see if the clustering process must continue or not.
+   * <li> &lt;"gmeansmt.TerminationCriteria",ClustererTerminationIntf&gt; the 
+	 * object that will decide when to stop the iterations. Mandatory.
+   * <li> &lt;"gmeansmt.evaluator",EvaluatorIntf&gt; the object that will 
+	 * evaluate a clustering. Mandatory.
+   * <li> &lt;"gmeansmt.movable",Vector&lt;Integer clusterind&gt; &gt; optional, 
+	 * indicates which clusters are allowed to exchange their documents, if it 
+	 * exists. Default is null.
+   * <li> &lt;"gmeansmt.numthreads",Integer nt&gt; optional, how many threads 
+	 * will be used to compute the clustering, default is 1.
+   * <li> &lt;"gmeansmt.projectonempty",Boolean&gt; optional, if false then 
+	 * whenever a cluster becomes empty the vector furthest away from any other 
+	 * center will become the new center, else the whenever a point is the last in
+	 * a cluster and about to be moved out, it is prevented from doing so. 
+	 * Default is false.
+   * <li> &lt;"gmeansmt.trycompacting",Double factor&gt; optional, if it exists, 
+	 * indicates a factor by which (at what would be the normal end of a 
+	 * clustering process) the average distance of any data point from its 
+	 * assigned cluster center must be multiplied and be greater than the actual 
+	 * distance of a data point from its nearest cluster center in order for this 
+	 * point to be "broken away" from its assigned cluster; after all such 
+	 * "distant" points have been "freed", the cluster centers are re-computed, 
+	 * the free data points are re-assigned to their new nearest centers, and the 
+	 * stopping criteria are re-evaluated to see if the clustering process must 
+	 * continue or not. Default is null.
    * </ul>
    * Also, before calling the method, the documents to be clustered must have
    * been added to the class object via addAllVectors(Vector&lt;VectorIntf&gt;) 
@@ -140,7 +147,8 @@ final public class GMeansMTClusterer implements ClustererIntf {
     ClustererTerminationIntf ct = (ClustererTerminationIntf)
         _params.get("gmeansmt.TerminationCriteria");
     EvaluatorIntf evaluator = (EvaluatorIntf) _params.get("gmeansmt.evaluator");
-    if (evaluator==null) evaluator = (EvaluatorIntf) _params.get("gmeansmt.codocupevaluator");
+    if (evaluator==null) 
+			evaluator = (EvaluatorIntf) _params.get("gmeansmt.codocupevaluator");
     ct.registerClustering(this); // register this clustering problem with ct
 
     final int n = _docs.size();
@@ -149,13 +157,13 @@ final public class GMeansMTClusterer implements ClustererIntf {
     Integer ntI = (Integer) _params.get("gmeansmt.numthreads");
     if (ntI!=null) num_threads = ntI.intValue();
     Double tcI = (Double) _params.get("gmeansmt.trycompacting");
-    final double try_compacting = (tcI!=null) ? tcI.doubleValue() : -1;  // default false
-
+    final double try_compacting = (tcI!=null) ? 
+			                              tcI.doubleValue() : -1;  // default false
     double r = Double.MAX_VALUE;
     int ind[];  // to which cluster each doc belongs
     int numi[];  // how many docs each cluster has
     if (_clusterIndices==null) {
-      //System.err.println("GMeansMTClusterer.clusterVectors(): initializing _clusterIndices");
+      _mger.msg("GMeansMTClusterer.clusterVectors(): init _clusterIndices",2);
       ind = new int[n];  // to which cluster each doc belongs
       numi = new int[k];  // how many docs each cluster has
       for (int i = 0; i < k; i++) numi[i] = 0;
@@ -169,32 +177,47 @@ final public class GMeansMTClusterer implements ClustererIntf {
           if (ind[j] >= 0)continue; // j already taken
           VectorIntf dj = (VectorIntf) _docs.get(j);
           //double distij = distmetric.dist(ci, dj);
-          double distij = VecUtil.getEuclideanDistance(ci,dj);  // VecUtil.norm2(VecUtil.subtract(ci,dj));
+          double distij = VecUtil.getEuclideanDistance(ci,dj);  
+          // above used to be VecUtil.norm2(VecUtil.subtract(ci,dj));
           distij *= distij;  // square it
-          if (distij < r) {
+          if (Double.compare(distij,r)<0) {
             r = distij;
             best_j = j;
           }
         }
-        numi[i] = 1;
+        numi[i] = 1;  
         ind[best_j] = i;
+				_mger.msg("GMeansMTClusterer.clusterVectors(): "+
+					        "initializing process sets pt #"+best_j+" to cluster #"+i, 3);
       }
       _clusterIndices = ind;
-      //System.err.println("GMeansMTClusterer.clusterVectors(): "+
-      //                   "done initializing _clusterIndices (length="+_clusterIndices.length+")");
+      _mger.msg("GMeansMTClusterer.clusterVectors(): "+
+                "done initializing _clusterIndices (length="+
+				        _clusterIndices.length+")",1);
     }
     else {
       // _clusterIndices already exists, and is assumed to have at least one
       // element for each cluster.
-      //System.err.println("GMeansMTClusterer.clusterVectors(): "+
-      //                   "_clusterIndices were already initialized (length="+_clusterIndices.length+")");
+      _mger.msg("GMeansMTClusterer.clusterVectors(): "+
+                "_clusterIndices were already initialized (length="+
+				        _clusterIndices.length+")",1);
       ind = _clusterIndices;
       numi = getClusterCards();
     }
 
+		long uid = utils.DataMgr.getUniqueId();
+		String bname = "barrier.gmeans."+uid;
+		try {
+			Barrier.setNumThreads(bname, num_threads);
+		}
+		catch (ParallelException e) {  // cannot happen
+			e.printStackTrace();
+			System.exit(-1);
+		}
     GMClustererThread threads[] = new GMClustererThread[num_threads];
     for (int i=0; i<num_threads; i++) {
-      GMClustererAux ai = new GMClustererAux(ind, numi, project_on_empty);
+      GMClustererAux ai = new GMClustererAux(ind, numi, project_on_empty,
+				                                     bname);
       threads[i] = new GMClustererThread(ai);
       threads[i].start();
     }
@@ -207,6 +230,7 @@ final public class GMeansMTClusterer implements ClustererIntf {
     List best_centers = new ArrayList();
     double best_val = Double.MAX_VALUE;
     boolean stop = ct.isDone();
+		int num_iters = 0;
     while (!stop) {
       // all threads except last have floor((n-1)/numthreads) work to do
       int starti = 0; int endi = interval;
@@ -225,7 +249,7 @@ final public class GMeansMTClusterer implements ClustererIntf {
         rt.waitForTask();
       }
 
-      // ind[] is already computed correctly as each thread had a reference to it
+      // ind[] is already computed correctly as each thread had a ref to it
       _clusterIndices = ind;
 /*
       System.err.print("inds: [ ");
@@ -265,11 +289,18 @@ final public class GMeansMTClusterer implements ClustererIntf {
 
       // incumbent computation
       double new_val = eval(evaluator);
+			
+			_mger.msg("GMeansMTClusterer.clusterVectors(): "+" #iter="+num_iters+
+				        " new clustering value="+new_val, 2);
+			++num_iters;
       if (new_val<best_val) {
         best_val = new_val;
         best_centers.clear();
         for (int i=0; i<n; i++) best_indices[i] = _clusterIndices[i];
-        for (int i=0; i<k; i++) best_centers.add(_centersA[i]);
+				// itc20181107: below used to be add(_centersA[i]) which is wrong if
+				// project_on_empty is false, as _centersA elements don't get created
+				// anew in each RUN_CENTERS phase.
+        for (int i=0; i<k; i++) best_centers.add(_centersA[i].newInstance());
       }
       stop = ct.isDone();  // check if we're done
       // break up clusters that are not "compact enough"
@@ -289,7 +320,8 @@ final public class GMeansMTClusterer implements ClustererIntf {
       threads[t].getGMClustererAux().setFinish();
     }
     if (_clusterIndices==null) {
-      throw new ClustererException("null _clusterIndices after running clusterDocs()");
+      throw new ClustererException("null _clusterIndices after running "+
+				                           "clusterDocs()");
     }
     // set incumbent
     for (int i=0; i<n; i++) _clusterIndices[i] = best_indices[i];
@@ -312,12 +344,15 @@ final public class GMeansMTClusterer implements ClustererIntf {
    * adds to the end of _docs all VectorIntf's in v.
    * Will throw class cast exception if any object in v is not a VectorIntf
    * @param v List // Vector&lt;VectorIntf&gt;
+	 * @throws ClassCastException 
    */
   public synchronized void addAllVectors(List v) {
     if (v==null) return;
     if (_docs==null) _docs = new ArrayList();
     for (int i=0; i<v.size(); i++)
       _docs.add((VectorIntf) v.get(i));
+		_mger.msg("GMeansMTClusterer.addAllVectors(v): added "+v.size()+" points", 
+			        1);
   }
 
 
@@ -327,7 +362,8 @@ final public class GMeansMTClusterer implements ClustererIntf {
    * @param centers List // Vector&lt;VectorIntf&gt;
    * @throws ClustererException if any object in centers is not a VectorIntf
    */
-  public synchronized void setInitialClustering(List centers) throws ClustererException {
+  public synchronized void setInitialClustering(List centers) 
+		throws ClustererException {
     if (centers==null || centers.size()==0)
       throw new ClustererException("null or empty initial clusters vector");
     _centersA = new VectorIntf[centers.size()];
@@ -335,12 +371,16 @@ final public class GMeansMTClusterer implements ClustererIntf {
     _centers = new ArrayList();
     try {
       for (int i = 0; i < centers.size(); i++) {
-        _centersA[i] = ((VectorIntf) centers.get(i)).newInstance();  // used to be newCopy();
+        _centersA[i] = ((VectorIntf) centers.get(i)).newInstance();  
+        // newInstance() above used to be newCopy();
         _centers.add(_centersA[i]);
       }
+			_mger.msg("GMeansMTClusterer.setInitialClustering(): "+
+				        _centersA.length+" centers set in clusterer.",2);
     }
     catch (ClassCastException e) {
-      throw new ClustererException("at least one object in centers is not a VectorIntf");
+      throw new ClustererException("at least one object in centers "+
+				                           "is not a VectorIntf");
     }
   }
 
@@ -455,7 +495,8 @@ final public class GMeansMTClusterer implements ClustererIntf {
    * their center, recompute the center, and assign the removed points to their
    * nearest center
    */
-  private void compactClusters(double trycompacting) throws ClustererException, ParallelException {
+  private void compactClusters(double trycompacting) 
+		throws ClustererException, ParallelException {
     final int k = _centersA.length;
     final int n = _docs.size();
     // 1. compute average distance from center for each cluster
@@ -466,7 +507,9 @@ final public class GMeansMTClusterer implements ClustererIntf {
       VectorIntf di = (VectorIntf) _docs.get(i);
       VectorIntf cl = _centersA[c];
       //ave_dist[c] += Document.d(di, cl);
-      ave_dist[c] += VecUtil.norm2(VecUtil.subtract(di,cl));
+			double d2 = VecUtil.getEuclideanDistance(di, cl);  
+      // itc20181103: above used to be VecUtil.norm2(VecUtil.subtract(di,cl));
+			ave_dist[c] += d2;
     }
     int cards[] = getClusterCards();
     for (int i=0; i<k; i++) {
@@ -481,7 +524,8 @@ final public class GMeansMTClusterer implements ClustererIntf {
       VectorIntf di = (VectorIntf) _docs.get(i);
       VectorIntf cl = _centersA[c];
       // double dist = Document.d(di, cl);
-      double dist = VecUtil.getEuclideanDistance(di,cl);  // VecUtil.norm2(VecUtil.subtract(di,cl));
+      double dist = VecUtil.getEuclideanDistance(di,cl);  
+      // above used to be VecUtil.norm2(VecUtil.subtract(di,cl));
       if (dist>trycompacting*ave_dist[c]) {
         changed[c]++;
         _clusterIndices[i] = -1;
@@ -524,7 +568,8 @@ final public class GMeansMTClusterer implements ClustererIntf {
         for (int j=0; j<k; j++) {
           VectorIntf cj = _centersA[j];
           // double dist = Document.d(di, cj);
-          double dist = VecUtil.getEuclideanDistance(di,cj);  // VecUtil.norm2(VecUtil.subtract(di,cj));
+          double dist = VecUtil.getEuclideanDistance(di,cj);  
+          // above used to be VecUtil.norm2(VecUtil.subtract(di,cj));
           if (dist<best) {
             best = dist;
             best_ind = j;
@@ -551,9 +596,9 @@ final public class GMeansMTClusterer implements ClustererIntf {
   private static List getCenters(List docs, int[] clusterindices, int k)
       throws ClustererException {
     final int docs_size = docs.size();
-    List centers = new ArrayList();  // Vector<Document>
+    List centers = new ArrayList();  // Vector<VectorIntf>
     for (int i=0; i<k; i++)
-      centers.add(((VectorIntf) docs.get(0)).newCopyMultBy(0));  // new Document(new TreeMap(), dims)
+      centers.add(((VectorIntf) docs.get(0)).newCopyMultBy(0));
     int[] cards = new int[k];
     for (int i=0; i<k; i++) cards[i]=0;
 
@@ -590,14 +635,14 @@ final public class GMeansMTClusterer implements ClustererIntf {
 	 * non-null clusters as well. Clearly not part of the public API.
 	 * <p>Title: popt4jlib</p>
 	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
-	 * <p>Copyright: Copyright (c) 2011-2016</p>
+	 * <p>Copyright: Copyright (c) 2011-2018</p>
 	 * <p>Company: </p>
 	 * @author Ioannis T. Christou
 	 * @version 1.0
 	 */
 	class GMClustererAux {
-		private int _ind[];
-		private int _numi[];
+		private int _ind[];  // shared reference to master _clusterIndices
+		private int _numi[];  // private thread-local array of cluster cardinalities
 		private int _starti=-1;
 		private int _endi=-1;  // the indices to work on [_starti, _endi]
 		private boolean _finish = false;
@@ -605,14 +650,19 @@ final public class GMeansMTClusterer implements ClustererIntf {
 		private int _what2Run=0;
 		final static int RUN_ASGNS=1;
 		final static int RUN_CENTERS=2;
+		
+		private Barrier _b;
+		
 
-
-		GMClustererAux(int[] ind, int[] numi, boolean projectOnEmpty) {
+		GMClustererAux(int[] ind, int[] numi, boolean projectOnEmpty, 
+			             String barriername) {
 			//_master = master;
 			_projectOnEmpty = projectOnEmpty;
 			_ind = ind;  // ref. to _master._clusterIndices
-			_numi = new int[numi.length];  // holds the thread-local version of cluster cardinalities
+			_numi = new int[numi.length];  // holds the thread-local version of 
+			                               // cluster cardinalities
 			for (int i=0; i<numi.length; i++) _numi[i] = numi[i];  // own private copy
+			_b = Barrier.getInstance(barriername);
 		}
 
 
@@ -693,16 +743,27 @@ final public class GMeansMTClusterer implements ClustererIntf {
 				// must first update _numi
 				for (int i = 0; i < k; i++) _numi[i] = 0;
 				for (int i = 0; i < n; i++) {
-					if (_clusterIndices[i]>=0)
-						_numi[_clusterIndices[i]]++;
+					if (_clusterIndices[i]>=0) _numi[_clusterIndices[i]]++;
 				}
+				// itc20181107: barrier needed here to prevent threads from modifying
+				// _clusterIndices
+				_b.barrier();
 				double r;
 				Vector movable = (Vector) _params.get("gmeansmt.movable");
 				boolean movable_exists = (movable != null);
 				for (int i = _starti; i <= _endi; i++) {
 					r = Double.MAX_VALUE;
 					VectorIntf di = (VectorIntf) docs.get(i);
+					if (_ind[i]>=0 && _numi[_ind[i]]<=0) {  // sanity test
+						System.err.println("i="+i+" _ind[i]="+_ind[i]+" _numi[i]="+_numi[i]);
+						System.exit(-1);
+					}
 					if (_ind[i] >= 0 && _numi[_ind[i]] == 1 && _projectOnEmpty) {
+						/*
+						_mger.msg("GMeansMTClusterer.GMClustererAux.go1(): "+
+							        "RUN_ASGNS doesn't move point #"+i+
+							        " as cluster #"+_ind[i]+" has single pt",2);
+						*/
 						continue; // don't move the Document as it's the only one
 						// at least among the docs in the [_starti, _endi] index range
 					}
@@ -712,17 +773,19 @@ final public class GMeansMTClusterer implements ClustererIntf {
 						continue; // data-point i is not allowed to move
 					}
 					for (int l = 0; l < k; l++) {
-						if (movable_exists && _ind[i] != l && movable.contains(new Integer(l)) == false)
+						if (movable_exists && _ind[i] != l && 
+							  movable.contains(new Integer(l)) == false)
 							continue; // cannot move to partition l
 						VectorIntf cl = (VectorIntf) centers[l];
 						try {
-							r = compareAndAssign(i, l, r, di, cl, _numi, _ind);  // was synchronized but no need, only penalty(?)
+							r = compareAndAssign(i, l, r, di, cl);  
+              // was synchronized but no need, only penalty(?)
 						}
 						catch (Exception e) {
 							e.printStackTrace();
 						}
-					}
-				}
+					}  // for l (center-index)
+				}   // for i (doc-index)
 			}
 			else if (_what2Run==RUN_CENTERS) {
 				// step 2: Recompute each cluster center
@@ -733,7 +796,8 @@ final public class GMeansMTClusterer implements ClustererIntf {
 				int n = docs.size();
 				int dim = ((VectorIntf) docs.get(0)).getNumCoords();
 				//int numi[] = new int[k];
-				if (_projectOnEmpty) {  // if _projectOnEmpty is false, don't nullify centers
+				if (_projectOnEmpty) {
+          // if _projectOnEmpty is false, don't nullify centers
 					for (int i = _starti; i <= _endi; i++) centers[i] = null;
 				}
 				// implement hard K-Means
@@ -741,7 +805,8 @@ final public class GMeansMTClusterer implements ClustererIntf {
 					int numi = 0;
 					boolean v_asgned = false;
 					VectorIntf v=null;
-					if (_projectOnEmpty) v = new popt4jlib.DblArray1Vector(new double[dim]);
+					if (_projectOnEmpty) 
+						v = new popt4jlib.DblArray1Vector(new double[dim]);
 					else v = centers[i];
 					boolean first_time = true;
 					for (int j=0; j<n; j++) {
@@ -756,21 +821,23 @@ final public class GMeansMTClusterer implements ClustererIntf {
 						}
 					}
 					if (v_asgned || _projectOnEmpty) {
-						v.div(numi);  // v.div(numi[i]);
+						v.div((double)numi);  // v.div(numi[i]);
 						if (_projectOnEmpty) centers[i] = v;
 					}
-					else if (!_projectOnEmpty) {
-						//System.err.println("re-assigning center-"+i);
+					else if (!_projectOnEmpty) {  // condition is redundant
+						_mger.msg("GMeansMTClusterer.CMClustererAux.go1(): RUN_CENTERS: "+
+							        "re-assigning center #"+i+" to most distant point",3);
 						// centers[i] has no assigned points,
 						// assign it to most distant point from thread's centers
-						double max_dist = 0.0;
+						double max_dist = -1.0;
 						VectorIntf d_max = null;
 						for (int j=0; j<n; j++) {
 							VectorIntf dj = (VectorIntf) docs.get(j);
-							for (int m=_starti; m<=i; m++) {
-								VectorIntf cm = (VectorIntf) centers[i];
+							for (int m=_starti; m<=_endi; m++) {  // used to be m<=i;
+								if (m==i) continue;
+								VectorIntf cm = (VectorIntf) centers[m];
 								double djm = VecUtil.getEuclideanDistance(dj,cm);
-								if (djm>max_dist) {
+								if (Double.compare(djm,max_dist)>=0) {
 									max_dist = djm;
 									d_max = dj;
 								}
@@ -778,7 +845,7 @@ final public class GMeansMTClusterer implements ClustererIntf {
 						}
 						centers[i] = d_max.newInstance();  // d_max.newCopy();
 					}
-				}
+				}  // for i in [_starti, _endi] centers
 			}
 			// finished, reset indices
 			_starti=-1; _endi=-1;
@@ -793,18 +860,18 @@ final public class GMeansMTClusterer implements ClustererIntf {
 		 * @param r double
 		 * @param di VectorIntf
 		 * @param cl VectorIntf
-		 * @param numi int[]
-		 * @param ind int[]
 		 * @return double
 		 */
-		private double compareAndAssign(int i, int l, double r, VectorIntf di, VectorIntf cl, int[] numi, int[] ind) {
-			double rl = VecUtil.getEuclideanDistance(di,cl);  // VecUtil.norm2(VecUtil.subtract(di, cl));
+		private double compareAndAssign(int i, int l, double r, 
+			                              VectorIntf di, VectorIntf cl) {
+			double rl = VecUtil.getEuclideanDistance(di,cl);  
+      // above was VecUtil.norm2(VecUtil.subtract(di, cl));
 			rl *= rl; // square it
-			if (rl < r) {
+			if (Double.compare(rl,r)<0) {
 				r = rl;
-				if (ind[i] >= 0 && numi[ind[i]] > 0) --numi[ind[i]];
-				numi[l]++;
-				ind[i] = l;
+				if (_ind[i] >= 0 && _numi[_ind[i]] > 0) --_numi[_ind[i]];
+				_numi[l]++;
+				_ind[i] = l;
 			}
 			return r;
 		}

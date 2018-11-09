@@ -6,7 +6,7 @@
 
 package tests;
 
-import java.util.Vector;
+import java.util.List;
 import popt4jlib.VectorIntf;
 import utils.DataFileAccessClt;
 
@@ -47,7 +47,7 @@ public class DataFileAccessTest {
 		try {
 			long start = System.currentTimeMillis();
 			DataFileAccessClt clt = new DataFileAccessClt(host,port);
-			Vector data = clt.readVectorsFromRemoteFile(filename, startind, endind);
+			List data = clt.readVectorsFromRemoteFile(filename, startind, endind);
 			long dur = System.currentTimeMillis()-start;
 			for (int i=0; i<data.size(); i++) {
 				VectorIntf xi = (VectorIntf) data.get(i);

@@ -5,12 +5,18 @@ import java.util.*;
 
 /**
  * Utility class for Vector computations.
+ * <p>Note:
+ * <ul>
+ * <li>2018-11-09: modified <CODE>innerProduct(x,y)</CODE> to work with
+ * sparse data faster. Also modified all methods not to declare the (unchecked)
+ * exceptions they may throw when passed illegal arguments.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 1.1
  */
 public class VecUtil {
 
@@ -27,17 +33,42 @@ public class VecUtil {
    * @param x VectorIntf
    * @param y VectorIntf
    * @throws IllegalArgumentException if any arg is null or if the dimensions
-   * of the two args don't match
+   * of the two args don't match. Not checked though.
    * @return double
    */
-  public static double innerProduct(VectorIntf x, VectorIntf y) 
-		throws IllegalArgumentException {
+  public static double innerProduct(VectorIntf x, VectorIntf y) {
     if (x==null) throw new IllegalArgumentException("1st arg is null");
     if (y==null) throw new IllegalArgumentException("2nd arg is null");
     final int n = x.getNumCoords();
     if (n!=y.getNumCoords())
       throw new IllegalArgumentException("dimensions don't match");
     double res=0.0;
+		// test if x or y are sparse vectors 
+		if (x instanceof DblArray1SparseVector) {
+			DblArray1SparseVector xs = (DblArray1SparseVector) x;
+			if (Double.compare(xs.getDefaultValue(),0.0)==0) {  // else makes no sense
+				final int xsnz = xs.getNumNonZeros();
+				for (int i=0; i<xsnz; i++) {
+					int xipos = xs.getIthNonZeroPos(i);
+					double xi = xs.getIthNonZeroVal(i);
+					res += xi*y.getCoord(xipos);
+				}
+				return res;
+			}
+		}
+		if (y instanceof DblArray1SparseVector) {
+			DblArray1SparseVector ys = (DblArray1SparseVector) y;
+			if (Double.compare(ys.getDefaultValue(),0.0)==0) {  // else makes no sense
+				final int ysnz = ys.getNumNonZeros();
+				for (int i=0; i<ysnz; i++) {
+					int yipos = ys.getIthNonZeroPos(i);
+					double yi = ys.getIthNonZeroVal(i);
+					res += yi*x.getCoord(yipos);
+				}
+				return res;
+			}
+		}
+		// revert to full inner product computation of vectors in R^n.
     for (int i=0; i<n; i++) {
       res += x.getCoord(i)*y.getCoord(i);
     }
@@ -46,15 +77,15 @@ public class VecUtil {
 
 
   /**
-   * return a new VectorIntf object that is the sum of the two arguments.
+   * return a new (unmanaged) VectorIntf object that is the sum of the two 
+	 * arguments.
    * @param x VectorIntf
    * @param y VectorIntf
    * @throws IllegalArgumentException if any arg is null or if the dimensions
-   * of the two args don't match
-   * @return VectorIntf
+   * of the two args don't match. Not checked though.
+   * @return VectorIntf of the same run-time type (class) as x
    */
-  public static VectorIntf add(VectorIntf x, VectorIntf y) 
-		throws IllegalArgumentException {
+  public static VectorIntf add(VectorIntf x, VectorIntf y) {
     if (x==null) throw new IllegalArgumentException("1st arg is null");
     if (y==null) throw new IllegalArgumentException("2nd arg is null");
     final int n = x.getNumCoords();
@@ -74,16 +105,15 @@ public class VecUtil {
 
 
   /**
-   * return a new VectorIntf object that is the difference (x-y) of the two
-   * arguments.
+   * return a new (unmanaged) VectorIntf object that is the difference (x-y) of 
+	 * the two arguments.
    * @param x VectorIntf
    * @param y VectorIntf
    * @throws IllegalArgumentException if any arg is null or if the dimensions
-   * of the two args don't match
-   * @return VectorIntf
+   * of the two args don't match. Not checked though.
+   * @return VectorIntf of the same run-time type (class) as x
    */
-  public static VectorIntf subtract(VectorIntf x, VectorIntf y) 
-		throws IllegalArgumentException {
+  public static VectorIntf subtract(VectorIntf x, VectorIntf y) {
     if (x==null) throw new IllegalArgumentException("1st arg is null");
     if (y==null) throw new IllegalArgumentException("2nd arg is null");
     final int n = x.getNumCoords();
@@ -103,16 +133,15 @@ public class VecUtil {
 
 	
   /**
-   * return a new VectorIntf object that is the component-wise product of the 
-	 * two arguments.
+   * return a new (unmanaged) VectorIntf object that is the component-wise 
+	 * product of the two arguments.
    * @param x VectorIntf
    * @param y VectorIntf
    * @throws IllegalArgumentException if any arg is null or if the dimensions
-   * of the two args don't match
-   * @return VectorIntf
+   * of the two args don't match. Not checked though.
+   * @return VectorIntf of the same run-time type (class) as x
    */
-  public static VectorIntf componentProduct(VectorIntf x, VectorIntf y) 
-		throws IllegalArgumentException {
+  public static VectorIntf componentProduct(VectorIntf x, VectorIntf y) {
     if (x==null) throw new IllegalArgumentException("1st arg is null");
     if (y==null) throw new IllegalArgumentException("2nd arg is null");
     final int n = x.getNumCoords();
@@ -135,11 +164,10 @@ public class VecUtil {
    * return the k-th norm of the vector x.
    * @param x VectorIntf
    * @param k int
-   * @throws IllegalArgumentException if x==null or if k&le;0
+   * @throws IllegalArgumentException if x==null or if k&le;0. But, not checked.
    * @return double
    */
-  public static double norm(VectorIntf x, int k) 
-		throws IllegalArgumentException {
+  public static double norm(VectorIntf x, int k) {
     if (x==null) throw new IllegalArgumentException("x is null");
     if (k<=0) throw new IllegalArgumentException("k<=0");
     if (k==2) return norm2(x);  // faster computation
@@ -160,10 +188,10 @@ public class VecUtil {
   /**
    * short-cut for norm(x,2). Faster too.
    * @param x VectorIntf
-   * @throws IllegalArgumentException if x==null
+   * @throws IllegalArgumentException if x==null. But, not checked.
    * @return double
    */
-  public static double norm2(VectorIntf x) throws IllegalArgumentException {
+  public static double norm2(VectorIntf x) {
     if (x==null) throw new IllegalArgumentException("x is null");
     if (x instanceof DblArray1SparseVector) {  // short-cut for sparse vectors
       return ((DblArray1SparseVector) x).norm2();
@@ -181,11 +209,10 @@ public class VecUtil {
   /**
    * computes the infinity norm of x.
    * @param x VectorIntf
-   * @throws IllegalArgumentException if x==null
+   * @throws IllegalArgumentException if x==null. But, not checked.
    * @return double
    */
-  public static double normInfinity(VectorIntf x) 
-		throws IllegalArgumentException {
+  public static double normInfinity(VectorIntf x) {
     if (x==null) throw new IllegalArgumentException("x is null");
     if (x instanceof DblArray1SparseVector) {  // short-cut for sparse vectors
       return ((DblArray1SparseVector) x).normInfinity();
@@ -203,10 +230,10 @@ public class VecUtil {
   /**
    * computes the zero-norm of x (#non-zero components of x)
    * @param x VectorIntf
-   * @throws IllegalArgumentException if x==null
+   * @throws IllegalArgumentException if x==null. But, not checked.
    * @return int
    */
-  public static int zeroNorm(VectorIntf x) throws IllegalArgumentException {
+  public static int zeroNorm(VectorIntf x) {
     if (x==null) throw new IllegalArgumentException("x is null");
     if (x instanceof SparseVectorIntf) {  // short-cut for sparse vectors
       SparseVectorIntf y = (SparseVectorIntf) x;
@@ -225,14 +252,13 @@ public class VecUtil {
 	 * only if both arguments are <CODE>DblArray1SparseVector</CODE>.
    * @param x VectorIntf
    * @param y VectorIntf
-   * @throws IllegalArgumentException if x &amp; y are both null
+   * @throws IllegalArgumentException if x &amp; y are both null. Not checked.
    * @return boolean true iff all the components of the vectors x and y are
    * equal (so that for each component i, the comparison 
 	 * <CODE>Double.compare(xi,yi)==0</CODE> returns true).
    * Returns false immediately if the two vectors have different lengths
    */
-  public static boolean equal(VectorIntf x, VectorIntf y) 
-		throws IllegalArgumentException {
+  public static boolean equal(VectorIntf x, VectorIntf y) {
     if (x==null && y==null) 
 			throw new IllegalArgumentException("both args null");
     if (x==null || y==null) return false;
@@ -252,11 +278,10 @@ public class VecUtil {
    * returns the center of a collection of VectorIntf objects.
    * @param vectors Collection
    * @throws IllegalArgumentException if the collection is null, empty or if it
-   * contains vectors of varying dimensions.
+   * contains vectors of varying dimensions. Not checked though.
    * @return VectorIntf
    */
-  public static VectorIntf getCenter(Collection vectors) 
-		throws IllegalArgumentException {
+  public static VectorIntf getCenter(Collection vectors) {
     if (vectors==null || vectors.size()==0)
       throw new IllegalArgumentException("null argument or empty set");
     Iterator it = vectors.iterator();
@@ -283,11 +308,10 @@ public class VecUtil {
    * @param x VectorIntf
    * @param y VectorIntf
    * @throws IllegalArgumentException if any arg is null or if the two args
-   * dimensions differ.
+   * dimensions differ. Exception is not checked.
    * @return double
    */
-  public static double getEuclideanDistance(VectorIntf x, VectorIntf y) 
-		throws IllegalArgumentException {
+  public static double getEuclideanDistance(VectorIntf x, VectorIntf y) {
     if (x==null || y==null) 
 			throw new IllegalArgumentException("at least one arg null");
     if (x.getNumCoords()!=y.getNumCoords()) 
@@ -311,11 +335,11 @@ public class VecUtil {
    * @param x VectorIntf
    * @param y VectorIntf
    * @throws IllegalArgumentException if x or y are null or if one of the two is
-   * the zero vector, or if the two vectors' dimensions don't agree.
+   * the zero vector, or if the two vectors' dimensions don't agree. Not checked
+	 * though.
    * @return double
    */
-  public static double getCosineSimilarityDistance(VectorIntf x, VectorIntf y) 
-		throws IllegalArgumentException {
+  public static double getCosineSimilarityDistance(VectorIntf x, VectorIntf y) {
     if (x==null || y==null) 
 			throw new IllegalArgumentException("at least one arg null");
     if (x.getNumCoords()!=y.getNumCoords()) 
@@ -345,11 +369,11 @@ public class VecUtil {
 	 * Recommender Systems etc.)
    * @param x VectorIntf
    * @param y VectorIntf
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if any argument is null or if dimensions 
+	 * don't match. Not checked though.
    * @return double
    */
-  public static double getJaccardDistance(VectorIntf x, VectorIntf y) 
-		throws IllegalArgumentException {
+  public static double getJaccardDistance(VectorIntf x, VectorIntf y) {
     if (x==null || y==null) 
 			throw new IllegalArgumentException("at least one arg null");
     if (x.getNumCoords()!=y.getNumCoords()) 

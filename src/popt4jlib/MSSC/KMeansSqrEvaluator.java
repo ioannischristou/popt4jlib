@@ -23,8 +23,8 @@ public class KMeansSqrEvaluator implements EvaluatorIntf {
 
 
   /**
-   * return the sum of the distances of each document from the cluster center
-   * it belongs.
+   * return the sum of the squared distances of each document from the cluster 
+	 * center it belongs.
    * @param cl Clusterer
    * @return double
    * @throws ClustererException
@@ -36,6 +36,7 @@ public class KMeansSqrEvaluator implements EvaluatorIntf {
     int[] asgnms = cl.getClusteringIndices();
     if (asgnms==null) {
       // no clustering has occured yet, or failed
+			System.err.println("KMeansSqrEvaluator: clusterer returns null asgns...");
       return Double.NaN;
     }
     final int n = docs.size();

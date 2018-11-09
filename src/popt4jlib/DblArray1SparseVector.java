@@ -20,6 +20,13 @@ import java.util.ArrayList;
  * that the application is race-condition free when using this class. A thread-
  * safe version is DblArray1SparseVectorMT (which also parallelizes some of the
  * methods) in this package.
+ * <p>Notes:
+ * <ul>
+ * <li>20181108: corrected bug in <CODE>newCopyMultBy(double)</CODE> in corner
+ * case where <CODE>_indices</CODE> is null (all comps at default values), and
+ * default value is NOT zero. Required changes in protected constructors 
+ * having multFactor argument in their parameter list.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2018</p>
@@ -206,7 +213,10 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 	
   /**
    * public constructor making a copy of the vector passed in, and multiplying
-   * each element by the multFactor passed in.
+   * each element by the multFactor passed in. Notice that there is no 
+	 * requirement that the new values components must not be at the default 
+	 * value, since it's not reasonable to expect the caller to ensure this 
+	 * condition is not violated.
    * @param indices int[] elements must be in ascending order
    * @param values double[] must not contain any element with value equal to
 	 * defVal/multFactor
@@ -214,8 +224,8 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    * @param multFactor double
 	 * @param defVal double default value of components
    * @throws IllegalArgumentException if any indices or values is null or their
-	 * dimensions don't match or if n &le; indices[indices.length-1] or if any
-	 * component of _values results in default value or if indices don't ascend
+	 * dimensions don't match or if n &le; indices[indices.length-1] or if indices 
+	 * don't ascend
    */
   public DblArray1SparseVector(int[] indices, double[] values, 
 		                           int n, double multFactor, double defVal) 
@@ -224,20 +234,29 @@ public class DblArray1SparseVector implements SparseVectorIntf {
       throw new IllegalArgumentException("Arguments null or dimensions don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
+		final utils.Messenger mger = utils.Messenger.getInstance();
     final int ilen = indices.length;
     _indices = new int[ilen];
     _values = new double[ilen];
 		_defVal = defVal;
+		int j=0;
     for (int i=0; i<ilen; i++) {
-			_indices[i] = indices[i];
+			_indices[j] = indices[i];
 			if (i>0 && _indices[i]<=_indices[i-1])
 				throw new IllegalArgumentException("indices don't ascend");
-			_values[i] = values[i]*multFactor;
-			if (Double.compare(_values[i],defVal)==0)  
-				throw new IllegalArgumentException("default value for _values["+i+"]");
+			_values[j++] = values[i]*multFactor;
+			if (Double.compare(_values[j-1],defVal)==0) {  
+				// throw new IllegalArgumentException("default value for _values["+i+"]");
+				mger.msg("DblArray1SparseVector.<init>(6 args): default value "+_defVal+
+					       " for _values["+i+"]",2);
+				--j;
+				// reset j-th pos for _indices and _values
+				_indices[j]=0;
+				_values[j]=0;
+			}
 		}
     _n = n;
-    _ilen  = ilen;
+    _ilen  = j;
   }
 
 		
@@ -274,7 +293,8 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 	
 
   /**
-   * return new VectorIntf object containing a copy of the data of this object.
+   * return new (unmanaged) VectorIntf object containing a copy of the data of 
+	 * this object.
    * @return VectorIntf
    */
   public VectorIntf newCopy() {
@@ -286,13 +306,30 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 
 
   /**
-   * create new copy of this vector, and multiply each component by the
-   * multFactor argument.
+   * create new (unmanaged) copy of this vector, and multiply each component by 
+   * the multFactor argument.
    * @param multFactor double
    * @return VectorIntf
    */
   public VectorIntf newCopyMultBy(double multFactor) {
-    if (_indices==null) return new DblArray1SparseVector(_n,_defVal);
+    if (_indices==null) {
+			// incorrect to return new DblArray1SparseVector(_n,_defVal); unless
+			// _defVal is zero or multFactor is one.
+			if (Double.compare(_defVal,0.0)==0 || Double.compare(multFactor,1.0)==0) 
+				return new DblArray1SparseVector(_n,_defVal);
+			// oops, vector is fully dense now
+			final double val = _defVal*multFactor;
+			int[] inds = new int[_n];
+			double[] vals = new double[_n];
+			for (int i=0; i<_n; i++) {
+				inds[i] = i;
+				vals[i] = val;
+			}
+			return new DblArray1SparseVector(_defVal,inds,vals,_n);
+		}
+		// check if _defVal==multFactor==0 as short-cut
+		if (Double.compare(_defVal, 0.0)==0 && Double.compare(multFactor,0.0)==0)
+			return new DblArray1SparseVector(_n);
     DblArray1SparseVector r = 
 			new DblArray1SparseVector(_indices, _values, _n, multFactor, 
 				                        _defVal, _ilen);
