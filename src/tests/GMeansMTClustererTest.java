@@ -35,7 +35,8 @@ public class GMeansMTClustererTest {
 	 * [init_method(0(default)=random point selection|1=KMeans++|2=KMeans||)] 
 	 * [numitersOrmaxdist(-1)]
 	 * [vectors_are_sparse(false)]
-	 * [project_on_empty(fale)]
+	 * [project_on_empty(false)]
+	 * [KMeans||_rounds(k/2)]
 	 * [dbglvl(Integer.MAX_VALUE, all msgs printed)]
 	 * </CODE>
    * @param args String[]
@@ -50,6 +51,7 @@ public class GMeansMTClustererTest {
 				                 "[numitersORmaxdist(-1)] "+
 				                 "[vectors_are_sparse(false)] "+
 				                 "[project_on_empty(false] "+
+				                 "[KMEans||_rounds(-1)]"+
 				                 "[dbglvl(Integer.MAX_VALUE->all msgs printed)]");
       System.exit(-1);
     }
@@ -81,8 +83,9 @@ public class GMeansMTClustererTest {
 		}
 		boolean vectors_sparse = args.length>6 ? args[6].startsWith("t") : false;
 		boolean p_o_e = args.length>7 ? args[7].startsWith("t") : false;
-		if (args.length>8) {
-			int dbglvl = Integer.parseInt(args[8]);
+		int nr = args.length>8 ? Integer.parseInt(args[8]) : -1;
+		if (args.length>9) {
+			int dbglvl = Integer.parseInt(args[9]);
 			utils.Messenger.getInstance().setDebugLevel(dbglvl);
 		}
     if (seed >= 0) RndUtil.getInstance().setSeed(seed);  // deterministic 
@@ -137,8 +140,8 @@ public class GMeansMTClustererTest {
 			else if (init_method==2) {
 				final int lambda = k/2 > 0 ? k/2 : 1;
         System.err.println("Running KMeans|| for seed initialization w/ "+
-					                 "lambda=k/2="+lambda);
-				final int numrounds = -1;
+					                 "lambda="+lambda);
+				final int numrounds = nr;
 				// KMeansCC needs an unsynchronized list of data to work well in
 				// parallel, and to avoid rewriting DataMgr.readXXX() methods, we 
 				// resort to this "trick"
@@ -184,6 +187,8 @@ public class GMeansMTClustererTest {
                       " compute duration (msecs)="+dur_compute);
 			System.out.println("Sum-Of-Variances="+
 				         gmclusterer.eval(new popt4jlib.MSSC.SumOfVarianceEvaluator()));
+			System.out.println("Normalized Sum-Of-Square-Errors="+
+				gmclusterer.eval(new popt4jlib.MSSC.KMeansNormSqrEvaluator(docs)));
     }
     catch (Exception e) {
       e.printStackTrace();

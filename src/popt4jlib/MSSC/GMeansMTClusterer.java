@@ -4,8 +4,8 @@ import parallel.ParallelException;
 import popt4jlib.VectorIntf;
 import popt4jlib.GradientDescent.VecUtil;
 import utils.Messenger;
-import java.util.*;
 import parallel.Barrier;
+import java.util.*;
 
 /**
  * class implements multi-threaded version of the (hard) K-Means algorithm, in
@@ -28,6 +28,12 @@ import parallel.Barrier;
  * initial clustering and the same data points sequence.
  * <p>Notes:
  * <ul>
+ * <li>2018-11-13: <CODE>_clusterIndices</CODE> initialization where each center
+ * gets one point assigned to it before threads start executing, now only occurs
+ * when the "gmeansmt.projectonempty" parameter flag is true.
+ * <li>2018-11-08: added barrier in <CODE>GMClustererAux.go1()</CODE> in the
+ * beginning of the RUN_ASGNS phase, so that the initialization of the _numi
+ * array elements is correct in each thread.
  * <li>2016-01-27: modified data structures to List interface from Vector to 
  * avoid synchronized access to array elements. 
  * <li>2016-01-27: Also, moved auxiliary classes within the GMeansMTClusterer 
@@ -168,28 +174,30 @@ final public class GMeansMTClusterer implements ClustererIntf {
       numi = new int[k];  // how many docs each cluster has
       for (int i = 0; i < k; i++) numi[i] = 0;
       for (int i = 0; i < n; i++) ind[i] = -1;
-      // first assign to each center the closest document to it
-      for (int i = 0; i < k; i++) {
-        VectorIntf ci = _centersA[i];  // (VectorIntf) _centers.elementAt(i);
-        r = Double.MAX_VALUE;
-        int best_j = -1;
-        for (int j = 0; j < n; j++) {
-          if (ind[j] >= 0)continue; // j already taken
-          VectorIntf dj = (VectorIntf) _docs.get(j);
-          //double distij = distmetric.dist(ci, dj);
-          double distij = VecUtil.getEuclideanDistance(ci,dj);  
-          // above used to be VecUtil.norm2(VecUtil.subtract(ci,dj));
-          distij *= distij;  // square it
-          if (Double.compare(distij,r)<0) {
-            r = distij;
-            best_j = j;
-          }
-        }
-        numi[i] = 1;  
-        ind[best_j] = i;
-				_mger.msg("GMeansMTClusterer.clusterVectors(): "+
-					        "initializing process sets pt #"+best_j+" to cluster #"+i, 3);
-      }
+			if (project_on_empty) {
+				// first assign to each center the closest document to it
+				for (int i = 0; i < k; i++) {
+					VectorIntf ci = _centersA[i];  // (VectorIntf) _centers.elementAt(i);
+					r = Double.MAX_VALUE;
+					int best_j = -1;
+					for (int j = 0; j < n; j++) {
+						if (ind[j] >= 0)continue; // j already taken
+						VectorIntf dj = (VectorIntf) _docs.get(j);
+						//double distij = distmetric.dist(ci, dj);
+						double distij = VecUtil.getEuclideanDistance(ci,dj);  
+						// above used to be VecUtil.norm2(VecUtil.subtract(ci,dj));
+						distij *= distij;  // square it
+						if (Double.compare(distij,r)<0) {
+							r = distij;
+							best_j = j;
+						}
+					}
+					numi[i] = 1;  
+					ind[best_j] = i;
+					_mger.msg("GMeansMTClusterer.clusterVectors(): "+
+										"initializing process sets pt #"+best_j+" to cluster #"+i, 3);
+				}
+			}
       _clusterIndices = ind;
       _mger.msg("GMeansMTClusterer.clusterVectors(): "+
                 "done initializing _clusterIndices (length="+
@@ -755,7 +763,8 @@ final public class GMeansMTClusterer implements ClustererIntf {
 					r = Double.MAX_VALUE;
 					VectorIntf di = (VectorIntf) docs.get(i);
 					if (_ind[i]>=0 && _numi[_ind[i]]<=0) {  // sanity test
-						System.err.println("i="+i+" _ind[i]="+_ind[i]+" _numi[i]="+_numi[i]);
+						System.err.println("i="+i+" _ind[i]="+_ind[i]+
+							                 " _numi[i]="+_numi[i]);
 						System.exit(-1);
 					}
 					if (_ind[i] >= 0 && _numi[_ind[i]] == 1 && _projectOnEmpty) {

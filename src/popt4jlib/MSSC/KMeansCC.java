@@ -137,10 +137,10 @@ public class KMeansCC implements ClustererInitIntf {
 		}
 		_mger.msg("fi_X(C)="+fi_X, 1);
 		int logy = (int) Math.ceil(Math.log(fi_X));
-		_mger.msg("KMeansCC): will iterate for "+logy+" times", 1);
 		// 3. for logy times, sample each point in dataset independently
 		final List C_new_points = new ArrayList();  // List<Integer>
 		final int numiters = _numrounds <= 0 ? logy : _numrounds;
+		_mger.msg("KMeansCC): will iterate for "+numiters+" times", 1);
 		for (int n=0; n<numiters; n++) {
 			_mger.msg("KMeansCC: in iteration "+n+"/"+logy, 1);
 			C_new_points.clear();
@@ -223,6 +223,7 @@ public class KMeansCC implements ClustererInitIntf {
 		}	
 		*/
 		_mger.msg("KMeansCC: done computing weights", 3);
+		/* wrong way of getting k centers from the current candidates
 		double tot_weight = _data.size();
 		while (final_centers.size()<k) {
 			int rn = r.nextInt(_CInd.size());
@@ -236,7 +237,19 @@ public class KMeansCC implements ClustererInitIntf {
 				c_ind_list.remove(rn);
 			}
 		}
+		*/
 		for (int i=0; i<_nthreads; i++) threads[i].setDone();
+		List init_centers = new ArrayList();
+		double[] w = new double[_CInd.size()];
+		Iterator cind_it = _CInd.iterator();
+		int cnt=0;
+		while (cind_it.hasNext()) {
+			final int ii = ((Integer)cind_it.next()).intValue();
+			w[cnt++] = _w[ii];
+			init_centers.add(_data.get(ii));
+		}
+		KMeansPP kmeanspp = new KMeansPP(init_centers);
+		final_centers = kmeanspp.getInitialCenters(k,w);
 		_mger.msg("KMeansCC: done", 0);
 		return final_centers;
 	} 
