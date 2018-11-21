@@ -7,6 +7,9 @@ import java.util.*;
  * Utility class for Vector computations.
  * <p>Note:
  * <ul>
+ * <li>2018-11-16: modified <CODE>getEuclideanDistance(x,y)</CODE> to work with
+ * <CODE>popt4jlib.DblArray1SparseVector</CODE> data faster (when both arguments
+ * are sparse).
  * <li>2018-11-09: modified <CODE>innerProduct(x,y)</CODE> to work with
  * sparse data faster. Also modified all methods not to declare the (unchecked)
  * exceptions they may throw when passed illegal arguments.
@@ -302,6 +305,64 @@ public class VecUtil {
     return res;
   }
 
+	
+  /**
+   * returns the Euclidean distance between two 
+	 * <CODE>DblArray1SparseVector</CODE> sparse vectors. When both x and y are 
+	 * sparse, speed up the computations by not calling the expensive 
+	 * <CODE>getCoord(i)</CODE> on default-valued coordinates.
+   * @param x DblArray1SparseVector
+   * @param y DblArray1SparseVector
+   * @throws IllegalArgumentException if any arg is null or if the two args
+   * dimensions differ. Exception is not checked.
+   * @return double
+   */	
+	public static double getEuclideanDistance(DblArray1SparseVector x, 
+		                                        DblArray1SparseVector y) {
+    if (x==null || y==null) 
+			throw new IllegalArgumentException("at least one arg null");
+    if (x.getNumCoords()!=y.getNumCoords()) 
+			throw new IllegalArgumentException("args of different dimensions");
+		final int n = x.getNumCoords();
+    double dist = 0.0;
+		if (Double.compare(x.getDefaultValue(),y.getDefaultValue())==0) {
+			final int xs_nz = x.getNumNonZeros();
+			final int ys_nz = y.getNumNonZeros();
+			final double defVal = x.getDefaultValue();
+			int x_ind = 0;
+			int y_ind = 0;
+			while (x_ind<xs_nz || y_ind<ys_nz) {
+				int x_pos = x_ind < xs_nz ? x.getIthNonZeroPos(x_ind) : 
+																		Integer.MAX_VALUE;
+				int y_pos = y_ind < ys_nz ? y.getIthNonZeroPos(y_ind) :
+																		Integer.MAX_VALUE;
+				if (y_pos < x_pos) {
+					double yi = y.getIthNonZeroVal(y_ind)-defVal;
+					dist += yi*yi;
+					y_ind++;
+				}
+				else if (x_pos < y_pos) {
+					double xi = x.getIthNonZeroVal(x_ind)-defVal;
+					dist += xi*xi;
+					x_ind++;
+				}
+				else {  // x_pos==y_pos
+					double xmyi = y.getIthNonZeroVal(y_ind)-x.getIthNonZeroVal(x_ind);
+					dist += xmyi*xmyi;
+					x_ind++;
+					y_ind++;
+				}
+			}
+			return Math.sqrt(dist);
+		}
+    for (int i=0; i<n; i++) {
+      double xi = x.getCoord(i);
+      double yi = y.getCoord(i);
+      dist += (xi-yi)*(xi-yi);
+    }
+    return Math.sqrt(dist);		
+	}
+
 
   /**
    * returns the Euclidean distance between two VectorIntf objects.
@@ -316,8 +377,8 @@ public class VecUtil {
 			throw new IllegalArgumentException("at least one arg null");
     if (x.getNumCoords()!=y.getNumCoords()) 
 			throw new IllegalArgumentException("args of different dimensions");
+		final int n = x.getNumCoords();
     double dist = 0.0;
-    final int n = x.getNumCoords();
     for (int i=0; i<n; i++) {
       double xi = x.getCoord(i);
       double yi = y.getCoord(i);
@@ -325,8 +386,8 @@ public class VecUtil {
     }
     return Math.sqrt(dist);
   }
-
-
+	
+	
   /**
    * return the cosine-similarity between x and y (ie the cos(x/\y))
    * used in Information Retrieval. This similarity measure is not a "distance"

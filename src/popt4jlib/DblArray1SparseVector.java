@@ -22,7 +22,11 @@ import java.util.ArrayList;
  * methods) in this package.
  * <p>Notes:
  * <ul>
- * <li>20181108: corrected bug in <CODE>newCopyMultBy(double)</CODE> in corner
+ * <li>2018-11-21: fixed a bug in <CODE>div(double)</CODE> that would only 
+ * appear if the default-value of this sparse vector's components is non-zero.
+ * <li>2018-11-21: added <CODE>addMul(double, DblArray1SparseVector)</CODE> 
+ * method which should speed-up computation in most cases.
+ * <li>2018-11-08: corrected bug in <CODE>newCopyMultBy(double)</CODE> in corner
  * case where <CODE>_indices</CODE> is null (all comps at default values), and
  * default value is NOT zero. Required changes in protected constructors 
  * having multFactor argument in their parameter list.
@@ -632,17 +636,48 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 
 
   /**
-   * modifies this VectorIntf by adding the quantity m*other to it. This
+   * modifies this sparse vector by adding the quantity m*other to it. This
+   * operation may destroy the sparse nature of this object.
+   * @param m double
+   * @param other DblArray1SparseVector
+   * @throws IllegalArgumentException if other is null or does not have the
+   * same dimensions as this vector or if m is NaN. Not checked.
+   * @throws ParallelException -never throws this exception, but sub-classes
+	 * may
+   */
+	public void addMul(double m, DblArray1SparseVector other) 
+		throws ParallelException {
+    if (other==null || other.getNumCoords()!=_n || Double.isNaN(m))
+      throw new IllegalArgumentException("cannot call addMul(m,v) with v "+
+                                         "having different dimensions than "+
+                                         "this vector or with m being NaN.");
+		if (Double.compare(other.getDefaultValue(),0.0)==0) {
+			final int other_nz = other.getNumNonZeros();
+			for (int i=0; i<other_nz; i++) {
+				int pi = other.getIthNonZeroPos(i);
+				double vi = other.getIthNonZeroVal(i);
+				setCoord(pi, getCoord(pi)+m*vi);
+			}
+		} else {  // revert to standard iteration
+	    for (int i=0; i<_n; i++) {
+		    setCoord(i, getCoord(i)+m*other.getCoord(i));
+			}
+		}
+	}
+	
+
+  /**
+   * modifies this sparse vector by adding the quantity m*other to it. This
    * operation may destroy the sparse nature of this object.
    * @param m double
    * @param other VectorIntf
    * @throws IllegalArgumentException if other is null or does not have the
-   * same dimensions as this vector or if m is NaN
+   * same dimensions as this vector or if m is NaN. Not checked.
    * @throws ParallelException -never throws this exception, but sub-classes
 	 * may
    */
   public void addMul(double m, VectorIntf other) 
-		throws IllegalArgumentException, ParallelException {
+		throws ParallelException {
     if (other==null || other.getNumCoords()!=_n || Double.isNaN(m))
       throw new IllegalArgumentException("cannot call addMul(m,v) with v "+
                                          "having different dimensions than "+
@@ -655,16 +690,23 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 
   /**
    * divide the components of this vector by the argument h.
-   * @param h double
-   * @throws IllegalArgumentException if h is (almost) zero
+   * @param h double must have absolute value &ge; 1.e-120.
+   * @throws IllegalArgumentException if h is (almost) zero (unchecked)
    * @throws ParallelException -never throws this exception.
    */
-  public void div(double h) throws IllegalArgumentException, ParallelException {
+  public void div(double h) throws ParallelException {
     if (Double.isNaN(h) || Math.abs(h)<1.e-120)
       throw new IllegalArgumentException("division by (almost) zero or NaN");
-    for (int i=0; i<_ilen; i++) {
-      _values[i] /= h;
-    }
+		if (Double.compare(_defVal,0.0)==0) {
+			for (int i=0; i<_ilen; i++) {
+				_values[i] /= h;
+			}
+		}
+		else {  // slow but correct version
+			for (int i=0; i<_n; i++) {
+				setCoord(i, getCoord(i)/h);
+			}
+		}
   }
 
 

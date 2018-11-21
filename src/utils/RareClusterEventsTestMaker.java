@@ -25,10 +25,14 @@ public class RareClusterEventsTestMaker {
    * cluster. This file has the following format:
    * line-i: num_points_to_make,mean_of_pdf_i1,sd_of_pdf_i1,
 	 * mean_of_pdf_i2,sd_of_pdf_i2,...mean_of_pdf_id,sd_of_pdf_id
-	 * [,miss_prob][,maxdim]
+	 * [,miss_prob][,[mindim-]maxdim]
    * i=1...k where the last two values are optional and indicate the over-riding
-	 * probability and max_dim_index with which values can go missing in this
-	 * cluster. Lines starting with # are ignored.
+	 * probability and min_dim_index(1) and max_dim_index with which values can go 
+	 * missing in this cluster. The last two values are truly overriding 
+	 * probabilities within the dimension indices specified by the last value.
+	 * Outside this range, the default missing probabilities (specified in args[3]
+	 * and args[4]) are used to compute missing values.
+	 * Lines starting with # in this file are ignored.
    * <li>args[2] -- string of, the filename containing the result dataset in
 	 * CSV format of the form v_1,v_2,...v_d
    * <li>args[3] -- double missingprob, optional, the probability with which a
@@ -81,6 +85,7 @@ public class RareClusterEventsTestMaker {
 				if (line.startsWith("#")) continue;  // comment line
 		    // over-riding values
 				double miss_prob_override = miss_prob;
+				int min_miss_dim_ind_override = 0;
 				int max_miss_dim_ind_override = max_miss_dim;
         i++;
         st = new StringTokenizer(line, ",");
@@ -98,7 +103,15 @@ public class RareClusterEventsTestMaker {
 					if (dim==dims) {
 						miss_prob_override = m_dim;
 						if (st.hasMoreTokens()) {
-							max_miss_dim_ind_override = Integer.parseInt(st.nextToken());
+							String minmaxdimind = st.nextToken();
+							try {
+								max_miss_dim_ind_override = Integer.parseInt(minmaxdimind);
+							}
+							catch (NumberFormatException e) {  // it's in min-max format
+								StringTokenizer st2 = new StringTokenizer(minmaxdimind,"-");
+								min_miss_dim_ind_override = Integer.parseInt(st2.nextToken());
+								max_miss_dim_ind_override = Integer.parseInt(st2.nextToken());
+							}
 						}
 						break;
 					}
@@ -116,8 +129,18 @@ public class RareClusterEventsTestMaker {
 				for (int j=0; j<card_i; j++) {
 					popt4jlib.VectorIntf vj = (popt4jlib.VectorIntf) cluster_i.get(j);
 					for (int k=0; k<dims; k++) {
-						if (k<=max_miss_dim_ind_override && 
-							  _r.nextDouble()<miss_prob_override) {
+						double rand_val = _r.nextDouble();
+						boolean miss_override = rand_val < miss_prob_override;
+						if (k>=min_miss_dim_ind_override && k<=max_miss_dim_ind_override && 
+							  miss_override) {  // first cond is override 
+							vpw.print("?");
+							if (k<dims-1) vpw.print(",");
+							continue;
+						}
+						else if ((k<min_miss_dim_ind_override || 
+							        k>max_miss_dim_ind_override) &&
+							   		  k<=max_miss_dim && rand_val<miss_prob) {
+							// second condition is overall-applicable missing prob and index
 							vpw.print("?");
 							if (k<dims-1) vpw.print(",");
 							continue;

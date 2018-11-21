@@ -295,22 +295,26 @@ final public class GMeansMTClusterer implements ClustererIntf {
         _centers.add(_centersA[i]);
       }
 
-      // incumbent computation
-      double new_val = eval(evaluator);
-			
-			_mger.msg("GMeansMTClusterer.clusterVectors(): "+" #iter="+num_iters+
-				        " new clustering value="+new_val, 2);
-			++num_iters;
-      if (new_val<best_val) {
-        best_val = new_val;
-        best_centers.clear();
-        for (int i=0; i<n; i++) best_indices[i] = _clusterIndices[i];
-				// itc20181107: below used to be add(_centersA[i]) which is wrong if
-				// project_on_empty is false, as _centersA elements don't get created
-				// anew in each RUN_CENTERS phase.
-        for (int i=0; i<k; i++) best_centers.add(_centersA[i].newInstance());
-      }
       stop = ct.isDone();  // check if we're done
+			
+			++num_iters;
+			if (_params.containsKey("gmeansmt.movable") || 
+				  _params.containsKey("gmeansmt.projectonempty")  || stop) {
+				// incumbent computation
+				double new_val = eval(evaluator);			
+				_mger.msg("GMeansMTClusterer.clusterVectors(): "+" #iter="+num_iters+
+									" new clustering value="+new_val, 2);
+				if (new_val<best_val) {
+					best_val = new_val;
+					best_centers.clear();
+					for (int i=0; i<n; i++) best_indices[i] = _clusterIndices[i];
+					// itc20181107: below used to be add(_centersA[i]) which is wrong if
+					// project_on_empty is false, as _centersA elements don't get created
+					// anew in each RUN_CENTERS phase.
+					for (int i=0; i<k; i++) best_centers.add(_centersA[i].newInstance());
+				}
+			}
+			
       // break up clusters that are not "compact enough"
       if (stop && try_compacting>=0) {
         // System.err.println("trying compacting clusters");
