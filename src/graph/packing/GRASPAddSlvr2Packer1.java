@@ -661,7 +661,7 @@ public final class GRASPAddSlvr2Packer1 {
 		int res = 0;
 		int nz = x.getNumNonZeros();
 		for (int i=0; i<nz; i++) {
-			res += x.getIthNonZeroVal(i);
+			res += x.getIntIthNonZeroVal(i);
 		}
 		return res;
 	}

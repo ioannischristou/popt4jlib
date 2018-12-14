@@ -290,7 +290,7 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
    * <CODE>
    * for (int i=0; i&lt;sparsevector.getNumNonZeros(); i++) {
    *   int    pos = sparsevector.getIthNonZeroPos(i);
-   *   double val = sparsevector.getCoord(pos);
+   *   double val = sparsevector.getIthNonZeroVal(i);
    * }
    * </CODE>
 	 * </pre>
@@ -303,6 +303,21 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
     if (i<0 || i>=_ilen) throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+_ilen+"] Vector is: "+this);
     return _indices[i];
   }
+	
+	
+	/**
+	 * get the i-th non-zero value of this vector.
+	 * @param i int
+	 * @return double
+	 * @throws IndexOutOfBoundsException if i is out-of-bounds. Always throws if
+	 * this is the default (zero) vector.
+	 */
+	public double getIthNonZeroVal(int i) throws IndexOutOfBoundsException {
+    if (i<0 || i>=_ilen) 
+			throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+
+				                                  _ilen+"] Vector is: "+this);
+    return _x[_indices[i]];		
+	}
 
 
   /**

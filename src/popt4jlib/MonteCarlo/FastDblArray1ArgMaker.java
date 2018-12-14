@@ -14,10 +14,12 @@ import utils.RndUtil;
 
 /**
  * creates random <CODE>double[]</CODE> objects of fixed length, according to 
- * parameters passed in a <CODE>HashMap</CODE> object.
+ * parameters passed in a <CODE>HashMap</CODE> object. Being completely
+ * unsynchronized, this class's design relies on the fact that no two threads
+ * will ever call the same object's methods.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0

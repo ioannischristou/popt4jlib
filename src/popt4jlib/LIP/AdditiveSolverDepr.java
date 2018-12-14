@@ -71,7 +71,7 @@ public class AdditiveSolverDepr {
 	private static boolean complete(IntArray1SparseVector x) {
 		int nz=x.getNumNonZeros();
 		for(int i=0; i<nz; i++) {
-			if (x.getIthNonZeroVal(i)==-1) return false;
+			if (x.getIntIthNonZeroVal(i)==-1) return false;
 		}
 		return true;
 	}
@@ -102,14 +102,14 @@ public class AdditiveSolverDepr {
 		int Ax_nz = Ax.getNumNonZeros();
 		for (int i=0; i<Ax_nz; i++) {
 			int axipos = Ax.getIthNonZeroPos(i);
-			int axival = Ax.getIthNonZeroVal(i); // (int) Ax.getCoord(axipos);
+			int axival = Ax.getIntIthNonZeroVal(i); // (int) Ax.getCoord(axipos);
 			int bival = (int) b.getCoord(axipos);
 			if (axival<bival) return false;
 		}
 		int b_nz = b.getNumNonZeros();
 		for (int i=0; i<b_nz; i++) {
 			int bipos = b.getIthNonZeroPos(i);
-			int bival = b.getIthNonZeroVal(i); // (int) b.getCoord(bipos);
+			int bival = b.getIntIthNonZeroVal(i); // (int) b.getCoord(bipos);
 			int axival = (int) Ax.getCoord(bipos);
 			if (axival<bival) return false;
 		}
@@ -123,7 +123,7 @@ public class AdditiveSolverDepr {
 		for (int i=0; i<nz; i++) {
 			//int ipos = x.getIthNonZeroPos(i);
 			//if (Integer.compare((int)x.getCoord(ipos),-1)==0) ++n;
-			if (x.getIthNonZeroVal(i)==-1) ++n;
+			if (x.getIntIthNonZeroVal(i)==-1) ++n;
 		}
 		return n;
 	}
@@ -292,7 +292,7 @@ public class AdditiveSolverDepr {
 		int nz = current._x.getNumNonZeros();
 		for (int i=0; i<nz; i++) {
 			int ipos = current._x.getIthNonZeroPos(i);
-			int val = (int) current._x.getIthNonZeroVal(i);
+			int val = (int) current._x.getIntIthNonZeroVal(i);
 			if (val==1) {
 				cstar += (int)_c.getCoord(ipos);
 				for (int j=0; j<_m; j++) {
@@ -338,7 +338,7 @@ public class AdditiveSolverDepr {
 				int cxnz = current._x.getNumNonZeros();
 				for (int j=0; j<cxnz; j++) {
 					int jpos = current._x.getIthNonZeroPos(j);
-					int jval = current._x.getIthNonZeroVal(j);
+					int jval = current._x.getIntIthNonZeroVal(j);
 					if (jval==-1) {
 						int Aij = _A.getCoord(i, jpos);
 						if (Aij>0) {
@@ -362,12 +362,12 @@ public class AdditiveSolverDepr {
 		int cxnz = current._x.getNumNonZeros();
 		for (int j=0; j<cxnz; j++) {
 			int jpos = current._x.getIthNonZeroPos(j);
-			int jval = current._x.getIthNonZeroVal(j);
+			int jval = current._x.getIntIthNonZeroVal(j);
 			if (jval==-1) {  // j-var is free
 				int pplusnz = Pplus.getNumNonZeros();
 				for (int i=0; i<pplusnz; i++) {
 					int ipos = Pplus.getIthNonZeroPos(i);
-					int ival = Pplus.getIthNonZeroVal(i);
+					int ival = Pplus.getIntIthNonZeroVal(i);
 					int Aij = _A.getCoord(ipos, jpos);
 					if (ival>0 && ival-Math.abs(Aij)<bbar.getCoord(ipos)) {
 						if (Aij>0) current._x.setCoord(jpos, 1);
@@ -399,7 +399,7 @@ public class AdditiveSolverDepr {
 			int bbari = (int) bbar.getCoord(i);
 			for (int j=0; j<cxnz; j++) {
 				int jpos = current._x.getIthNonZeroPos(j);
-				int jval = current._x.getIthNonZeroVal(j);
+				int jval = current._x.getIntIthNonZeroVal(j);
 				if (jval==-1) {  // x[j] is free
 					if (laux < bbari) {
 						++Li;
@@ -452,7 +452,7 @@ public class AdditiveSolverDepr {
 		int cxnz = current._x.getNumNonZeros();
 		for (int j=0; j<cxnz; j++) {
 			int jpos = current._x.getIthNonZeroPos(j);
-			int jval = current._x.getIthNonZeroVal(j);
+			int jval = current._x.getIntIthNonZeroVal(j);
 			if (jval==-1) {  // x[jpos] is free
 				int sm=0;
 				for (int i=0; i<_m; i++) {
@@ -681,7 +681,7 @@ public class AdditiveSolverDepr {
 		_csum = 0;
 		int cnz = _c.getNumNonZeros();
 		for (int i=0; i<cnz; i++) {
-			_csum += _c.getIthNonZeroVal(i);
+			_csum += _c.getIntIthNonZeroVal(i);
 		}
 
 		_current = new Node();
@@ -761,7 +761,7 @@ public class AdditiveSolverDepr {
 				solver._cstar=0;
 				int cnz = solver._current._x.getNumNonZeros();
 				for (int i=0; i<cnz; i++) {
-					if (solver._current._x.getIthNonZeroVal(i)==1) {
+					if (solver._current._x.getIntIthNonZeroVal(i)==1) {
 						int ipos = solver._current._x.getIthNonZeroPos(i);
 						solver._cstar += solver._c.getCoord(ipos);
 					}

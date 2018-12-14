@@ -120,7 +120,7 @@ public class RandomAsgnMaker {
 					for (int j=0; j<di.getNumNonZeros(); j++) {
 						int pos = di.getIthNonZeroPos(j);
 						int pn2 = pos+n+2;
-						int val = di.getIthNonZeroVal(j);
+						int val = di.getIntIthNonZeroVal(j);
 						int nv = -val;
 						int i2 = i+2;
 						pw.println(i2+" "+pn2+" "+nv+" 1");

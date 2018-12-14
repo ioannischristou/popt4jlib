@@ -181,6 +181,14 @@ public class GMeansMTClustererTest {
       }
       System.err.println("]");
       */
+			if (vectors_sparse) {  // report sparse centers: those having 90% zeros
+				for (int i=0; i<centers.size(); i++) {
+					SparseVectorIntf sci = (SparseVectorIntf) centers.get(i);
+					int nzi = sci.getNumNonZeros();
+					if (10*nzi < sci.getNumCoords())
+						System.out.println("center-"+i+" is sparse: #nonzeros="+nzi);
+				}
+			}
       System.out.println("MSSC="+
 				              gmclusterer.eval(new popt4jlib.MSSC.KMeansSqrEvaluator())+
 				              " duration (msecs): "+dur+

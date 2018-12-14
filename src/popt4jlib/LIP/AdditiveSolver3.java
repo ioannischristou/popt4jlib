@@ -28,7 +28,7 @@ public class AdditiveSolver3 extends AdditiveSolver2 {
 		int best_val = Integer.MIN_VALUE;
 		for (int i=0; i<nz; i++) {
 			int ixpos = x.getIthNonZeroPos(i);
-			int ixval = x.getIthNonZeroVal(i);
+			int ixval = x.getIntIthNonZeroVal(i);
 			if (ixval>=0) continue;  // only interested in free vars
 			int ival = (int) Math.abs(c.getCoord(ixpos));
 			if (ival>best_val) {

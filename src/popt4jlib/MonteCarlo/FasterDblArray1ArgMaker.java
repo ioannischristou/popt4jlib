@@ -17,10 +17,12 @@ import utils.RndUtil;
  * parameters passed in a <CODE>HashMap</CODE> object. It should be faster 
  * than the <CODE>FastDblArray1ArgMaker</CODE> class, because it doesn't create 
  * new double[] each time the <CODE>createRandomArgument(p)</CODE> method is 
- * invoked, but instead re-uses a private (cache) data member.
+ * invoked, but instead re-uses a private (cache) data member. Being completely
+ * unsynchronized, the methods of an object of this class must only be called
+ * from the same thread.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0

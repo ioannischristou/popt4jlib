@@ -15,10 +15,12 @@ import utils.RndUtil;
 
 /**
  * creates random <CODE>DblArray1Vector</CODE> objects of fixed length, 
- * according to parameters passed in a <CODE>HashMap</CODE> object.
+ * according to parameters passed in a <CODE>HashMap</CODE> object. Being 
+ * completely unsynchronized, methods of an object of this class must be called
+ * from the same thread only to guarantee memory visibility.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0

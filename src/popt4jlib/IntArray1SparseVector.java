@@ -1,8 +1,6 @@
 package popt4jlib;
 
 import java.util.ArrayList;
-import parallel.ParallelException;
-import java.util.Vector;
 
 
 /**
@@ -445,13 +443,30 @@ public class IntArray1SparseVector implements SparseVectorIntf {
 	
 	
 	/**
+	 * get the i-th non-default value of this vector.
+	 * @param i int
+	 * @return double the return value is an int upcasted to double
+	 * @throws IndexOutOfBoundsException if i is out-of-bounds. Always throws if
+	 * this is the default vector.
+	 */
+	public double getIthNonZeroVal(int i) throws IndexOutOfBoundsException {
+    if (i<0 || i>=_ilen) 
+			throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+
+				                                  _ilen+"] Vector is: "+this);
+    return _values[i];		
+	}
+	
+	
+	/**
 	 * returns the i-th non-zero value of this vector.
 	 * @param i int
 	 * @return int
 	 * @throws IndexOutOfBoundsException if i is out-of-bounds.
 	 */
-	public int getIthNonZeroVal(int i) throws IndexOutOfBoundsException {
-    if (i<0 || i>=_ilen) throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+_ilen+"] Vector is: "+this);
+	public int getIntIthNonZeroVal(int i) throws IndexOutOfBoundsException {
+    if (i<0 || i>=_ilen) 
+			throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+_ilen+
+				                                  "] Vector is: "+this);
     return _values[i];		
 	}
 

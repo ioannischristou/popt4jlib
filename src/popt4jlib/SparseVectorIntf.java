@@ -29,11 +29,26 @@ public interface SparseVectorIntf extends VectorIntf {
 	 * method must return the i-th non-default-valued element of this vector.</p>
    * @param i int
    * @throws IndexOutOfBoundsException if the argument i is &lt;0 or
-   * &ge;getNumCoords(). Also, if this is the zero vector, the method will
+   * &ge;getNumNonZeros(). Also, if this is the zero vector, the method will
    * always throw regardless of the argument passed in.
    * @return int
    */
   public int getIthNonZeroPos(int i) throws IndexOutOfBoundsException;
+	
+	
+	/**
+   * return the index of the i-th non-zero element of this vector. For example,
+   * for the vector v=[0 0 1 2 0], for a sparse vector where the default value
+	 * is zero, the method <CODE>getIthNonZeroVal(0)</CODE> will return 1, and the 
+	 * call <CODE>getIthNonZeroPos(1)</CODE> will return 2.
+	 * @param i int
+	 * @return double the i-th non-default (zero unless the class supports non-
+	 * zero defaults) value of this vector.
+	 * @throws IndexOutOfBoundsException if the argument i is &lt;0 or
+   * &ge;getNumNonZeros(). Also, if this is vector-of-all-defaults, the method 
+	 * will always throw regardless of the argument passed in.
+	 */
+	public double getIthNonZeroVal(int i) throws IndexOutOfBoundsException;
 	
 	
 	/**
