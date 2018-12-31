@@ -10,22 +10,28 @@ import java.util.HashMap;
  * the class implements a minimization method for a function alone one of its
  * variables, using an initial starting point x0, and a quantum step-size that
  * the variable must be constrained to take values on multiples of. The class
- * is not thread-safe (reentrant). Not part of the public API.
+ * is not thread-safe (reentrant), but the main method <CODE>argmin()</CODE>
+ * may be called concurrently from multiple threads as long as it is called on
+ * different objects.
+ * <p>Notes:
+ * <ul>
+ * <li>2018-12-29: class is useful enough to be made public.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2016</p>
+ * <p>Copyright: Copyright (c) 2011-2018</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-final class OneDStepQuantumOptimizer {
+final public class OneDStepQuantumOptimizer {
   private int _dir=0;
 	private double _val=Double.NaN;
 
   /**
    * public no-arg no-op constructor.
    */
-  OneDStepQuantumOptimizer() {
+  public OneDStepQuantumOptimizer() {
   }
 
 
@@ -72,13 +78,14 @@ final class OneDStepQuantumOptimizer {
    * @throws ParallelException
    * @return PairSer  // PairSer&lt;Double arg, Double val&gt;
    */
-  PairSer argmin(FunctionIntf f, VectorIntf x0, HashMap fparams,
+  public PairSer argmin(FunctionIntf f, VectorIntf x0, HashMap fparams,
                  int varindex, double stepquantum,
                  double lowerbound, double upperbound,
                  int niterbnd, int multfactor, double ftol) 
 		throws OptimizerException, ParallelException {
-    //utils.Messenger.getInstance().msg("OneDStepQuantumOptimizer.argmin(): optimizing var x"+varindex+"="+
-    //                                  x0.getCoord(varindex)+" in ["+lowerbound+","+upperbound+"]",0);
+		//utils.Messenger mger = utils.Messenger.getInstance();
+    //mger.msg("OneDStepQuantumOptimizer.argmin(): optimizing var x"+varindex+"="+
+    //         x0.getCoord(varindex)+" in ["+lowerbound+","+upperbound+"]",1);
     if (niterbnd<=0) niterbnd = 5;
     if (multfactor<=0) multfactor = 2;
     double step = stepquantum;
@@ -88,6 +95,8 @@ final class OneDStepQuantumOptimizer {
     double sqt = s;
     int prevdir = 0;
     while (true) {
+			//mger.msg("OneDStepQuantumOptimizer.argmin() x"+varindex+"="+s+
+			//	       " x0="+x, 2);
       if (--cnt==0) {
         step *= multfactor;
         cnt = niterbnd;
@@ -168,10 +177,12 @@ final class OneDStepQuantumOptimizer {
   private double detdir(FunctionIntf f, HashMap params, VectorIntf x,
                         int j, double eps, double lb, double ub, double ftol) 
 		throws ParallelException, IllegalArgumentException {
+		//utils.Messenger mger = utils.Messenger.getInstance();
     try {
       final double s = x.getCoord(j);
       final double c = f.eval(x, params);
-      //utils.Messenger.getInstance().msg("detdir: starting with x["+j+"]="+s+" c="+c+" lb="+lb+" ub="+ub,2);
+      //mger.msg("detdir: starting with x["+j+"]="+s+
+			//	       " c="+c+" lb="+lb+" ub="+ub,2);
       x.setCoord(j, s + eps);
       if (ftol < 0) ftol = 0.0;
       double cup = f.eval(x, params);
@@ -188,8 +199,8 @@ final class OneDStepQuantumOptimizer {
           s2 += eps;
           x.setCoord(j, s2);
           cnew = f.eval(x, params);
-          //utils.Messenger.getInstance().msg("ODSQO.detdir(): f(x" + j + "=" +
-          //                                  s2 + ")=" + cnew+" eps3="+eps, 0);
+          //mger.msg("ODSQO.detdir(): f(x" + j + "=" +
+          //         s2 + ")=" + cnew+" eps3="+eps, 2);
         }
         if (cnew < c - ftol) {
           _dir = 1;
@@ -210,7 +221,7 @@ final class OneDStepQuantumOptimizer {
             s2 -= eps;
             x.setCoord(j, s2);
             cnew = f.eval(x, params);
-            //utils.Messenger.getInstance().msg("ODSQO.detdir(): f(x"+j+"="+s2+")="+cnew,0);
+            //mger.msg("ODSQO.detdir(): f(x"+j+"="+s2+")="+cnew,2);
           }
           if (cnew < c - ftol) {
             _dir = -1;
@@ -244,8 +255,8 @@ final class OneDStepQuantumOptimizer {
           s2 -= eps;
           x.setCoord(j, s2);
           cnew = f.eval(x, params);
-          //utils.Messenger.getInstance().msg("ODSQO.detdir(): f(x" + j + "=" +
-          //                                  s2 + ")=" + cnew+" eps="+eps, 0);
+          //mger.msg("ODSQO.detdir(): f(x" + j + "=" +
+          //          s2 + ")=" + cnew+" eps="+eps, 2);
         }
         if (cnew < c - ftol) {
           _dir = -1;
@@ -266,8 +277,8 @@ final class OneDStepQuantumOptimizer {
             s2 += eps;
             x.setCoord(j, s2);
             cnew = f.eval(x, params);
-            //utils.Messenger.getInstance().msg("ODSQO.detdir(): f(x" + j + "=" +
-            //                                  s2 + ")=" + cnew+" eps2="+eps, 0);
+            //mger.msg("ODSQO.detdir(): f(x" + j + "=" +
+            //         s2 + ")=" + cnew+" eps2="+eps, 2);
           }
           if (cnew < c - ftol) {
             _dir = 1;
@@ -291,7 +302,7 @@ final class OneDStepQuantumOptimizer {
       return s;
     }
     finally {
-      //utils.Messenger.getInstance().msg("ODSQO.detdir(): done",2);
+      //mger.msg("ODSQO.detdir(): done",1);
     }
   }
 

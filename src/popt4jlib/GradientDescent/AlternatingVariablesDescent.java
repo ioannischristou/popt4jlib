@@ -273,7 +273,8 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
         minstepsizes[i] = minstepsize;
         try {
           Double mssD = (Double) _params.get("avd.minstepsize"+i);
-          if (mssD!=null && mssD.doubleValue()<minstepsize && mssD.doubleValue()>0)
+          if (mssD!=null && mssD.doubleValue()<minstepsize && 
+						                mssD.doubleValue()>0)
             minstepsizes[i] = mssD.doubleValue();
         }
         catch (ClassCastException e) {
