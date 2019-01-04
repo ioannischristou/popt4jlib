@@ -27,16 +27,22 @@ import java.io.Serializable;
  * for this executor to implement dynamic thread management (such as starting
  * more threads upon higher loads, or modifying threads' priorities etc. as is
  * done in the <CODE>parallel.LimitedTimeTaskExecutor</CODE> class).
- * The class is meant to be used in conjunction with
+ * <p>The class is meant to be used in conjunction with
  * PDBatchTaskExecutor[Srv/Clt/Wrk] classes that will allow parallel/distributed
  * execution of <CODE>TaskObject</CODE> objects in remote JVMs running under
  * parallel (multi-core) machines.
+ * <p>Notes:
+ * <ul>
+ * <li>2019-01-03: inner class FailedExecutionResult moved out, to be able to be
+ * serialized and thus transferred between workers and servers (and eventually,
+ * back to clients).
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 1.1
  */
 public final class PDBatchTaskExecutor {
   private static int _nextId = 0;
@@ -476,14 +482,17 @@ public final class PDBatchTaskExecutor {
 		// denotes end of computations for receiving thread
 	}
 
-
-	/**
-	 * empty inner-class represents response is an indication of a failed 
-	 * execution. Not part of the public API.
-	 */
-	class FailedExecutionResult implements Serializable {
-		// private static final long serialVersionUID = 5361446529275021760L;
-		// denotes a failed execution of a task
-	}
-
 }
+
+
+/**
+ * empty auxiliary class represents response is an indication of a failed 
+ * execution. Cannot be made inner-class of <CODE>PDBatchTaskExecutor</CODE> as
+ * in such a case it would not be able to be serialized since the enclosing 
+ * class is not serializable. Not part of the public API.
+ */
+final class FailedExecutionResult implements Serializable {
+	// private static final long serialVersionUID = 5361446529275021760L;
+	// denotes a failed execution of a task
+}
+

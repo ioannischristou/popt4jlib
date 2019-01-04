@@ -1,10 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-package tests.sic;
+package tests.sic.rnqt.norm;
 
 import popt4jlib.OptimizerIntf;
 import popt4jlib.FunctionIntf;
@@ -66,7 +60,8 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 	 * and x[1] is q_opt for given _T.
 	 * @throws OptimizerException 
 	 */
-	public PairObjTwoDouble minimize(FunctionIntf func) throws OptimizerException {
+	public PairObjTwoDouble minimize(FunctionIntf func) 
+		throws OptimizerException {
 		if (!(func instanceof RnQTCnorm))
 			throw new OptimizerException("RnQTCnormFixedTOpt.minimize(function): "+
 				                           "function passed in must be RnQTCnorm");
@@ -86,6 +81,7 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 		x0[0]=s0; x0[1]=_qnot; x0[2]=_T;
 		double[] x_best = new double[2];  // {s,Q}
 		double lb_q = 0;
+		double lbopt = Double.NaN;
 		while (lb_q<=Math.min(_curBest,copt)) {
 			Pair p = null;
 			try {
@@ -96,21 +92,19 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 				e.printStackTrace();
 			}
 			double y_q = ((Double) p.getSecond()).doubleValue();
+			x0[0] = ((Double)p.getFirst()).doubleValue();
+			Pair pv = f.evalBoth(x0);  // needless 2nd evaluation just to get lb
+			lb_q = ((Double)pv.getSecond()).doubleValue();
 			if (Double.compare(y_q, copt)<0) {
 				copt = y_q;
+				lbopt = lb_q;
 				x_best[0] = ((Double)p.getFirst()).doubleValue();
 				x_best[1] = x0[1];
 				if (Double.compare(copt, _curBest)<0) _curBest = copt;
 			}
-			x0[0] = ((Double)p.getFirst()).doubleValue();
-			Pair pv = f.evalBoth(x0);  // needless 2nd evaluation just to get lb
-			lb_q = ((Double)pv.getSecond()).doubleValue();
-			//System.err.println("EVAL: y="+pv.getFirst()+" LB="+pv.getSecond());  // itc: HERE rm asap
-			//System.err.println("curbest="+_curBest+" copt="+copt);  // itc: HERE rm asap
 			x0[1] += _epsq;
-			//System.err.println("HERE incremented x0[1]="+x0[1]);  // itc: HERE rm asap
 		}
-		PairObjTwoDouble pod = new PairObjTwoDouble(x_best, copt, lb_q);
+		PairObjTwoDouble pod = new PairObjTwoDouble(x_best, copt, lbopt);
 		return pod;
 	}
 	

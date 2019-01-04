@@ -1,28 +1,25 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+package tests.sic.rnqt.norm;
 
-package tests.sic;
-
-import java.io.IOException;
 import java.io.Serializable;
 import parallel.TaskObject;
 import parallel.distributed.FailedReply;
+import parallel.distributed.PDBTExecInitNoOpCmd;
 import parallel.distributed.PDBTExecInitedClt;
 import popt4jlib.FunctionIntf;
 import popt4jlib.OptimizerException;
 import popt4jlib.OptimizerIntf;
 import utils.PairObjDouble;
 import utils.PairObjTwoDouble;
+import utils.Messenger;
+
 
 /**
  * class implements an optimizer over ALL three variables of the (R,nQ,T)
  * policy, namely the reorder point R, the batch size Q and the review period T.
  * The system being optimized faces stochastic demands 
  * as described in the class <CODE>RnQTCnorm</CODE>. The solution found is 
- * guaranteed to be the global optimum. The optimizer is a parallel/distributed
+ * guaranteed to be the global optimum (subject to the step-size constraints for
+ * each of the decision variables). The optimizer is a parallel/distributed
  * method, submitting tasks to optimize over the first two variables, for fixed 
  * review period T, where the review period T is increased from the Tmin value
  * it can take on (dictated by the non-negative demands requirement in any 
@@ -36,15 +33,15 @@ import utils.PairObjTwoDouble;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class RnQTCnormOpt implements OptimizerIntf {
+public final class RnQTCnormOpt implements OptimizerIntf {
 	/**
 	 * default address for PDBTExecSingleCltWrkInitSrv
 	 */
-	private String _pdsrv = "localhost";  
+	private final String _pdsrv;  
 	/**
 	 * default port for PDBTExecSingleCltWrkInitSrv
 	 */
-	private int _pdport = 7891;
+	private final int _pdport;
 	
 	private PDBTExecInitedClt _pdclt;
 	
@@ -62,8 +59,8 @@ public class RnQTCnormOpt implements OptimizerIntf {
 	
 	/**
 	 * sole public constructor.
-	 * @param server String
-	 * @param port int
+	 * @param server String; default localhost
+	 * @param port int; default 7891
 	 * @param batchSz int &gt;0; default 8
 	 * @param epsT double &gt;0; default 0.01
 	 * @param epsQ double &gt;0; default 0.1
@@ -71,8 +68,10 @@ public class RnQTCnormOpt implements OptimizerIntf {
 	 */
 	public RnQTCnormOpt(String server, int port, int batchSz, 
 		                  double epsT, double epsQ, double epsR) {
-		_pdsrv = server;
-		_pdport = port;
+		if (server==null || server.length()==0) _pdsrv = "localhost";
+		else _pdsrv = server;
+		if (port>1024) _pdport = port;
+		else _pdport = 7891;
 		_batchSz = (batchSz>0) ? batchSz : 8;
 		_epsT = epsT>0 ? epsT : 0.01;
 		_epsQ = epsQ>0 ? epsQ : 0.1;
@@ -90,15 +89,28 @@ public class RnQTCnormOpt implements OptimizerIntf {
 		if (!(f instanceof RnQTCnorm))
 			throw new OptimizerException("RnQTCnormOpt.minimize(f): f must be "+
 				                           "function of type tests.sic.RnQTCnorm");
+		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
-			if (_pdclt==null) _pdclt = new PDBTExecInitedClt(_pdsrv, _pdport);
+			if (_pdclt==null) {
+				mger.msg("RnQTCnormOpt.minimize(f): connecting on "+_pdsrv+
+					       " on port "+_pdport, 2);
+				_pdclt = new PDBTExecInitedClt(_pdsrv, _pdport);
+				try {
+					_pdclt.submitInitCmd(new PDBTExecInitNoOpCmd());
+					mger.msg("RnQTCnormOpt.minimize(f): successfully sent init cmd", 2);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+					throw new OptimizerException("RnQTCnormOpt.mainimize(f): clt failed "+
+						                           "to submit empty init-cmd to network");
+				}
+			}
 			++_numRunning;
 		}
 		RnQTCnorm rnqtc = (RnQTCnorm) f;
 		
 		double Tmin = Math.pow((3.5*rnqtc._sigma/rnqtc._mi),2.0);
-		double c_cur_best = Double.MAX_VALUE;
-		double lb_cur = 0;
+		double c_cur_best = Double.POSITIVE_INFINITY;
 		
 		double r_star=Double.NaN;
 		double q_star = Double.NaN;
@@ -111,15 +123,21 @@ public class RnQTCnormOpt implements OptimizerIntf {
 		while (!done) {
 			// 1. prepare batch
 			TaskObject[] batch = new TaskObject[_batchSz];
+			double Tstart = T;
 			for (int i=0; i<_batchSz; i++) {
 				T += _epsT;
 				batch[i] = new RnQTCnormFixedTOptTask(rnqtc,T,_epsQ,0,_epsR,c_cur_best);
 			}
 			try {
+				mger.msg("RnQTCnormOpt.minimize(): submit a batch of "+_batchSz+
+					       " tasks to network for period length from "+Tstart+" up to "+T, 
+					       2);
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
 					RnQTCnormFixedTOpterResult ri = (RnQTCnormFixedTOpterResult) res[i];
 					if (Double.compare(ri._LB, c_cur_best)>0) {  // done!
+						mger.msg("RnQTCnormOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
+							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 2);
 						done = true;
 					}
 					if (Double.compare(ri._C, c_cur_best)<0) {
@@ -127,6 +145,8 @@ public class RnQTCnormOpt implements OptimizerIntf {
 						q_star = ri._Q;
 						t_star = ri._T;
 						c_cur_best = ri._C;
+						mger.msg("RnQTCnormOpt.minimize(f): found new better soln at T="+
+							       t_star+", c="+c_cur_best+" LB@T="+ri._LB, 1);
 					}
 				}
 			}
@@ -138,18 +158,37 @@ public class RnQTCnormOpt implements OptimizerIntf {
 		}
 		synchronized(this) {
 			if (--_numRunning==0) {
-				try {
-					_pdclt.terminateConnection();
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-					throw new Error("RnQTCnormOpt.minimize(): terminateConnection() "+
-						              "failed?");
-				}
+				notify();  // let another thread know that it can proceed with 
+					         // client termination
 			}
 		}
 		double[] x = new double[]{r_star,q_star,t_star};
 		return new PairObjDouble(x,c_cur_best);
+	}
+	
+	
+	/**
+	 * a thread may call this method at any point to terminate the sole connection
+	 * to the workers' network. The method will terminate the connection as soon
+	 * as there is no other thread running the <CODE>minimize(f)</CODE> method.
+	 */
+	public synchronized void terminateServerConnection() {
+		while (_numRunning>0) {
+			try {
+				wait();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+		try {
+			_pdclt.terminateConnection();
+		}
+		catch (Exception e) {
+			e.printStackTrace();  // ignore further
+			throw new Error("RnQTCnormOpt.terminateConnection() "+
+				              "failed?");
+		}
 	}
 	
 	
@@ -165,7 +204,7 @@ public class RnQTCnormOpt implements OptimizerIntf {
 	 * &lt;h&gt;
 	 * &lt;p&gt;
 	 * [pdbtserverhostname(localhost)]
-	 * [pdbtserverhostport(7981)]
+	 * [pdbtserverhostport(7891)]
 	 * [epsq(0.1)]
 	 * [minq(0)]
 	 * [epst(0.01)]
@@ -185,7 +224,7 @@ public class RnQTCnormOpt implements OptimizerIntf {
 		double p = Double.parseDouble(args[6]);
 		String host = "localhost";
 		if (args.length>7) host = args[7];
-		int port = 7981;
+		int port = 7891;
 		if (args.length>8) port = Integer.parseInt(args[8]);
 		double epsq = 0.1;
 		if (args.length>9) epsq = Double.parseDouble(args[9]);
@@ -211,6 +250,7 @@ public class RnQTCnormOpt implements OptimizerIntf {
 			double c = result.getDouble();
 			System.out.println("R*="+x[0]+" Q*="+x[1]+" T*="+x[2]+" ==> C*="+c);
 			System.out.println("run-time="+dur+" msecs");
+			ropter.terminateServerConnection();
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -231,7 +271,7 @@ public class RnQTCnormOpt implements OptimizerIntf {
  * @author Ioannis T. Christou
  * @version 1.0
  */
-class RnQTCnormFixedTOptTask implements TaskObject {
+final class RnQTCnormFixedTOptTask implements TaskObject {
 	private RnQTCnorm _f;
 	private double _T;
 	private double _epsQ;
@@ -259,13 +299,11 @@ class RnQTCnormFixedTOptTask implements TaskObject {
 			double[] x = (double[]) p.getArg();
 			res = new RnQTCnormFixedTOpterResult(_T, x[0], x[1], 
 				                                   p.getDouble(), p.getSecondDouble());
+			return res;
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			return new FailedReply();
-		}
-		finally {
-			return res;
 		}
 	}
 	
@@ -300,7 +338,7 @@ class RnQTCnormFixedTOptTask implements TaskObject {
  * @author Ioannis T. Christou
  * @version 1.0
  */
-class RnQTCnormFixedTOpterResult implements Serializable {
+final class RnQTCnormFixedTOpterResult implements Serializable {
 	public final double _T;
 	public final double _R;
 	public final double _Q;

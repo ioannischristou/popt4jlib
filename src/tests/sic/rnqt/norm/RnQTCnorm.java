@@ -1,4 +1,4 @@
-package tests.sic;
+package tests.sic.rnqt.norm;
 
 import popt4jlib.FunctionIntf;
 import popt4jlib.DblArray1Vector;
@@ -36,6 +36,14 @@ public class RnQTCnorm implements FunctionIntf {
 	                                                           // wire (sockets).
 	
 	private final static double _Qtol = 1.e-7;
+	
+	/**
+	 * compile-time constants used in determining whether the computations for
+	 * Po show some serious error in the formulae of Hadley-Whitin (1963).
+	 */
+	private final static double _P0tol = 1.e-12;
+	private final static double _ONE_TOL = 1.0 + _P0tol;
+	private final static double _ZERO_TOL = -_P0tol;
 	
 	
 	/**
@@ -96,13 +104,20 @@ public class RnQTCnorm implements FunctionIntf {
 		double Q = xp[1];
 		double T = xp[2];
 		double Po;
-		if (Double.compare(Q, _Qtol)<=0) Po=1;  // Q close enough to zero, assume (R,T) policy
+		if (Double.compare(Q, _Qtol)<=0) 
+			Po=1;  // Q close enough to zero, assume (R,T) policy
 		else {
 			double RT = Q/(_sigma*Math.sqrt(T));
 			double MT = _mi*Math.sqrt(T)/_sigma;
 			Po = 1.0 - (1.0/RT)*(normpdf(RT-MT) + (RT-MT)*normcdf(RT-MT) - 
 				                   (normpdf(-MT) - MT*normcdf(-MT)));
-			if (Po>1 || Po<0 || Double.isNaN(Po)) throw new IllegalStateException("Po="+Po);
+			if (Double.compare(Po,_ONE_TOL)>0 || Double.compare(Po,_ZERO_TOL)<0 || 
+				  Double.isNaN(Po)) {
+				String exc ="<R="+s+",Q="+Q+",T="+T+">: "+
+					          "Kr="+_Kr+" Ko="+_Ko+" L="+_L+
+					          " mi="+_mi+" sigma="+_sigma+" h="+_h+" p="+_p;
+				throw new IllegalStateException(exc+"--> Po="+Po);
+			}
 		}
 		double H1 = _h*(Q/2.0 + s - _mi*_L - _mi*T/2.0);  // holding costs
 		double D = _sigma*_sigma;
@@ -240,7 +255,8 @@ public class RnQTCnorm implements FunctionIntf {
 			String exc = "u="+u+", tau="+tau+",l="+l+",D="+D;
 			throw new IllegalStateException(exc+" t2 in U is "+t2);
 		}
-		double t3 = D*D*Math.exp(2*l*u/D)*(1-normcdf((u+l*tau)/Math.sqrt(D*tau)))/(4*l*l*l);
+		double t3 = D*D*Math.exp(2*l*u/D)*(1-normcdf((u+l*tau) / 
+			          Math.sqrt(D*tau)))/(4*l*l*l);
 		if (Double.isNaN(t3)) {
 			// t3 for large (u+l*tau)/sqrt(D*tau) can be problematic, use log/exp
 			double logt3 = 2*Math.log(D) + 2*l*u/D;
