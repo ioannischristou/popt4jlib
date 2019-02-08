@@ -8,7 +8,6 @@ package tests;
 
 import java.util.Random;
 import java.util.List;
-import popt4jlib.VectorIntf;
 import utils.DataFileAccessClt;
 
 /**
@@ -19,7 +18,7 @@ import utils.DataFileAccessClt;
  * JVMs executing this class with appropriate arguments.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2014</p>
+ * <p>Copyright: Copyright (c) 2014-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -28,7 +27,7 @@ public class DataFileMultiAccessTest {
 	
 	/**
 	 * invoke as:
-	 * <CODE>java -cp &lt;classpath&gt; tests.DataFileMultiAccessTest &lt;filename&gt; [hostname(localhost)] [startind(0)] [endind(0)]</CODE>
+	 * <CODE>java -cp &lt;classpath&gt; tests.DataFileMultiAccessTest &lt;filename&gt; [hostname(localhost)] [startind(0)] [endind(0)] [numiters]</CODE>
 	 * @param args 
 	 */
 	public static void main(String[] args) {
@@ -37,18 +36,23 @@ public class DataFileMultiAccessTest {
 		String host = "localhost";
 		int startind = 0;
 		int endind = 0;  // by default, just read the first vector in the file
+		int numiters = Integer.MAX_VALUE;
 		if (args.length>1) {
 			host = args[1];
 			if (args.length>2) {
 				startind = Integer.parseInt(args[2]);
-				if (args.length>3)
+				if (args.length>3) {
 					endind = Integer.parseInt(args[3]);
+					if (args.length>4) {
+						numiters = Integer.parseInt(args[4]);
+					}
+				}
 			}
 		}
 		try {
 			Random r = utils.RndUtil.getInstance().getRandom();
 			DataFileAccessClt clt = new DataFileAccessClt(host,port);
-			while (true) {
+			for (int i=0; i<numiters; i++) {
 				Thread.sleep(100);  // sleep 0.1 seconds
 				long start = System.currentTimeMillis();
 				int st = startind + r.nextInt(endind+1-startind);

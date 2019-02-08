@@ -20,12 +20,18 @@ import popt4jlib.IntArray1SparseVector;
  * complex objects in the library such as Graph, HGraph, and properties
  * HashMap objects.
  * The class is thread-safe (reentrant).
+ * <p>Notes:
+ * <ul>
+ * <li>2019-02-08: changed the signature of method 
+ * <CODE>readVectorsFromFileInRange()</CODE> to return <CODE>List</CODE> objects
+ * so as to avoid penalties related to the old <CODE>Vector</CODE> class.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class DataMgr {
 
@@ -399,26 +405,28 @@ public class DataMgr {
 	 * same functionality as in <CODE>readVectorsFromFile(String)</CODE> method,
 	 * except that it only reads and returns the vectors in the lines in the range
 	 * [fromIndex, toIndex] (fromIndex and toIndex take values in 
-	 * {0,...,<CODE>readNumVectorsInFile(String)</CODE>-1})
+	 * {0,...,<CODE>readNumVectorsInFile(String)</CODE>-1}).
 	 * @param filename String 
 	 * @param fromIndex int 
 	 * @param toIndex int
-	 * @return Vector // Vector&lt;DblArray1Vector&gt;
+	 * @return List // ArrayList&lt;DblArray1Vector&gt;
 	 * @throws IOException 
 	 * @throws IllegalArgumentException if fromIndex &gt; toIndex or any of the two
 	 * is outside the valid range of indices.
 	 * @throws IndexOutOfBoundsException if fromIndex or toIndex are out of range.
 	 */
-	public static Vector readVectorsFromFileInRange(String filename, int fromIndex, int toIndex)
+	public static List readVectorsFromFileInRange(String filename, int fromIndex, int toIndex)
 	    throws IOException, IllegalArgumentException, IndexOutOfBoundsException {
 		if (fromIndex>toIndex) 
 			throw new IllegalArgumentException("fromIndex("+fromIndex+
 							                           ") cannot be > toIndex("+toIndex+")");
 		if (fromIndex < 0 || toIndex < 0)
 			throw new IndexOutOfBoundsException("fromIndex or toIndex is less than zero");
+		Messenger mger = Messenger.getInstance();
+		long start_time = System.currentTimeMillis();
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
-      Vector v = new Vector();
+      List v = new ArrayList();
       if (br.ready()) {
         String line = br.readLine();
         StringTokenizer st = new StringTokenizer(line, " ");
@@ -445,11 +453,15 @@ public class DataMgr {
             val = Double.parseDouble(st2.nextToken());
             d.setCoord(dim.intValue(), val);
           }
-          v.addElement(d);
+          v.add(d);
         }
 				if (lcnt!=numdocs && toIndex > lcnt) 
 					throw new IOException("bad file header (numdocs="+numdocs+" but there are only "+lcnt+" data lines.");
       }
+			long dur = System.currentTimeMillis()-start_time;
+			mger.msg("DataMgr.readVectorsFromFileInRange("+filename+","+
+				                                           fromIndex+","+toIndex+
+				                                           ") took "+dur+" msecs", 1);
       return v;
     }
     finally {

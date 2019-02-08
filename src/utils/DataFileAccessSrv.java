@@ -102,18 +102,23 @@ public class DataFileAccessSrv {
   /**
    * invoke as:
    * <CODE>java -cp &lt;classpath&gt; utils.DataFileAccessSrv 
-	 * [port(7899)] [maxthreads(10000)]</CODE>.
+	 * [port(7899)] [maxthreads(10000)] [dbglvl(Integer.MAX_VALUE)]</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {
     int port = -1;
     int maxthreads = 10000;
     DataFileAccessSrv srv=null;
-		Messenger.getInstance().setDebugLevel(1);
+		//Messenger.getInstance().setDebugLevel(1);
     if (args.length>0) {
       port = Integer.parseInt(args[0]);
-      if (args.length>1)
+      if (args.length>1) {
         maxthreads = Integer.parseInt(args[1]);
+				if (args.length>2) {
+					int dbglevel = Integer.parseInt(args[2]);
+					utils.Messenger.getInstance().setDebugLevel(dbglevel);
+				}
+			}
     }
     srv = new DataFileAccessSrv(port, maxthreads);
     try {
@@ -148,6 +153,7 @@ public class DataFileAccessSrv {
 		                   ObjectOutputStream oos) 
 					throws IOException, ParallelException {
 		String filename = fadmsg.getFileName();
+		Messenger mger = utils.Messenger.getInstance();
 		DMCoordinator dvchunks_lock = DMCoordinator.getInstance(filename);
 		dvchunks_lock.getReadAccess();
 		List dvchunks = (List) _dataCache.get(filename);
@@ -254,7 +260,7 @@ public class DataFileAccessSrv {
 					}
 					// nope, condition still holds, do the work
 					dvchunks.remove(i);
-					Messenger.getInstance().msg(
+					mger.msg(
 						"DataFileAccessSrv.getData(): reading from file", 1);
 					try {
 						fadmsg.execute(oos);  // may throw if socket closes
@@ -295,7 +301,7 @@ public class DataFileAccessSrv {
 				}
 			}
 			// do the work and add result in cache
-			Messenger.getInstance().msg(
+			mger.msg(
 				"DataFileAccessSrv.getData(): reading from file", 1);
 			try {
 				fadmsg.execute(oos);  // may throw if socket closes

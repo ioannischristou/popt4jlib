@@ -41,7 +41,7 @@ public class RnQTCnorm implements FunctionIntf {
 	 * compile-time constants used in determining whether the computations for
 	 * Po show some serious error in the formulae of Hadley-Whitin (1963).
 	 */
-	private final static double _P0tol = 1.e-12;
+	private final static double _P0tol = 1.e-8;
 	private final static double _ONE_TOL = 1.0 + _P0tol;
 	private final static double _ZERO_TOL = -_P0tol;
 	
