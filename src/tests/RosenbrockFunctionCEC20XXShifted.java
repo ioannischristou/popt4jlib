@@ -29,7 +29,7 @@ public class RosenbrockFunctionCEC20XXShifted implements FunctionIntf {
    * @param arg Object must be a <CODE>VectorIntf</CODE>
    * @param p HashMap unused
    * @return double
-   * @throws IllegalArgumentException if arg does not adhere to the specification
+   * @throws IllegalArgumentException if arg does not adhere to specification
    * above.
    */
   public double eval(Object arg, HashMap p) throws IllegalArgumentException {
@@ -53,7 +53,10 @@ public class RosenbrockFunctionCEC20XXShifted implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &lt;classpath&gt; tests.RosenbrockFunctionCEC20XXShifted &lt;x_1&gt; &lt;x_n&gt;</CODE>
+   * invoke as 
+	 * <CODE>java -cp &lt;classpath&gt; tests.RosenbrockFunctionCEC20XXShifted 
+	 * &lt;x_1&gt; &lt;x_n&gt;
+	 * </CODE>
    * where the parameters are the components of the vector point at which the
    * function must be evaluated. There must be no more than 1000 numbers.
    * @param args String[]
@@ -69,7 +72,8 @@ public class RosenbrockFunctionCEC20XXShifted implements FunctionIntf {
     System.out.println(res);
   }
 	
-	private final static double[] _delta = {-75.42752834,-35.73170157,-57.59564405,38.90984567,
+	private final static double[] _delta = 
+	 {-75.42752834,-35.73170157,-57.59564405,38.90984567,
 		52.24768180,-30.36102769,50.69081435,49.79866081,-71.15514747,-30.78367518,
 		-43.00095077,-20.08811848,71.52725627,48.01996281,-46.02767978,-8.16344127,
 		-40.97564428,-13.82735774,35.81657200,57.13778773,58.58538382,-17.41231583,

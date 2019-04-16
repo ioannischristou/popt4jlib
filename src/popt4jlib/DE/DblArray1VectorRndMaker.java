@@ -21,15 +21,17 @@ public class DblArray1VectorRndMaker {
    * constructor.
    * The parameters that must be passed in (the HashMap arg) are as follows:
 	 * <ul>
-   * <li> &lt;"dde.numdimensions", Integer nd&gt; mandatory, the number of dimensions
+   * <li> &lt;"dde.numdimensions", Integer nd&gt; mandatory, num. of dimensions
    * <li> &lt;"dde.minargval", Double v&gt; optional, the min. value that any
    * component of the returned vector may assume
    * <li> &lt;"dde.maxargval", Double v&gt; optional, the max. value that any
    * component of the returned vector may assume
-   * <li> &lt;"dde.minargval"+$i$, Double v&gt; optional, the min. value that the i-th
-   * component of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * <li> &lt;"dde.maxargval"+$i$, Double v&gt; optional, the max. value that the i-th
-   * component of the returned vector may assume (i={0,1,...nd.intValue()-1})
+   * <li> &lt;"dde.minargval"+$i$, Double v&gt; optional, the min. value that 
+	 * the i-th component of the returned vector may assume 
+	 * (i={0,1,...nd.intValue()-1})
+   * <li> &lt;"dde.maxargval"+$i$, Double v&gt; optional, the max. value that 
+	 * the i-th component of the returned vector may assume 
+	 * (i={0,1,...nd.intValue()-1})
    * </ul>
    * <p>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
@@ -68,7 +70,8 @@ public class DblArray1VectorRndMaker {
       e.printStackTrace();
     }
     if (maxgval < mingval)
-      throw new OptimizerException("global min arg value > global max arg value");
+      throw new OptimizerException(
+				          "global min arg value > global max arg value");
     int n = 0;
     try {
       int tid = ((Integer) _params.get("thread.id")).intValue();
@@ -82,15 +85,17 @@ public class DblArray1VectorRndMaker {
         Double MvD = (Double) _params.get("dde.maxargval"+i);
         if (MvD!=null && MvD.doubleValue()<maxval) maxval = MvD.doubleValue();
         if (minval>maxval)
-          throw new OptimizerException("global min arg value > global max arg value");
+          throw new OptimizerException(
+						          "global min arg value > global max arg value");
         double factor = 100.0;
-        if (maxval!=Double.POSITIVE_INFINITY && minval!=Double.NEGATIVE_INFINITY)
+        if (maxval!=Double.POSITIVE_INFINITY && 
+					  minval!=Double.NEGATIVE_INFINITY)
           factor = (maxval-minval)/10;
         arr[i] = RndUtil.getInstance(tid).getRandom().nextGaussian()*factor;
         if (arr[i] > maxval) arr[i] = maxval;
         else if (arr[i] < minval) arr[i] = minval;
         //arr[i] = minval +
-        //         RndUtil.getInstance(tid).getRandom().nextDouble()*(maxval-minval);
+        //    RndUtil.getInstance(tid).getRandom().nextDouble()*(maxval-minval);
       }
       return new DblArray1Vector(arr);
     }

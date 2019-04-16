@@ -25,13 +25,13 @@ public class DDE2Test {
 
 
   /**
-   * run as <CODE> java -cp &lt;classpath&gt; tests.DDE2Test &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>.
+   * run as <CODE> java -cp &lt;classpath&gt; tests.DDE2Test &lt;params_file&gt; 
+	 * [random_seed] [maxfuncevals]</CODE>.
    * The params_file must contain lines of the following form:
 	 * <ul>
-   * <li> class,dde.function, &lt;fullclasspathname&gt;  mandatory, the java class
-   * name defining the function to be optimized, which must accept
-   * as arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
-   * objects.
+   * <li> class,dde.function, &lt;fullclasspathname&gt;  mandatory, the java 
+	 * class name defining the function to be optimized, which must accept as
+   * arguments either <CODE>double[]</CODE> or <CODE>VectorIntf</CODE> objects.
    * <li> class,dde.localoptimizer, &lt;fullclasspathname&gt; optional the java
    * class name of an object implementing the LocalOptimizerIntf defined in
    * the popt4jlib package, to be used as further optimizer of the best solution 
@@ -84,12 +84,16 @@ public class DDE2Test {
 	 * <li> dde.dmpaddress, $str_val$ optional, if existing, 
 	 * specifies the location of a distributed Msg-Passing server that implements
 	 * the basic send/recv operations as specified in 
-	 * <CODE>parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv[Clt]</CODE>
+	 * <CODE>
+	 * parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv[Clt]
+	 * </CODE>
 	 * default is null
 	 * <li> dde.dmpport, $num$ optional, if existing, 
 	 * specifies the port number of a distributed Msg-Passing server implementing
 	 * the basic send/recv operations as specified in 
-	 * <CODE>parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv[Clt]</CODE>
+	 * <CODE>
+	 * parallel.distributed.DActiveMsgPassingCoordinatorLongLivedConnSrv[Clt]
+	 * </CODE>
 	 * default is null
 	 * <li> dde.dmpthisprocessid, $num$ optional, if existing, it 
 	 * indicates the id of this process (this is the number to use in a 

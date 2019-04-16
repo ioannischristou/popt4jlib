@@ -126,7 +126,7 @@ public class DDE2 implements OptimizerIntf {
    * @param p HashMap
    * @throws OptimizerException if another thread is concurrently running the
    * <CODE>minimize(f)</CODE> of this object. Notice that unless the 2-arg
-   * constructor DDE(params, use_from_same_thread_only=true) is used to create
+   * constructor DDE2(params, use_from_same_thread_only=true) is used to create
    * this object, it is perfectly possible for one thread to call setParams(p),
    * then another to setParams(p2) to some other param-set, and then the
    * first thread to call minimize(f).
@@ -406,15 +406,16 @@ public class DDE2 implements OptimizerIntf {
     if (val<_incValue) {
       _incValue=val;
       _inc=arg;
+			Messenger mger = Messenger.getInstance();
 			_incIndex = index;
       if (Debug.debug(Constants.DDE)!=0) {
         // sanity check
         double incval = _f.eval(arg, _params);
         if (Math.abs(incval - _incValue) > 1.e-25) {
-          Messenger.getInstance().msg("DDE.setIncumbent(): arg-val originally="+
-                                      _incValue + " fval=" + incval + " ???",0);
+          mger.msg("DDE2.setIncumbent(): arg-val originally="+
+                   _incValue + " fval=" + incval + " ???",0);
           throw new OptimizerException(
-              "DDE.setIncumbent(): insanity detected; " +
+              "DDE2.setIncumbent(): insanity detected; " +
               "most likely evaluation function is " +
               "NOT reentrant... " +
               "Add the 'function.notreentrant,num'" +
@@ -422,7 +423,7 @@ public class DDE2 implements OptimizerIntf {
         }
         // end sanity check
       }
-      Messenger.getInstance().msg("setIncumbent(): best sol value="+val,0);
+      mger.msg("setIncumbent(): best sol value="+val,0);
     }
   }
 
@@ -681,33 +682,42 @@ class DDE2Thread extends Thread {
 				   // 2nd update: as the barriers are too slow, use _master synch only
 				   // which results in different threads seeing different versions of
 				   // of the population, unless of course non-determinism is NOT ok.
-				   if (!_nonDeterminismOK && _numthreads>1) b.barrier();
-				   synchronized (_master) {
-						 if (_nonDeterminismOK || _numthreads==1) {
-							 for (int j=0; j<_from; j++) {  // read others' updates
-							   copy_sols[j] = _master._sols[j];
-							   // risk no-copy, if nondeterminimsm is not OK, copy will be 
-							   // enforced below
-							   copy_vals[j] = _master._solVals[j];
-						   }
-						 }
+				   // 3rd update: _master synch is not needed when non-determinism NOTOK
+				   if (!_nonDeterminismOK && _numthreads>1) {
+						 b.barrier();
 						 for (int j=_from; j<=_to; j++) {  // write own updates
 							 _master._sols[j] = copy_sols[j];
 							 _master._solVals[j] = copy_vals[j];
 						 }
-						 if (_nonDeterminismOK || _numthreads==1) {
-						   for (int j=_to+1; j<copy_sols.length; j++) {  // read others'
-							   copy_sols[j] = _master._sols[j];
-  							 // risk no-copy, if nondeterminimsm is not OK, copy will be 
-	  						 // enforced below
-							   copy_vals[j] = _master._solVals[j];
-						   }
+					 } else {
+						 synchronized (_master) {
+							 if (_nonDeterminismOK || _numthreads==1) {
+								 for (int j=0; j<_from; j++) {  // read others' updates
+									 copy_sols[j] = _master._sols[j];
+									 // risk no-copy, if nondeterminimsm is not OK, copy will be 
+									 // enforced below
+									 copy_vals[j] = _master._solVals[j];
+								 }
+							 }
+							 for (int j=_from; j<=_to; j++) {  // write own updates
+								 _master._sols[j] = copy_sols[j];
+								 _master._solVals[j] = copy_vals[j];
+							 }
+							 if (_nonDeterminismOK || _numthreads==1) {
+								 for (int j=_to+1; j<copy_sols.length; j++) {  // read others'
+									 copy_sols[j] = _master._sols[j];
+									 // risk no-copy, if nondeterminimsm is not OK, copy will be 
+									 // enforced below
+									 copy_vals[j] = _master._solVals[j];
+								 }
+							 }
 						 }
 					 }
 					 if (!_nonDeterminismOK && _numthreads>1) {
 						 b.barrier();
 						 // read again the others' updates
-						 synchronized (_master) {
+						 // 3rd update: no _master synch needed
+						 //synchronized (_master) {
 						   for (int j=0; j<_from; j++) {
 							   if (copy_sols[j]!=null && 
 									   copy_sols[j] instanceof PoolableObjectIntf)
@@ -722,7 +732,7 @@ class DDE2Thread extends Thread {
 								 copy_sols[j] = _master._sols[j].newCopy();  // copy needed
 								 copy_vals[j] = _master._solVals[j];
 							 }
-						 }
+						 //}
 					 }
 			  }
         PairObjDouble pair = min(f, p, copy_sols, copy_vals, b);

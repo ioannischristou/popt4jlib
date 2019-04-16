@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package tests;
 
 import java.util.List;
@@ -27,7 +21,8 @@ public class DataFileAccessTest {
 	
 	/**
 	 * invoke as:
-	 * <CODE>java -cp &lt;classpath&gt; tests.DataFileAccessTest &lt;filename&gt; [hostname(localhost)] [startind(0)] [endind(0)]</CODE>
+	 * <CODE>java -cp &lt;classpath&gt; tests.DataFileAccessTest &lt;filename&gt; 
+	 *       [hostname(localhost)] [startind(0)] [endind(0)]</CODE>
 	 * @param args 
 	 */
 	public static void main(String[] args) {
@@ -53,7 +48,8 @@ public class DataFileAccessTest {
 				VectorIntf xi = (VectorIntf) data.get(i);
 				System.out.println("xi="+xi.toString());
 			}
-			System.out.println("Got total of "+data.size()+" VectorIntf objects in "+dur+" msecs");
+			System.out.println("Got total of "+data.size()+" VectorIntf objects in "+
+				                 dur+" msecs");
 		}
 		catch (Exception e) {
 			e.printStackTrace();

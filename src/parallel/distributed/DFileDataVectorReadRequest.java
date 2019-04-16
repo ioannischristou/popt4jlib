@@ -1,15 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package parallel.distributed;
 
-//import parallel.ParallelException;
 import utils.DataMgr;
 import java.io.*;
 import java.util.List;
+import popt4jlib.DblArray1Vector;
+import popt4jlib.VectorIntf;
 
 
 /**
@@ -18,6 +13,10 @@ import java.util.List;
  * public API (despite the public status of the class).
  * <p>Notes:
  * <ul>
+ * <li>2019-02-09: reads the compile-time flag
+ * <CODE>utils.DataFileAccessSrv._SEND_COMPACT_ARRAY</CODE> to determine how to
+ * send data over the network, as an optimization for the otherwise slow
+ * <CODE>writeObject()</CODE> method for object serialization.
  * <li>2019-02-08: modified the <CODE>_vectors</CODE> data member to be a 
  * generic <CODE>List</CODE> object to avoid the synchronization costs of old
  * <CODE>Vector</CODE> objects.
@@ -65,12 +64,37 @@ public class DFileDataVectorReadRequest implements DMsgIntf {
 	 */
 	public void execute(ObjectOutputStream oos) throws IOException {
 		try {
-			List vectors = DataMgr.readVectorsFromFileInRange(_filename, _fromIndex, _toIndex);
+			List vectors = DataMgr.readVectorsFromFileInRange(_filename, 
+				                                                _fromIndex, _toIndex);
 			long start = System.currentTimeMillis();
-			oos.reset();  // force object to be written anew
-			oos.writeObject(vectors);
+			if (!utils.DataFileAccessSrv._SEND_COMPACT_ARRAY) {
+				oos.reset();  // force object to be written anew
+				oos.writeObject(vectors);
+			} else {
+				// compact all data to a single 1-D double array
+				long start_mem_copy = System.currentTimeMillis();
+				final int k = vectors.size();
+				final int n = ((VectorIntf)vectors.get(0)).getNumCoords();
+				double[] data_arr = new double[k*n+1];
+				data_arr[0] = n;  // first position indicates vector length
+				int pos = 1;
+				for (int i=0; i<k; i++) {
+					double[] di = popt4jlib.DblArray1VectorAccess.get_x(
+																		(DblArray1Vector)vectors.get(i));
+					System.arraycopy(di, 0, data_arr, pos, n);
+					pos += n;
+				}
+				long num_bytes = 8*data_arr.length;
+				long dur_mem_copy = System.currentTimeMillis()-start_mem_copy;
+				_mger.msg("parallel.distributed.DFileDataVectorReadRequest.execute(): "+
+					        "data mem copy of "+num_bytes+" bytes took "+dur_mem_copy+
+					        " msecs",2);
+				oos.reset();
+				oos.writeObject(data_arr);				
+			}
 			long dur = System.currentTimeMillis()-start;
-			_mger.msg("parallel.distributed.DFileDataVectorReadRequest(): writeObject() took "+dur+" msecs", 2);
+			_mger.msg("parallel.distributed.DFileDataVectorReadRequest.execute(): "+
+				        "writing objects took totally "+dur+" msecs", 2);
 			_vectors = vectors;
 		}
 		catch (IOException e) {

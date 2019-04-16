@@ -7,6 +7,7 @@ import java.util.List;
 import parallel.distributed.DFileAccessSrvStatsRequest;
 import parallel.distributed.DFileDataVectorReadRequest;
 import parallel.distributed.SimpleMessage;
+import popt4jlib.DblArray1Vector;
 
 /**
  * class implementing clients for requesting reading a range of vectors residing
@@ -54,7 +55,8 @@ public class DataFileAccessClt {
 	 * system of the host specified in the constructor of the object.
 	 * @param filename String fully qualified (posibly network) path-name of the 
 	 * file to read vectors from
-	 * @param fromind int the starting index of the range (inclusive, including zero)
+	 * @param fromind int the starting index of the range (inclusive, including 
+	 * zero)
 	 * @param toind int the ending index of the range (inclusive, including zero)
 	 * @return List // List&lt;VectorIntf&gt;
 	 * @throws IOException
@@ -63,31 +65,58 @@ public class DataFileAccessClt {
 	 * @throws IndexOutOfBoundsException
 	 * @throws ClassNotFoundException 
 	 */
-	public synchronized List readVectorsFromRemoteFile(String filename, int fromind, int toind)
+	public synchronized List readVectorsFromRemoteFile(String filename, 
+		                                                 int fromind, int toind)
 					throws IOException, ParallelException, IllegalArgumentException, 
 					       IndexOutOfBoundsException, ClassNotFoundException {
     if (filename==null || filename.length()==0) 
 			throw new IllegalArgumentException("wrong filename");
-		if (fromind>toind) throw new IllegalArgumentException("fromindex > toindex");
+		if (fromind>toind) 
+			throw new IllegalArgumentException("fromindex > toindex");
 		if (fromind < 0) throw new IndexOutOfBoundsException("fromindex < 0");
 		Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
     ObjectInputStream ois = null;
     try {
-      oos = new ObjectOutputStream(s.getOutputStream());
+      oos = new ObjectOutputStream(
+				      new BufferedOutputStream(s.getOutputStream()));
       oos.flush();
-      ois = new ObjectInputStream(s.getInputStream());
+      ois = new ObjectInputStream(new BufferedInputStream(s.getInputStream()));
       // no need to call oos.reset() first
       oos.writeObject(new DFileDataVectorReadRequest(filename, fromind, toind));
       oos.flush();
       Object reply = ois.readObject();
-      if (reply instanceof List) {
-        return (List) reply;
-      }
-      else {
-				SimpleMessage srvmsg = (SimpleMessage) reply;
-        throw new ParallelException("readVectorsFromRemoteFile(filename,from,to) failed w/ msg from server="+srvmsg);
-      }
+			if (!DataFileAccessSrv._SEND_COMPACT_ARRAY) {
+				if (reply instanceof List) {
+					return (List) reply;
+				}
+				else {
+					SimpleMessage srvmsg = (SimpleMessage) reply;
+					throw new ParallelException("readVectorsFromRemoteFile(file,from,to)"+
+						                          " failed w/ msg from server="+srvmsg);
+				}
+			} else {  // data is one big 1-D array of doubles
+				if (reply instanceof double[]) {
+					double[] data_array = (double[]) reply;
+					int n = (int) data_array[0];
+					int nkp1 = data_array.length;
+					int k = (nkp1-1)/n;
+					int pos = 1;
+					List result = new java.util.ArrayList(k);
+					for (int i=0; i<k; i++) {
+						double[] xi = new double[n];
+						System.arraycopy(data_array, pos, xi, 0, n);
+						DblArray1Vector x = new DblArray1Vector(xi);
+						result.add(x);
+					}
+					return result;
+				}
+				else {
+					SimpleMessage srvmsg = (SimpleMessage) reply;
+					throw new ParallelException("readVectorsFromRemoteFile(file,from,to)"+
+						                          " failed w/ msg from server="+srvmsg);
+				}
+			}
     }
     finally {
       if (oos!=null) oos.close();
@@ -115,9 +144,10 @@ public class DataFileAccessClt {
     ObjectOutputStream oos = null;
     ObjectInputStream ois = null;
     try {
-      oos = new ObjectOutputStream(s.getOutputStream());
+      oos = new ObjectOutputStream(
+				      new BufferedOutputStream(s.getOutputStream()));
       oos.flush();
-      ois = new ObjectInputStream(s.getInputStream());
+      ois = new ObjectInputStream(new BufferedInputStream(s.getInputStream()));
       // no need to call oos.reset() here
       oos.writeObject(new DFileAccessSrvStatsRequest(filename));
       oos.flush();
@@ -127,7 +157,8 @@ public class DataFileAccessClt {
       }
       else {
 				SimpleMessage srvmsg = (SimpleMessage) reply;
-        throw new ParallelException("readVectorsFromRemoteFile(filename,from,to) failed w/ msg from server="+srvmsg);
+        throw new ParallelException("readVectorsFromRemoteFile(file,from,to) "+
+					                          " failed w/ msg from server="+srvmsg);
       }
     }
     finally {

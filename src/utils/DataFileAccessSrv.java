@@ -1,11 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package utils;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -14,14 +10,13 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-//import java.util.Vector;
 import parallel.DMCoordinator;
 import parallel.DynamicAsynchTaskExecutor;
 import parallel.ParallelException;
 import parallel.distributed.DFileAccessSrvStatsRequest;
 import parallel.distributed.DFileDataVectorReadRequest;
 import parallel.distributed.DMsgIntf;
-import parallel.distributed.DMsgPassingCoordinatorSrv;
+import popt4jlib.DblArray1Vector;
 import popt4jlib.VectorIntf;
 
 
@@ -32,14 +27,20 @@ import popt4jlib.VectorIntf;
  * <CODE>DataFileAccessClt</CODE> objects and returning the requested vector of
  * <CODE>popt4jlib.VectorIntf</CODE> objects to the requestor.
  * Every file that is requested to be read, must be read-only.
- * Note: This class is optimized for caching VectorIntf objects read from files, 
- * via the SoftReference mechanism etc. 
+ * <p>Notes:
+ * <ul>
+ * <li>2019-02-09: added the compile-time flag _SEND_COMPACT_ARRAY to send all
+ * data vectors in one single-dimensional array so that the 
+ * <CODE>writeObject()</CODE> method takes less time.
+ * <li>This class is optimized for caching VectorIntf objects read from 
+ * files, via the SoftReference mechanism etc. 
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2018</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class DataFileAccessSrv {
   private int _port = 7899;  // default port
@@ -53,6 +54,12 @@ public class DataFileAccessSrv {
 	                             //            SoftRef<Vector<VectorIntf>> data}>>
 	
 	private final static boolean _SCAN_FOR_PIECES=true;
+
+	
+	/**
+	 * compile-time flag for optimizing large data transfers.
+	 */
+	public final static boolean _SEND_COMPACT_ARRAY=true;   
 
 	
   /**
@@ -151,7 +158,7 @@ public class DataFileAccessSrv {
 	 */
 	private List getData(DFileDataVectorReadRequest fadmsg, 
 		                   ObjectOutputStream oos) 
-					throws IOException, ParallelException {
+		throws IOException, ParallelException {
 		String filename = fadmsg.getFileName();
 		Messenger mger = utils.Messenger.getInstance();
 		DMCoordinator dvchunks_lock = DMCoordinator.getInstance(filename);
@@ -260,8 +267,7 @@ public class DataFileAccessSrv {
 					}
 					// nope, condition still holds, do the work
 					dvchunks.remove(i);
-					mger.msg(
-						"DataFileAccessSrv.getData(): reading from file", 1);
+					mger.msg("DataFileAccessSrv.getData(): reading from file", 1);
 					try {
 						fadmsg.execute(oos);  // may throw if socket closes
 						res = fadmsg.getData();  // cannot be null now
@@ -318,22 +324,11 @@ public class DataFileAccessSrv {
 	}
 	
 	
-	/**
-	 * invoke as:
-	 * java -cp &lt;classpath&gt; [port(7894)] [maxthreads(10000)].
-	 * @deprecated 
-	 * @param args 
-	 */
-	public static void mainOld(String[] args) {
-		DMsgPassingCoordinatorSrv.main(args);		
-	}
-
-
   /**
-   * inner helper class.
+   * inner helper class. Not part of the public API.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
-   * <p>Copyright: Copyright (c) 2011-2015</p>
+   * <p>Copyright: Copyright (c) 2011-2019</p>
    * <p>Company: </p>
    * @author Ioannis T. Christou
    * @version 1.0
@@ -348,13 +343,16 @@ public class DataFileAccessSrv {
     }
 
     public void run() {
-      Messenger.getInstance().msg("DFATask with id="+_conId+" running...",1);
+			Messenger mger = Messenger.getInstance();
+      mger.msg("DFATask with id="+_conId+" running...",1);
       ObjectInputStream ois = null;
       ObjectOutputStream oos = null;
       try {
-        oos = new ObjectOutputStream(_s.getOutputStream());
+        oos = new ObjectOutputStream(
+					      new BufferedOutputStream(_s.getOutputStream()));
         oos.flush();
-        ois = new ObjectInputStream(_s.getInputStream());
+        ois = new ObjectInputStream(
+					      new BufferedInputStream(_s.getInputStream()));
         // read a msg (read -or write?- data request)
         DMsgIntf msg = (DMsgIntf) ois.readObject();  
         if (msg instanceof DFileDataVectorReadRequest) {
@@ -362,9 +360,37 @@ public class DataFileAccessSrv {
 					DFileDataVectorReadRequest fadmsg = (DFileDataVectorReadRequest) msg;
 					List data = getData(fadmsg, oos);
 					if (data!=null) {
-						oos.reset();  // force object to be written anew
-						oos.writeObject(data);
-						// oos.flush() will happen in the finally clause
+						if (!_SEND_COMPACT_ARRAY) {
+							long now = System.currentTimeMillis();
+							oos.reset();  // force object to be written anew
+							oos.writeObject(data);
+							long dur = System.currentTimeMillis()-now;
+							mger.msg("DFATask.run(): writeObject took "+dur+" msecs", 1);
+							// oos.flush() will happen in the finally clause
+						} else {
+							// compact all data to a single 1-D double array
+							long start_mem_copy = System.currentTimeMillis();
+							final int k = data.size();
+							final int n = ((VectorIntf)data.get(0)).getNumCoords();
+							double[] data_arr = new double[k*n+1];
+							data_arr[0] = n;  // first position indicates vector length
+							int pos = 1;
+							for (int i=0; i<k; i++) {
+								double[] di = popt4jlib.DblArray1VectorAccess.get_x(
+									                        (DblArray1Vector)data.get(i));
+								System.arraycopy(di, 0, data_arr, pos, n);
+								pos += n;
+							}
+							long dur_mem_copy = System.currentTimeMillis()-start_mem_copy;
+							long num_bytes = 8*data_arr.length;
+							mger.msg("DFATask.run(): "+"data mem copy of "+
+					             num_bytes+" bytes took "+dur_mem_copy+" msecs",2);
+							long now = System.currentTimeMillis();
+							oos.reset();
+							oos.writeObject(data_arr);
+							long dur = System.currentTimeMillis()-now;
+							mger.msg("DFATask.run(): writeObject() took "+dur+" msecs",1);
+						}
 					} else {
 						// no-op: if the result of getData() is null, it means that the
 						// data wasn't there in the cache, or was cleared, and therefore

@@ -27,22 +27,24 @@ public class FastDblArray1VectorURndMaker {
    * constructor.
    * The parameters that must be passed in (the HashMap arg) are as follows:
 	 * <ul>
-   * <li> &lt;"dde.numdimensions", Integer nd&gt; mandatory, the number of dimensions
+   * <li> &lt;"dde.numdimensions", Integer nd&gt; mandatory, num. of dimensions
    * <li> &lt;"dde.minargval", Double v&gt; optional, the min. value that any
    * component of the returned vector may assume
    * <li> &lt;"dde.maxargval", Double v&gt; optional, the max. value that any
    * component of the returned vector may assume
-   * <li> &lt;"dde.minargval"+$i$, Double v&gt; optional, the min. value that the i-th
-   * component of the returned vector may assume (i={0,1,...nd.intValue()-1})
-   * <li> &lt;"dde.maxargval"+$i$, Double v&gt; optional, the max. value that the i-th
-   * component of the returned vector may assume (i={0,1,...nd.intValue()-1})
+   * <li> &lt;"dde.minargval"+$i$, Double v&gt; optional, the min. value that 
+	 * the i-th component of the returned vector may assume 
+	 * (i={0,1,...nd.intValue()-1})
+   * <li> &lt;"dde.maxargval"+$i$, Double v&gt; optional, the max. value that 
+	 * the i-th component of the returned vector may assume 
+	 * (i={0,1,...nd.intValue()-1})
    * </ul>
    * <p>The "local" constraints can only impose more strict constraints on the
    * variables, but cannot be used to "over-ride" a global constraint to make
    * the domain of the variable wider.</p>
    * @param params HashMap
    */
-  public FastDblArray1VectorURndMaker(HashMap params) throws IllegalArgumentException {
+  public FastDblArray1VectorURndMaker(HashMap params) {
     _minargval = Double.NEGATIVE_INFINITY;
     try {
       Double mingvD = (Double) params.get("dde.minargval");
@@ -60,14 +62,16 @@ public class FastDblArray1VectorURndMaker {
       e.printStackTrace();
     }
     if (_maxargval < _minargval)
-      throw new IllegalArgumentException("global min arg value > global max arg value");
+      throw new IllegalArgumentException(
+				          "global min arg value > global max arg value");
     try {
 		  int tid = ((Integer) params.get("thread.id")).intValue();
       _r = RndUtil.getInstance(tid).getRandom();
 			_arglen = ((Integer) params.get("dde.numdimensions")).intValue();
 		}
 		catch (ClassCastException e) {
-			throw new IllegalArgumentException("thread.id or dde.numdimensions wrong");
+			throw new IllegalArgumentException(
+				          "thread.id or dde.numdimensions wrong");
 		}
 		_minargvali = new ArrayList();
 		_maxargvali = new ArrayList();
@@ -103,7 +107,8 @@ public class FastDblArray1VectorURndMaker {
         Double MvD = (Double) _maxargvali.get(i);
         if (MvD!=null && MvD.doubleValue()<maxval) maxval = MvD.doubleValue();
         if (minval>maxval)
-          throw new OptimizerException("global min arg value > global max arg value");
+          throw new OptimizerException(
+						          "global min arg value > global max arg value");
         arr[i] = minval + _r.nextDouble()*(maxval-minval);
       }
       return new DblArray1Vector(arr);
@@ -140,7 +145,8 @@ public class FastDblArray1VectorURndMaker {
         Double MvD = (Double) _maxargvali.get(i);
         if (MvD!=null && MvD.doubleValue()<maxval) maxval = MvD.doubleValue();
         if (minval>maxval)
-          throw new OptimizerException("global min arg value > global max arg value");
+          throw new OptimizerException(
+						          "global min arg value > global max arg value");
         arr[i] = minval + r.nextDouble()*(maxval-minval);
       }
       return new DblArray1Vector(arr);
