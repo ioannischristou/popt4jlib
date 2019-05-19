@@ -8,6 +8,8 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecNoOpCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1VectorAccess.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/FastDblArray1VectorLHSRndMaker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/BH/DGABH.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RegExTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/norm/RnQTCnorm.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1SparseVector.java</file>
@@ -45,6 +47,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansPP.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansSqrEvaluator.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/VectorIntfRndMakerIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DataFileAccessClt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/LightweightParams.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/SumOfVarianceEvaluator.java</file>
