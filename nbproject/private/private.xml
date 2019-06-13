@@ -15,11 +15,9 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1SparseVector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DataMgr.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecSingleCltWrkInitSrv.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/ConditionCounter.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/FastDblArray1VectorArgMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DFileDataVectorReadRequest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/DblArray1VectorRndMaker.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/AdditiveSolverDepr.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/VecUtil.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansCC.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/MCS.java</file>
@@ -39,6 +37,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DGA.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/FastDblArray1ArgMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DebugNR.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DObjectsCacheSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/IntArray1SparseVector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/BoolVector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutor.java</file>
@@ -47,12 +46,11 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansPP.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansSqrEvaluator.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/VectorIntfRndMakerIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DataFileAccessClt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/VectorIntfRndMakerIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/LightweightParams.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/SumOfVarianceEvaluator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/SparseVectorFile2KDDCup99FileFormatConverter.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/WMaxSATFileMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/PairSer.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/DataFileAccessSrvCacheStatsTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/FasterDblArray1ArgMaker.java</file>
@@ -63,7 +61,6 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/Barrier.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/MonteCarloTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/IntArray2SparseMatrix.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/AdditiveSolver2.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/GMeansMTClusterer.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/IntArray1SparseVectorTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DFileAccessSrvStatsRequest.java</file>
@@ -82,11 +79,11 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/DblArray1SparseVectorTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/Arg2ChromosomeMakerIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/ClustererInitIntf.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DActiveMsgPassingCoordinatorLongLivedConnClt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/GMeansMTClustererTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/network/AsgnAuctionMT.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/PairObjDouble.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/DDE2.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/AdditiveSolver3.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/GRASPAddSlvr2Packer1.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/DataFileMultiAccessTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/RRObject.java</file>

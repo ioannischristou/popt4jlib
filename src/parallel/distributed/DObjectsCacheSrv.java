@@ -79,7 +79,21 @@ public final class DObjectsCacheSrv {
 		extor.execute(rs);
 	}
 	
-	
+	/**
+	 * invoke as:
+	 * <CODE>
+	 * java -cp &lt;classpath&gt; 
+	 * parallel.distibuted.DObjectsCacheSrv &lt;port&gt;
+	 * </CODE>. The program will start listening for incoming socket connections
+	 * at the specified port; the client can then send any of the following 
+	 * requests: 
+	 * <ul>
+	 * <li> Add (implemented in the <CODE>DObjCacheAddReq</CODE> class),
+	 * <li> GetAll (implemented in the <CODE>DObjCacheGetAllReq</CODE> class) and
+	 * <li> Clear (implemented in the <CODE>DObjCacheClearReq</CODE> class)
+	 * </ul>.
+	 * @param args String[] with args[0] int specifying the port to listen to.
+	 */
 	public static void main(String[] args) {
 		try {
 			int port = Integer.parseInt(args[0]);
