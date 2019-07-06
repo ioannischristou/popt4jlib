@@ -18,9 +18,14 @@ import java.io.Serializable;
  * methods are of course thread-safe (as long as the underlying function object
  * that implements the FunctionIntf interface to be evaluated also happens to be
  * thread-safe).
+ * <p>Notes:
+ * <ul>
+ * <li>20190701: modified the <CODE>run()</CODE> method to set 
+ * <CODE>Double.MAX_VALUE</CODE> when the underlying function returns NaN.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2017</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -62,6 +67,7 @@ public class FunctionEvaluationTask implements TaskObject {
    */
   public Serializable run() {
     double val = _f.eval(_arg, _params);
+		if (Double.isNaN(val)) val = Double.MAX_VALUE;  // itc-20190701: fix NaN
     synchronized (this) {
 			setObjValue(val);
 			setDone(true);

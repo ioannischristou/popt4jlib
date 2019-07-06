@@ -11,9 +11,14 @@ import java.util.*;
  * However, if it is passed a non-vector of doubles argument, the eval() method
  * simply passes along the argument to the underlying function without shifting
  * it, since it does not know how to do the shifting.
+ * <p>Notes:
+ * <ul>
+ * <li>20190701: modified <CODE>eval()</CODE> to return 
+ * <CODE>Double.MAX_VALUE</CODE> when the underlying function returns NaN.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -53,15 +58,26 @@ public class ShiftedArgFunctionBase implements FunctionIntf {
         int n = newarg.length;
         double[] delta = (double[]) params.get("function.shiftarg");
         for (int i=0; i<n; i++) newarg[i] -= delta[i];
-        if (arg instanceof VectorIntf)
-          return _f.eval(new DblArray1Vector(newarg), params);
-        else return _f.eval(newarg, params);
+        if (arg instanceof VectorIntf) {
+          double y = _f.eval(new DblArray1Vector(newarg), params);
+					if (Double.isNaN(y)) 
+						return Double.MAX_VALUE;  // itc-20190701: fix NaN value issue
+					return y;
+				}
+        else {
+					double y = _f.eval(newarg, params);
+					if (Double.isNaN(y)) 
+						return Double.MAX_VALUE;  // itc-20190701: fix NaN value issue
+					return y;
+				}
       }
       catch (ClassCastException e) {
         e.printStackTrace();  // no-op
       }
     }
-    return _f.eval(arg, params);
+    double y = _f.eval(arg, params);
+		if (Double.isNaN(y)) return Double.MAX_VALUE;  // itc-20190701: fix NaN val
+		return y;
   }
 
 }

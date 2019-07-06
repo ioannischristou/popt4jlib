@@ -9,9 +9,14 @@ import java.util.HashSet;
  * evaluation requests for arguments that have been seen before are honored 
  * while any other request returns <CODE>Double.MAX_VALUE</CODE> once the limit
  * on the allowed number of function evaluations is hit.
+ * <p>Notes:
+ * <ul>
+ * <li>20190701: modified <CODE>eval()</CODE> to return 
+ * <CODE>Double.MAX_VALUE</CODE> when the underlying function returns NaN.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -43,12 +48,20 @@ public class FunctionArgStore extends FunctionBase {
 			if (max_countL!=null && max_countL.longValue() <= getEvalCount()) {
 				if (!_args.contains(arg))
 					return Double.MAX_VALUE;  // stop the function evaluation process
-				else return getFunction().eval(arg, params);
+				else {
+					double val = getFunction().eval(arg, params);
+					if (Double.isNaN(val)) 
+						val = Double.MAX_VALUE;  // itc-20190701: fix NaN value issue
+					return val;
+				}
 			}
 			incrCount();
 			_args.add(arg);
 		}
-    return getFunction().eval(arg, params);
+    double val = getFunction().eval(arg, params);
+		if (Double.isNaN(val))
+			return Double.MAX_VALUE;  // itc-20190701: fix NaN value issue
+		return val;
   }
 }
 

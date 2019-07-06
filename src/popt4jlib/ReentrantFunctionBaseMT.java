@@ -1,7 +1,6 @@
 package popt4jlib;
 
 import java.util.*;
-// import java.lang.reflect.*;
 
 
 /**
@@ -15,9 +14,14 @@ import java.util.*;
  * constructor otherwise an exception will be thrown as no such constructor will
  * be found in order to populate the array of FunctionIntf objects that this
  * class' objects maintain.</p>
+ * <p>Further Notes:
+ * <ul>
+ * <li>20190701: modified <CODE>eval()</CODE> to return 
+ * <CODE>Double.MAX_VALUE</CODE> when the underlying function returns NaN.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -67,10 +71,13 @@ public class ReentrantFunctionBaseMT implements FunctionIntf {
     if (id==null || id.intValue()==-1 || id.intValue()>=_f.length-1) {
       synchronized (this) {
         double v = _f[_f.length - 1].eval(arg, params);
+				if (Double.isNaN(v)) return Double.MAX_VALUE;  // itc-20190701: fix NaN
         return v;
       }
     }
-    return _f[id.intValue()].eval(arg, params);
+    double v = _f[id.intValue()].eval(arg, params);
+		if (Double.isNaN(v)) return Double.MAX_VALUE;  // itc-20190701: fix NaN
+		return v;
   }
 
 

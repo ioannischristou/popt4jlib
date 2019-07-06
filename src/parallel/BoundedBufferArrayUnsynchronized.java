@@ -5,9 +5,15 @@ package parallel;
  * unsynchronized. It's exactly the same as the <CODE>BoundedBufferArray</CODE>
  * class, only that's completely unsynchronized (and the exceptions thrown are 
  * now IllegalStateException or IndexOutOfBoundsException.)
+ * <p>Notes:
+ * <ul>
+ * <li>20190706: added <CODE>forceAddElement(Object o)</CODE> method that adds
+ * the argument even when there is no more space, by removing the first added
+ * element in the buffer.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2015</p>
+ * <p>Copyright: Copyright (c) 2015-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -36,7 +42,8 @@ public class BoundedBufferArrayUnsynchronized {
    */
   public void addElement(Object obj) throws IllegalStateException {
     if (_head!=-1 && prev(_head)==_tail)
-      throw new IllegalStateException("cannot add any more data to this buffer");
+      throw new IllegalStateException("cannot add any more data "+
+				                              "to this buffer");
     if (_head==-1) {
       _head = 0;
       _tail = _head;
@@ -48,6 +55,23 @@ public class BoundedBufferArrayUnsynchronized {
       return;
     }
   }
+	
+	
+	/**
+	 * add an object in the buffer. If there is no space, remove the first 
+	 * element added to make space for the new one.
+	 * @param obj Object 
+	 * @return Object the object "ejected" to make space, or null if there was no
+	 * need for such injection.
+	 */
+	public Object forceAddElement(Object obj) {
+		Object ret = null;
+		if (_head!=-1 && prev(_head)==_tail) {  // full buffer
+			ret = remove();  // make space for new kid in the block!
+		}
+		addElement(obj);
+		return ret;
+	}
 
 
   /**
@@ -75,11 +99,13 @@ public class BoundedBufferArrayUnsynchronized {
 	 * other operations.
 	 * @param i int 
 	 * @return Object 
-	 * @throws IndexOutOfBoundsException if the index is out of the range {0,...size()-1} 
+	 * @throws IndexOutOfBoundsException if the index is out of the range 
+	 * {0,...size()-1} 
 	 */
 	public Object remove(int i) throws IndexOutOfBoundsException {
 		if (i==0) return remove();  // remove the first element (pointed by _head)
-		if (i<0 || i>=size()) throw new IndexOutOfBoundsException("index "+i+" out of range");
+		if (i<0 || i>=size()) 
+			throw new IndexOutOfBoundsException("index "+i+" out of range");
 		Object res=null;
 		int opos = _head+i;
 		if (opos>=_buffer.length) opos -= _buffer.length;
@@ -141,7 +167,8 @@ public class BoundedBufferArrayUnsynchronized {
 				pos = hintPos - offset;
 				if (pos>=0) {
 					last = LEFT;
-					if (hintPos+offset>=sz) offset++;  // normally when going left, don't increment offset
+					if (hintPos+offset>=sz) 
+						offset++;  // normally when going left, don't increment offset
 				} else {  // reached left end
 					if (hintPos+offset>=sz) cont = false;  // break;
 					else {  // keep going right
@@ -163,7 +190,8 @@ public class BoundedBufferArrayUnsynchronized {
    * @return Object
    */
   public Object elementAt(int i) throws IndexOutOfBoundsException {
-    if (i<0 || i>= size()) throw new IndexOutOfBoundsException("index "+i+"out of range");
+    if (i<0 || i>= size()) 
+			throw new IndexOutOfBoundsException("index "+i+"out of range");
     int opos = _head+i;
     if (opos<_buffer.length) return _buffer[opos];
     else return _buffer[i - (_buffer.length - _head)];

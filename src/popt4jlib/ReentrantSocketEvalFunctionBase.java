@@ -12,9 +12,14 @@ import java.net.*;
  * to the popt4jlib client through the same socket.
  * The class also keeps track of how many times a function has been evaluated,
  * plus it forces threads asking for function evaluation to run sequentially.
+ * <p>Notes:
+ * <ul>
+ * <li>20190701: modified <CODE>eval()</CODE> to return 
+ * <CODE>Double.MAX_VALUE</CODE> when the underlying function returns NaN.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -41,7 +46,9 @@ public class ReentrantSocketEvalFunctionBase implements FunctionIntf {
     _oos.flush();
     _ois = new ObjectInputStream(_s.getInputStream());
     _evalCount=0;
-    utils.Messenger.getInstance().msg("ReentrantSocketEvalFunctionBase connected at <"+host+","+port+">",0);
+    utils.Messenger.getInstance().
+			                msg("ReentrantSocketEvalFunctionBase connected at <"+
+												  host+","+port+">",0);
   }
 
 
@@ -83,7 +90,9 @@ public class ReentrantSocketEvalFunctionBase implements FunctionIntf {
         _oos.flush();
         // get back the value
         Double val = (Double) _ois.readObject();
-        return val.doubleValue();
+        double v = val.doubleValue();
+				if (Double.isNaN(v)) return Double.MAX_VALUE;  // itc-20190701: fix NaN
+				return v;
       }
       catch (Exception e) {
         e.printStackTrace();

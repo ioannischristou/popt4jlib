@@ -18,9 +18,9 @@ import popt4jlib.*;
  * population new (hopefully better) solutions. The solutions moved back and
  * forth between optimizers have to be moved as function argument objects and
  * not as chromosome objects. However, the Subject/Observer interactions destroy
- * the otherwise deterministic order &amp; results of the DPSO execution due to the
- * fact that the order in which DPSOThreads call the setIncumbent() method which
- * in turn may call the notifyObservers() method is not deterministically
+ * the otherwise deterministic order &amp; results of the DPSO execution due to 
+ * the fact that the order in which DPSOThread's call the setIncumbent() method 
+ * which in turn may call the notifyObservers() method, is not deterministically
  * fixed (depends on thread schedules).
  * <p> This implementation features an island model of computation where there
  * exist multiple sub-populations each running in its own thread of computation;
@@ -53,7 +53,8 @@ import popt4jlib.*;
  * @author Ioannis T. Christou
  * @version 2.0
  */
-public class DPSO extends GLockingObservableObserverBase implements OptimizerIntf {
+public class DPSO extends GLockingObservableObserverBase 
+                  implements OptimizerIntf {
   private static int _nextId=0;
   private int _id;
   private HashMap _params;
@@ -115,7 +116,8 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
    * <CODE>minimize(f)</CODE> method of this object.
    */
   public synchronized void setParams(HashMap p) throws OptimizerException {
-    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    if (_f!=null) 
+			throw new OptimizerException("cannot modify parameters while running");
     _params = null;
     _params = new HashMap(p);  // own the params
 		// set the distributed computing mode init cmd, if any is specified
@@ -167,28 +169,32 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
    * setParams(p) to do that).
    * These parameters are:
    * <ul>
-   * <li> &lt;"dpso.randomparticlemaker",RandomChromosomeMakerIntf maker&gt; mandatory,
-   * the RandomChromosomeMakerIntf Object responsible for creating valid random
-   * chromosome Objects to populate the islands.
-   * <li> &lt;"dpso.randomvelocitymaker",RandomVelocityMakerIntf maker&gt; mandatory,
-   * the RandomVelocityMakerIntf Object responsible for creating valid random
-   * velocity Objects to determine the next position of the particles.
+   * <li> &lt;"dpso.randomparticlemaker",RandomChromosomeMakerIntf maker&gt; 
+	 * mandatory, the RandomChromosomeMakerIntf Object responsible for creating 
+	 * valid random chromosome Objects to populate the islands.
+   * <li> &lt;"dpso.randomvelocitymaker",RandomVelocityMakerIntf maker&gt; 
+	 * mandatory, the RandomVelocityMakerIntf Object responsible for creating 
+	 * valid random velocity Objects to determine the next position of the 
+	 * particles.
    * <li> &lt;"dpso.vmover",NewVelocityMakerIntf maker&gt; mandatory, the
    * NewVelocityMakerIntf object responsible for determining the new velocity
    * of a particle given its current position, velocity and its neighborhood.
-   * <li> &lt;"dpso.c2vadder",ChromosomeVelocityAdderIntf adder&gt; mandatory, an Object
-   * that implements the ChromosomeVelocityAdderIntf that produces the next
-   * position of a particle given its current position and velocity.
-   * <li> &lt;"dpso.numthreads",Integer nt&gt; optional, how many threads will be used,
-   * default is 1. Each thread corresponds to an island in the DGA model.
-   * <li> &lt;"dpso.c2amaker",Chromosome2ArgMakerIntf c2a&gt; optional, the object that is
-   * responsible for tranforming a chromosome Object to a function argument
-   * Object. If not present, the default identity transformation is assumed.
-   * <li> &lt;"dpso.a2cmaker",Arg2ChromosomeMakerIntf a2c&gt; optional, the object that is
-   * responsible for transforming a FunctionIntf argument Object to a chromosome
-   * Object. If not present, the default identity transformation is assumed. The
-   * a2c object is only useful when other ObserverIntf objects register for this
-   * SubjectIntf object and also add back solutions to it (as FunctionIntf args)
+   * <li> &lt;"dpso.c2vadder",ChromosomeVelocityAdderIntf adder&gt; mandatory, 
+	 * an Object that implements the ChromosomeVelocityAdderIntf that produces the 
+	 * next position of a particle given its current position and velocity.
+   * <li> &lt;"dpso.numthreads",Integer nt&gt; optional, how many threads will 
+	 * be used, default is 1. Each thread corresponds to an island in the DGA 
+	 * model.
+   * <li> &lt;"dpso.c2amaker",Chromosome2ArgMakerIntf c2a&gt; optional, the 
+	 * object that is responsible for tranforming a chromosome Object to a 
+	 * function argument Object. If not present, the default identity 
+	 * transformation is assumed.
+   * <li> &lt;"dpso.a2cmaker",Arg2ChromosomeMakerIntf a2c&gt; optional, the 
+	 * object that is responsible for transforming a FunctionIntf argument Object 
+	 * to a chromosome Object. If not present, the default identity transformation 
+	 * is assumed. The a2c object is only useful when other ObserverIntf objects 
+	 * register for this SubjectIntf object and also add back solutions to it 
+	 * (as FunctionIntf args)
    * <li> &lt;"dpso.numgens",Integer ng&gt; optional, the number of generations 
 	 * to run the DPSO, default is 1.
    * <li> &lt;"dpso.immprob",Double prob&gt; optional, the probability with 
@@ -201,13 +207,15 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
 	 * the maximum distance from the left or the right of a given particle within 
 	 * which the best (guiding) particle position will be sought for the 
 	 * computation of the next position of the given particle, default is 1.
-	 * <li> &lt;"dpso.topologyselector", ChromosomeSelectorIntf topological_selector&gt;
+	 * <li> &lt;"dpso.topologyselector", 
+	 *          ChromosomeSelectorIntf topological_selector&gt;
 	 * optional, if present defines among which of the island's sub-population 
 	 * the best (guiding) solution will be sought for the computation of the 
 	 * next position of each particle; default is the ring topology mentioned 
 	 * above (which is built-in in the private method 
 	 * <CODE>DPSOThreadAux.getBestInSubSwarm(i)</CODE>).
-	 * <li> &lt;"dpso.immigrationrouteselector", popt4jlib.ImmigrationIslandOpIntf route_selector&gt;
+	 * <li> &lt;"dpso.immigrationrouteselector", 
+	 *          popt4jlib.ImmigrationIslandOpIntf route_selector&gt;
 	 * optional, if present defines the routes of immigration from island to 
 	 * island; default is null, which forces the built-in unidirectional ring 
 	 * routing topology.
@@ -215,8 +223,10 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
 	 * synchronized optimization ensemble in which this DPSO object will 
 	 * participate. In case this value is non-null, then a higher-level ensemble 
 	 * optimizer must have appropriately called the method
-   * <CODE>Barrier.setNumThreads(name+"_master", numParticipantOptimizers)</CODE>
-   * so as to properly synchronize the various participating optimizers' threads.
+   * <CODE>
+	 * Barrier.setNumThreads(name+"_master", numParticipantOptimizers)
+	 * </CODE>
+   * so as to properly synchronize the participating optimizers' threads.
    * Also, if this object is to be re-used as a stand-alone optimizer,
    * this key-value pair must be removed from its parameter-set via a call to
    * <CODE>setParams(p)</CODE> prior to calling <CODE>minimize(f)</CODE> again.
@@ -246,10 +256,12 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
 		if (f==null) throw new OptimizerException("DPSO.minimize(f): null f");
     try {
-      // atomic.start(Constants.OB);  // no longer needed to protect OrderedBarrier
+      // atomic.start(Constants.OB);  // not needed to protect OrderedBarrier
       synchronized (this) {
-				if (_f != null) throw new OptimizerException("DPSO.minimize(): "+
-          "another thread is concurrently executing the method on the same object");
+				if (_f != null) 
+					throw new OptimizerException("DPSO.minimize(): "+
+                                       "another thread is concurrently "+
+						                           "executing the method on this object");
         _f = f;
       }
       // add the function itself onto the parameters hashtable for possible use
@@ -264,28 +276,32 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
 				if (ntI != null) nt = ntI.intValue();
 			}
 			catch (ClassCastException e) {
-				throw new OptimizerException("DPSO.minimize(): dpso.numthreads not an integer in params");
+				throw new OptimizerException("DPSO.minimize(): dpso.numthreads "+
+					                           "not an integer in params");
 			}
       if (nt < 1)throw new OptimizerException(
           "DPSO.minimize(): invalid number of threads specified");
       RndUtil.addExtraInstances(nt);  // not needed
 			// set immigration topology router if it exists
 			try {
-				_immigrationTopologySelector = (ImmigrationIslandOpIntf) _params.get("dpso.immigrationrouteselector");
+				_immigrationTopologySelector = 
+					(ImmigrationIslandOpIntf)_params.get("dpso.immigrationrouteselector");
 			}
 			catch (ClassCastException e) {
-				throw new OptimizerException("DPSO.minimize(): invalid ImmigrationIslandOpIntf object specified in params");
+				throw new OptimizerException(
+					          "DPSO.minimize(): invalid ImmigrationIslandOpIntf object "+
+									  "specified in params");
 			}
       // check if this object will participate in an ensemble
       String ensemble_name = (String) _params.get("ensemblename");
       _threads = new DPSOThread[nt];
       _islandsPop = new int[nt];
       for (int i = 0; i < nt; i++) _islandsPop[i] = 0; // init.
-      // the _XXX data members are correctly protected since this method executes
-      // atomically, and the working threads are started below. FindBugs
+      // the _XXX data members are correctly protected since this method 
+      // executes atomically and the working threads are started below. FindBugs
       // complains unjustly here...
       try {
-        parallel.Barrier.setNumThreads("dpso." + _id, nt); // init the Barrier obj.
+        parallel.Barrier.setNumThreads("dpso." + _id, nt); // init Barrier obj.
       }
       catch (parallel.ParallelException e) {
         e.printStackTrace();
@@ -294,7 +310,9 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
 
       for (int i = 0; i < nt; i++) {
         _threads[i] = new DPSOThread(this, i);
-        OrderedBarrier.addThread(_threads[i], "dpso."+_id); // for use in synchronizing/ordering
+        OrderedBarrier.addThread(_threads[i], "dpso."+_id); // for use in 
+				                                                    // synchronizing /
+				                                                    // ordering
         if (ensemble_name!=null) {
           ComplexBarrier.addThread(ensemble_name, _threads[i]);
         }
@@ -307,11 +325,13 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
         }
         catch (NullPointerException e) {
           e.printStackTrace();
-          utils.Messenger.getInstance().msg("this DPSO.minimize(f) method must "+
-                                            "be invoked from within the minimize(f)"+
+          utils.Messenger.getInstance().msg("this DPSO.minimize(f) method must"+
+                                            " be invoked from within the "+
+						                                "minimize(f)"+
                                             " method of an ensemble optimizer "+
                                             "that has properly called the "+
-                                            "Barrier.setNumThreads(<name>_master,<num>)"+
+                                            "Barrier.setNumThreads("+
+						                                "<name>_master,<num>)"+
                                             " method.",0);
           throw new OptimizerException("DPSO.minimize(f): ensemble broken");
         }
@@ -340,7 +360,7 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
     }
     finally {
       reset();
-      // atomic.end(Constants.OB);  // no longer needed to protect OrderedBarrier
+      // atomic.end(Constants.OB);  // not needed to protect OrderedBarrier
     }
   }
 
@@ -378,11 +398,16 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
    * @return int if -1 indicates no migration
    */
   synchronized int getImmigrationIsland(int myid, int gen) {
-		if (_immigrationTopologySelector!=null) {  // migration topology selector exists, use it.
-			return _immigrationTopologySelector.getImmigrationIsland(myid, gen, _islandsPop, _params);
+		if (_immigrationTopologySelector!=null) {  
+      // migration topology selector exists, use it.
+			return _immigrationTopologySelector.getImmigrationIsland(myid, 
+				                                                       gen, 
+				                                                       _islandsPop, 
+																															 _params);
 		}
     for (int i=0; i<_islandsPop.length; i++)
-      if (myid!=i && (_islandsPop[i]==0 || _islandsPop[myid]>2.5*_islandsPop[i])) return i;
+      if (myid!=i && 
+				  (_islandsPop[i]==0 || _islandsPop[myid]>2.5*_islandsPop[i])) return i;
     // populations are more or less the same size, so immigration will occur
     // with some small probability to an immediate neighbor
     double immprob = 0.01;
@@ -475,7 +500,8 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
     }
     catch (ParallelException e) {
       e.printStackTrace();
-      throw new OptimizerException("DPSO.setIncumbent(): double lock somehow failed...");
+      throw new OptimizerException(
+				          "DPSO.setIncumbent(): double lock somehow failed...");
     }
     finally {
       try {
@@ -490,13 +516,15 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
 
   /**
    * moves all chromosomes that the observers and subjects have added so far to
-   * _individuals List&lt;DPSOIndividual&gt; of the DPSOThread with id 0, and clears
-   * the solutions from the _observers and _subjects map.
+   * _individuals List&lt;DPSOIndividual&gt; of the DPSOThread with id 0, and 
+   * clears the solutions from the _observers and _subjects map.
    * @param tinds List  // List&lt;DPSOIndividual&gt;
    * @param params HashMap the optimization params
    * @param funcParams HashMap the function parameters
    */
-  synchronized void transferSolutionsTo(List tinds, HashMap params, HashMap funcParams) {
+  synchronized void transferSolutionsTo(List tinds, 
+		                                    HashMap params, 
+																				HashMap funcParams) {
     // 1. observers
     int ocnt = 0;
     Iterator it = getObservers().keySet().iterator();
@@ -506,21 +534,25 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
       int solssz = sols.size();
       for (int i=0; i<solssz; i++) {
         try {
-          RandomVelocityMakerIntf vmaker = (RandomVelocityMakerIntf) params.get("dpso.randomvelocitymaker");
+          RandomVelocityMakerIntf vmaker = 
+						(RandomVelocityMakerIntf) params.get("dpso.randomvelocitymaker");
           Object velocity = vmaker.createRandomVelocity(params);
           Object chromosomei = null;
-          Arg2ChromosomeMakerIntf a2cmaker = (Arg2ChromosomeMakerIntf) params.get("dpso.a2cmaker");  // itc: used to be dga.a2cmaker
+          Arg2ChromosomeMakerIntf a2cmaker = 
+						(Arg2ChromosomeMakerIntf) params.get("dpso.a2cmaker");  
+          // itc: used to be dga.a2cmaker
           if (a2cmaker != null)
             chromosomei = a2cmaker.getChromosome(sols.elementAt(i), params);
-          else chromosomei = sols.elementAt(i); // assume chromosome and arg are the same
+          else chromosomei = sols.elementAt(i); // assume chromosome and arg 
+					                                      // are the same
           DPSOIndividual indi = new DPSOIndividual(chromosomei, velocity,
                                                    this, params, funcParams);
           tinds.add(indi);
           ++ocnt;
         }
         catch (OptimizerException e) {
-          e.printStackTrace();  // report failure to create individual out of the
-                                // provided chromosome Object
+          e.printStackTrace();  // report failure to create individual out of
+                                // the provided chromosome Object
         }
       }
       sols.clear();
@@ -534,21 +566,25 @@ public class DPSO extends GLockingObservableObserverBase implements OptimizerInt
       int solssz = sols.size();
       for (int i=0; i<solssz; i++) {
         try {
-          RandomVelocityMakerIntf vmaker = (RandomVelocityMakerIntf) params.get("dpso.randomvelocitymaker");
+          RandomVelocityMakerIntf vmaker = 
+						(RandomVelocityMakerIntf) params.get("dpso.randomvelocitymaker");
           Object velocity = vmaker.createRandomVelocity(params);
           Object chromosomei = null;
-          Arg2ChromosomeMakerIntf a2cmaker = (Arg2ChromosomeMakerIntf) params.get("dpso.a2cmaker");  // itc: used to be dga.a2cmaker
+          Arg2ChromosomeMakerIntf a2cmaker = 
+						(Arg2ChromosomeMakerIntf) params.get("dpso.a2cmaker");  
+          // itc: used to be dga.a2cmaker
           if (a2cmaker != null)
             chromosomei = a2cmaker.getChromosome(sols.elementAt(i), params);
-          else chromosomei = sols.elementAt(i); // assume chromosome and arg are the same
+          else chromosomei = sols.elementAt(i); // assume chromosome and arg 
+					                                      // are the same
           DPSOIndividual indi = new DPSOIndividual(chromosomei, velocity,
                                                    this, params, funcParams);
           tinds.add(indi);
           ++scnt;
         }
         catch (OptimizerException e) {
-          e.printStackTrace();  // report failure to create individual out of the
-                                // provided chromosome Object
+          e.printStackTrace();  // report failure to create individual out of 
+                                // the provided chromosome Object
         }
       }
       sols.clear();
@@ -663,10 +699,12 @@ class DPSOThreadAux {
         if (pack!=null) {
           String packname = pack.getName();
           if (packname.startsWith("popt4jlib") ||
-              packname.startsWith("parallel"))continue; // don't include such objects
+              packname.startsWith("parallel"))
+						continue; // don't include such objects
         }
         else {
-          Messenger.getInstance().msg("no package info for object with key "+key,2);
+          Messenger.getInstance().msg("no package info for object with key "+
+						                          key,2);
         }
         _fp.put(key,val);
       }
@@ -683,14 +721,17 @@ class DPSOThreadAux {
 					port = ((Integer) _p.get("dpso.pdbtport")).intValue();
 				}
 				catch (ClassCastException e) {
-					Messenger.getInstance().msg("param value for dpso.pdbtport is not an Integer",2);
+					Messenger.getInstance().msg("param value for dpso.pdbtport "+
+						                          "is not an Integer",2);
 				}
 				_pdbtExecInitedClt = new PDBTExecInitedClt(host,port);
 				_pdbtExecInitedClt.submitInitCmd(init_cmd);
 			}
 		}
 		catch (Exception e) {
-			Messenger.getInstance().msg("couldn't set distributed computing environment, will run on this machine only", 2);
+			Messenger.getInstance().msg("couldn't set distributed computing "+
+				                          "environment, will run on this machine only", 
+				                          2);
 			_pdbtExecInitedClt = null;
 		}
     _immigrantsPool = new Vector();
@@ -715,17 +756,20 @@ class DPSOThreadAux {
     }
     catch (ClassCastException e) { e.printStackTrace(); }
     for (int gen = 0; gen < numgens; gen++) {
-      Barrier.getInstance("dpso."+_master.getId()).barrier();  // synchronize with other threads
+      Barrier.getInstance("dpso."+_master.getId()).barrier();  // synchronize w/ 
+			                                                         // other threads
       try {
-        if (ensemble_name!=null)
-          ComplexBarrier.getInstance(ensemble_name).barrier(); // synchronize with other optimizers' threads
+        if (ensemble_name!=null)  // synchronize with other optimizers' threads
+          ComplexBarrier.getInstance(ensemble_name).barrier(); 
       }
       catch (ParallelException e) {
         e.printStackTrace();  // no-op
       }
       //System.err.println("Island-Thread id=" + _id + " running gen=" + gen +
       //                   " popsize=" + _individuals.size());
-			if (_id==0 && gen % 10 == 0) utils.Messenger.getInstance().msg("DPSOThreadAux.runTask(): running gen=" + gen, 2);
+			if (_id==0 && gen % 10 == 0) 
+				utils.Messenger.getInstance().msg("DPSOThreadAux.runTask(): "+
+					                                "running gen=" + gen, 2);
       recvInds();
       if (_individuals.size()>0) {
         try {
@@ -737,7 +781,8 @@ class DPSOThreadAux {
       }
       sendInds(gen);
       _master.setIslandPop(_id, _individuals.size());
-      Barrier.getInstance("dpso."+_master.getId()).barrier();  // synchronize with other threads
+      Barrier.getInstance("dpso."+_master.getId()).barrier();  // synchronize w/
+			                                                         // other threads
     }
     if (ensemble_name!=null) {  // remove thread from ensemble barrier
       try {
@@ -790,16 +835,21 @@ class DPSOThreadAux {
   /* DPSO-GA methods */
 
 
-  private void initPopulation() throws OptimizerException, InterruptedException {
+  private void initPopulation() 
+		throws OptimizerException, InterruptedException {
     int initpopnum = 10;
     Integer initpopnumI = ((Integer) _p.get("dpso.numinitpop"));
     if (initpopnumI!=null) initpopnum = initpopnumI.intValue();
     _individuals = new ArrayList();  // used to be Vector<DPSOIndividual>
-    RandomChromosomeMakerIntf amaker = (RandomChromosomeMakerIntf) _p.get("dpso.randomparticlemaker");
-    RandomVelocityMakerIntf vmaker = (RandomVelocityMakerIntf) _p.get("dpso.randomvelocitymaker");
+    RandomChromosomeMakerIntf amaker = 
+			(RandomChromosomeMakerIntf) _p.get("dpso.randomparticlemaker");
+    RandomVelocityMakerIntf vmaker = 
+			(RandomVelocityMakerIntf) _p.get("dpso.randomvelocitymaker");
     // if no such makers are provided, can only throw exception		
 		if (amaker==null || vmaker==null) 
-			throw new OptimizerException("DPSOThreadAux.initPopulation(): null randomparticlemaker and/or randomvelocitymaker");
+			throw new OptimizerException("DPSOThreadAux.initPopulation(): null "+
+				                           "randomparticlemaker and/or "+
+				                           "randomvelocitymaker");
     boolean run_locally = true;
 		if (_pdbtExecInitedClt!=null) {  // function evaluations go distributed
 			TaskObject[] tasks = new TaskObject[initpopnum];
@@ -815,12 +865,13 @@ class DPSOThreadAux {
 			}
 			try {
 				Object[] results = _pdbtExecInitedClt.submitWorkFromSameHost(tasks, 1);
-				// results are the same tasks, but with values for the function evaluations
+				// results are same tasks, but with values for the function evaluations
 				for (int i=0; i<initpopnum; i++) {
 					double val = ((FunctionEvaluationTask) results[i]).getObjValue();
 					Object chromosome = chromosomes[i];
 		      Object velocity = vmaker.createRandomVelocity(_p);
-					DPSOIndividual indi = new DPSOIndividual(chromosome, velocity, val, _master, _p, _fp);
+					DPSOIndividual indi = 
+						new DPSOIndividual(chromosome, velocity, val, _master, _p, _fp);
 					_individuals.add(indi);
 				}
 				run_locally = false;
@@ -834,7 +885,8 @@ class DPSOThreadAux {
 			for (int i=0; i<initpopnum; i++) {
 				Object chromosome = amaker.createRandomChromosome(_p);
 				Object velocity = vmaker.createRandomVelocity(_p);
-				DPSOIndividual indi = new DPSOIndividual(chromosome, velocity, _master, _p, _fp);
+				DPSOIndividual indi = 
+					new DPSOIndividual(chromosome, velocity, _master, _p, _fp);
 				//System.out.println("Individual-"+i+"="+indi);
 				_individuals.add(indi);
 			}
@@ -850,7 +902,8 @@ class DPSOThreadAux {
         best = indi;
       }
     }
-    if (best!=null) _master.setIncumbent(best);  // update master's best soln found if needed
+    if (best!=null) 
+			_master.setIncumbent(best);  // update master's best soln found if needed
   }
 
 
@@ -875,7 +928,8 @@ class DPSOThreadAux {
       _immigrantsPool.clear();
     }
     // if it's the thread w/ id=0, add any solutions from the obervers
-    if (_id==0) {  // used to be ((DPSOThread) Thread.currentThread()).getId()==0
+    if (_id==0) {  
+      // used to be ((DPSOThread) Thread.currentThread()).getId()==0
       _master.transferSolutionsTo(_individuals, _p, _fp);
     }
   }
@@ -885,13 +939,15 @@ class DPSOThreadAux {
     int sendTo = _master.getImmigrationIsland(_id, gen);
     if (sendTo>=0) {
       Vector immigrants = getImmigrants();
-      DPSOThreadAux receiverThreadAux = _master.getDPSOThread(sendTo).getDPSOThreadAux();
+      DPSOThreadAux receiverThreadAux = 
+				_master.getDPSOThread(sendTo).getDPSOThreadAux();
       receiverThreadAux.recvIndsAux(immigrants);
     }
     else {
       // synchronize order with null task
       try {
-        OrderedBarrier.getInstance("dpso."+_master.getId()).orderedBarrier(null);
+        OrderedBarrier.
+					getInstance("dpso."+_master.getId()).orderedBarrier(null);
       }
       catch (ParallelException e) {
         e.printStackTrace();  // cannot reach this point
@@ -902,10 +958,11 @@ class DPSOThreadAux {
 
   // used to be synchronized
   private void recvIndsAux(Vector immigrants) {
-    // guarantee the order in which the immigrants are placed in the _individuals
+    // guarantee the order in which the immigrants are placed in _individuals
     // so that all runs with same seed produce identical results
     try {
-      OrderedBarrier.getInstance("dpso."+_master.getId()).orderedBarrier(new RecvIndTask(
+      OrderedBarrier.getInstance("dpso."+_master.getId()).
+				               orderedBarrier(new RecvIndTask(
           _immigrantsPool, immigrants));
     }
     catch (ParallelException e) {
@@ -918,7 +975,8 @@ class DPSOThreadAux {
   private void nextGeneration(int gen) throws OptimizerException {
     // 0. update each individual's velocity & position (chromosome)
     NewVelocityMakerIntf vmaker = (NewVelocityMakerIntf) _p.get("dpso.vmover");
-    ChromosomeVelocityAdderIntf c2vadder = (ChromosomeVelocityAdderIntf) _p.get("dpso.c2vadder");		
+    ChromosomeVelocityAdderIntf c2vadder = 
+			(ChromosomeVelocityAdderIntf) _p.get("dpso.c2vadder");		
 		boolean compute_val_locally = _master.getPDBTInitCmd()==null;
 		Pair[] tasks = null; 
 		ChromosomeSelectorIntf topological_selector = (ChromosomeSelectorIntf) 
@@ -930,7 +988,8 @@ class DPSOThreadAux {
 				try {
 					Object g;
 					if (topological_selector!=null) {
-						DPSOIndividual best = topological_selector.getBestIndividual(_individuals, i, gen, _p);
+						DPSOIndividual best = 
+							topological_selector.getBestIndividual(_individuals, i, gen, _p);
 						g = best.getBestChromosome();
 					}
 					else g = getBestInSubSwarm(i);
@@ -939,7 +998,8 @@ class DPSOThreadAux {
 							                                      indi.getBestChromosome(),
 								                                    g,
 									                                  _p);
-					Object newchromosomei = c2vadder.addVelocity2Chromosome(indi.getChromosome(), newveli, _p);
+					Object newchromosomei = 
+						c2vadder.addVelocity2Chromosome(indi.getChromosome(), newveli, _p);
 					tasks[i] = new Pair(newchromosomei, newveli);					
 				}
 				catch (Exception e) {
@@ -948,13 +1008,17 @@ class DPSOThreadAux {
 			}			
 			TaskObject[] tasksarr = new TaskObject[tasks.length];
 			for (int i=0; i<tasksarr.length; i++) 
-				tasksarr[i] = new FunctionEvaluationTask(_master._f, tasks[i].getFirst(), _fp);
+				tasksarr[i] = new FunctionEvaluationTask(_master._f, 
+					                                       tasks[i].getFirst(), 
+					                                       _fp);
 			try {
-				Object[] results = _pdbtExecInitedClt.submitWorkFromSameHost(tasksarr, 1);
+				Object[] results = 
+					_pdbtExecInitedClt.submitWorkFromSameHost(tasksarr, 1);
 				for (int i=0; i<results.length; i++) {
 					DPSOIndividual indi = (DPSOIndividual) _individuals.get(i);
 					double vali = ((FunctionEvaluationTask) results[i]).getObjValue();
-					indi.setValues(tasks[i].getFirst(), tasks[i].getSecond(), vali, _p, _fp);
+					indi.setValues(tasks[i].getFirst(), tasks[i].getSecond(), 
+						             vali, _p, _fp);
 					// update island and total best
 					if (indi.getValue()<_inc) {
 						_inc = indi.getValue();
@@ -965,7 +1029,9 @@ class DPSOThreadAux {
 			}
 			catch (Exception e) {
 				// must do the work locally
-				utils.Messenger.getInstance().msg("failed to send function evaluation tasks over the network, will resort to local computations", 2);
+				utils.Messenger.getInstance().msg("failed to send function evaluation "+
+					                                "tasks over the network, "+
+					                                "resorting to local computations", 2);
 				compute_val_locally = true;
 			}			
 		}
@@ -975,7 +1041,8 @@ class DPSOThreadAux {
 				try {
 					Object g;
 					if (topological_selector!=null) {
-						DPSOIndividual best = topological_selector.getBestIndividual(_individuals, i, gen, _p);
+						DPSOIndividual best = 
+							topological_selector.getBestIndividual(_individuals, i, gen, _p);
 						g = best.getBestChromosome();
 					}
 					else g = getBestInSubSwarm(i);
@@ -984,7 +1051,8 @@ class DPSOThreadAux {
 							                                      indi.getBestChromosome(),
 								                                    g,
 									                                  _p);
-					Object newchromosomei = c2vadder.addVelocity2Chromosome(indi.getChromosome(), newveli, _p);
+					Object newchromosomei = 
+						c2vadder.addVelocity2Chromosome(indi.getChromosome(), newveli, _p);
 					indi.setValues(newchromosomei, newveli, _p, _fp);
 					// update island and total best
 					if (indi.getValue()<_inc) {
@@ -1019,7 +1087,8 @@ class DPSOThreadAux {
       imms.add(_individuals.get(best_ind));
       _individuals.remove(best_ind);
     }
-    // repeat for second guy, only if there is someone to leave behind in this island
+    // repeat for second guy, only if there is someone to leave behind in this 
+		// island
     if (_individuals.size()>1) {
       best_val = Double.MAX_VALUE;
       best_ind = -1;
@@ -1110,7 +1179,8 @@ class DPSOIndividual {
   public String toString() {
     String r = "Chromosome=[";
     r += _x.toString();
-    r += "] val="+_val+" Velocity=["+_v.toString()+"] BestKnown=["+_pb.toString()+"]";
+    r += "] val="+_val+" Velocity=["+_v.toString()+"] BestKnown=["+
+			   _pb.toString()+"]";
     return r;
   }
   public Object getChromosome() { return _x; }
@@ -1120,8 +1190,8 @@ class DPSOIndividual {
   public double getValue() { return _val; }
 
 
-  void setValues(Object chromosome, Object velocity, HashMap params, HashMap funcParams)
-    throws OptimizerException {
+  void setValues(Object chromosome, Object velocity, 
+		             HashMap params, HashMap funcParams) throws OptimizerException {
     _x = chromosome;
     _v = velocity;
     Chromosome2ArgMakerIntf c2amaker =
@@ -1136,8 +1206,8 @@ class DPSOIndividual {
       _pbval = _val;
     }
   }
-  void setValues(Object chromosome, Object velocity, double val, HashMap params, HashMap funcParams)
-    throws OptimizerException {
+  void setValues(Object chromosome, Object velocity, double val, 
+		             HashMap params, HashMap funcParams) throws OptimizerException {
     _x = chromosome;
     _v = velocity;
 		_val = val;

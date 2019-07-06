@@ -6,6 +6,11 @@ import java.util.*;
  * The class is a wrapper class for FunctionIntf objects, that keeps track of
  * how many times a function has been evaluated, plus it forces threads asking
  * for function evaluation to execute sequentially.
+ * <p>Notes:
+ * <ul>
+ * <li>20190701: modified <CODE>eval()</CODE> to return 
+ * <CODE>Double.MAX_VALUE</CODE> when the underlying function returns NaN.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -37,7 +42,9 @@ public class ReentrantFunctionBase implements FunctionIntf {
    */
   public synchronized double eval(Object arg, HashMap params) {
     ++_evalCount;
-    return _f.eval(arg, params);
+    double y = _f.eval(arg, params);
+		if (Double.isNaN(y)) return Double.MAX_VALUE;  // itc-20190701: fix NaN val
+		return y;
   }
 
 

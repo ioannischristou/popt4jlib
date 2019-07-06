@@ -5,9 +5,14 @@ import java.util.*;
 /**
  * The class is a wrapper class for FunctionIntf objects, that keeps track of
  * how many times a function has been evaluated.
+ * <p>Notes:
+ * <ul>
+ * <li>20190701: modified <CODE>eval()</CODE> to return 
+ * <CODE>Double.MAX_VALUE</CODE> when the underlying function returns NaN.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2017</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 2.0
@@ -45,7 +50,9 @@ public class FunctionBase implements FunctionIntf {
 				return Double.MAX_VALUE;  // stop the function evaluation process
 			++_evalCount;
 		}
-    return _f.eval(arg, params);
+    double y = _f.eval(arg, params);
+		if (Double.isNaN(y)) return Double.MAX_VALUE;  // itc-20190701: fix NaN vals
+		return y;
   }
 
 

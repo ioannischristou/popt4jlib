@@ -21,7 +21,12 @@ public interface FunctionIntf extends Serializable {
    * @param arg Object
    * @param params HashMap
    * @throws IllegalArgumentException if the arg is illegal for the function
-   * @return double
+   * @return double Notice that it is illegal for the function to return 
+	 * <CODE>Double.NaN</CODE>; if the argument is outside the domain of the 
+	 * function definition an <CODE>IllegalArgumentException</CODE> should be
+	 * thrown instead. It is valid though to return 
+	 * <CODE>Double.[POSITIVE|NEGATIVE]_INFINITY</CODE>.
    */
-  public double eval(Object arg, HashMap params) throws IllegalArgumentException;
+  public double eval(Object arg, HashMap params) 
+		throws IllegalArgumentException;
 }

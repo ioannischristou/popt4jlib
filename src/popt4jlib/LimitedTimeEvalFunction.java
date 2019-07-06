@@ -7,9 +7,14 @@ import java.util.*;
  * The class is a wrapper class for FunctionIntf objects, that forces the
  * function to execute in a different thread than the calling thread, allowing
  * only up to a certain amount of time for execution.
+ * <p>Notes:
+ * <ul>
+ * <li>20190701: modified <CODE>FunctionEvaluationTask</CODE> to return 
+ * <CODE>Double.MAX_VALUE</CODE> when the underlying function returns NaN.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
