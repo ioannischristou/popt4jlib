@@ -1,0 +1,16 @@
+class,dga.function,popt4jlib.FunctionInPython,/Users/itc/projects/popt4jlib/PyRos.py,rosenbrock
+dga.chromosomelength,30
+dga.maxallelevalue,30.0
+dga.minallelevalue,-30.0
+dga.cutoffage,50
+dga.varage,10.0
+dga.numgens,20
+dga.numinitpop,10
+dga.poplimit,100
+rndgen,7,1
+dga.numthreads,1
+class,dga.xoverop,popt4jlib.GA.DblArray1PtXOverOp
+dga.xoverprob,0.75
+class,dga.mutationop,popt4jlib.GA.DblVarArray1MAlleleMutationOp
+dga.mutoprate,0.05
+class,dga.randomchromosomemaker,popt4jlib.GA.DblArray1CMaker

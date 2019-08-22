@@ -3,7 +3,6 @@ package tests;
 import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.*;
 import popt4jlib.GA.*;
-import popt4jlib.GradientDescent.*;
 import java.util.*;
 import utils.RndUtil;
 

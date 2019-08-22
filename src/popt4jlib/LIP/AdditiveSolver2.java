@@ -551,7 +551,8 @@ public class AdditiveSolver2 implements Runnable {
 	 * @param current Node
 	 */
 	private void fixSumTestVars(Node current) {
-		IntArray1SparseVector copy = (IntArray1SparseVector) current._x.newInstance();
+		IntArray1SparseVector copy = 
+			(IntArray1SparseVector) current._x.newInstance();
 		int cxnz = copy.getNumNonZeros();
 		for (int j=0; j<cxnz; j++) {
 			int jpos = copy.getIthNonZeroPos(j);
@@ -761,8 +762,6 @@ public class AdditiveSolver2 implements Runnable {
 				if (cn==_m-1) {  // x_j has no upper bound
 					throw new IllegalStateException("Problem cannot be converted to "+
 						                              "Additive Format");
-					//System.err.println("Problem cannot be converted to Additive Format");
-					//format=false;
 				}
 				else {  // _A[cn,j]<0
 					int cni = cn;
@@ -771,7 +770,8 @@ public class AdditiveSolver2 implements Runnable {
 						int k=0;
 						boolean nobsum = false;
 						while (k<=_n-1) {  // or is it _n?
-							double coef = (double)_A.getCoord(cn, k) / (double)_A.getCoord(cn, j);
+							double coef = (double)_A.getCoord(cn, k) / 
+								            (double)_A.getCoord(cn, j);
 							if (k!=j) {
 								if (coef<0) {
 									if (Double.compare(bound[k],-1.0)==0) {
@@ -786,7 +786,8 @@ public class AdditiveSolver2 implements Runnable {
 							if (bound[j]>tbsum ||
 								  Double.compare(bound[j], -1.0)==0) {
 								bound[j]=tbsum;
-								//System.err.println("improving bound for j="+j+" bound="+bound[j]);
+								//System.err.println("improving bound for j="+j+
+								//                   " bound="+bound[j]);
 								pass=true;
 							}
 						}
@@ -884,7 +885,15 @@ public class AdditiveSolver2 implements Runnable {
 	 * initialize the data structures for the solver, reading data from the file
 	 * containing the problem data. Each thread participating in the program
 	 * execution calls this method to read the matrix A and the vector b in its
-	 * own memory.
+	 * own memory. The file must be formatted like this:
+	 * &lt;m&gt; // _m number of constraints (augmented by 1)
+	 * &lt;n&gt; // _n number of variables
+	 * A_[0,.] row 0 values (one line): val1, val2, ... valn
+	 * ...
+	 * A_[m-2,.] row m-2 values (one line): val1, val2, ... valn
+	 * b[0] first constraint rhs value
+	 * ...
+	 * b[m-2] last constraint rhs value
 	 * @param filename String
 	 * @throws Exception
 	 */
@@ -1163,7 +1172,8 @@ public class AdditiveSolver2 implements Runnable {
 			_cstar = computeNode(current, _bbar);
 			/*
 			if (current._id % 10 == 0)  {// itc: HERE rm asap
-				System.err.println("processing node "+current._id +" x="+x+". Remaining #nodes="+ON.getNumOpenNodes());
+				System.err.println("processing node "+current._id +" x="+x+
+			                     ". Remaining #nodes="+ON.getNumOpenNodes());
 			}
 			*/
 			boolean feasible = sumTest(current);
@@ -1233,8 +1243,7 @@ public class AdditiveSolver2 implements Runnable {
 		synchronized (_classLock) {
 			String datafile = args[0];
 			if (args.length>1) {
-				_conversionNeeded =
-                                    args[1].toLowerCase().startsWith("t");
+				_conversionNeeded = args[1].toLowerCase().startsWith("t");
 			}
 			int nt = 1;
 			if (args.length>2) {

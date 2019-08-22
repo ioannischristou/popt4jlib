@@ -1,1 +1,1 @@
-java -Xmx1200m -cp ./dist/popt4jlib.jar;./lib/colt.jar tests.DGATest %1 %2 %3
+java -Xmx1200m -cp ./dist/popt4jlib.jar tests.DGATest %1 %2 %3
