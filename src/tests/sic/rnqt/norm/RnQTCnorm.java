@@ -311,7 +311,7 @@ public class RnQTCnorm implements FunctionIntf {
 	
 	/**
 	 * invoke as 
-	 * <CODE>java -cp &lt;classpath&gt; tests.sic.RnQTCnorm 
+	 * <CODE>java -cp &lt;classpath&gt; tests.sic.rnqt.norm.RnQTCnorm 
 	 * &lt;r&gt; &lt;Q&gt; &lt;T&gt;
 	 * &lt;Kr&gt; &lt;Ko&gt; &lt;L&gt; &lt;&mu;&gt; &lt;&sigma;&gt; 
 	 * &lt;h&gt; &lt;p&gt;</CODE>. 

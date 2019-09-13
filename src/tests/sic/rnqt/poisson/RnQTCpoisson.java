@@ -1,0 +1,167 @@
+package tests.sic.rnqt.poisson;
+
+import popt4jlib.FunctionIntf;
+import popt4jlib.DblArray1Vector;
+import utils.Pair;
+import cern.jet.random.Poisson;
+
+
+/**
+ * function implements the continuous-time long-run expected cost of a periodic
+ * review, single echelon inventory control system facing exogenous demands 
+ * generated in a period of length T, from a Poisson process with parameters 
+ * &lambda;&gt;0. The system faces linear holding and 
+ * backorder costs with cost rates h&gt;0, p&gt;0 and p2&ge;0. It also faces 
+ * fixed costs: 
+ * fixed review cost per period Kr&ge;0, and fixed order cost Ko&ge;0. Finally, 
+ * there is a constant lead-time for each order being placed equal to L&ge;0.
+ * The control parameters then, are r (the reorder point), Q (the batch size),
+ * and T (the review interval).
+ * The code below uses the formulae 5-20, 5-22...5-24, 5-27...5-5-29 and 5-33 
+ * in the Hadley-Whittin (1963) textbook "Analysis of Inventory Systems".
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class RnQTCpoisson implements FunctionIntf {
+	private double _Kr;
+	private double _Ko;
+	double _L;
+	double _lambda;
+	double _h, _p, _p2;
+	
+	/**
+	 * Function sole public constructor.
+	 * @param Kr double
+	 * @param Ko double
+	 * @param L double
+	 * @param lambda double
+	 * @param h double
+	 * @param p double 
+	 * @param p2 double
+	 */
+	public RnQTCpoisson(double Kr, double Ko, double L, 
+		                 double lambda, 
+									   double h, double p, double p2) {
+		_Kr=Kr;
+		_Ko=Ko;
+		_L=L;
+		_lambda=lambda;
+		_h=h;
+		_p=p;
+		_p2=p2;
+	}
+
+	
+	
+	/**
+	 * evaluate the long-run expected cost of a single echelon inventory control
+	 * system facing Poisson demands with linear holding and backorder costs and
+	 * fixed backorder cost as well, and
+	 * fixed review and order costs controlled by (r,nQ,T) periodic review policy.
+	 * @param x double[] representing s, S and T
+	 * @param param HashMap if not null, it may contain value for the Kr parameter
+	 * @return double
+	 * @throws IllegalStateException unchecked if the computations go awry, see
+	 * method <CODE>evalBoth(x)</CODE>.
+	 */
+	public double eval(Object x, java.util.HashMap param) {
+		utils.Pair p = evalBoth(x, param);
+		return ((Double) p.getFirst()).doubleValue();
+	} 
+	
+		
+	/**
+	 * evaluate the long-run expected cost of a single echelon inventory control
+	 * system facing normal demands with linear holding and backorder costs and 
+	 * fixed review and order costs controlled by (r,nQ,T) periodic review policy.
+	 * It returns in a pair of doubles, both the actual value as well as the value
+	 * when the order cost Ko is zero, forming a lower bound on the cost function.
+	 * @param x double[] or popt4jlib.DblArray1Vector representing r, Q and T
+	 * @param param HashMap  // may contain a &lt;"Ko",$val&gt; pair
+	 * @return utils.Pair  // Pair&lt;Double result, Double lowerbound&gt;
+	 * @throws IllegalStateException unchecked if Po is computed outside [0,1] or
+	 * if any number computed turns out to be <CODE>Double.NaN</CODE>.
+	 */
+	utils.Pair evalBoth(Object x, java.util.HashMap param) {
+		double[] xp;
+		if (x instanceof double[]) xp = (double[])x;
+		else xp = ((DblArray1Vector) x).getDblArray1();
+		int s = (int)xp[0];
+		int Q = (int)xp[1];
+		double T = xp[2];
+		double Ko = _Ko;
+		if (param!=null && param.containsKey("Ko")) 
+			Ko = ((Double) param.get("Ko")).doubleValue();
+		Poisson pois = new tests.sic.sST.poisson.Poisson2(1);
+		
+		pois.setMean(_lambda*T);
+		double Po = _lambda*T*pois.cdf(Q-1)/Q + complpoisscdf(pois,Q+1,_lambda*T);
+		
+		double y = (_Kr+Ko*Po)/T + _h*(Q+1)/2.0 + s - _lambda*_L - _lambda*T/2.0;
+		y += (_h+_p)*bP(s,Q,T,_L,_lambda,pois) + _p2*eP(s,Q,T,_L,_lambda,pois);
+		return new Pair(new Double(y), new Double(y-Ko*Po/T));
+	}
+
+	
+	private static double bP(int s, int Q, double T, double L, double lambda, 
+		               Poisson pois) {
+		return (yP(s,T,L,lambda,pois) - yP(s+Q,T,L,lambda,pois))/Q;
+	}
+	
+	
+	private static double yP(int v, double T, double L, double lambda, 
+		                       Poisson pois) {
+		return KsiP(v,T+L,lambda,T,pois) - KsiP(v,L,lambda,T,pois);
+	}
+	
+	
+	private static double KsiP(int v, double t, double lambda, double Tcap,
+		                         Poisson pois) {
+		double z31 = -lambda*v*t*t*complpoisscdf(pois,v,lambda*t) / 
+			           (2.0*Tcap);
+		double z32 = (lambda*lambda)*(t*t*t)*complpoisscdf(pois,v-1,lambda*t) /
+			           (6.0*Tcap);
+		double z33 = v*(v+1)*t*complpoisscdf(pois,v+1,lambda*t) / (2.0*Tcap);
+		double z34 = -v*(v+1)*(v+2)*complpoisscdf(pois,v+2,lambda*t) / 
+			           (6.0*lambda*Tcap);
+		return z31 + z32 + z33 + z34;
+	}
+	
+	
+	private static double eP(int s, int Q, double T, double L, double lambda, 
+		                       Poisson pois) {
+		return (lambdaP(s,T,L,lambda,pois) - lambdaP(s+Q,T,L,lambda,pois)) / Q;
+	}
+	
+	
+	private static double lambdaP(int v, double T, double L, double lambda, 
+		                            Poisson pois) {
+		return (betaP(v,L+T,lambda,pois) - betaP(v,L,lambda,pois))/T;
+	}
+	
+	
+	private static double betaP(int v, double t, double lambda, Poisson pois) {
+		double lt = lambda*t;
+		double w31 = lt*lt*complpoisscdf(pois,v-1,lt)/2.0;
+		double w32 = lt*v*complpoisscdf(pois,v,lt);
+		double w33 = v*(v+1)*complpoisscdf(pois,v+1,lt)/2.0;
+		return w31 - w32 + w33;
+	}
+	
+	
+	private static double complpoisscdf(Poisson pois, int x, double lm) {
+		if (Double.compare(lm, 0.0)<=0) {  // corner case
+			if (x<0) {
+				return 1.0;  // MATLAB poisscdf returns 0
+			}
+			else return 0.0;  // MATLAB poisscdf returns 1 when lm=0, x>=0
+		}
+		pois.setMean(lm);
+		return 1.0 - pois.cdf(x-1);
+	} 
+
+}

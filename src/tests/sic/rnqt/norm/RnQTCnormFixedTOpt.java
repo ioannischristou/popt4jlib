@@ -54,10 +54,16 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 
 	/**
 	 * obtains the global minimum over all R and all Q &ge; 0 of the function 
-	 * <CODE>RnQTCnorm(R,Q,T)</CODE> for the given T&gt;T_min.
+	 * <CODE>RnQTCnorm(R,Q,T)</CODE> for the given T&gt;T_min. Works by 
+	 * incrementing the Q variable at steps of size <CODE>_epsq</CODE>, and for
+	 * each value of Q, solves the convex programming problem in R, using the 
+	 * <CODE>OneDStepQuantumOptimizer</CODE>. The algorithm continues incrementing
+	 * Q until the cost surpasses a lower bound value, in an area in which we are
+	 * guaranteed that the cost function is increasing in Q when taken at the 
+	 * optimal R(Q) for such Q.
 	 * @param func RnQTCnorm instance
-	 * @return Pair  // Pair&lt;double[] x, double copt&gt; where x[0] is s_opt
-	 * and x[1] is q_opt for given _T.
+	 * @return PairObjTwoDouble  // Pair&lt;double[] x, double cb, double lb&gt; 
+	 * where x[0] is s_opt and x[1] is q_opt for given _T.
 	 * @throws OptimizerException 
 	 */
 	public PairObjTwoDouble minimize(FunctionIntf func) 
