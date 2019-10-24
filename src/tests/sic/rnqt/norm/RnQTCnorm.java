@@ -281,6 +281,9 @@ public class RnQTCnorm implements FunctionIntf {
 	 * @param l double mean demand in one period
 	 * @param D double demand variance in one period
 	 * @return double
+	 * @throws IllegalStateException if any of the computations results in 
+	 * <CODE>Double.NaN</CODE>, which can happen when systems with very low 
+	 * variance (sigma) are optimized
 	 */
 	private double Ksi(double r, double tau, double l, double D) {
 		/*
@@ -293,6 +296,10 @@ public class RnQTCnorm implements FunctionIntf {
 			          (l*l*tau*tau*tau/6 - D*D*r/(4*l*l*l) - l*tau*tau*r/2 - 
 			           D*r*r/(4*l*l) + D*tau*tau/4 + tau*r*r/2 - r*r*r/(6*l) - 
 			           D*D*D/(8*l*l*l*l));
+		if (Double.isNaN(z1)) {
+			throw new IllegalStateException("Ksi(r="+r+", tau="+tau+
+				                              ", l="+l+", D="+D+"): z1 is NaN");
+		}
 		double sqrtt3 = Math.pow(tau,1.5);
 		double sqrtD3 = Math.pow(D, 1.5);
 		double sqrtD5 = Math.pow(D, 2.5);
@@ -303,8 +310,16 @@ public class RnQTCnorm implements FunctionIntf {
 			            sqrtD3*sqrtt3/(12*l) + 
 			            sqrtD3*Math.sqrt(tau)*r/(4*l*l) + 
 			            sqrtD5*Math.sqrt(tau)/(4*l*l*l));
+		if (Double.isNaN(z2)) {
+			throw new IllegalStateException("Ksi(r="+r+", tau="+tau+
+				                              ", l="+l+", D="+D+"): z2 is NaN");
+		}
 		double z3 = (1-normcdf((r+l*tau)/Math.sqrt(D*tau)))*
 			          (D*D*D*Math.exp(2*l*r/D)/(8*l*l*l*l));
+		if (Double.isNaN(z3)) {
+			throw new IllegalStateException("Ksi(r="+r+", tau="+tau+
+				                              ", l="+l+", D="+D+"): z3 is NaN");
+		}
 		return z1+z2+z3;
 	}
 	

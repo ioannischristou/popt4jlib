@@ -15,7 +15,6 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RegExTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/norm/RnQTCnorm.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/DGATest.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DataMgr.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1SparseVector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecSingleCltWrkInitSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/TestPoisson.java</file>
@@ -99,8 +98,8 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/ClustererInitIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblVarArray1AlleleMutationOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DActiveMsgPassingCoordinatorLongLivedConnClt.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/ReentrantSocketEvalFunctionBase.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/GMeansMTClustererTest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/ReentrantSocketEvalFunctionBase.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/UnboundedBufferArray.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/PairObjDouble.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/DDE2.java</file>
