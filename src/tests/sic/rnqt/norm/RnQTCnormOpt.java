@@ -1,6 +1,13 @@
 package tests.sic.rnqt.norm;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import java.io.Serializable;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Locale;
 import parallel.TaskObject;
 import parallel.distributed.FailedReply;
 import parallel.distributed.PDBTExecInitNoOpCmd;
@@ -9,8 +16,22 @@ import popt4jlib.FunctionIntf;
 import popt4jlib.OptimizerException;
 import popt4jlib.OptimizerIntf;
 import utils.PairObjDouble;
-import utils.PairObjTwoDouble;
+//import utils.PairObjTwoDouble;
+import utils.PairObjThreeDouble;
 import utils.Messenger;
+// below import needed for visualization of graph of optimal C(T) for various T
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+//import org.jfree.data.time.TimeSeries;
+//import org.jfree.data.time.TimeSeriesCollection;
+//import org.jfree.data.time.Year;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+//import org.jfree.util.ShapeUtilities;
 
 
 /**
@@ -26,6 +47,16 @@ import utils.Messenger;
  * review period for normally distributed demand process) up to a point where
  * the lower-bound on the cost function (namely the cost function with Ko=0)
  * strictly exceeds the best known cost.
+ * <p>Notices:
+ * <ul>
+ * <li>20191025: program produces a visualization of the curve C*(T) for all T
+ * it tries. Also, the same RnQTCnormOpt object can no longer simultaneously
+ * run many different optimization tasks (the method <CODE>minimize()</CODE>
+ * will wait until there are no threads running the same method of the same
+ * object before it starts running itself.) This is because we now need to keep
+ * track of the series of the T-values tried, and their corresponding costs so
+ * we can visualize them in the main program execution.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2018</p>
@@ -53,6 +84,12 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 	 * by default, 8 tasks to be submitted each time to be processed in parallel
 	 */
 	private final int _batchSz;
+
+	
+	private ArrayList _tis;      // used for visualization purposes
+	private ArrayList _ctis;     // again, for visualization purposes only
+	private ArrayList _lbtis;    // guess for what purposes this is...
+	private ArrayList _heurtis;  // or this...
 	
 	private int _numRunning = 0;
 
@@ -76,13 +113,17 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 		_epsT = epsT>0 ? epsT : 0.01;
 		_epsQ = epsQ>0 ? epsQ : 0.1;
 		_epsR = epsR>0 ? epsR : 1.e-4;
+		_tis = new ArrayList();
+		_ctis = new ArrayList();
+		_lbtis = new ArrayList();
+		_heurtis = new ArrayList();
 	}
 	
 	
 	/**
 	 * main class method.
 	 * @param f
-	 * @return
+	 * @return 
 	 * @throws OptimizerException 
 	 */
 	public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
@@ -91,6 +132,14 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 				                           "function of type tests.sic.RnQTCnorm");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
+			while (_numRunning > 0) {
+				try {
+					wait();  // don't proceed while other threads are running minimize()
+				}
+				catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
 			if (_pdclt==null) {
 				mger.msg("RnQTCnormOpt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);
@@ -105,6 +154,10 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 						                           "to submit empty init-cmd to network");
 				}
 			}
+			_tis.clear();
+			_ctis.clear();
+			_lbtis.clear();
+			_heurtis.clear();
 			++_numRunning;
 		}
 		RnQTCnorm rnqtc = (RnQTCnorm) f;
@@ -135,6 +188,14 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
 					RnQTCnormFixedTOpterResult ri = (RnQTCnormFixedTOpterResult) res[i];
+					_tis.add(new Double(ri._T));  // add to tis time-series
+					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+					// also, compute the value of the heuristic:
+					double heur = 
+						ri._C - ri._OC + 
+						rnqtc.getKo()*Math.min(1.0, rnqtc.getMiu()*ri._T / ri._Q) / ri._T;
+					_heurtis.add(new Double(heur));
 					if (Double.compare(ri._LB, c_cur_best)>0) {  // done!
 						mger.msg("RnQTCnormOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
 							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 2);
@@ -148,7 +209,7 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 						mger.msg("RnQTCnormOpt.minimize(f): found new better soln at T="+
 							       t_star+", c="+c_cur_best+" LB@T="+ri._LB, 1);
 					}
-				}
+				}				
 			}
 			catch (Exception e) {
 				e.printStackTrace();
@@ -164,6 +225,29 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 		}
 		double[] x = new double[]{r_star,q_star,t_star};
 		return new PairObjDouble(x,c_cur_best);
+	}
+	
+	
+	/**
+	 * get the time-series from the latest run.
+	 * @return ArrayList[] first element is T-axis values, second is optimal 
+	 * costs, third is lower bound on costs
+	 */
+	public synchronized ArrayList[] getLatestTimeSeries() {
+		while (_numRunning>0) {
+			try {
+				wait();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+		ArrayList[] result = new ArrayList[4];
+		result[0] = _tis;
+		result[1] = _ctis;
+		result[2] = _lbtis;
+		result[3] = _heurtis;
+		return result;
 	}
 	
 	
@@ -251,6 +335,66 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 			System.out.println("R*="+x[0]+" Q*="+x[1]+" T*="+x[2]+" ==> C*="+c);
 			System.out.println("run-time="+dur+" msecs");
 			ropter.terminateServerConnection();
+
+			// finally: now visualize results
+			ArrayList[] xyseries = ropter.getLatestTimeSeries();
+			XYSeriesCollection xyc = new XYSeriesCollection();
+			XYSeries tcs = new XYSeries("C*");
+			XYSeries tlbs = new XYSeries("LB");
+			XYSeries heurs = new XYSeries("Heur");
+			for (int i=0; i<xyseries[1].size(); i++) {
+				tcs.add(((Double)xyseries[0].get(i)).doubleValue(), 
+					      ((Double)xyseries[1].get(i)).doubleValue());
+			}
+			for (int i=0; i<xyseries[2].size(); i++) {
+				tlbs.add(((Double)xyseries[0].get(i)).doubleValue(), 
+					      ((Double)xyseries[2].get(i)).doubleValue());				
+			}
+			for (int i=0; i<xyseries[3].size(); i++) {
+				heurs.add(((Double)xyseries[0].get(i)).doubleValue(), 
+					      ((Double)xyseries[3].get(i)).doubleValue());				
+			}
+			xyc.addSeries(tcs);
+			xyc.addSeries(tlbs);
+			xyc.addSeries(heurs);
+			JFreeChart chart = 
+				ChartFactory.createXYLineChart(
+					"Optimal (r,nQ,T) Cost as Function of T",
+					"T",
+					"Costs",
+					xyc,
+					PlotOrientation.VERTICAL,
+					true, true, false);
+			// customize plot
+			XYPlot plot = (XYPlot) chart.getPlot();
+			XYLineAndShapeRenderer r = (XYLineAndShapeRenderer) plot.getRenderer();
+			//r.setSeriesShape(2, ShapeUtilities.createUpTriangle(5));
+			//r.setSeriesShapesVisible(2, true);
+			//r.setSeriesLinesVisible(2, false);
+			Shape shape  = new Ellipse2D.Double(0,0,3,3);
+			r.setSeriesShape(0, shape);
+			r.setSeriesShapesVisible(0,true);
+			r.setSeriesLinesVisible(0, false);
+			r.setSeriesPaint(2, Color.DARK_GRAY);
+			
+			ChartPanel cp = new ChartPanel(chart);
+			// create new JPanel for each frame we show
+			javax.swing.JPanel _GraphPanel = new javax.swing.JPanel();
+			_GraphPanel.setLayout(new BorderLayout());
+			_GraphPanel.add(cp, BorderLayout.CENTER);  
+			_GraphPanel.validate();
+			_GraphPanel.repaint();
+			// set in a frame and show
+			javax.swing.JFrame plot_frame = new javax.swing.JFrame();
+			plot_frame.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
+			NumberFormat df = NumberFormat.getInstance(Locale.US);
+			df.setGroupingUsed(false);
+			df.setMaximumFractionDigits(2);
+			plot_frame.setTitle("(r,nQ,T) Policy with Normal Demands Plot");
+			plot_frame.add(_GraphPanel);
+			plot_frame.setLocationRelativeTo(null);
+			plot_frame.pack();
+			plot_frame.setVisible(true);						
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -290,15 +434,18 @@ final class RnQTCnormFixedTOptTask implements TaskObject {
 		_curBest = curBest;
 	}
 	
+	
 	public Serializable run() {
 		RnQTCnormFixedTOpt opter = 
 			new RnQTCnormFixedTOpt(_T, _epsQ, _qnot, _epsR, _curBest);
 		RnQTCnormFixedTOpterResult res = null;
 		try {
-			PairObjTwoDouble p = opter.minimize(_f);
+			PairObjThreeDouble p = opter.minimize(_f);
 			double[] x = (double[]) p.getArg();
 			res = new RnQTCnormFixedTOpterResult(_T, x[0], x[1], 
-				                                   p.getDouble(), p.getSecondDouble());
+				                                   p.getDouble(), 
+				                                   p.getSecondDouble(),
+			                                     p.getThirdDouble());
 			return res;
 		}
 		catch (Exception e) {
@@ -306,6 +453,7 @@ final class RnQTCnormFixedTOptTask implements TaskObject {
 			return new FailedReply();
 		}
 	}
+	
 	
   /**
    * always throws.
@@ -344,14 +492,16 @@ final class RnQTCnormFixedTOpterResult implements Serializable {
 	public final double _Q;
 	public final double _C;
 	public final double _LB;
+	public final double _OC;  // the order cost component of the total cost
 	
 	public RnQTCnormFixedTOpterResult(double T, double R, double Q, 
-		                                double c, double lb) {
+		                                double c, double lb, double oc) {
 		_T = T;
 		_Q = Q;
 		_R = R;
 		_C = c;
 		_LB = lb;
+		_OC = oc;
 	}
 }
 

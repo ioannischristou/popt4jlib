@@ -5,9 +5,10 @@ import popt4jlib.FunctionIntf;
 import popt4jlib.OptimizerException;
 import popt4jlib.DblArray1Vector;
 import popt4jlib.GradientDescent.OneDStepQuantumOptimizer;
-import utils.PairObjDouble;
+//import utils.PairObjDouble;
 import utils.Pair;
-import utils.PairObjTwoDouble;
+import utils.PairObjThreeDouble;
+//import utils.PairObjTwoDouble;
 
 
 /**
@@ -54,7 +55,7 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 
 	/**
 	 * obtains the global minimum over all R and all Q &ge; 0 of the function 
-	 * <CODE>RnQTCnorm(R,Q,T)</CODE> for the given T&gt;T_min. Works by 
+	 * <CODE>RnQTCnorm(R,Q,T)</CODE> for the given T&ge;T_min. Works by 
 	 * incrementing the Q variable at steps of size <CODE>_epsq</CODE>, and for
 	 * each value of Q, solves the convex programming problem in R, using the 
 	 * <CODE>OneDStepQuantumOptimizer</CODE>. The algorithm continues incrementing
@@ -62,11 +63,11 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 	 * guaranteed that the cost function is increasing in Q when taken at the 
 	 * optimal R(Q) for such Q.
 	 * @param func RnQTCnorm instance
-	 * @return PairObjTwoDouble  // Pair&lt;double[] x, double cb, double lb&gt; 
-	 * where x[0] is s_opt and x[1] is q_opt for given _T.
+	 * @return PairObjThreeDouble  // Pair&lt;double[] x, double cb, double lb,
+	 * double oc&gt; where x[0] is s_opt and x[1] is q_opt for given _T.
 	 * @throws OptimizerException 
 	 */
-	public PairObjTwoDouble minimize(FunctionIntf func) 
+	public PairObjThreeDouble minimize(FunctionIntf func) 
 		throws OptimizerException {
 		if (!(func instanceof RnQTCnorm))
 			throw new OptimizerException("RnQTCnormFixedTOpt.minimize(function): "+
@@ -75,8 +76,6 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 		OneDStepQuantumOptimizer onedopter = new OneDStepQuantumOptimizer();
 		double Q = _qnot;
 		double copt = Double.POSITIVE_INFINITY;
-		double _qopt = Double.NaN;
-		double _sopt = Double.NaN;
 		double s0 = (f._L + _T)*f._mi;
 		double lb = -100.0*(f._mi*_T + 10.0*f._sigma*Math.sqrt(_T));
 		double ub = +100.0*(f._mi*_T + 10.0*f._sigma*Math.sqrt(_T));
@@ -87,6 +86,7 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 		x0[0]=s0; x0[1]=_qnot; x0[2]=_T;
 		double[] x_best = new double[2];  // {s,Q}
 		double lb_q = 0;
+		double ordct = Double.NaN;
 		double lbopt = Double.NaN;
 		while (lb_q<=Math.min(_curBest,copt)) {
 			Pair p = null;
@@ -100,21 +100,38 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 			double y_q = ((Double) p.getSecond()).doubleValue();
 			x0[0] = ((Double)p.getFirst()).doubleValue();
 			Pair pv = f.evalBoth(x0);  // needless 2nd evaluation just to get lb
+			if (Double.compare(((Double)pv.getFirst()).doubleValue(), y_q)!=0) {
+				// insanity
+				throw new IllegalStateException("y_q="+y_q+" but pv="+pv+"?");
+			}
 			lb_q = ((Double)pv.getSecond()).doubleValue();
 			if (Double.compare(y_q, copt)<0) {
 				copt = y_q;
-				lbopt = lb_q;
+				ordct = y_q - lb_q;
+				// lbopt = lb_q;  // the best lower-bound is not necessarily here
 				x_best[0] = ((Double)p.getFirst()).doubleValue();
 				x_best[1] = x0[1];
 				if (Double.compare(copt, _curBest)<0) _curBest = copt;
 			}
+			if (Double.compare(lb_q, lbopt)<0) {  // update lbopt
+				lbopt = lb_q;
+			}
 			x0[1] += _epsq;
 		}
-		PairObjTwoDouble pod = new PairObjTwoDouble(x_best, copt, lbopt);
+		PairObjThreeDouble pod = new PairObjThreeDouble(x_best, copt, lbopt, ordct);
 		return pod;
 	}
 	
 	
+	/**
+	 * test-driver for the class. Invoke as:
+	 * <CODE>
+	 * java -cp &lt;classpath&gt; tests.sic.rnqt.norm.RnQTCnormFixedTOpt 
+	 * &lt;T&gt; &lt;Kr&gt; &lt;Ko&gt; &lt;L&gt; &lt;&mu;&gt; &lt;&sigma;&gt;
+	 * &lt;h&gt; &lt;p&gt;
+	 * </CODE>.
+	 * @param args 
+	 */
 	public static void main(String[] args) {
 		final double epsq = 0.1;
 		final double qnot = 1.e-8;
@@ -131,10 +148,13 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 		RnQTCnorm f = new RnQTCnorm(Kr,Ko,L,mi,sigma,h,p);
 		RnQTCnormFixedTOpt opt2D = new RnQTCnormFixedTOpt(T,epsq,qnot,epss,curbst);
 		try {
-			PairObjDouble bp = opt2D.minimize(f);
+			PairObjThreeDouble bp = opt2D.minimize(f);
 			double[] xbest = (double[]) bp.getArg();
 			double ybest = bp.getDouble();
-			System.out.println("R*="+xbest[0]+" Q*="+xbest[1]+" C*("+T+")="+ybest);
+			double lbbest = bp.getSecondDouble();
+			double ordct = bp.getThirdDouble();
+			System.out.println("R*="+xbest[0]+" Q*="+xbest[1]+" C*("+T+")="+ybest+
+				                 " LB*("+T+")="+lbbest+" FixedOrderCost("+T+")="+ordct);
 		}
 		catch (Exception e) {
 			e.printStackTrace();

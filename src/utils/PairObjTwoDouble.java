@@ -18,7 +18,7 @@ package utils;
  * @version 1.0
  */
 public class PairObjTwoDouble extends PairObjDouble {
-	private double _secondVal;
+	double _secondVal;
 	
 	
 	public PairObjTwoDouble(Object arg, double val, double secondval) {
@@ -68,6 +68,16 @@ public class PairObjTwoDouble extends PairObjDouble {
 		if (comp!=0) return comp;
 		else return Double.compare(_secondVal, c._secondVal);
   }
+	
+	
+	/**
+	 * return a String showing the 3 data members of this object.
+	 * @return String
+	 */
+	public String toString() {
+		String str = "(arg="+_arg+", firstVal="+_val+", secondVal="+_secondVal+")";
+		return str;
+	}
 	
 }
 

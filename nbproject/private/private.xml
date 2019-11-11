@@ -42,6 +42,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionBase.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/FastDblArray1ArgMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DebugNR.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/PairObjThreeDouble.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DObjectsCacheSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionEvaluationTask.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionInPython.java</file>
@@ -115,6 +116,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/Debug.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/KDDCup992NumericCSVFileFormatConverter.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1Vector2DblArray1AdapterFunction.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/Pair.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecInitedClt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/AckleyFunction.java</file>

@@ -22,13 +22,13 @@ import cern.jet.random.Normal;
  * @version 1.0
  */
 public class RnQTCnorm implements FunctionIntf {
-	private double _Kr;
-	private double _Ko;
-	double _L;
-	double _mi;
-	double _sigma;
-	private double _h;
-	private double _p;
+	final private double _Kr;
+	final private double _Ko;
+	final double _L;
+	final double _mi;
+	final double _sigma;
+	final private double _h;
+	final private double _p;
 	private final static Normal _norm = new Normal(0,1,null);  // _norm always 
 	                                                           // available, even
 	                                                           // after being
@@ -143,14 +143,22 @@ public class RnQTCnorm implements FunctionIntf {
 					          " mi="+_mi+" sigma="+_sigma+" h="+_h+" p="+_p;
 				throw new IllegalStateException(exc+" --> B is "+B);				
 			}
-			double y = (_Kr+_Ko)/T + H1 + (_h+_p)*B;
+			// itc-20191025: remove Q-contribution (shouldn't affect costs) unless
+			// _h is too big ...
+			H1 = _h*(s - _mi*_L - _mi*T/2.0);  // holding costs for (R,T): NO Q/2
+			double lb = _Kr/T + H1 + (_h+_p)*B;
+			double y = lb + _Ko/T;
+			// itc-20191025: compute y by adding to lb instead
+			// double y = (_Kr+_Ko)/T + H1 + (_h+_p)*B;
 			if (Double.isNaN(y) || Double.isInfinite(y)) {
 				String exc ="<R="+s+",Q="+Q+",T="+T+">: "+
 					          "Kr="+_Kr+" Ko="+_Ko+" L="+_L+
 					          " mi="+_mi+" sigma="+_sigma+" h="+_h+" p="+_p;
 				throw new IllegalStateException(exc+" --> y is "+y);
 			}
-			return new utils.Pair(new Double(y), new Double(y-_Ko/T));
+			//return new utils.Pair(new Double(y), new Double(y-_Ko/T));
+			// itc-20191025: used to be as above when there was no lb computation here
+			return new utils.Pair(new Double(y), new Double(lb));
 		}
 		// compute full (R,nQ,T) policy cost
 		double K1 = Ksi(s,_L+T,_mi,D);
@@ -197,6 +205,33 @@ public class RnQTCnorm implements FunctionIntf {
 		return new utils.Pair(new Double(y), new Double(lb));
 	} 
 
+	
+	/**
+	 * return the value of the fixed review cost for this function.
+	 * @return double
+	 */
+	double getKr() {
+		return _Kr;
+	}
+	
+	
+	/**
+	 * return the value of the fixed ordering cost for this function.
+	 * @return double
+	 */
+	double getKo() {
+		return _Ko;
+	}
+	
+	
+	/**
+	 * return the mean value of the demand for this function.
+	 * @return double
+	 */
+	double getMiu() {
+		return _mi;
+	}
+	
 	
 	/**
 	 * evaluate the function &phi;(x) ie the pdf of the normal distribution N(0,1)
@@ -317,8 +352,21 @@ public class RnQTCnorm implements FunctionIntf {
 		double z3 = (1-normcdf((r+l*tau)/Math.sqrt(D*tau)))*
 			          (D*D*D*Math.exp(2*l*r/D)/(8*l*l*l*l));
 		if (Double.isNaN(z3)) {
-			throw new IllegalStateException("Ksi(r="+r+", tau="+tau+
-				                              ", l="+l+", D="+D+"): z3 is NaN");
+			// try taking the logs of the above expression before giving up
+			double logz3 = Math.log(1-normcdf((r+l*tau)/Math.sqrt(D*tau)));
+			logz3 += 3*Math.log(D);
+			logz3 += 2*l*r/D;
+			logz3 -= (4*Math.log(l) + Math.log(8));
+			if (Double.isNaN(logz3)) {
+				throw new IllegalStateException("Ksi(r="+r+", tau="+tau+
+					                              ", l="+l+", D="+D+"): log(z3) is NaN");
+			}
+			z3 = Math.exp(logz3);
+			if (Double.isNaN(z3)) {  // still fails
+				throw new IllegalStateException("Ksi(r="+r+", tau="+tau+
+					                              ", l="+l+", D="+D+"): z3 is NaN");
+				
+			}
 		}
 		return z1+z2+z3;
 	}
