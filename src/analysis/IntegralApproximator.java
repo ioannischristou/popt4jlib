@@ -20,7 +20,7 @@ public class IntegralApproximator implements FunctionIntf {
 
   /**
    * public constructor.
-   * @param f FunctionIntf
+   * @param f FunctionIntf must accept VectorIntf objects as argument
    * @param params HashMap may contain the following pairs:
 	 * <ul>
    * <li> &lt;"integralapproximator.eps", Double eps&gt; if present specifies the required

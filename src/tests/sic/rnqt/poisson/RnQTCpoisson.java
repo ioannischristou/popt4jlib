@@ -62,7 +62,8 @@ public class RnQTCpoisson implements FunctionIntf {
 	 * system facing Poisson demands with linear holding and backorder costs and
 	 * fixed backorder cost as well, and
 	 * fixed review and order costs controlled by (r,nQ,T) periodic review policy.
-	 * @param x double[] representing s, S and T
+	 * @param x double[] representing r (order up-to), Q (batch size) and T 
+	 * (review period)
 	 * @param param HashMap if not null, it may contain value for the Kr parameter
 	 * @return double
 	 * @throws IllegalStateException unchecked if the computations go awry, see
@@ -76,7 +77,7 @@ public class RnQTCpoisson implements FunctionIntf {
 		
 	/**
 	 * evaluate the long-run expected cost of a single echelon inventory control
-	 * system facing normal demands with linear holding and backorder costs and 
+	 * system facing Poisson demands with linear holding and backorder costs and 
 	 * fixed review and order costs controlled by (r,nQ,T) periodic review policy.
 	 * It returns in a pair of doubles, both the actual value as well as the value
 	 * when the order cost Ko is zero, forming a lower bound on the cost function.
@@ -164,4 +165,47 @@ public class RnQTCpoisson implements FunctionIntf {
 		return 1.0 - pois.cdf(x-1);
 	} 
 
+	
+	/**
+	 * invoke as 
+	 * <CODE>java -cp &lt;classpath&gt; tests.sic.rnqt.poisson.RnQTCpoisson
+	 * &lt;r&gt; &lt;Q&gt; &lt;T&gt;
+	 * &lt;Kr&gt; &lt;Ko&gt; &lt;L&gt; &lt;&lambda;&gt;
+	 * &lt;h&gt; &lt;p&gt; [p2(0)]</CODE>. 
+	 * The constraints on the variables and parameters values are as follows:
+	 * <ul>
+	 * <li>T&gt;0
+	 * <li>&lambda;&gt;0
+	 * <li>p_l&gt;0
+	 * <li>h&gt;0
+	 * <li>p&gt;0
+	 * <li>p2&ge;0
+	 * </ul>
+	 * All numbers (except r) must be non-negative. The reorder point variable r
+	 * may take any integer value; the batch size Q may take any positive integer
+	 * value.
+	 * @param args String[]
+	 */
+	public static void main(String[] args) {
+		int r = Integer.parseInt(args[0]);
+		int Q = Integer.parseInt(args[1]);
+		double T = Double.parseDouble(args[2]);
+		double Kr = Double.parseDouble(args[3]);
+		double Ko = Double.parseDouble(args[4]);
+		double L = Double.parseDouble(args[5]);
+		double lambda = Double.parseDouble(args[6]);
+		double h = Double.parseDouble(args[7]);
+		double p = Double.parseDouble(args[8]);
+		double p2 = 0.0;
+		if (args.length>9) p2 = Double.parseDouble(args[9]);
+		RnQTCpoisson cc = new RnQTCpoisson(Kr,Ko,L,lambda,h,p,p2);
+		double[] x = new double[]{r,Q,T};
+		long start = System.currentTimeMillis();
+		double val = cc.eval(x, null);
+		long dur = System.currentTimeMillis()-start;
+		System.out.println("y = "+val);
+		System.out.println("duration="+dur+" msecs");
+	}
+
 }
+
