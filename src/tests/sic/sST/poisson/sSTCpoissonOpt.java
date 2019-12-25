@@ -271,7 +271,7 @@ final class sSTCpoissonFixedTOptTask implements TaskObject {
 	
 	public Serializable run() {
 		sSTCpoissonFixedTOpt opter = 
-			new sSTCpoissonFixedTOpt(_T, _curBest);
+			new sSTCpoissonFixedTOpt(_T);
 		sSTCpoissonFixedTOpterResult res = null;
 		try {
 			PairObjTwoDouble p = opter.minimize(_f);

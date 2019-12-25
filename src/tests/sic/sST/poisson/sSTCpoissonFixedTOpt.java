@@ -29,7 +29,6 @@ import utils.PairObjTwoDouble;
 public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 	private double _T;
 	
-	private double _curBest;
 	private static ThreadLocal _tlpois = new ThreadLocal() {
 		protected Object initialValue() {
 			return null;
@@ -39,12 +38,9 @@ public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 	/**
 	 * sole public constructor.
 	 * @param T double the given review period
-	 * @param currentMinVal double the best currently known value of the total 
-	 * cost, may be <CODE>Double.POSITIVE_INFINITY</CODE> as default.
 	 */
-	public sSTCpoissonFixedTOpt(double T, double currentMinVal) {
+	public sSTCpoissonFixedTOpt(double T) {
 		_T = T;
-		_curBest = currentMinVal;
 	}
 	
 
@@ -189,7 +185,6 @@ public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 	
 	
 	public static void main(String[] args) {
-		final double curbst = Double.POSITIVE_INFINITY;
 		double T = Double.parseDouble(args[0]);
 		double Kr = Double.parseDouble(args[1]);
 		double Ko = Double.parseDouble(args[2]);
@@ -199,7 +194,7 @@ public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 		double p = Double.parseDouble(args[6]);
 		double p2 = args.length>7 ? Double.parseDouble(args[7]) : 0.0;
 		sSTCpoisson f = new sSTCpoisson(Kr,Ko,L,lambda,h,p,p2);
-		sSTCpoissonFixedTOpt opt2D = new sSTCpoissonFixedTOpt(T,curbst);
+		sSTCpoissonFixedTOpt opt2D = new sSTCpoissonFixedTOpt(T);
 		try {
 			PairObjDouble bp = opt2D.minimize(f);
 			double[] xbest = (double[]) bp.getArg();
