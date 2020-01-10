@@ -30,10 +30,18 @@ import java.io.Serializable;
  * <li> 2017-02-10: The class is made serializable so that it can be used with
  * <CODE>graph.packing.DBBNode*</CODE> to store the node-ids of a partial soln
  * instead of using expensive HashSet's.
+ * <li> 2019-12-31: added method <CODE>reqSize()</CODE> that returns the 
+ * original number of bits requested when the vector was constructed; this can
+ * be useful when one wants to know the original number of bits requested as
+ * capacity of this vector, as the <CODE>capacity()</CODE> method will almost
+ * always return a larger number. Added supporting field 
+ * <CODE>_numBitsRequested</CODE>. Notice that it's still possible to set bits
+ * larger than the max. number of bits requested in the bit-vector, if the 
+ * capacity of the bit-vector allows it.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2017</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -42,6 +50,8 @@ public class BoolVector implements Serializable, Comparable {
   private final static int _MIN_CAPACITY_REQD_4_PARALLEL_OP = 1000000;
   private final static int _NUM_THREADS = 4;
   private long[] _data;
+	private int _numBitsRequested = -1;  // the size in bits requested during
+	                                     // construction or after resize(n)
   private int _numSetBits = -1; // cache to cardinality
 	private int _lastSetBit = -1;  // cache to last set bit
 
@@ -75,6 +85,7 @@ public class BoolVector implements Serializable, Comparable {
   public BoolVector(int sizeinbits) {
     _data = new long[ (sizeinbits + 63) / 64];
     _numSetBits = 0;
+		_numBitsRequested = sizeinbits;
   }
 
 
@@ -122,6 +133,7 @@ public class BoolVector implements Serializable, Comparable {
     for (int i = 0; i < _data.length; i++) _data[i] = other._data[i];
 		_numSetBits = other._numSetBits;
 		_lastSetBit = other._lastSetBit;
+		_numBitsRequested = other._numBitsRequested;
   }
 
 
@@ -136,7 +148,10 @@ public class BoolVector implements Serializable, Comparable {
 
 
   /**
-   * copy the contents of the other BoolVector into this object.
+   * copy the contents of the other BoolVector into this object. It also copies
+	 * the field <CODE>_numBitsRequested</CODE>, so that the 
+	 * <CODE>reqSize()</CODE> method of this object returns the same answer as the
+	 * object being copied.
    * @param other BoolVector
    * @throws IllegalArgumentException if the argument is of different size than
    * this.
@@ -151,6 +166,7 @@ public class BoolVector implements Serializable, Comparable {
     }
     _numSetBits = other._numSetBits;
 		_lastSetBit = other._lastSetBit;
+		_numBitsRequested = other._numBitsRequested;
   }
 
 
@@ -161,10 +177,20 @@ public class BoolVector implements Serializable, Comparable {
   public int capacity() {
     return _data.length * 64;
   }
+	
+	
+	/**
+	 * return the requested size in number of bits.
+	 * @return int
+	 */
+	public int reqSize() {
+		return _numBitsRequested;
+	}
 
 
   /**
-   * resize this vector to hold at least as many bits as the argument.
+   * resize this vector to hold at least as many bits as the argument. Sets the
+	 * <CODE>_numBitsRequested</CODE> field accordingly.
    * @param sizeinbits int
    */
   public void resize(int sizeinbits) {
@@ -175,6 +201,7 @@ public class BoolVector implements Serializable, Comparable {
       _data = tmp;
       // _numSetBits = -1;  // no reason invalidate cache
     }
+		_numBitsRequested = sizeinbits;  // update size information
   }
 
 
@@ -469,15 +496,16 @@ public class BoolVector implements Serializable, Comparable {
 
 	/**
 	 * returns true if and only if the <CODE>_data</CODE> data members of this
-	 * vector and the argument are exactly equal, both in length, and in element
-	 * values.
+	 * vector and the argument are exactly equal, both in length, in element
+	 * values, and in number of requested bits as well.
 	 * @param o Object  // must be BoolVector
 	 * @return boolean
 	 */
 	public boolean equals(Object o) {
 		if (o instanceof BoolVector == false) return false;
 		BoolVector other = (BoolVector) o;
-		if (_data.length != other._data.length) return false;
+		if (_data.length != other._data.length ||
+			  _numBitsRequested != other._numBitsRequested) return false;
 		for (int i=0; i<_data.length; i++) {
 			if (_data[i]!=other._data[i]) return false;
 		}
@@ -498,7 +526,8 @@ public class BoolVector implements Serializable, Comparable {
 	/**
 	 * element-wise comparison between two bit-vectors. empty vector comes first.
 	 * If the argument has different size, then assuming the common data are the
-	 * same, the vector with the less data-length comes first.
+	 * same, the vector with the less data-length comes first. If data are the
+	 * same, then the <CODE>_numBitsRequested</CODE> also comes into play.
 	 * @param o Object  // BoolVector
 	 * @return int -1 if this vector comes before o in element-wise number order,
 	 * 0 if they are the same
@@ -513,10 +542,16 @@ public class BoolVector implements Serializable, Comparable {
 			if (comp!=0) return comp;
 		}
 		// check lengths
-                int dlen = _data.length;
-                int olen = other._data.length;
-                int cmp = dlen < olen ? -1 : (dlen==olen ? 0 : 1);
-		return cmp; // Integer.compare(_data.length,other._data.length);
+    int dlen = _data.length;
+    int olen = other._data.length;
+    int cmp = dlen < olen ? -1 : (dlen==olen ? 0 : 1);
+		// Integer.compare(_data.length,other._data.length);
+		if (cmp!=0) return cmp;
+		// compare _numBitsRequested
+		int nbreq = _numBitsRequested;
+		int onbreq = other._numBitsRequested;
+		cmp = nbreq < onbreq ? -1 : (nbreq==onbreq ? 0 : 1);
+		return cmp;
 	}
 
 
@@ -531,6 +566,7 @@ public class BoolVector implements Serializable, Comparable {
 			result += "d["+i+"]="+_data[i];
 			if (i>0) result += ",";
 		}
+		result += " numReqBits="+_numBitsRequested;
 		result += "]";
 		return result;
 	}

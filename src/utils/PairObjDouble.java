@@ -3,9 +3,14 @@ package utils;
 /**
  * utility class with the same semantics as PairIntDouble except the first (key)
  * object in a PairObjDouble can be any Object.
+ * Notes:
+ * <ul>
+ * <li> 20191227: modified <CODE>hashCode()</CODE> to work according to Bloch's
+ * suggestions.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -63,12 +68,18 @@ public class PairObjDouble implements Comparable {
 
 
   /**
-   * as in PairIntDouble
+   * as in PairIntDouble, only use the <CODE>_val</CODE> field for the hash-code
+	 * computation.
    * @return int
    */
   public int hashCode() {
     if (Double.isNaN(_val)) return 0;  // guard against NAN value
-    return (int) Math.floor(_val);
+    // return (int) Math.floor(_val);
+		int result = 17;
+		long tmplvl = Double.doubleToLongBits(_val);
+		int c = (int)(tmplvl ^ (tmplvl >>> 32));
+		result = 31*result + c;
+		return result;		
   }
 
 

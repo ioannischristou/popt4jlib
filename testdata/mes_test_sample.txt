@@ -1,0 +1,8 @@
+# 4 vars, 3 rules, 4 insts
+4 3 4
+rvar 0 0 1 
+rvar 1 1 2
+rvar 2 1 2 3
+rinst 0 0
+rinst 1 0 2
+rinst 2 1 3

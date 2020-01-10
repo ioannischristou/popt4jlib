@@ -36,10 +36,17 @@ import java.io.Serializable;
  * <li>2019-01-03: inner class FailedExecutionResult moved out, to be able to be
  * serialized and thus transferred between workers and servers (and eventually,
  * back to clients).
+ * <li>2020-01-07: added throttling functionality to reduce the number of active
+ * threads in the thread-pool of this executor, which can be useful in long-
+ * running processes that we want to keep on running, but after some point we 
+ * may wish to reduce the resources dedicated to this process (so that the 
+ * machine is not over-worked, or so as to run some other demanding process 
+ * etc.) However, the throttling-down is undone as soon as the 
+ * <CODE>executeTaskOnAllThreads(task)</CODE> method is called.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2019</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.1
@@ -218,8 +225,9 @@ public final class PDBatchTaskExecutor {
 
 	/**
 	 * executes the task passed as parameter on each thread in this executor's
-	 * thread-pool. The threads will execute the task concurrently, so if 
-	 * sequential execution is needed, the task must be properly synchronized.
+	 * thread-pool, regardless of whether the thread is sleeping or not. The 
+	 * threads will execute the task concurrently, so if sequential execution is 
+	 * needed, the task must be properly synchronized.
 	 * Useful when a special-command (such as a request for all threads to load or 
 	 * update some data) must be issued to the executor. As the 
 	 * <CODE>executeBatch(tasks)</CODE> method, this method executes synchronously 
@@ -258,6 +266,11 @@ public final class PDBatchTaskExecutor {
 		// below is not possible (will not work correctly as there will be in 
 		// general problems on the id waited on on the back-channel in the 
 		// same-loop case).
+		// first, awaken every thread, sleeping or not
+		final int numthreads = _threads.length;
+		for (int i=0; i<numthreads; i++) {
+			_threads[i].awake();
+		}
 		TreeSet ids = new TreeSet();
 		for (int i=0; i<_threads.length; i++) {
 			int id = getNextId();
@@ -298,6 +311,11 @@ public final class PDBatchTaskExecutor {
     if (_isRunning==false)
       throw new ParallelException("shutDown() has been called already");
     final int numthreads = _threads.length;
+		// first, wake up any sleeping beauties
+		for (int i=0; i<numthreads; i++) {
+			_threads[i].awake();
+		}
+		// next, shut all threads down
     for (int i=0; i<numthreads; i++) {
       _threads[i].stopRunning();
       MsgPassingCoordinator.getInstance("PDBatchTaskExecutor"+_id).
@@ -313,6 +331,34 @@ public final class PDBatchTaskExecutor {
 		}
     return;
   }
+	
+	
+	/**
+	 * put a number of threads in this thread-pool to sleep until the end of 
+	 * computations (ie until <CODE>shutDown()</CODE> is called.)
+	 * @param numThreads int the number of threads to put to sleep.
+	 * @throws ParallelException if this executor is no longer alive
+	 */
+	public synchronized void throttleDown(int numThreads) 
+		throws ParallelException {
+    if (_isRunning==false)
+      throw new ParallelException("shutDown() has been called already");
+    final int totnumthreads = _threads.length;
+		// next, put to sleep up to numThreads, leaving at least one thread awake
+    int totnumthreads_awake = 0;
+		for (int i=0; i<totnumthreads; i++) {
+			if (!_threads[i].isSleeping()) ++totnumthreads_awake;
+		}
+		int count = Math.min(numThreads,totnumthreads_awake-1);
+		for (int i=0; i<totnumthreads && count>0; i++) {
+      if (!_threads[i].isSleeping()) {
+				--count;
+				MsgPassingCoordinator.getInstance("PDBatchTaskExecutor"+_id).
+																sendDataBlocking(getNextId(), 
+																	               new SleepingPill());
+			}
+    }		
+	}
 
 
   /**
@@ -386,7 +432,7 @@ public final class PDBatchTaskExecutor {
 	 * executor's thread-pool. Not part of the public API.
 	 * <p>Title: popt4jlib</p>
 	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
-	 * <p>Copyright: Copyright (c) 2011</p>
+	 * <p>Copyright: Copyright (c) 2011-2020</p>
 	 * <p>Company: </p>
 	 * @author Ioannis T. Christou
 	 * @version 1.0
@@ -396,6 +442,8 @@ public final class PDBatchTaskExecutor {
 		private PDBatchTaskExecutor _e;  // unnecessary now
 		private boolean _doRun=true;
 		private int _id;
+		private boolean _sleeping = false;
+		
 
 		/**
 		 * sole constructor.
@@ -417,7 +465,10 @@ public final class PDBatchTaskExecutor {
 		 * "PDBatchTaskExecutor$id$ message-passing queue, executes them, and sends
 		 * the same task object on the "back-channel" as acknowledgement of 
 		 * execution. If it encounters a <CODE>PoissonPill</CODE> object, the method
-		 * returns.
+		 * returns; if it encounters a <CODE>SleepingPill</CODE> object, the method
+		 * sets the <CODE>_sleeping</CODE> field, and enters the waiting state until
+		 * the outer-object <CODE>shutDown()</CODE> method, wakes the thread up
+		 * again so as to kill it!.
 		 */
 		public void run() {
 			final int pdbteid = _e.getObjId();
@@ -441,6 +492,19 @@ public final class PDBatchTaskExecutor {
 							mpc_bak.sendDataBlocking(id, -1, result);
 						}
 						else if (data instanceof PoissonPill) break;  // done
+						else if (data instanceof SleepingPill) {  // go to sleep until end
+							synchronized (this) {
+								_sleeping = true;
+								while (_sleeping) {
+									try {
+										wait();
+									}
+									catch (InterruptedException e) {  // recommended but useless
+										Thread.currentThread().interrupt();
+									}
+								}
+							}
+						}
 						else throw new ParallelException("data object cannot be run");
 					}
 					catch (Exception e) {
@@ -461,6 +525,17 @@ public final class PDBatchTaskExecutor {
 
 		private synchronized boolean isRunning() { return _doRun; }
 
+		
+		private synchronized boolean isSleeping() { return _sleeping; }
+		
+		
+		private synchronized void awake() {
+			if (_sleeping) {
+				_sleeping = false;
+				notify();
+			}
+		}
+		
 
 		private static synchronized int getNextId(PDBatchTaskExecutor e) {
 			// this method must be the same as the one in PDBatchTaskExecutor
@@ -480,6 +555,15 @@ public final class PDBatchTaskExecutor {
 	 */
 	class PoissonPill {
 		// denotes end of computations for receiving thread
+	}
+
+
+	/**
+	 * empty inner-class represents command for putting a thread to sleep. 
+	 * Not part of the public API.
+	 */
+	class SleepingPill {
+		// denotes "goto-sleep until end" for receiving thread
 	}
 
 }

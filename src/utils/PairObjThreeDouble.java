@@ -5,6 +5,10 @@ package utils;
  * <CODE>tests.sic</CODE> package to return the optimal value of a function
  * as well as a lower bound of it and the fixed ordering costs at the optimal
  * review period.
+ * Notes:
+ * <ul>
+ * <li> 20191227: added <CODE>hashCode()</CODE> method.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2019</p>
@@ -47,6 +51,25 @@ public class PairObjThreeDouble extends PairObjTwoDouble {
       return false;
     }
   }
+	
+
+	/**
+	 *  computes the hash-code according to Joshua Bloch's suggestions.
+	 * @return int
+	 */
+	public int hashCode() {
+		int result = 17;
+		long tmplvl = Double.doubleToLongBits(_val);
+		int c = (int)(tmplvl ^ (tmplvl >>> 32));
+		result = 31*result + c;
+		tmplvl = Double.doubleToLongBits(_secondVal);
+		c = (int) (tmplvl ^ (tmplvl >>> 32));
+		result = 31*result + c;
+		tmplvl = Double.doubleToLongBits(_thirdVal);
+		c = (int) (tmplvl ^ (tmplvl >>> 32));
+		result = 31*result + c;
+		return result;		
+	}
 
 
   /**

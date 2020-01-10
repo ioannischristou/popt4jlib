@@ -13,9 +13,14 @@ import java.io.Serializable;
  * objects in the pool, otherwise, the pool will soon be exhausted, and when
  * new objects are needed, a call to <CODE>new PairIntDouble(i,val)</CODE> will
  * occur each time afterwards.
+ * Notes:
+ * <ul>
+ * <li> 20191227: modified <CODE>hashCode()</CODE> to work according to Bloch's
+ * recommendations.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -105,13 +110,21 @@ public class PairIntDouble implements Comparable, Serializable {
 
 
   /**
-   * returns the value <CODE>Math.floor(this._val)</CODE>
+   * returns the hash-code computed according to Joshua Bloch's suggestions in 
+	 * "Effective Java 2".
    * @return int
    */
   public int hashCode() {
     if (Double.isNaN(_val) || Double.isInfinite(_val))
       return 0;  // guard against NAN or infinity values
-    return (int) Math.floor(_val);
+    // return (int) Math.floor(_val);
+		int result = 17;
+		int c = (int)(_key ^ (_key >>> 32));
+		result = 31*result + c;
+		long tmplvl = Double.doubleToLongBits(_val);
+		c = (int)(tmplvl ^ (tmplvl >>> 32));
+		result = 31*result + c;
+		return result;		
   }
 
 

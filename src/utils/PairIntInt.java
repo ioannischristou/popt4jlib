@@ -5,9 +5,14 @@ import java.io.Serializable;
 
 /**
  * utility class with the same semantics as PairIntDouble, but holds two ints.
+ * Notes:
+ * <ul>
+ * <li>20191227: modified the <CODE>hashCode()</CODE> method according to 
+ * the suggestions given in "Effective Java", 2nd edition.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2019</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -65,11 +70,17 @@ public class PairIntInt implements Comparable, Serializable {
 
 
   /**
-   * return the sum of the two ints held by this object.
+   * return the value recommended by Joshua Bloch.
    * @return int
    */
   public int hashCode() {
-    return _first+_second;
+    // return _first+_second;
+		int result = 17;
+		int c = (int)(_first ^ (_first >>> 32));
+		result = 31*result + c;
+		c = (int)(_second ^ (_second >>> 32));
+		result = 31*result + c;
+		return result;		
   }
 
 
@@ -82,14 +93,14 @@ public class PairIntInt implements Comparable, Serializable {
     if (o==this) return 0;
     PairIntInt c = (PairIntInt) o;
 		int fc =  // Integer.compare(_first, c._first);
-                    _first < c._first ? -1 :
-                                        (_first==c._first ? 0 : 1);
+              _first < c._first ? -1 :
+                                  (_first==c._first ? 0 : 1);
 		//return fc==0 ? Integer.compare(_second, c._second) : fc;
-                if (fc!=0) return fc;
-                else {
-                  int fs = _second < c._second ? -1 :
-                                                 (_second==c._second ? 0 : 1);
-                  return fs;
-                }
+    if (fc!=0) return fc;
+    else {
+	    int fs = _second < c._second ? -1 :
+                                     (_second==c._second ? 0 : 1);
+      return fs;
+    }
   }
 }
