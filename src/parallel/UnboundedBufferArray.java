@@ -6,12 +6,12 @@ package parallel;
  * UnboundedXXXMsgPassingCoordinator family of classes.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2015</p>
+ * <p>Copyright: Copyright (c) 2015-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class UnboundedBufferArray {
+public class UnboundedBufferArray implements BufferIntf {
   private Object[] _buffer;
   private int _head;  // points to first element, remove from head (-1 if no elems in buffer)
   private int _tail;  // points to last element, add into tail (-1 if no elems in buffer)
@@ -123,6 +123,16 @@ public class UnboundedBufferArray {
     if (_head<=_tail) return _tail - _head + 1;
     else return _buffer.length - (_head - _tail) + 1;
   }
+	
+	
+	/**
+	 * reset this buffer.
+	 */
+	public synchronized void reset() {
+		for (int i=0; i<_buffer.length; i++) _buffer[i] = null;
+		_head = -1;
+		_tail = -1;
+	}
 
 	
 	/**

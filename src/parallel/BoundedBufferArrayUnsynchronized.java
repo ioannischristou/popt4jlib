@@ -13,12 +13,12 @@ package parallel;
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2015-2019</p>
+ * <p>Copyright: Copyright (c) 2015-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class BoundedBufferArrayUnsynchronized {
+public class BoundedBufferArrayUnsynchronized implements BufferIntf {
   private Object[] _buffer;
   private int _head;
   private int _tail;
@@ -207,6 +207,16 @@ public class BoundedBufferArrayUnsynchronized {
     if (_head<=_tail) return _tail - _head + 1;
     else return _buffer.length - (_head - _tail) + 1;
   }
+
+
+	/**
+	 * reset this buffer.
+	 */
+	public void reset() {
+		for (int i=0; i<_buffer.length; i++) _buffer[i] = null;
+		_head = -1;
+		_tail = -1;
+	}
 
 	
 	/**

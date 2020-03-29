@@ -570,6 +570,21 @@ public class BoolVector implements Serializable, Comparable {
 		result += "]";
 		return result;
 	}
+	
+	
+	/**
+	 * more human-readable string representation of this BoolVector.
+	 * @return String
+	 */
+	public String toStringSet() {
+		StringBuffer result = new StringBuffer("[ ");
+		for (int i=nextSetBit(0); i>=0; i=nextSetBit(i+1)) {
+			result.append(i);
+			result.append(" ");
+		}
+		result.append("]");
+		return result.toString();
+	}
 
 
   /*

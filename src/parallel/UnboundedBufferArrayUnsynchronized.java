@@ -8,12 +8,12 @@ package parallel;
  * exceptions are never thrown.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2015</p>
+ * <p>Copyright: Copyright (c) 2015-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class UnboundedBufferArrayUnsynchronized {
+public class UnboundedBufferArrayUnsynchronized implements BufferIntf {
   private Object[] _buffer;
   private int _head;  // points to first element, remove from head (-1 if no elems in buffer)
   private int _tail;  // points to last element, add into tail (-1 if no elems in buffer)
@@ -135,6 +135,16 @@ public class UnboundedBufferArrayUnsynchronized {
 	 */
 	public int getCurrentMaxSize() {
 		return _buffer.length;
+	}
+	
+	
+	/**
+	 * reset this buffer.
+	 */
+	public void reset() {
+		for (int i=0; i<_buffer.length; i++) _buffer[i] = null;
+		_head = -1;
+		_tail = -1;
 	}
 
 	

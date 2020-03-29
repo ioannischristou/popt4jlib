@@ -6,16 +6,17 @@ package parallel;
  * XXXMsgPassingCoordinator family of classes.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class BoundedBufferArray {
+public class BoundedBufferArray implements BufferIntf {
   private Object[] _buffer;
   private int _head;
   private int _tail;
 
+	
   /**
    * public constructor.
    * @param maxlen int
@@ -122,6 +123,16 @@ public class BoundedBufferArray {
 	 */
 	public int getMaxSize() {
 		return _buffer.length;
+	}
+
+	
+	/**
+	 * reset this buffer.
+	 */
+	public synchronized void reset() {
+		for (int i=0; i<_buffer.length; i++) _buffer[i] = null;
+		_head = -1;
+		_tail = -1;
 	}
 
 

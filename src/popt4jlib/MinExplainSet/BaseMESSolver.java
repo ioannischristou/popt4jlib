@@ -88,6 +88,19 @@ public abstract class BaseMESSolver {
 	}
 	
 	
+	protected BaseMESSolver(int numVars, int numRules, int numInstances,
+		                      BoolVector[] v2rA, BoolVector[] r2vA, 
+													BoolVector[] r2iA, BoolVector[] i2rA) {
+		_numVars = numVars;
+		_numRules = numRules;
+		_numInstances = numInstances;
+		_v2rA = v2rA;
+		_r2vA = r2vA;
+		_r2iA = r2iA;
+		_i2rA = i2rA;
+	}
+	
+	
 	/**
 	 * obtains a (hopefully) near-optimal solution to the MES problem, starting
 	 * from the cur_vars solution.
@@ -118,11 +131,10 @@ public abstract class BaseMESSolver {
 	
 	
 	/**
-	 * debug routine, prints in stderr the input vector x. Should be static, but
-	 * then we'd have to prefix its call with "BaseMESSolver.".
+	 * debug routine, prints in stderr the input vector x.
 	 * @param x BoolVector
 	 */
-	protected void print(BoolVector x) {
+	protected static void print(BoolVector x) {
 		System.err.print("[ ");
 		for (int k=x.nextSetBit(0); k>=0; k=x.nextSetBit(k+1)) 
 			System.err.print(k+" ");

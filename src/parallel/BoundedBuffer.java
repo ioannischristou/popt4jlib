@@ -6,12 +6,12 @@ package parallel;
  * XXXMsgPassingCoordinator family of classes.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class BoundedBuffer {
+public class BoundedBuffer implements BufferIntf {
   private DLCListNode _head;
   private DLCListNode _tail;
   private int _maxLen;
@@ -106,6 +106,18 @@ public class BoundedBuffer {
     if (_head._pos<=_tail._pos) return _tail._pos - _head._pos + 1;
     else return _maxLen - (_head._pos - _tail._pos) + 1;
   }
+	
+	
+	/**
+	 * reset this buffer.
+	 */
+	public synchronized void reset() {
+		for (int i=0; i<_buffer.length; i++) {
+			_buffer[i]._data = null;  // ensure no memory leaks
+		}
+		_head = null;
+		_tail = null;
+	}
 
 	
 	/**
