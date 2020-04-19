@@ -155,6 +155,16 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
    * <li> &lt;"avd.ftol", Double tol&gt; optional, the min. abs. value below 
 	 * which the absolute value of the difference between two function evaluations 
 	 * is considered to be zero. Default is 1.e-8.
+	 * <li> &lt;"onedopter.maxdetdirstepswithsamefuncval", $num$&gt; optional, if
+	 * attribute is present then it denotes the maximum number of iterations the
+	 * routine will perform in order to determine a direction of descent while the
+	 * function value remains "almost" (or exactly) the same as at the starting
+	 * point. Default is 10.
+	 * <li> &lt;"onedopter.maxnumfuncevals", $num$&gt; optional, if
+	 * attribute is present then it denotes the maximum number of iterations the
+	 * routine will perform in order to determine a direction of descent while the
+	 * function value remains "almost" (or exactly) the same as at the starting
+	 * point. Default is <CODE>Integer.MAX_VALUE</CODE>.
 	 * <li>&lt;"avd.pdbtexecinitedwrkcmd", RRObject cmd &gt; optional, the 
 	 * initialization command to send to the network of workers to run 
 	 * minimization tasks, default is null, indicating no distributed computation.
@@ -172,6 +182,7 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
    */
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
 		if (f==null) throw new OptimizerException("AVD.minimize(f): null f");
+		final Messenger mger = Messenger.getInstance();
     try {
       synchronized (this) {
         if (_f != null)
@@ -232,6 +243,24 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
       try {
         Integer nI = (Integer) _params.get("avd.nitercnt");
         if (nI!=null) niterbnd = nI.intValue();
+      }
+      catch (ClassCastException e) {
+        e.printStackTrace();
+      }
+			int maxiterswithsamefuncval = 10;
+      try {
+        Integer nI = 
+					(Integer) _params.get("onedopter.maxdetdirstepswithsamefuncval");
+        if (nI!=null) maxiterswithsamefuncval = nI.intValue();
+      }
+      catch (ClassCastException e) {
+        e.printStackTrace();
+      }
+			int maxnumfuncevals = Integer.MAX_VALUE;
+      try {
+        Integer nI = 
+					(Integer) _params.get("onedopter.maxnumfuncevals");
+        if (nI!=null) maxnumfuncevals = nI.intValue();
       }
       catch (ClassCastException e) {
         e.printStackTrace();
@@ -341,8 +370,7 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
       PairObjDouble p = null;
       if (tryorder==null) {
         // solve n 1-D problems in parallel
-        Messenger.getInstance().msg(
-					"AVD.minimize(): minimizing using parallel searches",1);
+        mger.msg("AVD.minimize(): minimizing using parallel searches",1);
         PDBatchTaskExecutor pbtexecutor=null;
 				PDBTExecInitedClt pdbtclt=null;
 				try {
@@ -366,7 +394,9 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
 						  for (int i = 0; i < n; i++) {
 							  Opt1DTask ti = new Opt1DTask(f, x, _params, i, minstepsizes[i],
 								                             lowerbounds[i], upperbounds[i],
-									                           niterbnd, multfactor, ftol);
+									                           niterbnd, multfactor, ftol, 
+								                             maxiterswithsamefuncval,
+																						 maxnumfuncevals);
 	              batch[i] = ti;
 		          }
 							// send the tasks to the server
@@ -390,14 +420,11 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
 							}
 							if (ibest>=0) {  // found an improving solution
 								x.setCoord(ibest, xibest);
-								Messenger.getInstance().msg("AVD.minimize(x"+ibest+
-									                          ") new incumbent fval="+fbest,1);
+								mger.msg("AVD.minimize(x"+ibest+") new best fval="+fbest,1);
 								cont = true;
 							}
 						}
-						utils.Messenger.getInstance().msg("AVD.minimize(): parallel "+
-							                                "searching yields "+
-							                                "#outer-iterations="+k,1);
+						mger.msg("AVD.minimize(): parallel search ran #outer-iters="+k,1);
 						_incValue = fbest;
 						_inc = x;
 						p = new PairObjDouble(x, fbest);  // done
@@ -413,43 +440,51 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
 						List batch = new ArrayList();  // used to be Vector
 	          int k;
 		        for (k = 0; k < ntries && cont; k++) {
+							mger.msg("AVD.minimize(x): running try "+k+"/"+ntries+" with "+
+								       numthreads+" threads",2);
 			        cont = false;
 				      int n = x0.getNumCoords();
 					    batch.clear();
 						  for (int i = 0; i < n; i++) {
 							  Opt1DTask ti = new Opt1DTask(f, x, _params, i, minstepsizes[i],
 								                             lowerbounds[i], upperbounds[i],
-									                           niterbnd, multfactor, ftol);
+									                           niterbnd, multfactor, ftol,
+								                             maxiterswithsamefuncval,
+								                             maxnumfuncevals);
 	              batch.add(ti);
 		          }
 			        results = pbtexecutor.executeBatch(batch);  // run in parallel
 				      // figure out best f-val and apply change to x
 					    int ibest = -1;
 						  double xibest = Double.NaN;
+							double cur_iter_best = Double.POSITIVE_INFINITY;
 							for (int i=0; i<results.size(); i++) {
 								PairSer pi = (PairSer) results.get(i);
 								Double xi = (Double) pi.getFirst();
 	              if (xi.isNaN()) continue;  // no optimization took place
-		            double xi_init = x.getCoord(i);
-			          x.setCoord(i, xi.doubleValue());
+		            //double xi_init = x.getCoord(i);
+			          //x.setCoord(i, xi.doubleValue());
 				        double fival = ((Double) pi.getSecond()).doubleValue(); 
 					      if (fival < fbest) {
 						      fbest = fival;
 							    xibest = xi.doubleValue();
 								  ibest = i;
 								}
-								x.setCoord(i, xi_init);  // reset coord
+								//x.setCoord(i, xi_init);  // reset coord
+								// some diagnostic information
+								if (Double.compare(fival, cur_iter_best)<0) {
+									cur_iter_best = fival;
+									mger.msg("AVD.minimizer(x): x"+i+" yields best iter val="+
+									         cur_iter_best, 2);
+								}
 							}
 							if (ibest>=0) {  // found an improving solution
 								x.setCoord(ibest, xibest);
-								Messenger.getInstance().msg("AVD.minimize(x"+ibest+
-									                          ") new incumbent fval="+fbest,1);
+								mger.msg("AVD.minimize(x"+ibest+") new best fval="+fbest,1);
 								cont = true;
 							}
 						}
-						utils.Messenger.getInstance().msg("AVD.minimize(): parallel "+
-							                                "searching yields "+
-							                                "#outer-iterations="+k,1);
+						mger.msg("AVD.minimize(): parallel search ran #outer-iters="+k,1);
 						_incValue = fbest;
 						_inc = x;
 						p = new PairObjDouble(x, fbest);  // done
@@ -485,8 +520,7 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
       }
       else {
         // solve a sequence of 1-D problems as defined in the tryorder array
-        Messenger.getInstance().msg("AVD.minimize(): minimizing using "+
-					                          "sequential searches",1);
+        mger.msg("AVD.minimize(): minimizing using sequential searches",1);
         OneDStepQuantumOptimizer onedopt = new OneDStepQuantumOptimizer();
         boolean cont=true;
         VectorIntf x = x0.newInstance();  // used to be x0.newCopy();
@@ -500,7 +534,9 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
             try {
               PairSer result = onedopt.argmin(f, x, _params, j, minstepsizes[j],
                                              lowerbounds[j], upperbounds[j],
-                                             niterbnd, multfactor, ftol);
+                                             niterbnd, multfactor, ftol,
+																						 maxiterswithsamefuncval,
+																						 maxnumfuncevals);
 							double xj_opt = ((Double)result.getFirst()).doubleValue();
               x.setCoord(j, xj_opt);
               // double fx = f.eval(x, _params);
@@ -510,9 +546,7 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
               if (fx < _incValue) {
                 _inc = x.newInstance();  // used to be x.newCopy();
                 _incValue = fx;
-                Messenger.getInstance().msg("AVD.minimize(x"+j+
-									                          ") new incumbent fval="+
-									                          _incValue,1);
+                mger.msg("AVD.minimize(x"+j+") new best fval="+_incValue,1);
                 cont=true;
               }
             }
@@ -525,9 +559,7 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
             break;
           }
         }
-        utils.Messenger.getInstance().msg("AVD.minimize(): sequential "+
-					                                "searching yields "+
-					                                "#outer-iterations="+k,1);
+        mger.msg("AVD.minimize(): sequential search ran #outer-iters="+k,1);
       }
       // done.
       p = new PairObjDouble(_inc, _incValue);
@@ -579,7 +611,7 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
    * algorithm.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
-   * <p>Copyright: Copyright (c) 2011-2015</p>
+   * <p>Copyright: Copyright (c) 2011-2020</p>
    * <p>Company: </p>
    * @author Ioannis T. Christou
    * @version 1.0
@@ -596,6 +628,8 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
     private int _niterbnd;
     private int _multfactor;
     private double _ftol;
+		private int _maxiterswithsamefuncval;
+		private int _maxnumfuncevals;
     private OneDStepQuantumOptimizer _opter;
 
 
@@ -611,10 +645,14 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
      * @param niterbnd int
      * @param mul int
      * @param ftol double
+		 * @param maxiterswithsamefuncval int
+		 * @param maxnumfuncevals int
      */
     Opt1DTask(FunctionIntf f, VectorIntf x0, HashMap p,
                      int j, double ss, double lb, double ub,
-                     int niterbnd, int mul, double ftol) {
+                     int niterbnd, int mul, double ftol,
+										 int maxiterswithsamefuncval,
+										 int maxnumfuncevals) {
       _f = f;
       _x0 = x0.newInstance();  // used to be x0.newCopy();
       _params = new HashMap(p);
@@ -625,9 +663,12 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
       _niterbnd = niterbnd;
       _multfactor = mul;
       _ftol = ftol;
+			_maxiterswithsamefuncval = maxiterswithsamefuncval;
+			_maxnumfuncevals = maxnumfuncevals;
       _opter = new OneDStepQuantumOptimizer();
     }
 
+		
     /**
      * execute the OneDStepQuantumOptimizer.argmin() method and return the arg
      * min for the given variable whose index was specified in the constructor.
@@ -638,7 +679,9 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
       try {
         PairSer result = _opter.argmin(_f, _x0, _params, _j, _stepsize,
                                      _lowerbound, _upperbound, _niterbnd,
-                                     _multfactor, _ftol);
+                                     _multfactor, _ftol,
+																		 _maxiterswithsamefuncval,
+																		 _maxnumfuncevals);
         if (_opter.getDir()==-2) 
 					return new PairSer(new Double(Double.NaN), new Double(Double.NaN));
         else return result;
@@ -662,7 +705,7 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
      * @throws IllegalArgumentException
      */
     public void copyFrom(TaskObject t) throws IllegalArgumentException {
-      throw new IllegalArgumentException("copyFrom(t) method not supported");
+      throw new UnsupportedOperationException("copyFrom(t): not supported");
     }
   }
 

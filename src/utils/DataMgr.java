@@ -25,13 +25,16 @@ import popt4jlib.IntArray1SparseVector;
  * <li>2019-02-08: changed the signature of method 
  * <CODE>readVectorsFromFileInRange()</CODE> to return <CODE>List</CODE> objects
  * so as to avoid penalties related to the old <CODE>Vector</CODE> class.
+ * <li>2020-04-13: expanded method <CODE>readPropsFromFile()</CODE> to allow 
+ * loading array and matrix/sparse-matrix objects into the props hash-map to be 
+ * returned.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2019</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 2.0
+ * @version 2.1
  */
 public class DataMgr {
 
@@ -65,6 +68,49 @@ public class DataMgr {
 	 * <p>In case key is the keyword "class", the key value is the next token in
    * the line, and the object to be constructed together with its string
    * arguments is given in the rest of the line.
+	 * <p>In case key is the keyword "array", the key value is the next token in 
+	 * the line, the next token is the type of the array ("int","long","double",
+	 * "boolean","string" or the full class name of the type of the objects in the 
+	 * array) and the rest of the tokens are either the values of the primitive 
+	 * types defined, or else each token must simply specify the name of one of
+	 * the keys that are already encountered (higher up in the props file) and 
+	 * stored in the hash-table to be returned (and of course they must be of the
+	 * right type). The order in which the values appear defines the order of 
+	 * elements in the array value object to be stored along with the key name.
+	 * Notice that when the array is supposed to hold as elements other arrays,
+	 * then the type of the array must be the canonical type name for arrays, e.g.
+	 * "[Lpopt4jlib.DblArray1Vector;" etc. Notice the 
+	 * "[L" in the beginning of the full class name the ";" in the end, which is
+	 * used to indicate array-of in Java. HOWEVER, to declare that the elements of
+	 * the array are themselves arrays of a primitive type, use the name of the
+	 * primitive type followed by square brackets, e.g. "int[]" or "double[]".
+	 * Also notice that when the type of the elements is any non-primitive type 
+	 * (except "String"), the resulting object stored in the return hash-map is of 
+	 * type <CODE>Object[]</CODE>. 
+	 * <p> In case key is the keyword "arrayofcopies", the key value is the next
+	 * token in the line; the next token is the number of copies, and the next one
+	 * is the full class-name of the object whose copies shall be stored in the 
+	 * array, followed by the argument values, in the same manner as in the lines
+	 * starting with the keyword "class". This is a convenient short-cut so that
+	 * arrays of identically constructed (but different) objects can be stored in
+	 * an array. The array is stored with type <CODE>Object[]</CODE>.
+	 * <p> In case key is the keywrod "dblarray", then the value is the name of 
+	 * the property, and the next token is the filename of a text file describing
+	 * the array of doubles to be read via the method 
+	 * <CODE>readDoubleLabelsFromFile(filename)</CODE>. The resulting value object
+	 * stored in the returned hash-map is of type <CODE>double[]</CODE>.
+	 * <p> Similarly as above, when the key is the keyword "intarray" (now it is
+	 * the <CODE>readIntegerLabelsFromFile(filename)</CODE> that does the work.)
+	 * <p> In case key is the keyword "matrix", then the value is the name of the
+	 * property, and the next token is the filename of a text file describing the 
+	 * matrix to be read via the method <CODE>readMatrixFromFile(filename)</CODE>.
+	 * The resulting value object stored in the returned hash-map is of type 
+	 * <CODE>double[][]</CODE>.
+	 * <p> In case key is the keyword "sparsematrix", the the value is the name of
+	 * the property, and the next token is the filename of a text file describing
+	 * the matrix to be read via the method <CODE>readSparseVectorsFromFile</CODE>
+	 * and the resulting object stored as a value in the returned hash-map is a
+	 * <CODE>java.util.Vector&lt;DblArray1SparseVector&gt;</CODE> object.
    * <p>In case key is the keyword "rndgen", the <CODE>RndUtil</CODE> class's 
 	 * seed is populated with the value of this line (long int). The seed does not 
 	 * need to be stored in the <CODE>HashMap</CODE> returned. Also, if a 3rd 
@@ -112,6 +158,7 @@ public class DataMgr {
           line = br.readLine();
           if (line == null) break;
           else if (line.length()==0 || line.startsWith("#")) continue;
+					System.err.println("DataMgr.readPropsFromFile(): line="+line);  // itc: HERE rm asap
           st = new StringTokenizer(line, ",");
           String key = st.nextToken();
           String strval = st.nextToken();
@@ -129,7 +176,33 @@ public class DataMgr {
                 Pair p = getArgTypesAndObjs(ctrargs, props);
                 Class[] argtypes = (Class[]) p.getFirst();
                 Object[] args = (Object[]) p.getSecond();
-                Constructor ctor = cl.getConstructor(argtypes);
+                // Constructor ctor = cl.getConstructor(argtypes);
+								// itc-20200418: the above only works if there exists a 
+								// constructor having the exact type arguments specified in 
+								// argtypes. If the constructor expects a super-type of the 
+								// type inside the argtypes array, the getConstructor(argtypes)
+								// simply throws.
+								Constructor ctor = null;
+								Constructor[] all_ctors = cl.getConstructors();
+								for (int c=0; c<all_ctors.length; c++) {
+									Constructor cc = all_ctors[c];
+									Class[] cc_param_types = cc.getParameterTypes();
+									if (cc_param_types.length==argtypes.length) {  // 1st match
+										boolean found = true;
+										for (int d=0; d<argtypes.length; d++) {
+											Class argtyped = argtypes[d];
+											Class ctorargd = cc_param_types[d];
+											if (!ctorargd.isAssignableFrom(argtyped)) {
+												found=false;
+												break;
+											} 
+										}
+										if (found) {  // cc constructor works, just use it! 
+											ctor = cc;
+											break;
+										}
+									}
+								}
                 Object obj = ctor.newInstance(args);
                 props.put(strval, obj);
                 continue;
@@ -141,11 +214,198 @@ public class DataMgr {
                 continue;
               }
             }
-            catch (Exception e) {
-              e.printStackTrace();
+            catch (Exception e) {  
+              e.printStackTrace();  // print stack-trace and ignore
               continue;
             }
           }
+					else if ("array".equals(key)) {  // must construct an array
+						try {
+							key = strval;  // name for the array to be constructed
+							String type = st.nextToken();
+							Class cl=null;
+							if ("int".equals(type)) cl = int.class;
+							else if ("long".equals(type)) cl = long.class;
+							else if ("double".equals(type)) cl = double.class;
+							else if ("boolean".equals(type)) cl = boolean.class;
+							else if ("string".equals(type)) cl = String.class;
+							else {
+								if ("int[]".equals(type)) cl = int[].class;
+								else if ("long[]".equals(type)) cl = long[].class;
+								else if ("double[]".equals(type)) cl = double[].class;
+								else if ("boolean[]".equals(type)) cl = boolean[].class;
+								else if ("string[]".equals(type)) cl = String[].class;
+								else  // non-primitive type 
+									cl = Class.forName(type);
+							}
+							// read the values in the rest of the line.
+							List arrels = new ArrayList();
+							while (st.hasMoreTokens()) {
+								String name = st.nextToken();
+								if (props.containsKey(name)) {
+									Object val = props.get(name);
+									if (!cl.isInstance(val)) { 
+										throw new IllegalArgumentException(
+											          "Object "+val+
+																" inside current props is of type "+
+																val.getClass()+" but type "+type+" expected.");
+									}
+									arrels.add(val);
+								}
+								else {
+									// ignore name, just interpret value and add to arrels
+									if ("int".equals(type)) {
+										arrels.add(Integer.parseInt(name));
+									}
+									else if ("long".equals(type)) {
+										arrels.add(Long.parseLong(name));
+									}
+									else if ("double".equals(type)) {
+										arrels.add(Double.parseDouble(name));
+									}
+									else if ("boolean".equals(type)) {
+										arrels.add(Boolean.parseBoolean(name));
+									}
+									else if ("string".equals(type)) arrels.add(name);
+									else throw new IllegalArgumentException(
+										               "don't know that type");
+								}
+							}
+							// now create the right type array and include in props
+							if ("int".equals(type)) {
+								int[] result = new int[arrels.size()];
+								for (int i=0; i<result.length; i++) 
+									result[i] = ((Integer)arrels.get(i)).intValue();
+								props.put(key,result);
+								continue;
+							}
+							else if ("long".equals(type)) {
+								long[] result = new long[arrels.size()];
+								for (int i=0; i<result.length; i++) 
+									result[i] = ((Long)arrels.get(i)).longValue();
+								props.put(key,result);
+								continue;
+							}
+							else if ("double".equals(type)) {
+								double[] result = new double[arrels.size()];
+								for (int i=0; i<result.length; i++) 
+									result[i] = ((Double)arrels.get(i)).doubleValue();
+								props.put(key,result);
+								continue;
+							}
+							else if ("boolean".equals(type)) {
+								boolean[] result = new boolean[arrels.size()];
+								for (int i=0; i<result.length; i++) 
+									result[i] = ((Boolean)arrels.get(i)).booleanValue();
+								props.put(key,result);
+								continue;
+							}
+							else if ("string".equals(type)) {
+								String[] result = new String[arrels.size()];
+								for (int i=0; i<result.length; i++) 
+									result[i] = (String) arrels.get(i);
+								props.put(key,result);
+								continue;
+							}
+							else {
+								// return the array of complex type as Object[].
+								Object[] results = new Object[arrels.size()];
+								for (int i=0; i<results.length; i++) results[i] = arrels.get(i);
+								props.put(key, results);
+								continue;
+							}
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+							continue;
+						}
+				  }
+					else if ("arrayofcopies".equals(key)) {
+						// example line: 
+						// arrayofcopies,myarray,10,popt4jlib.neural.HardThres,1.0
+						key = strval;
+						try {
+							int num_copies = Integer.parseInt(st.nextToken());
+							Object[] ac = new Object[num_copies];
+							String classname = st.nextToken();
+							Class cl = Class.forName(classname);
+	            String ctrargs = "";
+		          while (st.hasMoreTokens()) {
+			          // ctrargs = st.nextToken().trim();
+								ctrargs += st.nextToken();
+								if (st.hasMoreTokens()) ctrargs+=",";
+						  }
+							Constructor ctor = null;
+							Object[] args = null;
+							if (ctrargs.length()>0) {
+                Pair p = getArgTypesAndObjs(ctrargs, props);
+                Class[] argtypes = (Class[]) p.getFirst();
+                args = (Object[]) p.getSecond();
+								Constructor[] all_ctors = cl.getConstructors();
+								for (int c=0; c<all_ctors.length; c++) {
+									Constructor cc = all_ctors[c];
+									Class[] cc_param_types = cc.getParameterTypes();
+									if (cc_param_types.length==argtypes.length) {  // 1st match
+										boolean found = true;
+										for (int d=0; d<argtypes.length; d++) {
+											Class argtyped = argtypes[d];
+											Class ctorargd = cc_param_types[d];
+											if (!ctorargd.isAssignableFrom(argtyped)) {
+												found=false;
+												break;
+											} 
+										}
+										if (found) {  // cc constructor works, just use it! 
+											ctor = cc;
+											break;
+										}
+									}
+								}
+							}
+							for (int i=0; i<num_copies; i++) {
+								if (ctor==null) {
+	                Object obj = cl.newInstance();
+		              ac[i] = obj;
+			            continue;
+								}
+								// ctor has arguments
+								ac[i] = ctor.newInstance(args);
+							}
+							props.put(key,ac);
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+						}
+						continue;
+					}
+					else if ("dblarray".equals(key)) {
+						key = strval;
+						String dafile = st.nextToken();
+						double[] da = readDoubleLabelsFromFile(dafile);
+						props.put(key,da);
+						continue;
+					}
+					else if ("intarray".equals(key)) {
+						key = strval;
+						String iafile = st.nextToken();
+						int[] ia = readIntegerLabelsFromFile(iafile);
+						props.put(key,ia);
+						continue;
+					}
+					else if ("matrix".equals(key)) {
+						key = strval;
+						String matfile = st.nextToken();
+						double[][] matrix = readMatrixFromFile(matfile);
+						props.put(key,matrix);
+						continue;
+					}
+					else if ("sparsematrix".equals(key)) {
+						key = strval;
+						String smatfile = st.nextToken();
+						Vector sparse_vectors = readSparseVectorsFromFile(smatfile);
+						props.put(key, sparse_vectors);
+						continue;
+					}
           else if ("rndgen".equals(key)) {
             long seed = Long.parseLong(strval);
             RndUtil.getInstance().setSeed(seed);
@@ -163,6 +423,7 @@ public class DataMgr {
 						catch (Exception e) {
 							e.printStackTrace();  // ignore
 						}
+						continue;
 					}
 					else if ("rpp.poolsize".equals(key)) {
 						try {
@@ -172,6 +433,7 @@ public class DataMgr {
 						catch (Exception e) {
 							e.printStackTrace();  // ignore
 						}
+						continue;
 					}
 					else if ("graph".equals(key)) {
 						try {
@@ -182,6 +444,7 @@ public class DataMgr {
 						catch (Exception e) {
 							e.printStackTrace();  // ignore
 						}
+						continue;
 					}
           else if ("dbglvl".equals(key)) {
             String msgername=null;
@@ -909,7 +1172,8 @@ public class DataMgr {
    * @throws IOException
    * @return int[]
    */
-  public static int[] readNumericLabelsFromFile(String filename) throws IOException {
+  public static int[] readIntegerLabelsFromFile(String filename) 
+		throws IOException {
     BufferedReader br = null;
     Vector ls=new Vector();
     try {
@@ -930,6 +1194,39 @@ public class DataMgr {
     int labels[] = new int[numdocs];
     for (int i=0; i<numdocs; i++)
       labels[i]=((Integer) ls.elementAt(i)).intValue();
+    return labels;
+  }
+
+	
+  /**
+   * reads numbers from a file (one double in each consecutive line) and
+   * returns them as an double[].
+   * @param filename String
+   * @throws IOException
+   * @return double[]
+   */
+  public static double[] readDoubleLabelsFromFile(String filename) 
+		throws IOException {
+    BufferedReader br = null;
+    Vector ls=new Vector();
+    try {
+      br = new BufferedReader(new FileReader(filename));
+      if (br.ready()) {
+        while (true) {
+          String line=br.readLine();
+          if (line==null) break;  // EOF
+          double li = Double.parseDouble(line);
+          ls.addElement(new Double(li));
+        }
+      }
+    }
+    finally {
+      if (br!=null) br.close();
+    }
+    int numdocs = ls.size();
+    double labels[] = new double[numdocs];
+    for (int i=0; i<numdocs; i++)
+      labels[i]=((Double) ls.elementAt(i)).doubleValue();
     return labels;
   }
 

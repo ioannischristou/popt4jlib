@@ -35,18 +35,38 @@ public class DGABHTest {
 	 * specifies the full java class name of the function to be optimized 
 	 * (implementing the <CODE>popt4jlib.FunctionIntf</CODE> interface.) The 
 	 * function must accept <CODE>popt4jlib.VectorIntf</CODE> objects as args.
-   * <li> class,[dgabh.]randomparticlemaker,&lt;fullclassname&gt;[,args] 
+   * <li> class,dgabh.randomparticlemaker,&lt;fullclassname&gt;[,args] 
 	 * mandatory, the full class name of the 
 	 * <CODE>popt4jlib.RandomChromosomeMakerIntf</CODE> object responsible for 
 	 * creating valid random chromosome Objects to populate the islands.
+	 * Notice that in most cases, including the one where the actual class 
+	 * responsible for creating valid random chromosome objects is the 
+	 * <CODE>popt4jlib.BH.DblArray1VectorCMaker</CODE>, the params file must 
+	 * contain the following extra params that are needed for chromosome creation:
+	 * 
+   * <li> dgabh.chromosomelength,$integer_value$ mandatory, the 
+	 * length of the chromosome.
+   * <li> dgabh.minallelevalue,$value$ mandatory, the min value for
+   * any allele in the chromosome.
+   * <li> dgabh.minallelevalue$i$,$value$ optional, the min value 
+	 * for the i-th allele in the chromosome ($i$ must be in the range
+   * {0,...,chromosome_length-1}). If this value is less than the global value
+   * specified by the "[dgabh.]minallelevalue" key, it is ignored.
+   * <li> dgabh.maxallelevalue,$value$ mandatory, the maximum value 
+	 * for any allele in the chromosome.
+   * <li> dgabh.maxallelevalue$i$,$value$ optional, the max value 
+	 * for the i-th allele in the chromosome ($i$ must be in the range
+   * {0,...,chromosome_length-1}). If this is greater than the global value
+   * specified by the "[dgabh.]maxallelevalue" key, it is ignored.
+	 * 
    * <li> dgabh.numthreads,$num$ optional, how many threads will 
 	 * be used, default is 1. Each thread corresponds to an island in the DGA 
 	 * model.
-   * <li> class,[dgabh.]c2amaker,&lt;fullclassname&gt; optional, the 
+   * <li> class,dgabh.c2amaker,&lt;fullclassname&gt; optional, the 
 	 * object implementing <CODE>popt4jlib.Chromosome2ArgMakerIntf</CODE> that is 
 	 * responsible for tranforming a chromosome Object to a function argument 
 	 * Object. If not present, the default identity transformation is assumed.
-   * <li> class,[dgabh.]a2cmaker,&lt;fullclassname&gt;[,args] optional, the 
+   * <li> class,dgabh.a2cmaker,&lt;fullclassname&gt;[,args] optional, the 
 	 * object implementing <CODE>popt4jlib.Arg2ChromosomeMakerIntf</CODE> that is 
 	 * responsible for transforming a FunctionIntf argument Object to a chromosome 
 	 * Object. If not present, the default identity transformation is assumed. 
@@ -56,12 +76,12 @@ public class DGABHTest {
 	 * that is part of the Basin-Hopping algorithm, may work on a different 
 	 * representation space than the one the Basin-Hopping works (though there 
 	 * does not seem to be any benefit from such a transformation).
-   * <li> [dgabh.]numgens, $num$; optional, the number of iterations to run the 
+   * <li> dgabh.numgens, $num$; optional, the number of iterations to run the 
 	 * DGABH algorithm, default is 1.
-   * <li> [dgabh.]immprob, $val$ optional, the probability with which a 
+   * <li> dgabh.immprob, $val$ optional, the probability with which a 
 	 * sub-population will send some of its members to migrate to another 
 	 * (island) sub-population, default is 0.01.
-   * <li> [dgabh.]numinitpop,$num$ optional, the initial population number for 
+   * <li> dgabh.numinitpop,$num$ optional, the initial population number for 
 	 * each island, default is 10.
 	 * <li> class,[dgabh.]immigrationrouteselector,&lt;fullclassname&gt;[,args] 
 	 * optional, the full class name of the 
@@ -86,13 +106,42 @@ public class DGABHTest {
 	 * the object implementing <CODE>popt4jlib.BH.ChromosomePerturberIntf</CODE> 
 	 * responsible for producing new individuals that are (presumably small) 
 	 * perturbations of an original starting individual. Extra parameters that the 
-	 * implementing perturber object requires must also be present.
+	 * implementing perturber object requires must also be present. The extra 
+	 * parameters, when the perturber object is of class 
+	 * <CODE>popt4jlib.BH.VectorIntfRndDeltaCPerturber</CODE> are the following:
+	 * 
+	 * <li> dgabh.delta,$value$ mandatory, the maximum delta 
+	 * perturbation that may occur for any vector component.
+	 * <li> dgabh.maxperturbations,$num$ optional, the maximum number
+	 * of components of the input vector that may be modified. Default is the 
+	 * length of the vector.
+   * <li> [dgabh.]minallelevalue,$value$ optional, the minimum value 
+	 * for any allele in the chromosome. Default -Infinity.
+   * <li> [dgabh.]minallelevalue$i$,$value$ optional, the minimum 
+	 * value for the i-th allele in the chromosome ($i$ must be in the range
+   * {0,...,chromosome_length-1}. If this value is less than the global value
+   * specified by the "[dgabh.]minallelevalue" key, it is ignored.
+   * <li> [dgabh.]maxallelevalue,$value$ optional, the maximum value 
+	 * for any allele in the chromosome. Default +Infinity.
+   * <li> [dgabh.]maxallelevalue$i$",$value$ optional, the max value 
+	 * for the i-th allele in the chromosome ($i$ must be in the range
+   * {0,...,chromosome_length-1}. If this value is greater than the global value
+   * specified by the "[dgabh.]maxallelevalue" key, it is ignored.
+	 * 
 	 * <li>class,dgabh.localoptimizer,&lt;fullclassname&gt;[,args] optional, the
 	 * object implementing <CODE>popt4jlib.LocalOptimizerIntf</CODE> that is 
 	 * responsible for performing a local-search around a starting point and 
 	 * returning the best individual found by local-search. Missing such a line 
 	 * implies no local-search process. As with above, any additional parameters 
-	 * that the implementing locOpt object requires must also be present.
+	 * that the implementing locOpt object requires must also be present. As an 
+	 * example, for the case where local optimizer is chosen to be the 
+	 * <CODE>popt4jlib.GradientDescent.AlternatingVariablesDescent</CODE> class,
+	 * no extra arguments are mandatory, but it may be worth setting the
+	 * <li> avd.numtries,$val$ optional line setting the total number of outer 
+	 * major iterations of this local optimizer, as well as the 
+	 * <li> avd.niterbnd,$val$ optional line that sets the number of inner iters
+	 * after which the seach-step size is multiplied by the avd.multfactor number
+	 * (default for the latter is 2)
 	 * <li> class,dgabh.pdbtexecinitedwrkcmd,&lt;fullclassname&gt;[args] optional, 
 	 * if present, the full class name of the initialization command to send to 
 	 * the network of workers to run function evaluation tasks, followed by the 

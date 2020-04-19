@@ -1,0 +1,53 @@
+dbglvl,2
+# the following defines an ANN and weights on the nn's connections
+# the ANN looks like this:
+# INP L0    L1    OUT
+# x1
+# x2  N00   N10  
+# x3  N01   N11  
+# x4  ...   ...   y
+# x5  N09   N19
+# ...
+# x36
+class,n00,popt4jlib.neural.TanH
+class,n01,popt4jlib.neural.TanH
+class,n02,popt4jlib.neural.TanH
+class,n03,popt4jlib.neural.TanH
+class,n04,popt4jlib.neural.TanH
+class,n05,popt4jlib.neural.TanH
+class,n06,popt4jlib.neural.TanH
+class,n07,popt4jlib.neural.TanH
+class,n08,popt4jlib.neural.TanH
+class,n09,popt4jlib.neural.TanH
+class,n10,popt4jlib.neural.TanH
+class,n11,popt4jlib.neural.TanH
+class,n12,popt4jlib.neural.TanH
+class,n13,popt4jlib.neural.TanH
+class,n14,popt4jlib.neural.TanH
+class,n15,popt4jlib.neural.TanH
+class,n16,popt4jlib.neural.TanH
+class,n17,popt4jlib.neural.TanH
+class,n18,popt4jlib.neural.TanH
+class,n19,popt4jlib.neural.TanH
+class,outputlayer,popt4jlib.neural.TanH
+array,layer1_arr,popt4jlib.neural.NNNodeIntf,n00,n01,n02,n03,n04,n05,n06,n07,n08,n09
+array,layer2_arr,popt4jlib.neural.NNNodeIntf,n10,n11,n12,n13,n14,n15,n16,n17,n18,n19
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr
+# train data:
+matrix,ffnn.traindata,testdata/traindata1.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/trainlabels1.dat
+# AVD props next
+class,costfunc,popt4jlib.neural.costfunction.L2Norm
+class,avd.function,popt4jlib.neural.FFNN4Train,hiddenlayers,outputlayer,costfunc
+avd.numdimensions,470
+avd.maxargval,3.0
+avd.minargval,-3.0
+#avd.numthreads,6
+#avd.tryallparallel,true
+avd.numtries,20
+onedopter.maxdetdirstepswithsamefuncval,3
+onedopter.maxnumfuncevals,100
+avd.minstepsize,0.005
+avd.ftol,1.e-6
+avd.niterbnd,3

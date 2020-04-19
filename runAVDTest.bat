@@ -1,1 +1,1 @@
-java -Xmx1200m -cp ./dist/popt4jlib.jar tests.AVDTest %1 %2 %3
+java -Xmx4000m -cp ./dist/popt4jlib.jar tests.AVDTest %1 %2 %3

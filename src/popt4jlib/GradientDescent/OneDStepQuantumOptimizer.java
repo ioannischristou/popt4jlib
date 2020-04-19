@@ -16,10 +16,12 @@ import java.util.HashMap;
  * <p>Notes:
  * <ul>
  * <li>2018-12-29: class is useful enough to be made public.
+ * <li>2020-04-18: restored debug messages, added maxcount check for iterating
+ * over an interval where the function remains essentially constant.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2018</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -27,6 +29,9 @@ import java.util.HashMap;
 final public class OneDStepQuantumOptimizer {
   private int _dir=0;
 	private double _val=Double.NaN;
+	
+	private int _remaining_funcevals;
+	
 
   /**
    * public no-arg no-op constructor.
@@ -62,7 +67,7 @@ final public class OneDStepQuantumOptimizer {
    * @param f FunctionIntf the function to optimize must accept arguments of 
 	 * type VectorIntf
    * @param x0 VectorIntf the initial point
-   * @param fparams HashMap the function params
+   * @param fparams HashMap the function params 
    * @param varindex int the dimension along which to minimize 
 	 * (range in [0,...n))
    * @param stepquantum double
@@ -74,6 +79,12 @@ final public class OneDStepQuantumOptimizer {
    * step-size after a number of iterations are all in the same direction
    * @param ftol double the function tolerance below which two function evals
    * are considered the same
+	 * @param maxiterswithsamefunctionval int the number of function evaluations
+	 * performed in the <CODE>detdir()</CODE> auxiliary method to determine the
+	 * direction of descent when function values are "almost" (within ftol) the
+	 * same
+	 * @param maxnumfuncevals int the maximum number of function evaluations this
+	 * call is allowed to perform befofe calling it quits.
    * @throws OptimizerException
    * @throws ParallelException
    * @return PairSer  // PairSer&lt;Double arg, Double val&gt;
@@ -81,11 +92,13 @@ final public class OneDStepQuantumOptimizer {
   public PairSer argmin(FunctionIntf f, VectorIntf x0, HashMap fparams,
                  int varindex, double stepquantum,
                  double lowerbound, double upperbound,
-                 int niterbnd, int multfactor, double ftol) 
+                 int niterbnd, int multfactor, double ftol, 
+								 int maxiterswithsamefunctionval,
+								 int maxnumfuncevals) 
 		throws OptimizerException, ParallelException {
-		//utils.Messenger mger = utils.Messenger.getInstance();
-    //mger.msg("OneDStepQuantumOptimizer.argmin(): optimizing var x"+varindex+"="+
-    //         x0.getCoord(varindex)+" in ["+lowerbound+","+upperbound+"]",1);
+		utils.Messenger mger = utils.Messenger.getInstance();
+    mger.msg("OneDStepQuantumOptimizer.argmin(): optimizing var x"+varindex+"="+
+             x0.getCoord(varindex)+" in ["+lowerbound+","+upperbound+"]",3);
     if (niterbnd<=0) niterbnd = 5;
     if (multfactor<=0) multfactor = 2;
     double step = stepquantum;
@@ -94,16 +107,17 @@ final public class OneDStepQuantumOptimizer {
     double s = x.getCoord(varindex);
     double sqt = s;
     int prevdir = 0;
-    while (true) {
-			//mger.msg("OneDStepQuantumOptimizer.argmin() x"+varindex+"="+s+
-			//	       " x0="+x, 2);
+		_remaining_funcevals = maxnumfuncevals;
+    while (_remaining_funcevals>0) {
+			mger.msg("OneDStepQuantumOptimizer.argmin() x"+varindex+"="+s, 3);
       if (--cnt==0) {
         step *= multfactor;
         cnt = niterbnd;
       }
       x.setCoord(varindex, s);
       double news = detdir(f, fparams, x, varindex, stepquantum, 
-				                   lowerbound, upperbound, ftol);
+				                   lowerbound, upperbound, ftol,
+													 maxiterswithsamefunctionval);
       if (_dir==0) {
         sqt = news;
         break;
@@ -115,6 +129,7 @@ final public class OneDStepQuantumOptimizer {
           double xvarindex = x0.getCoord(varindex) + k*stepquantum;
 					x.setCoord(varindex, xvarindex);
 					_val = f.eval(x, fparams);
+					--_remaining_funcevals;
 					if (x instanceof PoolableObjectIntf) {
 						((PoolableObjectIntf) x).release();
 					}
@@ -133,6 +148,7 @@ final public class OneDStepQuantumOptimizer {
 					double xvarindex = x0.getCoord(varindex) - k*stepquantum;
 					x.setCoord(varindex, xvarindex);
 					_val = f.eval(x, fparams);
+					--_remaining_funcevals;
           if (x instanceof PoolableObjectIntf) {
 						((PoolableObjectIntf) x).release();
 					}
@@ -145,7 +161,7 @@ final public class OneDStepQuantumOptimizer {
         }
       }
       prevdir = _dir;
-    }  // while true
+    }  // while there remain func evals to perform: used to be while true
     if (Math.abs(sqt-x0.getCoord(varindex))<=ftol) 
 			_dir = -2;  // indicate no change
     if (Double.isNaN(_val)) {  // must evaluate at sqt
@@ -170,23 +186,27 @@ final public class OneDStepQuantumOptimizer {
    * @param lb double
    * @param ub double
    * @param ftol double
+	 * @param maxiterswithsamefunctionval int
    * @throws ParallelException
    * @throws IllegalArgumentException
    * @return double
    */
   private double detdir(FunctionIntf f, HashMap params, VectorIntf x,
-                        int j, double eps, double lb, double ub, double ftol) 
+                        int j, double eps, double lb, double ub, double ftol,
+												int maxiterswithsamefunctionval) 
 		throws ParallelException, IllegalArgumentException {
-		//utils.Messenger mger = utils.Messenger.getInstance();
+		utils.Messenger mger = utils.Messenger.getInstance();
     try {
       final double s = x.getCoord(j);
       final double c = f.eval(x, params);
-      //mger.msg("detdir: starting with x["+j+"]="+s+
-			//	       " c="+c+" lb="+lb+" ub="+ub,2);
+			--_remaining_funcevals;
+      mger.msg("detdir: starting with x["+j+"]="+s+
+				       " c="+c+" lb="+lb+" ub="+ub,3);
       x.setCoord(j, s + eps);
       if (ftol < 0) ftol = 0.0;
       double cup = f.eval(x, params);
-      if (c > cup + ftol) {
+			--_remaining_funcevals;
+      if (Double.compare(c, cup + ftol) > 0) {
         _dir = 1;
 				_val = cup;
         return s + eps;  // itc 20161116: used to be return s;
@@ -195,42 +215,55 @@ final public class OneDStepQuantumOptimizer {
         double s2 = s;
         x.setCoord(j, s2);
         double cnew = f.eval(x, params);
-        while (Math.abs(cnew - c) <= ftol && s2 < ub) {  // Double.compare(cnew,c)==0
+				--_remaining_funcevals;
+        for (int cnt=0; 
+					   Math.abs(cnew - c) <= ftol && s2 < ub &&
+					   cnt < maxiterswithsamefunctionval;
+						 cnt++) {  
+          // used to be while Double.compare(cnew,c)==0
           s2 += eps;
           x.setCoord(j, s2);
           cnew = f.eval(x, params);
-          //mger.msg("ODSQO.detdir(): f(x" + j + "=" +
-          //         s2 + ")=" + cnew+" eps3="+eps, 2);
+					--_remaining_funcevals;
+          mger.msg("ODSQO.detdir(): f(x" + j + "=" +
+						       s2 + ")=" + cnew+" eps3="+eps, 4);
         }
-        if (cnew < c - ftol) {
+        if (Double.compare(cnew, c - ftol) < 0) {
           _dir = 1;
 					_val = cnew;
           return s2;
         }
-        else { // cnew >= c - ftol OR s2 >= ub
-          if (s2 >= ub) { // irrespective of "trend to decrease further or not"
+        else { // cnew >= c - ftol OR s2 >= ub OR too many "sameval" iterations
+          if (Double.compare(s2, ub) >= 0) { 
+            // irrespective of "trend to decrease further or not"
             _dir = 0;
 						_val = Double.NaN;  // not specified at this point
             return ub;
           }
-          // ok, cnew >= c - ftol, so to the starting point, and go left
+          // ok, cnew >= c - ftol (OR too many "sameval" iterations), 
+					// so start from the starting point, and go left
           s2 = s;
           x.setCoord(j, s2);
           cnew = c;  // itc 20161116: used to be cnew = f.eval(x, params);
-          while (Math.abs(c - cnew) <= ftol && s2 > lb) {  // Double.compare(cnew,c)==0
+          for (int cnt=0;
+						   Math.abs(c - cnew) <= ftol && s2 > lb &&
+						   cnt < maxiterswithsamefunctionval;
+							 cnt++) {  
+            // used to be while Double.compare(cnew,c)==0
             s2 -= eps;
             x.setCoord(j, s2);
             cnew = f.eval(x, params);
-            //mger.msg("ODSQO.detdir(): f(x"+j+"="+s2+")="+cnew,2);
+						--_remaining_funcevals;
+            mger.msg("ODSQO.detdir(): f(x"+j+"="+s2+")="+cnew,4);
           }
-          if (cnew < c - ftol) {
+          if (Double.compare(cnew, c - ftol) < 0) {
             _dir = -1;
 						_val = cnew;
             return s2;
           }
-          else { // cnew >= c + ftol OR s2 <= lb
+          else { // cnew >= c + ftol OR s2 <= lb OR too many "sameval" iters
             _dir = 0;
-            if (s2 <= lb) {
+            if (Double.compare(s2,lb) <= 0) {
               _val = Double.NaN;  // value unspecified
 							return lb;
 						}
@@ -242,7 +275,8 @@ final public class OneDStepQuantumOptimizer {
       // should try the down direction
       x.setCoord(j, s - eps);
       double cdown = f.eval(x, params);
-      if (c > cdown + ftol) {
+			--_remaining_funcevals;
+      if (Double.compare(c, cdown + ftol) > 0) {
         _dir = -1;
 				_val = cdown;
         return s - eps;  // itc 20161116: used to be return s;
@@ -251,43 +285,54 @@ final public class OneDStepQuantumOptimizer {
         double s2 = s;
         x.setCoord(j, s2);
         double cnew = f.eval(x, params);
-        while (Math.abs(cnew - c) <= ftol && s2 > lb) {  // Double.compare(cnew,c)==0
+				--_remaining_funcevals;
+        for (int cnt=0;
+					   Math.abs(cnew - c) <= ftol && s2 > lb &&
+					   cnt < maxiterswithsamefunctionval;
+						 cnt++) {  // used to be while Double.compare(cnew,c)==0
           s2 -= eps;
           x.setCoord(j, s2);
           cnew = f.eval(x, params);
-          //mger.msg("ODSQO.detdir(): f(x" + j + "=" +
-          //          s2 + ")=" + cnew+" eps="+eps, 2);
+					--_remaining_funcevals;
+          mger.msg("ODSQO.detdir(): f(x" + j + "=" +
+                    s2 + ")=" + cnew+" eps="+eps, 4);
         }
-        if (cnew < c - ftol) {
+        if (Double.compare(cnew, c - ftol) < 0) {
           _dir = -1;
 					_val = cnew;
           return s2;
         }
-        else { // cnew > c - ftol OR s2<=lb
-          if (s2 <= lb) { // irrespective of "trend to decrease further or not"
+        else { // cnew > c - ftol OR s2<=lb OR too many "sameval" iterations
+          if (Double.compare(s2, lb) <= 0) { 
+            // irrespective of "trend to decrease further or not"
             _dir = 0;
 						_val = Double.NaN;
             return lb;
           }
-          // ok, cnew > c - ftol, so to the starting point, and go right
+          // ok, cnew > c - ftol, (OR too many "sameval" iterations) 
+					// so go back to the starting point, and go right
           s2 = s;
           x.setCoord(j, s2);
           cnew = c; // itc 20161116: used to be cnew = f.eval(x, params);
-          while (Math.abs(cnew - c) <= ftol && s2 < ub) {  // Double.compare(cnew,c)==0
+          for (int cnt=0;
+						   Math.abs(cnew - c) <= ftol && s2 < ub &&
+						   cnt < maxiterswithsamefunctionval;
+							 cnt++) {  // used to be while Double.compare(cnew,c)==0
             s2 += eps;
             x.setCoord(j, s2);
             cnew = f.eval(x, params);
-            //mger.msg("ODSQO.detdir(): f(x" + j + "=" +
-            //         s2 + ")=" + cnew+" eps2="+eps, 2);
+						--_remaining_funcevals;
+            mger.msg("ODSQO.detdir(): f(x" + j + "=" +
+                     s2 + ")=" + cnew+" eps2="+eps, 4);
           }
-          if (cnew < c - ftol) {
+          if (Double.compare(cnew, c - ftol) < 0) {
             _dir = 1;
 						_val = cnew;
             return s2;
           }
-          else {  // cnew > c
+          else {  // cnew > c (OR too many "sameval" iterations)
             _dir = 0;
-            if (s2 >= ub) {
+            if (Double.compare(s2, ub) >= 0) {
               _val = Double.NaN;
 							return ub;
 						}
@@ -302,7 +347,7 @@ final public class OneDStepQuantumOptimizer {
       return s;
     }
     finally {
-      //mger.msg("ODSQO.detdir(): done",1);
+      mger.msg("ODSQO.detdir(): done",3);
     }
   }
 

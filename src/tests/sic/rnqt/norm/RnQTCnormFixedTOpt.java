@@ -82,6 +82,8 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 		int niterbnd = 3;
 		int multfactor = 2;
 		double tol = 1.e-12;
+		int maxiterswithsamefunctionval = 100;
+		int maxnumfuncevals = Integer.MAX_VALUE;
 		double[] x0 = new double[3];  // new double[]{s0, _qnot, _T};
 		x0[0]=s0; x0[1]=_qnot; x0[2]=_T;
 		double[] x_best = new double[2];  // {s,Q}
@@ -92,7 +94,8 @@ public class RnQTCnormFixedTOpt implements OptimizerIntf {
 			Pair p = null;
 			try {
 				p = onedopter.argmin(f, new DblArray1Vector(x0), null, 0, 
-				                     _epss, lb, ub, niterbnd, multfactor, tol);
+				                     _epss, lb, ub, niterbnd, multfactor, tol,
+														 maxiterswithsamefunctionval, maxnumfuncevals);
 			}
 			catch (parallel.ParallelException e) {  // cannot get here
 				e.printStackTrace();

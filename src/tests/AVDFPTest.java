@@ -7,7 +7,8 @@ import utils.RndUtil;
 
 /**
  * Test-driver class for optimizing the Fletcher-Powell Function (defined and
- * documented in <CODE>tests.FletcherPowellFunction</CODE>) using the AVD process.
+ * documented in <CODE>tests.FletcherPowellFunction</CODE>) using the AVD 
+ * process.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -25,9 +26,11 @@ public class AVDFPTest {
 
 
   /**
-   * invoke as <CODE>java -&lt;classpath&gt; tests.AVDFPTest &lt;params_file&gt;</CODE>.
+   * invoke as 
+	 * <CODE>java -&lt;classpath&gt; tests.AVDFPTest &lt;params_file&gt;</CODE>.
    * The params_file must have the lines described in the documentation of
-   * the class <CODE>popt4jlib.GradientDescent.AlternatingVariablesDescent</CODE>.
+   * the class 
+	 * <CODE>popt4jlib.GradientDescent.AlternatingVariablesDescent</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -40,8 +43,9 @@ public class AVDFPTest {
       double minargval = ((Double) params.get("avd.minargval")).doubleValue();
       // add the initial point
       VectorIntf x0 = new DblArray1Vector(new double[n]);
+			Random rnd = RndUtil.getInstance().getRandom();
       for (int j=0; j<n; j++) {
-        double val = minargval+RndUtil.getInstance().getRandom().nextDouble()*(maxargval-minargval);
+        double val = minargval + rnd.nextDouble()*(maxargval-minargval);
         x0.setCoord(j, val);
       }
       // check out any tryorder points
@@ -66,8 +70,8 @@ public class AVDFPTest {
         B[i] = new Vector();
         alpha[i] = Math.PI*Math.sin(Math.PI/(i+1));
         for (int j=0; j<n; j++) {
-          A[i].addElement(new Integer(RndUtil.getInstance().getRandom().nextInt(200)-100));
-          B[i].addElement(new Integer(RndUtil.getInstance().getRandom().nextInt(200)-100));
+          A[i].addElement(new Integer(rnd.nextInt(200)-100));
+          B[i].addElement(new Integer(rnd.nextInt(200)-100));
         }
       }
       params.put("A",A);
@@ -76,13 +80,16 @@ public class AVDFPTest {
       FunctionIntf func = (FunctionIntf) params.get("avd.function");
       FunctionBase wrapper_func = new FunctionBase(func);
       params.put("avd.function",wrapper_func);
-      AlternatingVariablesDescent opter = new AlternatingVariablesDescent(params);
+      AlternatingVariablesDescent opter = 
+				new AlternatingVariablesDescent(params);
       utils.PairObjDouble p = opter.minimize(wrapper_func);
       VectorIntf arg = (VectorIntf) p.getArg();
       System.out.print("best soln found:[");
-      for (int i=0; i<arg.getNumCoords(); i++) System.out.print(arg.getCoord(i)+" ");
+      for (int i=0; i<arg.getNumCoords(); i++) 
+				System.out.print(arg.getCoord(i)+" ");
       System.out.println("] VAL="+p.getDouble());
-      System.out.println("total function evaluations="+wrapper_func.getEvalCount());
+      System.out.println("total function evaluations="+
+				                 wrapper_func.getEvalCount());
       long end_time = System.currentTimeMillis();
       System.out.println("total time (msecs): "+(end_time-start_time));
       System.out.print("true optimal solution is: alpha=[ ");

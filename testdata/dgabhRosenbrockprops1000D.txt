@@ -1,0 +1,16 @@
+class,dgabh.function,tests.RosenbrockFunctionCEC20XXShifted
+class,dgabh.randomparticlemaker,popt4jlib.BH.DblArray1VectorCMaker
+dgabh.chromosomelength,1000
+dgabh.minallelevalue,-100.0
+dgabh.maxallelevalue,100.0
+dgabh.numthreads,8
+dgabh.numgens,100
+#dgabh.immprob,0.01
+dgabh.numinitpop,10
+class,dgabh.chromosomeperturber,popt4jlib.BH.VectorIntfRndDeltaCPerturber
+dgabh.maxperturbations,10
+dgabh.delta,0.2
+class,dgabh.localoptimizer,popt4jlib.GradientDescent.AlternatingVariablesDescent
+avd.niterbnd,3
+avd.numtries,10
+rndgen,11,8

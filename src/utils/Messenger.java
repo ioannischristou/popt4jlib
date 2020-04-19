@@ -204,6 +204,9 @@ public class Messenger {
 						String dateFormatted = formatter.format(date);
 						_os.print("["+dateFormatted+"]:");
 					}
+					if (lvl>=3) {  // for debug messages with high levels, show level!
+						_os.print("[DEBUG-LVL="+lvl+"] ");
+					}
 		      _os.println(msg);
 				  _os.flush();
 				}

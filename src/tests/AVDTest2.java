@@ -1,16 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package tests;
 
 import java.util.HashMap;
 import popt4jlib.*;
 
 /**
- *
- * @author itc
+ * Slight variation of the <CODE>tests.AVDTest</CODE> class accepts no command
+ * line arguments. 
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
  */
 public class AVDTest2 {
 
@@ -32,7 +33,8 @@ public class AVDTest2 {
 			// get the best objective value found
 			double best_value = result.getDouble();
 			// get the minimizer vector
-			double[] best_arg = (double[]) ((popt4jlib.VectorIntf)result.getArg()).getDblArray1();
+			double[] best_arg = 
+				(double[]) ((popt4jlib.VectorIntf)result.getArg()).getDblArray1();
 			// done…
 			System.err.println("best value found is=" + best_value);
 			System.err.print("x=[ ");

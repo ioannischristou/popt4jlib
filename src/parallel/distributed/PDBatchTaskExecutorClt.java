@@ -11,7 +11,7 @@ import java.util.*;
  * to a specific host/port IP address.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -83,7 +83,9 @@ public class PDBatchTaskExecutorClt {
 	public Object[] submitWorkFromSameHost(TaskObject[] tasks)
 		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
 		if (tasks == null || tasks.length == 0) 
-			throw new PDBatchTaskExecutorException("PDBatchTaskExecutorClt.submitWork(tasks): null or empty tasks passed in.");
+			throw new PDBatchTaskExecutorException(
+				          "PDBatchTaskExecutorClt.submitWork(tasks): "+
+									"null or empty tasks passed in.");
 		Socket s = null;
 		ObjectInputStream ois = null;
 		ObjectOutputStream oos = null;
@@ -214,7 +216,8 @@ public class PDBatchTaskExecutorClt {
 			oos = new ObjectOutputStream(s.getOutputStream());
 			oos.flush();
 			ois = new ObjectInputStream(s.getInputStream());
-			TaskObjectsExecutionRequest req = new TaskObjectsExecutionRequest(originating_clients, tasks);
+			TaskObjectsExecutionRequest req = 
+				new TaskObjectsExecutionRequest(originating_clients, tasks);
 			oos.writeObject(req);  // no need for oos.reset() here
 			oos.flush();
 			Object response = ois.readObject();

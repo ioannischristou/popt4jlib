@@ -10,7 +10,7 @@ import java.io.Serializable;
  * PDBatchTaskExecutorSrv must be running on (localhost,7890).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -80,7 +80,10 @@ public class PDBatchTaskExecutorCltTest2 {
 
   /**
    * invoke with single arg as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBatchTaskExecutorCltTest &lt;graphfilename&gt; </CODE>
+   * <CODE>
+	 * java -cp &lt;classpath&gt; 
+	 * parallel.distributed.PDBatchTaskExecutorCltTest &lt;graphfilename&gt; 
+	 * </CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -102,7 +105,8 @@ public class PDBatchTaskExecutorCltTest2 {
     PDBatchTaskExecutorClt _client;
     GraphDiameterEvalTask[] _tasks;
     Object[] _results;  // must be Serializable
-    PDBTECT2Thread(PDBatchTaskExecutorClt client, GraphDiameterEvalTask[] tasks) {
+    PDBTECT2Thread(PDBatchTaskExecutorClt client, 
+			             GraphDiameterEvalTask[] tasks) {
       _client = client;
       _tasks = tasks;
     }
@@ -148,7 +152,7 @@ public class PDBatchTaskExecutorCltTest2 {
  * API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0

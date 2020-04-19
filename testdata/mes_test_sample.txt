@@ -1,3 +1,4 @@
+# test dataset for MinExplainSet algorithms:
 # 4 vars, 3 rules, 4 insts
 4 3 4
 rvar 0 0 1 

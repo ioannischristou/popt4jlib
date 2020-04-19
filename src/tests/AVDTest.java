@@ -12,7 +12,7 @@ import java.util.*;
  * functions also).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2016</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -28,7 +28,9 @@ public class AVDTest {
 
   /**
    * invoke from the command-line as:
-   * <CODE>java -cp &lt;classpath&gt; tests.AVDTest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>.
+   * <CODE>java -cp &lt;classpath&gt; tests.AVDTest &lt;params_file&gt; 
+	 * [random_seed] [maxfuncevals]
+	 * </CODE>.
    * The params_file must contain lines of the following form:
 	 * <ul>
    * <li> avd.numdimensions, $num$ mandatory, number of dimensions
@@ -89,7 +91,7 @@ public class AVDTest {
       HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       if (args.length>1) {
         long seed = Long.parseLong(args[1]);
-        RndUtil.getInstance().setSeed(seed);  // updates all extra instances too!
+        RndUtil.getInstance().setSeed(seed);  // update all extra instances too!
       }
       if (args.length>2) {
         long num = Long.parseLong(args[2]);
@@ -101,7 +103,8 @@ public class AVDTest {
       // add the initial point
       VectorIntf x0 = new DblArray1Vector(new double[n]);
       for (int j=0; j<n; j++) {
-        double val = minargval+RndUtil.getInstance().getRandom().nextDouble()*(maxargval-minargval);
+        double val = minargval+RndUtil.getInstance().getRandom().nextDouble()*
+					           (maxargval-minargval);
         x0.setCoord(j, val);
       }
       // check out any tryorder points
@@ -128,15 +131,19 @@ public class AVDTest {
       params.put("avd.x0", x0);
       FunctionIntf func = (FunctionIntf) params.get("avd.function");
       FunctionBase wrapper_func = new FunctionBase(func);
-      AlternatingVariablesDescent opter = new AlternatingVariablesDescent(params);
+      AlternatingVariablesDescent opter = 
+				new AlternatingVariablesDescent(params);
       utils.PairObjDouble p = opter.minimize(wrapper_func);
       VectorIntf arg = (VectorIntf) p.getArg();
       System.out.print("best soln found: ");
       System.out.print(arg);
-      System.out.println(" VAL="+p.getDouble()+" #function calls="+wrapper_func.getEvalCount());
+      System.out.println(" VAL="+p.getDouble()+" #function calls="+
+				                 wrapper_func.getEvalCount());
       long dur = System.currentTimeMillis()-start_time;
       System.out.println("total time (msecs): "+dur);
-      System.out.println("VVV,"+p.getDouble()+",TTT,"+dur+",NNN,"+wrapper_func.getEvalCount()+",PPP,AVD,FFF,"+args[0]);  // for parser program to extract from output
+      System.out.println("VVV,"+p.getDouble()+",TTT,"+dur+",NNN,"+
+				                 wrapper_func.getEvalCount()+",PPP,AVD,FFF,"+args[0]);  
+      // above is for parser program to extract from output
     }
     catch (Exception e) {
       e.printStackTrace();

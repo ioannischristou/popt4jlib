@@ -127,11 +127,14 @@ public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 		final int niterbnd = 3;
 		final int multfactor = 2;
 		final double tol = 1.e-12;
+		final int maxiterswithsamefunctionval = 100;
+		final int maxnumfuncevals = Integer.MAX_VALUE;
 		Pair pr = null;
 		try {
 			pr = onedopter.argmin(rnqtpois, new DblArray1Vector(x0), null, 
 				                    0,  // the dimension s, along which to minimize f 
-			                      1, lb, ub, niterbnd, multfactor, tol);
+			                      1, lb, ub, niterbnd, multfactor, tol,
+														maxiterswithsamefunctionval, maxnumfuncevals);
 		}
 		catch (parallel.ParallelException e) {  // cannot get here
 			e.printStackTrace();
