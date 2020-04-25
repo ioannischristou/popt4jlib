@@ -28,6 +28,9 @@ import popt4jlib.IntArray1SparseVector;
  * <li>2020-04-13: expanded method <CODE>readPropsFromFile()</CODE> to allow 
  * loading array and matrix/sparse-matrix objects into the props hash-map to be 
  * returned.
+ * <li>2020-04-22: expanded same method as above to allow storing keys with null
+ * values. Also modified slightly code dealing with setting debug levels when
+ * reading props.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -67,7 +70,10 @@ public class DataMgr {
 	 * next token.
 	 * <p>In case key is the keyword "class", the key value is the next token in
    * the line, and the object to be constructed together with its string
-   * arguments is given in the rest of the line.
+   * arguments is given in the rest of the line. However, if the line is of the
+	 * form "class,mitsos,null" then the key "mitsos" is stored in props along 
+	 * with null object value. This allows for null values to be stored in the 
+	 * table for various keys.
 	 * <p>In case key is the keyword "array", the key value is the next token in 
 	 * the line, the next token is the type of the array ("int","long","double",
 	 * "boolean","string" or the full class name of the type of the objects in the 
@@ -149,6 +155,7 @@ public class DataMgr {
       throws IOException {
     HashMap props = new HashMap();
     BufferedReader br=null;
+		Messenger mger = Messenger.getInstance();
     try {
       br = new BufferedReader(new FileReader(filename));
       String line = null;
@@ -158,12 +165,16 @@ public class DataMgr {
           line = br.readLine();
           if (line == null) break;
           else if (line.length()==0 || line.startsWith("#")) continue;
-					System.err.println("DataMgr.readPropsFromFile(): line="+line);  // itc: HERE rm asap
+					mger.msg("DataMgr.readPropsFromFile(): line="+line, 2);
           st = new StringTokenizer(line, ",");
           String key = st.nextToken();
           String strval = st.nextToken();
           if ("class".equals(key)) {
             String classname = st.nextToken();
+						if ("null".equals(classname)) {  // specifies null val 4 strval key
+							props.put(strval, null);
+							continue;
+						}
             String ctrargs = "";
             while (st.hasMoreTokens()) {
               // ctrargs = st.nextToken().trim();
@@ -452,13 +463,14 @@ public class DataMgr {
             if (st.countTokens()>=1) {
               msgername = strval;
               dbglvl = Integer.parseInt(st.nextToken());
-              Messenger mger = Messenger.getInstance(msgername);
+              Messenger mger2 = Messenger.getInstance(msgername);
               OutputStream stream = null;
               if (st.countTokens()>=1) {
                 stream = new FileOutputStream(st.nextToken());
               }
-              if (mger==null || stream!=null) Messenger.setInstance(msgername, stream);
-              else if (mger==null) Messenger.setInstance(msgername,System.err);
+              if (mger2==null || stream!=null) 
+								Messenger.setInstance(msgername, stream);
+              else if (mger2==null) Messenger.setInstance(msgername,System.err);
               Messenger.getInstance(msgername).setDebugLevel(dbglvl);
             } else {
               dbglvl = Integer.parseInt(strval);

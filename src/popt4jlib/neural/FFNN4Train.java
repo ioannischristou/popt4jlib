@@ -206,22 +206,15 @@ public class FFNN4Train extends FFNN {
 			for (int i=0; i<num_inputs; i++) 
 				layer_i_inputs[i] = inputs_t[i];  // must NOT modify inputs_t
 			for (int i=0; i<num_hidden_layers; i++) {
-				//double[] weights_i = new double[layer_i_inputs.length];
 				NNNodeIntf[] layeri = hidden_layers[i];
 				double[] layeri_outputs = new double[layeri.length];
 				for (int j=0; j<layeri.length; j++) {
 					NNNodeIntf node_i_j = layeri[j];
-					//for (int p=0; p<weights_i.length; p++) weights_i[p] = w[pos++];
-					//layeri_outputs[j] = node_i_j.eval(layer_i_inputs, weights_i);
 					layeri_outputs[j] = node_i_j.eval(layer_i_inputs, w, pos);
 					pos += layer_i_inputs.length;
 				}
 				layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
 			}
-			// compute the output node output
-			//double[] output_ws = new double[w.length-pos];
-			//for (int p=0; p<output_ws.length; p++) output_ws[p] = w[pos++];
-			//double valt = output_node.eval(output_ws, layer_i_inputs);
 			double valt = output_node.eval(layer_i_inputs, w, pos);
 			errors[t] = (valt-train_labels[t]);
 		}
@@ -366,23 +359,16 @@ public class FFNN4Train extends FFNN {
 				for (int i=0; i<num_inputs; i++) 
 					layer_i_inputs[i] = inputs_t[i];  // must NOT modify inputs_t
 				for (int i=0; i<num_hidden_layers; i++) {
-					//double[] weights_i = new double[layer_i_inputs.length];
 					NNNodeIntf[] layeri = _hiddenLayers[i];
 					double[] layeri_outputs = new double[layeri.length];
 					for (int j=0; j<layeri.length; j++) {
 						NNNodeIntf node_i_j = layeri[j];
-						//for (int p=0; p<weights_i.length; p++) 
-						//	weights_i[p] = _weights[pos++];
-						//layeri_outputs[j] = node_i_j.eval(layer_i_inputs, weights_i);
 						layeri_outputs[j] = node_i_j.eval(layer_i_inputs, _weights, pos);
 						pos += layer_i_inputs.length;
 					}
 					layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
 				}
 				// compute the output node output
-				//double[] output_ws = new double[_weights.length-pos];
-				//for (int p=0; p<output_ws.length; p++) output_ws[p] = _weights[pos++];
-				//double valt = _outputNode.eval(output_ws, layer_i_inputs);
 				double valt = _outputNode.eval(layer_i_inputs, _weights, pos);
 				errors[t] = (valt-_labels[t]);
 			}

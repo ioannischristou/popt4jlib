@@ -1,0 +1,55 @@
+dbglvl,2
+# the following defines an ANN and weights on the nn's connections
+# the ANN looks like this:
+# INP L0    L1    L2    OUT
+# x1
+# x2  N00   N10  
+# x3  N01   N11   N20
+# x4  ...   ...   ...   y
+# x5  ...   ...   N24
+# ... N09   N19
+# ...
+# x36
+class,outputlayer,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layer1_arr,10,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layer2_arr,10,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layer3_arr,5,popt4jlib.neural.Sigmoid,1.0
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr,layer3_arr
+# train data:
+matrix,ffnn.traindata,testdata/traindata1.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/trainlabels1.dat
+class,costfunc,popt4jlib.neural.costfunction.L2Norm
+# DGA props next
+class,dga.function,popt4jlib.neural.FFNN4Train,hiddenlayers,outputlayer,costfunc
+dga.chromosomelength,515
+dga.maxallelevalue,10.0
+dga.minallelevalue,-10.0
+dga.cutoffage,50
+dga.varage,10.0
+dga.numgens,800
+dga.numinitpop,10
+dga.poplimit,100
+rndgen,7,4
+dga.numthreads,4
+class,dga.xoverop,popt4jlib.GA.DblArray1PtXOverOp
+class,dga.mutationop,popt4jlib.GA.DblVarArray1MAlleleMutationOp
+dga.mutoprate,0.15
+class,dga.randomchromosomemaker,popt4jlib.GA.DblArray1CMaker
+class,dga.localoptimizer,popt4jlib.GradientDescent.AlternatingVariablesDescent
+# output file below used by [DGA,AVD]FFNNTest class
+ffnn.outputlabelsfile,testdata/result_trainlabels1.dat
+# AVD props next
+# notice: the FFNN4Train function will be using dga.numthreads threads to do a 
+# single function evaluation on the train dataset when running the local-opt
+# via the DGAFFNNRun class.
+avd.numdimensions,515
+avd.maxargval,10.0
+avd.minargval,-10.0
+avd.numtries,5
+onedopter.maxdetdirstepswithsamefuncval,3
+onedopter.maxnumfuncevals,100
+#avd.minstepsize,0.005
+avd.minstepsize,0.001
+avd.ftol,1.e-6
+avd.niterbnd,3

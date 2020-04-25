@@ -109,7 +109,6 @@ public class FFNN implements FunctionIntf {
 		final int num_signals_4_out = _hiddenLayers[_hiddenLayers.length-1].length;
 		double[] weights = new double[num_signals_4_out];
 		final int stop_pos = all_weights.length - num_signals_4_out;
-		int cnt=0;
 		for (int i=all_weights.length-1; i>=stop_pos; --i) {
 			weights[weights.length-(all_weights.length-i)] = all_weights[i];
 		}

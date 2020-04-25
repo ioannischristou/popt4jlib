@@ -107,6 +107,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/EA/IntVarArray1CMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/DSPPFinderFwdSrch.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutorWrk.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/Sigmoid.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/IntArray2SparseMatrix.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/AdditiveSolver2.java</file>
@@ -114,10 +115,12 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/IntArray1SparseVectorTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonFixedTOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DFileAccessSrvStatsRequest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/DGAFFNNRun.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1Vector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/BoundedBuffer.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/ClustererTerminationNoCenterMove.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/norm/package.html</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_train_test_props4.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/NNNodeIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/BH/VectorIntfRndDeltaCPerturber.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/FailedReply.java</file>
@@ -186,6 +189,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RosenbrockFunctionCEC20XXShifted.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/HNode.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/ThreadAccessTest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/InputSignalMaxPosSelector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/DDE2Test.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/poisson/RnQTCpoisson.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/ClustererIntf.java</file>
