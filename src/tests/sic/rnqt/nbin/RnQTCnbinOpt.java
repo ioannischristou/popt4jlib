@@ -7,6 +7,7 @@ import java.awt.geom.Ellipse2D;
 import java.io.Serializable;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 import parallel.TaskObject;
 import parallel.distributed.FailedReply;
@@ -46,7 +47,7 @@ import org.jfree.data.xy.XYSeriesCollection;
  * it can take on (user-defined) up to a point where the lower-bound on the cost 
  * function (namely the cost function with Ko=0) strictly exceeds the best known 
  * cost.
- * <p>Notices:
+ * <p>Notes:
  * <ul>
  * <li>20191115: program produces a visualization of the curve C*(T) for all T
  * it tries. Also, the same RnQTCnbinOpt object can no longer simultaneously
@@ -55,6 +56,8 @@ import org.jfree.data.xy.XYSeriesCollection;
  * object before it starts running itself.) This is because we now need to keep
  * track of the series of the T-values tried, and their corresponding costs so
  * we can visualize them in the main program execution.
+ * <li>2020-04-25: added method seParams() (public) because it was moved up from
+ * LocalOptimizerIntf to the root OptimizerIntf interface class.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -113,6 +116,15 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 		_ctis = new ArrayList();
 		_lbtis = new ArrayList();
 		_heurtis = new ArrayList();
+	}
+	
+	
+	/**
+	 * no-op.
+	 * @param p HashMap unused 
+	 */
+	public void setParams(HashMap p) {
+		// no-op.
 	}
 	
 	

@@ -10,6 +10,11 @@ import java.util.*;
  * method provider to compare other algorithms against (any optimization process
  * should produce superior results than the MCS class given the same number of
  * function evaluations.)
+ * <p>Notes:
+ * <ul>
+ * <li>2020-04-25: method seParams() became public because it was moved up from
+ * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -59,7 +64,7 @@ public class MCS implements OptimizerIntf {
    * @throws OptimizerException if another thread is concurrently running
    * <CODE>minimize(f)</CODE> of this object
    */
-  synchronized void setParams(HashMap params) throws OptimizerException {
+  public synchronized void setParams(HashMap params) throws OptimizerException {
     if (_f!=null) 
 			throw new OptimizerException("cannot modify parameters while running");
     _params = new HashMap(params);

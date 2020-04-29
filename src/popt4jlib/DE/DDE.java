@@ -20,6 +20,11 @@ import popt4jlib.GradientDescent.VecUtil;
  * It must be noted that DE applies only to functions with domain the space
  * R^n, and range the real axis R, and therefore cannot be applied to functions
  * with other domains.
+ * <p>Notes:
+ * <ul>
+ * <li>2020-04-25: method seParams() became public because it was moved up from
+ * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2018</p>
@@ -122,7 +127,7 @@ public class DDE implements OptimizerIntf {
    * then another to setParams(p2) to some other param-set, and then the
    * first thread to call minimize(f).
    */
-  synchronized void setParams(HashMap p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) 
 			throw new OptimizerException("cannot modify parameters while running");
     if (_setParamsFromSameThreadOnly) {

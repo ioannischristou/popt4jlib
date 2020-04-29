@@ -20,6 +20,11 @@ import utils.PairObjDouble;
  * the constant demand rate). If the demand rate is integral, then on integral
  * review periods, total demand will also be integer.
  * </ul>
+ * <p>Notes:
+ * <ul>
+ * <li>2020-04-25: added method seParams() (public) because it was moved up from
+ * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2019</p>
@@ -38,7 +43,16 @@ public class sSTCdetFixedTOpt implements OptimizerIntf {
 	public sSTCdetFixedTOpt(double T) {
 		_T = T;
 	}
+
 	
+	/**
+	 * no-op.
+	 * @param p HashMap unused 
+	 */
+	public void setParams(HashMap p) {
+		// no-op.
+	}
+
 	
 	/**
 	 * computes the optimal parameters for an (s,S,T) reorder-point, order-up-to

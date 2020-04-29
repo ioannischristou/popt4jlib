@@ -23,9 +23,15 @@ import java.io.Serializable;
  * are nested in this class definition, and this is another reason that this 
  * class also implements the <CODE>Serializable</CODE> interface (as do all
  * implementations of <CODE>popt4jlib.LocalOptimizerIntf</CODE>.)
+ * <p>Notes:
+ * <ul>
+ * <li> 20200429: added a check for the existence of key "avd.tryallparallel"
+ * which if it exists in the params and is false, it forces sequential variable
+ * optimization even if no "avd.tryorder" array is in the params.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2017</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 2.0
@@ -147,6 +153,10 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
    * in each major iteration, all variables are optimized (in parallel, but
    * considered in each thread one-by-one) and the optimization resulting in the
    * largest descent is chosen each time.
+	 * <li>&lt;"avd.tryallparallel", Boolean b&gt; optional, if it exists and is
+	 * false, then even if no "avd.tryorder" array exists in the parameters, the
+	 * result is still a sequential optimization process. Default is null (thus
+	 * true).
    * <li> &lt;"avd.niterbnd", Integer n&gt; optional, the number of inner-
 	 * iterations in the <CODE>OneDStepQuantumOptimizer</CODE> process before 
 	 * changing the length of the step-size. Default is 5.
@@ -365,6 +375,16 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
       catch (ClassCastException e) {
         e.printStackTrace();
       }
+			// itc-20200429: if "avd.tryallparallel" exists and is false go sequential
+			if (tryorder==null && _params.containsKey("avd.tryallparallel")) {
+				boolean tap = 
+					((Boolean) _params.get("avd.tryallparallel")).booleanValue();
+				if (!tap) {
+          final int n = x0.getNumCoords();
+					tryorder = new int[n];
+					for (int i=0; i<n; i++) tryorder[i] = i;
+				}
+			}
 
       // the core of the method
       PairObjDouble p = null;

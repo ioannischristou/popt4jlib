@@ -151,8 +151,9 @@ public class Adam implements LocalOptimizerIntf {
       _threads = new AdamThread[numthreads];
       int ntries = 1;
       try {
-        Integer ntriesI = (Integer) _params.get("asd.numtries");
-        if (ntriesI != null && ntriesI.intValue() > 1) ntries = ntriesI.intValue();
+        Integer ntriesI = (Integer) _params.get("adam.numtries");
+        if (ntriesI != null && ntriesI.intValue() > 1) 
+					ntries = ntriesI.intValue();
       }
       catch (ClassCastException e) { e.printStackTrace(); }
       int triesperthread = ntries / numthreads;
@@ -206,12 +207,8 @@ public class Adam implements LocalOptimizerIntf {
    * set the incumbent solution -if it is better than the current incumbent.
    * @param arg VectorIntf proposed arg.
    * @param val double proposed value
-   * @throws OptimizerException in case of insanity (may only happen if the
-   * function to be minimized is not reentrant and the debug bit
-   * <CODE>Constants.ASD</CODE> is set in the <CODE>Debug</CODE> class)
    */
-  synchronized void setIncumbent(VectorIntf arg, double val) 
-		throws OptimizerException {
+  synchronized void setIncumbent(VectorIntf arg, double val) {
     if (val<_incValue) {
       Messenger.getInstance().msg("Adam: update incumbent w/ new best value="+
 				                          val,0);
@@ -279,7 +276,7 @@ public class Adam implements LocalOptimizerIntf {
       try {
         setIncumbent(best, bestval);
       }
-      catch (OptimizerException e) {
+      catch (Exception e) {
         e.printStackTrace();
       }
     }
@@ -313,13 +310,13 @@ public class Adam implements LocalOptimizerIntf {
       Double b1D = (Double) p.get("adam.b1");
       if (b1D!=null && b1D.doubleValue()>0 && b1D.doubleValue()<1.0)
         b1 = b1D.doubleValue();
-			final double b1_inv = 1.0/b1;
+			final double b1_inv = 1.0 / b1;
 			final double one_minus_b1 = 1.0 - b1; 
       double b2 = 0.999;
       Double b2D = (Double) p.get("adam.b2");
       if (b2D!=null && b2D.doubleValue()>0 && b2D.doubleValue()<=1.0)
         b2 = b2D.doubleValue();
-			final double b2_inv = 1.0/b2;
+			final double b2_inv = 1.0 / b2;
 			final double one_minus_b2 = 1.0 - b2;
 			double eps = 1e-8;
 			Double eD = (Double) p.get("adam.eps");

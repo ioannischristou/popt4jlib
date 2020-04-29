@@ -19,6 +19,11 @@ import utils.PairObjTwoDouble;
  * (fixed) review period T. The system being optimized faces stochastic demands 
  * as described in the class <CODE>sSTCpoisson</CODE>. The solution found is 
  * guaranteed to be the global optimum for the given review period T.
+ * <p>Notes:
+ * <ul>
+ * <li>2020-04-25: added method seParams() (public) because it was moved up from
+ * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2018</p>
@@ -42,7 +47,16 @@ public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 	public sSTCpoissonFixedTOpt(double T) {
 		_T = T;
 	}
+
 	
+	/**
+	 * no-op.
+	 * @param p HashMap unused 
+	 */
+	public void setParams(java.util.HashMap p) {
+		// no-op.
+	}
+
 
 	/**
 	 * obtains the global minimum over all s and all S &ge; s of the function 

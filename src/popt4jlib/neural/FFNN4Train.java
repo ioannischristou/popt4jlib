@@ -1,15 +1,17 @@
 package popt4jlib.neural;
 
-import java.io.Serializable;
 import popt4jlib.*;
 import popt4jlib.neural.costfunction.L2Norm;
 import parallel.TaskObject;
 import parallel.distributed.PDBatchTaskExecutor;
+import utils.DataMgr;
+import utils.RndUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Vector;
-import utils.DataMgr;
+import java.util.Random;
+import java.io.Serializable;
 
 
 /**
@@ -115,6 +117,22 @@ public class FFNN4Train extends FFNN {
 	 * training dataset, with given training labels, according to the cost 
 	 * function held in data member <CODE>_costFunction</CODE> where the cost 
 	 * function accepts as inputs the errors of the network on the training data.
+	 * The network can also be trained with random mini-batches if the key-value
+	 * pair &lt;"ffnn.randombatchsize",$num$&gt; exists in the parameters hashmap
+	 * passed in as second argument to the method call; in such a case, only a 
+	 * random sample from the training set of the given size will be used to
+	 * evaluate the network, which of course will significantly speed-up training.
+	 * On the other hand, this will also make the call to this function with the
+	 * same arguments non-deterministic as same weights and same parameters will
+	 * be evaluated on a different training sample. Further, when only a strict
+	 * subset of the entire training set is evaluated, the resulting errors array
+	 * although it has length equal to the entire training set size, it will 
+	 * contain zeros for those instances that were not evaluated, and in the case
+	 * of parallel execution, the errors will not in general correspond to the 
+	 * positions in the training set that they were created. This should not 
+	 * create any problem for cost function evaluation, because no cost function 
+	 * cares about where an error has occurred (see the classes in package 
+	 * <CODE>popt4jlib.neural.costfunction</CODE>).
 	 * @param x Object  // double[] the weights of the network:
 	 * The weights are stored consecutively, starting with the weights of the 
 	 * first node of the first layer, then continuing with the weights of the 
@@ -139,11 +157,22 @@ public class FFNN4Train extends FFNN {
 			                   DblArray1VectorAccess.get_x((DblArray1Vector) x);
 		final double[][] train_vectors = (double[][]) params.get("ffnn.traindata");
 		final double[] train_labels = (double[]) params.get("ffnn.trainlabels");
+		final int batchsize = 
+			params.containsKey("ffnn.randombatchsize") ?
+				((Integer)params.get("ffnn.randombatchsize")).intValue() : -1;
+		final double prob_enter = batchsize > 0 ? 
+				                        ((double) batchsize)/train_vectors.length : 1.0;
 		final int num_inputs = train_vectors[0].length;  // get the #input_signals
 		final NNNodeIntf[][] hidden_layers = getHiddenLayers();
 		final int num_hidden_layers = hidden_layers.length;
 		final NNNodeIntf output_node = getOutputNode();
 		double[] errors = new double[train_vectors.length];
+			
+		Integer tidI = (Integer) params.get("thread.id");
+		Random rnd = null;
+		if (tidI!=null) rnd = RndUtil.getInstance(tidI.intValue()).getRandom();
+		else rnd = RndUtil.getInstance().getRandom();
+			
 		// check if there is a PDBatchTaskExecutor to use
 		PDBatchTaskExecutor extor = 
 			(PDBatchTaskExecutor) params.get("ffnn.pdbtexecutor");
@@ -152,12 +181,17 @@ public class FFNN4Train extends FFNN {
 		}
 		if (extor!=null) {  // create task-objects to do the work for each t
 			List tasks = 
-				new ArrayList((int) Math.ceil(((double)num_inputs)/_numInputsPerTask));  
+				new ArrayList((int) Math.ceil(((double)train_vectors.length) /
+					                            _numInputsPerTask));  
       // List<FFNNMultiEvalTask>
 			int cnt = 0;
 			double[][] input_vectors = new double[_numInputsPerTask][];
 			double[] input_labels = new double[_numInputsPerTask];
 			for (int t=0; t<train_vectors.length; t++) {
+				// enter with certain probability
+				if (rnd.nextDouble()>prob_enter) {  // this train-inst doesn't get in
+					continue;
+				} 
 				input_vectors[cnt] = train_vectors[t];
 				input_labels[cnt++] = train_labels[t];
 				if (cnt==_numInputsPerTask) {  // reached limit, create task and add to
@@ -198,6 +232,10 @@ public class FFNN4Train extends FFNN {
 		}
 		// nope, no parallel executor, do things serially.
 		for (int t=0; t<train_vectors.length; t++) {
+			// enter with certain probability
+			if (rnd.nextDouble()>prob_enter) {  // don't evaluate this training inst.
+				continue;
+			} 			
 			double[] inputs_t = train_vectors[t];
 			// compute from layer-0 to final hidden layer the node activations
 			int pos = 0;  // the position index in the vector w

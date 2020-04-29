@@ -1,0 +1,219 @@
+package popt4jlib.neural;
+
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import popt4jlib.LocalOptimizerIntf;
+import popt4jlib.*;
+import java.util.*;
+import parallel.distributed.PDBatchTaskExecutor;
+import utils.LightweightParams;
+import utils.RndUtil;
+
+
+/**
+ * Test-driver program for optimizing feed-forward neural networks via ANY of 
+ * the meta-heuristic optimizers available in this library. Post-processing 
+ * local optimization is possible via the optional "opt.localoptimizer" 
+ * parameter.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class OptFFNNRun {
+
+  /**
+   * public no-arg (no-op) constructor
+   */
+  public OptFFNNRun() {
+
+  }
+
+
+  /**
+   * run as 
+	 * <CODE> 
+	 * java -cp &lt;classpath&gt; popt4jlib.neural.OptFFNNRun &lt;params_file&gt; 
+	 * [random_seed] [maxfuncevalslimit]
+	 * </CODE>.
+   * 
+	 * The params_file must contain lines that can be parsed by the utility method
+	 * <CODE>utils.DataMgr.readPropsFromFile(params_file)</CODE> that will be 
+	 * understood by the optimizer specified in a particular line of the form:
+	 * <ul>
+   * <li> class,ffnn.mainoptimizer, &lt;fullclassnameoffunction&gt; mandatory, 
+	 * the name of the java class defining the optimizer to use; example name:
+	 * "popt4jlib.GA.DGA".
+	 * </ul>
+	 * <p> There are also a number of other lines specifying mandatory key,value 
+	 * pairs, in addition to what is required by the used classes themselves: one
+	 * line must specify a key-value pair of the form:
+	 * &lt;"opt.function", popt4jlib.neural.FFNN4Train func&gt; which denotes the
+	 * actual function to optimize.
+	 * <ul>
+	 * <li> Further, if a key-value pair of the form:
+	 * &lt;"ffnn.outputlabelsfile",&lt;filename&gt;&gt; is in the parameters, that
+	 * file will be used to write the outputs of the neural network for each 
+	 * training instance passed in the params for key "ffnn.traindata".
+   * </ul>
+	 * 
+   * <p> The optional second argument, if present, overrides the initial random
+   * seed specified in the params_file.
+   *
+   * <p> The optional third argument, if present, overrides any max. limit set
+   * on the number of function evaluations allowed. After this limit, the
+   * function will always return Double.MAX_VALUE instead, and won't increase
+   * the evaluation count.
+   * @param args String[]
+   */
+  public static void main(String[] args) {
+    try {
+      long start_time = System.currentTimeMillis();
+      HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
+			LightweightParams pl = new LightweightParams(params);
+      FunctionIntf func = (FunctionIntf) pl.getObject("opt.function");
+      Integer maxfuncevalI = pl.getInteger("function.maxevaluationtime");
+      Boolean doreentrantMT = pl.getBoolean("function.reentrantMT");
+			int nt = 1;
+      Integer ntI = pl.getInteger("opt.numthreads");
+      if (ntI!=null) nt = ntI.intValue();
+			if (args.length>1) {
+        long seed = Long.parseLong(args[1]);
+        RndUtil.getInstance().setSeed(seed);  // updates all extra instances too
+      }
+      if (args.length>2) {
+        long num = Long.parseLong(args[2]);
+        params.put("maxfuncevalslimit",new Long(num));
+      }
+      FunctionIntf wrapper_func = null;
+      if (maxfuncevalI!=null && maxfuncevalI.intValue()>0)
+        wrapper_func = 
+					new LimitedTimeEvalFunction(func, maxfuncevalI.longValue());
+      else if (doreentrantMT!=null && doreentrantMT.booleanValue()==true) {
+        wrapper_func = new ReentrantFunctionBaseMT(func, nt);
+      }
+      else wrapper_func = new FunctionBase(func);
+      params.put("function",wrapper_func);
+			OptimizerIntf opter = (OptimizerIntf) pl.getObject("ffnn.mainoptimizer");
+			opter.setParams(params);
+      // check for an ObserverIntf
+      ObserverIntf obs=(ObserverIntf) params.get("opt.observerlocaloptimizer");
+      if (obs!=null) {
+        ((GLockingObservableObserverBase) opter).registerObserver(obs);
+        ((LocalOptimizerIntf) obs).setParams(params);
+      }
+      utils.PairObjDouble p = opter.minimize(wrapper_func);
+      double[] arg = null;
+      try {
+        arg = (double[]) p.getArg();
+      }
+      catch (ClassCastException e) {
+				try {
+          DblArray1Vector y = (DblArray1Vector) p.getArg();
+          arg = y.getDblArray1();
+				}
+				catch (ClassCastException e2) {
+					// no-op
+				}
+      }
+			utils.PairObjDouble p2 = null;
+      if (arg!=null) {
+        System.out.print("best soln found:[");
+        for (int i = 0; i < arg.length; i++) System.out.print(arg[i] + " ");
+        System.out.println("] VAL=" + p.getDouble());
+      // final local optimization
+        LocalOptimizerIntf lasdst = 
+					(LocalOptimizerIntf) params.get("opt.localoptimizer");
+        if (lasdst!=null) {
+          VectorIntf x0 = new popt4jlib.DblArray1Vector(arg);
+          params.put("gradientdescent.x0", x0);
+					// remove any batch-size optimization, as this is a local search 
+					// process about to take place
+					params.remove("ffnn.randombatchsize");
+					if (nt>1) {  
+            // add an executor to the params to allow for parallel evaluation of 
+						// the FFNN4Train function on the training dataset! Use as many 
+						// threads as there were islands on the DGA.
+						PDBatchTaskExecutor extor = 
+							PDBatchTaskExecutor.newPDBatchTaskExecutor(nt);
+						params.put("ffnn.pdbtexecutor",extor);
+					}
+					
+          lasdst.setParams(params);
+          p2 = lasdst.minimize(wrapper_func);
+          VectorIntf xf = (VectorIntf) p2.getArg();
+          System.out.print("Optimized (via LocalOptimizer) best soln found:[");
+          for (int i = 0; i < xf.getNumCoords(); i++)
+            System.out.print(xf.getCoord(i) + " ");
+          System.out.println("] VAL=" + p2.getDouble());
+        }
+      } else System.err.println("Optimizer did not find any solution.");
+      double val = (p2==null || p2.getDouble()>=Double.MAX_VALUE) ? 
+				             p.getDouble() : p2.getDouble();
+			if (wrapper_func instanceof FunctionBase)
+        System.out.println("total function evaluations="+
+					                 ((FunctionBase) wrapper_func).getEvalCount());
+      else if (wrapper_func instanceof ReentrantFunctionBase)
+        System.out.println("total function evaluations="+
+					                 ((ReentrantFunctionBase) wrapper_func).
+														 getEvalCount());
+      else if (wrapper_func instanceof ReentrantFunctionBaseMT)
+        System.out.println("total function evaluations="+
+					                 ((ReentrantFunctionBaseMT) wrapper_func).
+														 getEvalCount());
+      else {
+        LimitedTimeEvalFunction f = (LimitedTimeEvalFunction) wrapper_func;
+        System.out.println("total function evaluations="+f.getEvalCount()+
+                           " total SUCCESSFUL function evaluations="+
+					                 f.getSucEvalCount());
+      }
+			
+			// finally, if there exists a requirement for storing results, do so.
+			String outputlabelsfile = (String) params.get("ffnn.outputlabelsfile");
+			if (outputlabelsfile!=null) {
+				// first, add the "hiddenws$i$ and "outputws" key-value pairs in params
+				FFNN4Train ft = (FFNN4Train) func;
+				double[] all_weights = arg;
+				final int num_hidden_layers = ft.getNumHiddenLayers();
+				final double[][] matrix = (double[][]) params.get("ffnn.traindata");
+				final double[] labels = (double[]) params.get("ffnn.trainlabels");
+				int num_data_features = matrix[0].length;
+				for (int l=0; l<num_hidden_layers; l++) {
+					double[][] wi = ft.getLayerWeights(l, all_weights, num_data_features);
+					params.put("hiddenws"+l, wi);
+				}
+				double[] outws = ft.getOutputWeights(all_weights);
+				params.put("outputws", outws);
+				PrintWriter pw = new PrintWriter(new FileWriter(outputlabelsfile));
+				int num_errors = 0;
+				for (int row=0; row<matrix.length; row++) {
+					double c_label = ft.evalNetworkOnInputData(matrix[row], params);
+					// let's calculate the number of errors as well, assuming labels are
+					// integer -consecutive- numbers.
+					int comp_lbl = (int)Math.round(c_label);
+					if (comp_lbl != (int) labels[row]) ++num_errors;
+					pw.println(c_label);
+				}
+				final double acc = 100*(1.0-((double)num_errors)/labels.length);
+				System.out.println("accuracy on training set="+acc+"%");
+				pw.flush();
+				pw.close();
+			}
+			
+      long end_time = System.currentTimeMillis();
+      long dur = end_time-start_time;
+			System.out.println("total time (msecs): "+dur);
+			if (wrapper_func instanceof FunctionBase)
+        System.out.println("VVV,"+val+",TTT,"+dur+",NNN,"+
+				                   ((FunctionBase)wrapper_func).getEvalCount()+
+				                   ",PPP,???,FFF,"+args[0]);  // for parser program to 
+		                                                  // extract from output
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
+}

@@ -30,16 +30,6 @@ public interface LocalOptimizerIntf extends OptimizerIntf, Serializable {
 	 * @return HashMap may be null
 	 */
   public HashMap getParams();
-	
-	
-	/**
-	 * set this object's parameters needed for the optimization process. The 
-	 * parameter set must always contain a starting point from which to start the
-	 * local optimization process (with key that is usually "[X.]x0" where X is an 
-	 * abbreviated name of the method employed).
-	 * @param params HashMap
-	 * @throws OptimizerException 
-	 */
-  public void setParams(HashMap params) throws OptimizerException;
+		
 }
 

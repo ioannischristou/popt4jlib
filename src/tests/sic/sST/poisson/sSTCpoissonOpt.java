@@ -26,6 +26,11 @@ import utils.Messenger;
  * value it can take on, up to a point where
  * the lower-bound on the cost function (namely the cost function with Ko=0)
  * strictly exceeds the best known cost.
+ * <p>Notes:
+ * <ul>
+ * <li>2020-04-25: added method seParams() (public) because it was moved up from
+ * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2019</p>
@@ -71,7 +76,16 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 		_epsT = epsT>0 ? epsT : 0.01;
 	}
 	
-	
+
+	/**
+	 * no-op.
+	 * @param p HashMap unused 
+	 */
+	public void setParams(java.util.HashMap p) {
+		// no-op.
+	}
+
+		
 	/**
 	 * main class method.
 	 * @param f

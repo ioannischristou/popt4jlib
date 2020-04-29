@@ -7,7 +7,6 @@ import popt4jlib.*;
 import popt4jlib.GA.*;
 import java.util.*;
 import parallel.distributed.PDBatchTaskExecutor;
-import popt4jlib.neural.FFNN4Train;
 import utils.RndUtil;
 
 /**
@@ -34,7 +33,7 @@ public class DGAFFNNRun {
   /**
    * run as 
 	 * <CODE> 
-	 * java -cp &lt;classpath&gt; tests.DGAFFNNRun &lt;params_file&gt; 
+	 * java -cp &lt;classpath&gt; popt4jlib.neural.DGAFFNNRun &lt;params_file&gt; 
 	 * [random_seed] [maxfuncevalslimit]
 	 * </CODE>.
    * 

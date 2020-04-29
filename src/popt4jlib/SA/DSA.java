@@ -18,6 +18,11 @@ import java.util.*;
  * perform an identical search because each thread is given a different random
  * number generator.)
  * This strategy is described in a paper on "Parallel Simulated Annealing".
+ * <p>Notes:
+ * <ul>
+ * <li>2020-04-25: method seParams() became public because it was moved up from
+ * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -82,7 +87,7 @@ public class DSA implements OptimizerIntf {
    * @throws OptimizerException if this method is called while another thread
    * is running the <CODE>minimize(f)</CODE> method on this object.
    */
-  synchronized void setParams(HashMap p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
     _params = null;
     _params = new HashMap(p);  // own the params
@@ -90,7 +95,7 @@ public class DSA implements OptimizerIntf {
 
 
   /**
-   * reset fields that need resetting so that another thread (or the current one)
+   * reset fields that need resetting so that another thread (or current one)
    * can re-use the object's <CODE>minimize(f)</CODE> method.
    */
   synchronized void reset() {

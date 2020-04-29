@@ -74,6 +74,10 @@ public class DataMgr {
 	 * form "class,mitsos,null" then the key "mitsos" is stored in props along 
 	 * with null object value. This allows for null values to be stored in the 
 	 * table for various keys.
+	 * <p>In case key is the keyword "ref", the key value is the next token in the
+	 * line, and the next (and last) token in the line must be the name of an 
+	 * existing key in the properties defined so far, the value of which is also
+	 * stored in props under the new key provided in this line.
 	 * <p>In case key is the keyword "array", the key value is the next token in 
 	 * the line, the next token is the type of the array ("int","long","double",
 	 * "boolean","string" or the full class name of the type of the objects in the 
@@ -230,6 +234,20 @@ public class DataMgr {
               continue;
             }
           }
+					else if ("ref".equals(key)) {  // next token is key-name, and
+						                             // last token is name of key in props!
+						key = strval;
+						try {
+							String refname = st.nextToken();
+							Object refval = props.get(refname);
+							props.put(key, refval);
+							continue;
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+							continue;
+						}
+					}
 					else if ("array".equals(key)) {  // must construct an array
 						try {
 							key = strval;  // name for the array to be constructed

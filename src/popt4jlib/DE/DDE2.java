@@ -26,6 +26,11 @@ import popt4jlib.GradientDescent.VecUtil;
  * generation; for example, when minimizing the Rosenbrock function in 100 
  * dimensions, when the population size is 5000, running with 8 threads on 
  * a Lenovo ThinkPad T530 is about 2.5 times faster than running on 1 thread.
+ * <p>Notes:
+ * <ul>
+ * <li>2020-04-25: method seParams() became public because it was moved up from
+ * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2018</p>
@@ -131,7 +136,7 @@ public class DDE2 implements OptimizerIntf {
    * then another to setParams(p2) to some other param-set, and then the
    * first thread to call minimize(f).
    */
-  synchronized void setParams(HashMap p) throws OptimizerException {
+  public synchronized void setParams(HashMap p) throws OptimizerException {
     if (_f!=null) 
 			throw new OptimizerException("cannot modify parameters while running");
     if (_setParamsFromSameThreadOnly) {

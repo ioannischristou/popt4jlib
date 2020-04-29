@@ -9,6 +9,7 @@ import popt4jlib.GradientDescent.OneDStepQuantumOptimizer;
 import utils.Pair;
 import utils.PairObjThreeDouble;
 //import utils.PairObjTwoDouble;
+import java.util.HashMap;
 
 
 /**
@@ -17,6 +18,11 @@ import utils.PairObjThreeDouble;
  * (fixed) review period T. The system being optimized faces stochastic demands 
  * as described in the class <CODE>RnQTCnbin</CODE>. The solution found is 
  * guaranteed to be the global optimum for the given review period T.
+ * <p>Notes:
+ * <ul>
+ * <li>2020-04-25: added method seParams() (public) because it was moved up from
+ * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2019</p>
@@ -39,6 +45,15 @@ public class RnQTCnbinFixedTOpt implements OptimizerIntf {
 	public RnQTCnbinFixedTOpt(double T, double currentMinVal) {
 		_T = T;
 		_curBest = currentMinVal;
+	}
+	
+
+	/**
+	 * no-op.
+	 * @param p HashMap unused 
+	 */
+	public void setParams(HashMap p) {
+		// no-op
 	}
 	
 
