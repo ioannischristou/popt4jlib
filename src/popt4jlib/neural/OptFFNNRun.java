@@ -6,6 +6,7 @@ import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.*;
 import java.util.*;
 import parallel.distributed.PDBatchTaskExecutor;
+import utils.DataMgr;
 import utils.LightweightParams;
 import utils.RndUtil;
 
@@ -57,6 +58,28 @@ public class OptFFNNRun {
 	 * &lt;"ffnn.outputlabelsfile",&lt;filename&gt;&gt; is in the parameters, that
 	 * file will be used to write the outputs of the neural network for each 
 	 * training instance passed in the params for key "ffnn.traindata".
+	 * <li> Also notice that in case the optimizer chosen is capable of 
+	 * using a cluster of machines to distribute the function evaluations (e.g. 
+	 * DGA, DPSO etc.), then an appropriate line specifying the initialization cmd
+	 * for each of the workers in the cluster must be specified, e.g.
+	 * "class,dga.pdbtexecinitedwrkcmd,
+	 *  popt4jlib.neural.FFNN4TrainEvalPDBTExecInitCmd,
+	 *  testdata/traindata1.dat,testdata/trainlabels1.dat".
+	 * In such a case, instead of having lines such as those below in the params
+	 * file:
+	 * <pre>
+	 * # train data:
+	 * matrix,ffnn.traindata,testdata/traindata1.dat
+	 * # train labels
+	 * dblarray,ffnn.trainlabels,testdata/trainlabels1.dat
+	 * </pre>
+	 * the params file should ONLY have the following two lines:
+	 * <pre>
+	 * ffnn.traindatafile,testdata/traindata1.dat
+	 * ffnn.trainlabelsfile,testdata/trainlabels1.dat
+	 * </pre>
+	 * which will NOT cause the parameters to contain the actual matrix and labels
+	 * data.
    * </ul>
 	 * 
    * <p> The optional second argument, if present, overrides the initial random
@@ -139,8 +162,7 @@ public class OptFFNNRun {
 						PDBatchTaskExecutor extor = 
 							PDBatchTaskExecutor.newPDBatchTaskExecutor(nt);
 						params.put("ffnn.pdbtexecutor",extor);
-					}
-					
+					}					
           lasdst.setParams(params);
           p2 = lasdst.minimize(wrapper_func);
           VectorIntf xf = (VectorIntf) p2.getArg();
@@ -177,8 +199,17 @@ public class OptFFNNRun {
 				FFNN4Train ft = (FFNN4Train) func;
 				double[] all_weights = arg;
 				final int num_hidden_layers = ft.getNumHiddenLayers();
-				final double[][] matrix = (double[][]) params.get("ffnn.traindata");
-				final double[] labels = (double[]) params.get("ffnn.trainlabels");
+				double[][] matrix = (double[][]) params.get("ffnn.traindata");
+				double[] labels = (double[]) params.get("ffnn.trainlabels");
+				if (matrix==null || labels==null) {
+					// see if data can be read from "ffnn.train[data|labels]file" param
+					String traindatafile = (String) params.get("ffnn.traindatafile");
+					if (traindatafile!=null) 
+						matrix = DataMgr.readMatrixFromFile(traindatafile);
+					String trainlabelsfile = (String) params.get("ffnn.trainlabelsfile");
+					if (trainlabelsfile!=null) 
+						labels = DataMgr.readDoubleLabelsFromFile(trainlabelsfile);
+				}
 				int num_data_features = matrix[0].length;
 				for (int l=0; l<num_hidden_layers; l++) {
 					double[][] wi = ft.getLayerWeights(l, all_weights, num_data_features);
