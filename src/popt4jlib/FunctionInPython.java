@@ -76,12 +76,14 @@ public class FunctionInPython implements FunctionIntf {
 			if (x instanceof VectorIntf) {
 				final int len = ((VectorIntf) x).getNumCoords();
 				arg = new Object[len];
-				for (int i=0; i<len; i++) arg[i] = ((VectorIntf)x).getCoord(i);
+				for (int i=0; i<len; i++) 
+					arg[i] = ((VectorIntf)x).getCoord(i);  // implicit box:double-->Double
 			}
 			else if (x instanceof double[]) {
 				final int len = ((double[])x).length;
 				arg = new Object[len];				
-				for (int i=0; i<len; i++) arg[i] = ((double[])x)[i];
+				for (int i=0; i<len; i++) 
+					arg[i] = ((double[])x)[i];  // implicit box:double-->Double
 			}
 			else 
 				throw new IllegalArgumentException("FunctionInPython.eval(): x is "+

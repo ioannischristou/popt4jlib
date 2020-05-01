@@ -9,9 +9,9 @@ import parallel.ParallelException;
 
 /**
  * Server class that allows storage and retrieval of sets of objects into an 
- * in-memory cache identified by name. Network clients send requests for adding
- * objects into the global cache, retrieving an entire cache by name, or 
- * clearing a named cache. Useful for storing QuantRule objects in the 
+ * in-memory cache. Network clients send requests for adding
+ * objects into the global cache, retrieving the entire cache, or 
+ * clearing the cache. Useful for storing QuantRule objects in the 
  * distributed versions of the QARMA algorithm.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>

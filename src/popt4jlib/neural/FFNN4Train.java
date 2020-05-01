@@ -45,7 +45,7 @@ public class FFNN4Train extends FFNN {
 
 	private FunctionIntf _costFunc = null;
 
-	private PDBatchTaskExecutor _extor = null;  // set by the 4-arg constructor
+	private transient PDBatchTaskExecutor _extor = null;  // set by 4-arg ctor
 	private static volatile int _numObjs4 = 0;  // used to check 4 FFNN4Train objs
 	
 	
@@ -146,7 +146,17 @@ public class FFNN4Train extends FFNN {
 	 * each input vector. The dataset is maintained as a 2-D double array
 	 * <CODE>double[][]</CODE> with key "ffnn.traindata" where each row represents 
 	 * one input vector, together with the expected outputs maintained in a 1-D 
-	 * double array <CODE>double[]</CODE> stored for key "ffnn.trainlabels".  
+	 * double array <CODE>double[]</CODE> stored for key "ffnn.trainlabels". If 
+	 * either of these two keys doesn't exist in the params map, the method will
+	 * attempt to retrieve them by calling the static class methods
+	 * <CODE>TrainData.getTrainingVectors()</CODE> and/or 
+	 * <CODE>TrainData.getTrainingLabels()</CODE> respectively. In the case of
+	 * distributed function evaluations (where both the weights as well as the 
+	 * parameters needed for the evaluation of the function) this allows to avoid
+	 * sending the training data along with the weights for evaluation over the 
+	 * network, assuming of course that when the argument reaches its destination
+	 * worker JVM, the worker has been initialized via a proper command so that 
+	 * the calls mentioned above actually have (cached) data to return.
 	 * @return double
 	 */
 	public double eval(Object x, HashMap params) {
@@ -155,8 +165,14 @@ public class FFNN4Train extends FFNN {
 		final double[] w = (x instanceof double[]) ?   
 			                   (double[]) x :
 			                   DblArray1VectorAccess.get_x((DblArray1Vector) x);
-		final double[][] train_vectors = (double[][]) params.get("ffnn.traindata");
-		final double[] train_labels = (double[]) params.get("ffnn.trainlabels");
+		final double[][] train_vectors = 
+			params.containsKey("ffnn.traindata") ?
+				(double[][]) params.get("ffnn.traindata") :
+			  TrainData.getTrainingVectors();
+		double[] train_labels = 
+			params.containsKey("ffnn.trainlabels") ?
+				(double[]) params.get("ffnn.trainlabels") :
+				TrainData.getTrainingLabels();
 		final int batchsize = 
 			params.containsKey("ffnn.randombatchsize") ?
 				((Integer)params.get("ffnn.randombatchsize")).intValue() : -1;
