@@ -127,6 +127,13 @@ public class OptFFNNRun {
         ((GLockingObservableObserverBase) opter).registerObserver(obs);
         ((LocalOptimizerIntf) obs).setParams(params);
       }
+			// check for existence of the "ffnn.train[data|labels]file" key in which
+			// case we must invoke the TrainData.readTrainingDataFromFiles() function
+			if (params.containsKey("ffnn.traindatafile")) {
+				String tdatafile = (String) params.get("ffnn.traindatafile");
+				String tlabelsfile = (String) params.get("ffnn.trainlabelsfile");
+				TrainData.readTrainingDataFromFiles(tdatafile, tlabelsfile);
+			}
       utils.PairObjDouble p = opter.minimize(wrapper_func);
       double[] arg = null;
       try {

@@ -1,6 +1,6 @@
 package popt4jlib.neural;
 
-import java.util.HashMap;
+import java.io.Serializable;
 
 /**
  * common interface for any Neural Network node (hidden or output).
@@ -11,7 +11,7 @@ import java.util.HashMap;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public interface NNNodeIntf {
+public interface NNNodeIntf extends Serializable {
 	/**
 	 * method assumes that the input weights are available as a 1-D array of the 
 	 * same dimension as the input signals to the node.

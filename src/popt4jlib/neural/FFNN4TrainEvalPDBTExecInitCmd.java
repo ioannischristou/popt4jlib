@@ -10,7 +10,8 @@ import parallel.distributed.RRObject;
 /**
  * auxiliary class used to initialize workers participating in a distributed 
  * network of machines evaluating the function <CODE>FFNN4Train</CODE>. NOT part 
- * of the public API.
+ * of the public API (but has to be public so that it can be instantiated from
+ * <CODE>DataMgr.readPropsFromFile(filename)</CODE>.)
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -18,17 +19,17 @@ import parallel.distributed.RRObject;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-final class FFNN4TrainEvalPDBTExecInitCmd extends RRObject {
+public final class FFNN4TrainEvalPDBTExecInitCmd extends RRObject {
 	private String _datafile;
 	private String _labelsfile;
 
 	
 	/**
-	 * sole constructor is not public.
+	 * sole constructor.
 	 * @param datafile String
 	 * @param labelsfile String
 	 */
-	FFNN4TrainEvalPDBTExecInitCmd(String datafile, String labelsfile) {
+	public FFNN4TrainEvalPDBTExecInitCmd(String datafile, String labelsfile) {
 		_datafile = datafile;
 		_labelsfile = labelsfile;
 	}

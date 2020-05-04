@@ -63,7 +63,7 @@ import java.util.*;
  * class).</p>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2016</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 2.0
@@ -844,7 +844,7 @@ class DGAThreadAux {
     _xoverOp = (XoverOpIntf) _p.get("dga.xoverop");
     _mutationOp = (MutationOpIntf) _p.get("dga.mutationop");
   }
-
+	
 /*
   public void runTask() {
     // start: do the DGA
@@ -1003,8 +1003,10 @@ class DGAThreadAux {
 		if (_pdbtExecInitedClt!=null) {  // function evaluations go distributed
 			TaskObject[] tasks = new TaskObject[initpopnum];
 			Chromosome2ArgMakerIntf c2amaker = _master.getChromosome2ArgMaker();
+			Object[] chromosomes = new Object[initpopnum];
 			for (int i=0; i<initpopnum; i++) {
 				Object chromosome = amaker.createRandomChromosome(_fp);
+				chromosomes[i] = chromosome;
 	      Object arg = null;
 	      if (c2amaker == null) arg = chromosome;
 				else arg = c2amaker.getArg(chromosome, _fp);
@@ -1018,14 +1020,21 @@ class DGAThreadAux {
         // function evaluations
 				for (int i=0; i<initpopnum; i++) {
 					double val = ((FunctionEvaluationTask) results[i]).getObjValue();
-					DGAIndividual indi = DGAIndividual.newInstance(c2amaker, val, 1.0, 
-						                                             _master);
+					//DGAIndividual indi = DGAIndividual.newInstance(c2amaker, val, 1.0, 
+					//	                                             _master);
+					// itc-20200505: line below used to be as above, which uses c2amaker
+					// as the actual chromosome required. Now we use the chromosomes 
+					// array, which will work as long as the results Object[] maintains
+					// the order in which the tasks are sent to the cluster.
+					DGAIndividual indi = DGAIndividual.newInstance(chromosomes[i], val, 
+						                                             1.0, _master);
 					indi.incrAge();
 					_individuals.add(indi);
 				}
 				run_locally = false;
 			}
 			catch (Exception e) {  // oops, distributed mode failed, go for local
+				e.printStackTrace();
 				run_locally = true;
 			}
 		}

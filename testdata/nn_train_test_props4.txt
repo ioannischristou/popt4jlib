@@ -17,19 +17,19 @@ arrayofcopies,layer3_arr,5,popt4jlib.neural.Sigmoid,1.0
 array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr,layer3_arr
 # train data:
 #matrix,ffnn.traindata,testdata/traindata1.dat
-ffnn.traindata,testdata/traindata1.dat
+ffnn.traindatafile,testdata/traindata1.dat
 # train labels
 #dblarray,ffnn.trainlabels,testdata/trainlabels1.dat
-ffnn.trainlabels,testdata/trainlabels1.dat
+ffnn.trainlabelsfile,testdata/trainlabels1.dat
 class,costfunc,popt4jlib.neural.costfunction.L2Norm
 # optimizer props
 class,ffnn.mainoptimizer,popt4jlib.GA.DGA
 class,opt.function,popt4jlib.neural.FFNN4Train,hiddenlayers,outputlayer,costfunc
-opt.numthreads,20
+opt.numthreads,2
 # line below causes non-deterministic function evaluations, of small batches of
 # input vectors, but runs a lot faster!
 #ffnn.randombatchsize,1000
-rndgen,7,20
+rndgen,7,2
 class,opt.localoptimizer,popt4jlib.GradientDescent.AlternatingVariablesDescent
 # DGA props next
 ref,dga.function,opt.function
@@ -38,7 +38,7 @@ dga.maxallelevalue,10.0
 dga.minallelevalue,-10.0
 dga.cutoffage,50
 dga.varage,10.0
-dga.numgens,10
+dga.numgens,2
 dga.numinitpop,10
 dga.poplimit,100
 ref,dga.numthreads,opt.numthreads
@@ -47,7 +47,7 @@ class,dga.mutationop,popt4jlib.GA.DblVarArray1MAlleleMutationOp
 dga.mutoprate,0.15
 class,dga.randomchromosomemaker,popt4jlib.GA.DblArray1CMaker
 ref,dga.localoptimizer,opt.localoptimizer
-class,dga.pdbtexecinitedwrkcmd,popt4jlib.neural.FFNN4TrainEvalPDBTExecInitCmd,ffnn.traindata,ffnn.trainlabels
+class,dga.pdbtexecinitedwrkcmd,popt4jlib.neural.FFNN4TrainEvalPDBTExecInitCmd,ffnn.traindatafile,ffnn.trainlabelsfile
 dga.pdbthost,localhost
 dga.pdbtport,7891
 # output file below used by [DGA,AVD]FFNNTest class
