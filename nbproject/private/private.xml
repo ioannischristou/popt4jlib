@@ -82,6 +82,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionArgStore.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/FastDblArray1VectorURndMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/VectorIntf.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1PtXOverOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/L1Norm.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/BH/DblArray1VectorCMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/DBBNode0.java</file>
@@ -100,6 +101,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/FastDblArray1VectorLHSRndMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/BH/DGABH.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutorCltTest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1Vector1PtXOverOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/Node.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1SparseVector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/EA/DEA.java</file>
@@ -126,6 +128,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/FastDblArray1ArgMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DebugNR.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/RnQTCnbinOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1CMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/MsgPassingCoordinator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/ReLU.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/BH/ChromosomePerturberIntf.java</file>
@@ -194,6 +197,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/AckleyFunction.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/LimitedTimeTaskExecutor.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RosenbrockFunctionCEC20XXShifted.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/optffnnrundbatch.bat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/InputSignalMaxPosSelector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/DDE2Test.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/poisson/RnQTCpoisson.java</file>

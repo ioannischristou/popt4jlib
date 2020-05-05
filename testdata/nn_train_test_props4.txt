@@ -21,15 +21,15 @@ ffnn.traindatafile,testdata/traindata1.dat
 # train labels
 #dblarray,ffnn.trainlabels,testdata/trainlabels1.dat
 ffnn.trainlabelsfile,testdata/trainlabels1.dat
-class,costfunc,popt4jlib.neural.costfunction.L2Norm
+class,costfunc,popt4jlib.neural.costfunction.L1Norm
 # optimizer props
 class,ffnn.mainoptimizer,popt4jlib.GA.DGA
 class,opt.function,popt4jlib.neural.FFNN4Train,hiddenlayers,outputlayer,costfunc
-opt.numthreads,2
+opt.numthreads,20
 # line below causes non-deterministic function evaluations, of small batches of
 # input vectors, but runs a lot faster!
 #ffnn.randombatchsize,1000
-rndgen,7,2
+rndgen,7,20
 class,opt.localoptimizer,popt4jlib.GradientDescent.AlternatingVariablesDescent
 # DGA props next
 ref,dga.function,opt.function
@@ -38,7 +38,7 @@ dga.maxallelevalue,10.0
 dga.minallelevalue,-10.0
 dga.cutoffage,50
 dga.varage,10.0
-dga.numgens,2
+dga.numgens,1000
 dga.numinitpop,10
 dga.poplimit,100
 ref,dga.numthreads,opt.numthreads
