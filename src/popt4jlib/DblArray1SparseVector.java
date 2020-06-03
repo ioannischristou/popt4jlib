@@ -709,6 +709,24 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 		}
   }
 
+	
+	/**
+	 * multiply the components of this vector by the argument h.
+	 * @param h double
+	 * @throws ParallelException
+	 */
+	public void mul(double h) throws ParallelException {
+		if (Double.compare(h, 0.0)==0 && Double.compare(_defVal,0.0)==0) {
+			_ilen = 0;
+			_indices = null;
+			_values = null;
+			return;
+		}
+		for (int i=0; i<_n; i++) {  // slow but correct version
+			setCoord(i, getCoord(i)*h);
+		}
+	}
+
 
   /**
    * return true iff all components are zero.

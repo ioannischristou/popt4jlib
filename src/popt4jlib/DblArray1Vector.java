@@ -252,6 +252,16 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
       _x[i] += m*other.getCoord(i);
     }
   }
+	
+	
+	/**
+	 * multiply the components of this vector by the argument h.
+	 * @param h double
+	 */
+	public void mul(double h) {
+    for (int i=0; i<_x.length; i++)
+      _x[i] *= h;		
+	}
 
 
   /**

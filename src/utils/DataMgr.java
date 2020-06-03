@@ -120,6 +120,8 @@ public class DataMgr {
 	 * now the cells of the matrix are all in [0,1] by subtracting from each cell
 	 * the column minimum and dividing the difference by the difference of the 
 	 * column max minus the column min.
+	 * <p> In case key is the keyword "matrix-1_1" then things work as above, but 
+	 * now the cells of the matrix are all in [-1,1]. 
 	 * <p> In case key is the keyword "sparsematrix", the the value is the name of
 	 * the property, and the next token is the filename of a text file describing
 	 * the matrix to be read via the method <CODE>readSparseVectorsFromFile</CODE>
@@ -436,6 +438,14 @@ public class DataMgr {
 						key = strval;
 						String matfile = st.nextToken();
 						double[][] matrix = readMatrixFromFileAndCanonicalizeCols(matfile);
+						props.put(key,matrix);
+						continue;
+					}
+					else if ("matrix-1_1".equals(key)) {
+						key = strval;
+						String matfile = st.nextToken();
+						double[][] matrix = 
+							readMatrixFromFileAndCanonicalizeColsInNegativeOne2One(matfile);
 						props.put(key,matrix);
 						continue;
 					}
@@ -1236,7 +1246,49 @@ public class DataMgr {
 			// do the column update
 			for (int i=0; i<rows; i++) {
 				//matrix[i][j] = (matrix[i][j] - col_min[j]) / (col_max[j] - col_min[j]);
-				matrix[i][j] = (matrix[i][j] - col_min) / (col_max - col_min);
+				if (Double.compare(col_max, col_min)>0)
+					matrix[i][j] = (matrix[i][j] - col_min) / (col_max - col_min);
+				else matrix[i][j] = 0.0;
+			}
+		}
+		return matrix;
+	}
+
+	
+	/**
+	 * same as <CODE>readMatrixFromFile(filename)</CODE> but it also converts 
+	 * every cell value to [-1,1].
+	 * @param fname
+	 * @return double[][] where each cell value is in [0,1]
+	 * @throws IOException 
+	 */
+	public static double[][] 
+	  readMatrixFromFileAndCanonicalizeColsInNegativeOne2One(String fname)
+		throws IOException {
+		double[][] matrix = readMatrixFromFile(fname);
+		final int rows = matrix.length;
+		final int cols = matrix[0].length;
+		//double[] col_max = new double[cols];
+		//double[] col_min = new double[cols];
+		for (int j=0; j<cols; j++) {
+			//col_max[j] = Double.NEGATIVE_INFINITY;
+			double col_max = Double.NEGATIVE_INFINITY;
+			//col_min[j] = Double.POSITIVE_INFINITY;
+			double col_min = Double.POSITIVE_INFINITY;
+			for (int i=0; i<rows; i++) {
+				//if (matrix[i][j]>col_max[j]) col_max[j] = matrix[i][j];
+				if (matrix[i][j]>col_max) col_max = matrix[i][j];
+				//if (matrix[i][j]<col_min[j]) col_min[j] = matrix[i][j];
+				if (matrix[i][j]<col_min) col_min = matrix[i][j];
+			}
+			// do the column update
+			double base = (col_max+col_min)/2.0;
+			double range = (col_max-col_min)/2.0;
+			for (int i=0; i<rows; i++) {
+				//matrix[i][j] = (matrix[i][j] - col_min[j]) / (col_max[j] - col_min[j]);
+				if (Double.compare(range,0)!=0)
+					matrix[i][j] = (matrix[i][j] - base) / range;
+				else matrix[i][j] = 0.0;
 			}
 		}
 		return matrix;

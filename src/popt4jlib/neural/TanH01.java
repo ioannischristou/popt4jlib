@@ -3,7 +3,8 @@ package popt4jlib.neural;
 
 /**
  * TanH01 implements the tanh function, scaled and shifted so as to produce 
- * values in [0,1] as activation function of a node.
+ * values in [0,1] as activation function of a node. Can only be used as hidden
+ * layer node.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -50,4 +51,47 @@ public class TanH01 implements NNNodeIntf {
 		return (Math.tanh(prod)+1)/2;
 	}
 
+
+	/**
+	 * Given arguments two vectors x and y, returns 
+	 * (tanh(&lt;x,y[0:x.len-1]&gt;+y[y.len-1])+1)/2.
+	 * @param inputSignals double[]
+	 * @param weights double[] includes a bias term
+	 * @return double
+	 */
+	public double evalB(double[] inputSignals, double[] weights) {
+		double prod = 0.0;
+		for (int i=0; i<inputSignals.length; i++)
+			prod += inputSignals[i]*weights[i];
+		prod += weights[inputSignals.length];  // bias term
+		return (Math.tanh(prod)+1)/2;
+	}
+
+	
+	/**
+	 * same as <CODE>evalB(s,w)</CODE> method, but the 2nd argument is now assumed
+	 * to hold all the network weights including node biases
+	 * @param inputSignals double[]
+	 * @param weights double[] includes nodes' biases
+	 * @param offset int
+	 * @return double
+	 */
+	public double evalB(double[] inputSignals, double[] weights, int offset) {
+		double prod = 0.0;
+		for (int i=0; i<inputSignals.length; i++)
+			prod += inputSignals[i]*weights[offset+i];
+		prod += weights[offset+inputSignals.length];  // bias term
+		return (Math.tanh(prod)+1)/2;
+	}
+
+	
+	/**
+	 * get this node's name.
+	 * @return String "TanH01"
+	 */
+	public String getNodeName() {
+		return "TanH01";
+	}
+
 }
+

@@ -28,7 +28,7 @@ public class FFNN implements FunctionIntf {
 	/**
 	 * field stores the single output node of the ANN.
 	 */
-	private NNNodeIntf _outputNode;
+	private OutputNNNodeIntf _outputNode;
 	
 	
 	/**
@@ -36,7 +36,7 @@ public class FFNN implements FunctionIntf {
 	 * @param hiddenLayers Object[]  // NNNodeIntf[][]
 	 * @param output 
 	 */
-	public FFNN(Object[] hiddenLayers, NNNodeIntf output) {
+	public FFNN(Object[] hiddenLayers, OutputNNNodeIntf output) {
 		_outputNode = output;
 		final int num_layers = hiddenLayers.length;
 		_hiddenLayers = new NNNodeIntf[num_layers][];
@@ -62,7 +62,7 @@ public class FFNN implements FunctionIntf {
 	 * allow sub-classes access to the <CODE>_outputNode</CODE> field.
 	 * @return NNNodeIntf  // _outputNode
 	 */
-	protected NNNodeIntf getOutputNode() {
+	protected OutputNNNodeIntf getOutputNode() {
 		return _outputNode;
 	}
 	
@@ -114,7 +114,60 @@ public class FFNN implements FunctionIntf {
 		}
 		return weights;		
 	}
+
 	
+	/**
+	 * given an array of weights for the entire network (all_weights) and the 
+	 * total number of input signals for the network, compute the weights 2-D 
+	 * array for a given layer (starting from zero), where the all_weights array
+	 * includes biases for each node in the network.
+	 * @param layerIndex int
+	 * @param all_weights double[]
+	 * @param numInputSignals int
+	 * @return double[][] the weights for the layer including biases for nodes
+	 */
+	public double[][] getLayerWeightsWithBias(int layerIndex, 
+		                                        double[] all_weights,
+		                                        int numInputSignals) {
+		final int num_nodes_in_layer = _hiddenLayers[layerIndex].length;
+		double[][] weights = new double[num_nodes_in_layer][];
+		int num_signals_4_layer = 
+			layerIndex > 0 ? 
+			  _hiddenLayers[layerIndex-1].length + 1 :  // +1 is bias term
+			  numInputSignals + 1;  // +1 is bias term
+		int start_pos = 0;
+		int prev_num_nodes = numInputSignals;
+		for (int i=0; i<layerIndex; i++) {
+			start_pos += _hiddenLayers[i].length * (prev_num_nodes+1);
+			prev_num_nodes = _hiddenLayers[i].length;
+		}
+		// start_pos now is the index in all_weights where we must start retrieving 
+		// values for our result
+		for (int i=0; i<num_nodes_in_layer; i++) {
+			weights[i] = new double[num_signals_4_layer];
+			for (int j=0; j<num_signals_4_layer; j++) 
+				weights[i][j] = all_weights[start_pos++];
+		}
+		return weights;
+	}
+	
+	
+	/**
+	 * similar to <CODE>getLayerWeightsWithBias()</CODE> but for the output node.
+	 * @param all_weights double[]
+	 * @return double[] the weights for the output node
+	 */
+	public double[] getOutputWeightsWithBias(double[] all_weights) {
+		final int num_signals_4_out = 
+			_hiddenLayers[_hiddenLayers.length-1].length+1;  // +1 is bias term
+		double[] weights = new double[num_signals_4_out];
+		final int stop_pos = all_weights.length - num_signals_4_out;
+		for (int i=all_weights.length-1; i>=stop_pos; --i) {
+			weights[weights.length-(all_weights.length-i)] = all_weights[i];
+		}
+		return weights;		
+	}
+
 	
 	/**
 	 * get the number of hidden layers.
@@ -134,11 +187,15 @@ public class FFNN implements FunctionIntf {
 	 * The output node weights are stored as a <CODE>double[]</CODE> with key 
 	 * "outputws".
 	 * @param inputs Object // double[]
-	 * @param params HashMap
+	 * @param params HashMap  // may include boolean value for key "includeBiases"
 	 * @return double
 	 */
 	public double eval(Object inputs, HashMap params) {
 		double[] x = (double[]) inputs;
+		final boolean biases = 
+			params.containsKey("includeBiases") ?
+			  ((Boolean) params.get("includeBiases")).booleanValue() :
+			  false;
 		final int numLayers = _hiddenLayers.length;
 		double[][][] weights = new double[numLayers][][];
 		for (int i=0; i<numLayers; i++) {
@@ -151,12 +208,17 @@ public class FFNN implements FunctionIntf {
 			layer_outputs = new double[weights[i].length];
 			for (int j=0; j<layer_outputs.length; j++) {
 				NNNodeIntf nodeij = _hiddenLayers[i][j];
-				layer_outputs[j] = nodeij.eval(x, weights[i][j]);
+				layer_outputs[j] = biases==false ? 
+					                   nodeij.eval(x, weights[i][j]) :
+					                   nodeij.evalB(x,weights[i][j]);              
 			}
 			x = layer_outputs;
 		}
 		// finally, compute the output layer output!
-		return _outputNode.eval(layer_outputs, outputws);
+		double ret = biases==false ? 
+			             _outputNode.eval(layer_outputs, outputws) :
+			             _outputNode.evalB(layer_outputs, outputws);
+		return ret;
 	}
 	
 	
@@ -212,7 +274,8 @@ public class FFNN implements FunctionIntf {
 			// figure out num_features from hiddenws0 matrix
 			double[][] hiddenws_mat = (double[][]) props.get("hiddenws0");
 			final int num_features = hiddenws_mat.length;
-			NNNodeIntf output_layer = (NNNodeIntf) props.get("outputlayer");
+			OutputNNNodeIntf output_layer = 
+				(OutputNNNodeIntf) props.get("outputlayer");
 			FFNN net = new FFNN(hidden_layers, output_layer);
 			double[] inputs = new double[num_features];
 			// let inputs stay at zero first

@@ -1,11 +1,11 @@
 package popt4jlib.neural;
 
 import popt4jlib.*;
-import popt4jlib.neural.costfunction.L2Norm;
 import parallel.TaskObject;
 import parallel.distributed.PDBatchTaskExecutor;
 import utils.DataMgr;
 import utils.RndUtil;
+import utils.Messenger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
@@ -15,22 +15,9 @@ import java.io.Serializable;
 
 
 /**
- * FFNN4Train extends FFNN that implements a standard feef-forward ANN, with 
- * arbitrary inputs, hidden layers, and a single output node. The difference 
- * lies in that this class's <CODE>eval()</CODE> method takes as input the 
- * actual object of training, ie the weights of the ANN, and returns the error
- * function value (measured as the return value of the cost function passed in 
- * the constructor as extra 3rd argument) of the ANN on a -labeled- dataset 
- * passed in the params map of the <CODE>eval()</CODE> method.
- * Notice: this is a serial implementation by default, but also allows for 
- * shared-memory parallel evaluation of a weighted NN (training vectors are 
- * evaluated in parallel) if in the <CODE>eval()</CODE> method the params 
- * object passed in contains a key-value pair of the form
- * &lt;"ffnn.pdbtexecutor",parallel.distributed.PDBatchTaskExecutor&gt;.
- * Alternatively, if the 4-arg constructor was used to create an object of this
- * class and the 4th argument is greater than 1, then again, a shared-memory
- * parallel evaluation of the function on the training inputs will occur with as
- * many threads as the 3rd constructor argument specified.
+ * FFNN4TrainB extends FFNN4Train and adds the requirement that all nodes in the
+ * FFNN have one more trainable variable (encoded as their last weight input
+ * variable), namely a bias. 
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -38,16 +25,8 @@ import java.io.Serializable;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class FFNN4Train extends FFNN {
-
-	protected FunctionIntf _costFunc = null;
-
-	protected final static int _numInputsPerTask = 32;  // used in shared-memory
-	                                                    // parallel evaluation
-
-	protected transient PDBatchTaskExecutor _extor = null;  // set by 4-arg ctor
-	static volatile int _numObjs4 = 0;  // used to check 4 FFNN4Train objs
-	
+public class FFNN4TrainB extends FFNN4Train {
+		
 	
 	/**
 	 * 3-arg public constructor for serial training set evaluation (unless the 
@@ -59,12 +38,9 @@ public class FFNN4Train extends FFNN {
 	 * L2 norm is used by default (essentially corresponding to a regression 
 	 * problem).
 	 */
-	public FFNN4Train(Object[] hiddenlayers, OutputNNNodeIntf outputnode, 
+	public FFNN4TrainB(Object[] hiddenlayers, OutputNNNodeIntf outputnode, 
 		                FunctionIntf f) {
-		super(hiddenlayers, outputnode);
-		if (f==null) f = new L2Norm();
-		_costFunc = f;
-		// ++_numObjs;  // deliberately not counting such objects
+		super(hiddenlayers, outputnode, f);
 	}
 
 	
@@ -79,24 +55,9 @@ public class FFNN4Train extends FFNN {
 	 * problem).
 	 * @param numthreads int if &gt; 1, parallel training set evaluation occurs.
 	 */
-	public FFNN4Train(Object[] hiddenlayers, OutputNNNodeIntf outputnode, 
+	public FFNN4TrainB(Object[] hiddenlayers, OutputNNNodeIntf outputnode, 
 		                FunctionIntf f, int numthreads) {
-		super(hiddenlayers, outputnode);
-		if (f==null) f = new L2Norm();
-		_costFunc = f;
-		if (++_numObjs4 > 1) {
-			System.err.println("2nd FFNN4Train being constructed via 4-arg ctor???");
-			System.exit(-1);
-		}
-		if (numthreads>1) {
-			try {
-				_extor = PDBatchTaskExecutor.newPDBatchTaskExecutor(numthreads);
-			}
-			catch (Exception e) {  // cannot happen
-				e.printStackTrace();  // ignore
-				_extor = null;
-			}
-		}
+		super(hiddenlayers, outputnode, f, numthreads);
 	}
 	
 	
@@ -104,11 +65,14 @@ public class FFNN4Train extends FFNN {
 	 * allows clients to call the base-class <CODE>eval()</CODE> method.
 	 * @param arg Object  // double[] inputSignal
 	 * @param params HashMap  // must contain &lt;"hiddenws$i$", double[][]&gt;
-	 * as well as &lt;"outputws",double[]&gt; pairs.
+	 * as well as &lt;"outputws",double[]&gt; pairs. All these arrays must be
+	 * expanded to include the respective node biases.
 	 * @return double
 	 */
 	public double evalNetworkOnInputData(Object arg, HashMap params) {
-		return super.eval(arg, params);
+		HashMap p2 = new HashMap(params);
+		p2.put("includeBiases", new Boolean(true));
+		return super.evalNetworkOnInputData(arg, p2);
 	}
 	
 	
@@ -117,6 +81,11 @@ public class FFNN4Train extends FFNN {
 	 * training dataset, with given training labels, according to the cost 
 	 * function held in data member <CODE>_costFunction</CODE> where the cost 
 	 * function accepts as inputs the errors of the network on the training data.
+	 * The difference from base class <CODE>FFNN4Train</CODE> is that in this 
+	 * class, each node requires one more weight (coming last in the order of 
+	 * weights) to be the bias for the node), so the weights variables array must
+	 * have size increased by exactly the number of total nodes (hidden plus 
+	 * output) in the network.
 	 * The network can also be trained with random mini-batches if the key-value
 	 * pair &lt;"ffnn.randombatchsize",$num$&gt; exists in the parameters hashmap
 	 * passed in as second argument to the method call; in such a case, only a 
@@ -135,13 +104,15 @@ public class FFNN4Train extends FFNN {
 	 * <CODE>popt4jlib.neural.costfunction</CODE>).
 	 * @param x Object  // double[] the weights of the network:
 	 * The weights are stored consecutively, starting with the weights of the 
-	 * first node of the first layer, then continuing with the weights of the 
-	 * second node of the first layer, ... until finally we get the weights of the
-	 * connections to the output node. The FFNN class network architecture is that
-	 * all nodes in one layer connect to all nodes in the next layer and only 
-	 * those. Notice that x may be instead a <CODE>DblArray1Vector</CODE> object,
-	 * in which case we obtain access to the underlying <CODE>double[]</CODE> via
-	 * the <CODE>popt4jlib.DblArray1VectorAccess.get_x()</CODE> static method.
+	 * first node of the first layer (including for each node one bias variable), 
+	 * then continuing with the weights of the second node of the first layer 
+	 * (again, including one bias variable for each node) ... until finally we get 
+	 * the weights of the connections to the output node plus their own biases. 
+	 * The FFNN class network architecture is that all nodes in one layer connect 
+	 * to all nodes in the next layer and only those. Notice that x may be instead 
+	 * be a <CODE>DblArray1Vector</CODE> object, in which case we obtain access to 
+	 * the underlying <CODE>double[]</CODE> via the 
+	 * <CODE>popt4jlib.DblArray1VectorAccess.get_x()</CODE> static method.
 	 * @param params HashMap must contain the dataset as well as the labels for
 	 * each input vector. The dataset is maintained as a 2-D double array
 	 * <CODE>double[][]</CODE> with key "ffnn.traindata" where each row represents 
@@ -160,8 +131,9 @@ public class FFNN4Train extends FFNN {
 	 * @return double
 	 */
 	public double eval(Object x, HashMap params) {
+		Messenger mger = Messenger.getInstance();
 		double result = 0.0;
-		// w is the weights of the network connections
+		// w is the weights+biases of the network connections
 		final double[] w = (x instanceof double[]) ?   
 			                   (double[]) x :
 			                   DblArray1VectorAccess.get_x((DblArray1Vector) x);
@@ -199,7 +171,7 @@ public class FFNN4Train extends FFNN {
 			List tasks = 
 				new ArrayList((int) Math.ceil(((double)train_vectors.length) /
 					                            _numInputsPerTask));  
-      // List<FFNNMultiEvalTask>
+      // List<FFNNMultiEvalTaskB>
 			int cnt = 0;
 			double[][] input_vectors = new double[_numInputsPerTask][];
 			double[] input_labels = new double[_numInputsPerTask];
@@ -212,9 +184,9 @@ public class FFNN4Train extends FFNN {
 				input_labels[cnt++] = train_labels[t];
 				if (cnt==_numInputsPerTask) {  // reached limit, create task and add to
 					                             // tasks
-					FFNNMultiEvalTask met = 
-						new FFNNMultiEvalTask(input_vectors, input_labels, w,
-							                    hidden_layers, output_node);
+					FFNNMultiEvalTaskB met = 
+						new FFNNMultiEvalTaskB(input_vectors, input_labels, w,
+							                     hidden_layers, output_node);
 					tasks.add(met);
 					cnt=0;
 					input_vectors = new double[_numInputsPerTask][];
@@ -222,9 +194,9 @@ public class FFNN4Train extends FFNN {
 				}
 			}
 			if (cnt > 0) {  // there is a remainder
-				FFNNMultiEvalTask met = 
-					new FFNNMultiEvalTask(input_vectors, input_labels, w, 
-						                    hidden_layers, output_node);
+				FFNNMultiEvalTaskB met = 
+					new FFNNMultiEvalTaskB(input_vectors, input_labels, w, 
+						                     hidden_layers, output_node);
 				tasks.add(met);
 			}
 			try {
@@ -253,6 +225,9 @@ public class FFNN4Train extends FFNN {
 				continue;
 			} 			
 			double[] inputs_t = train_vectors[t];
+			if (mger.getDebugLvl()>=3) {  // diagnostics
+				mger.msg(" FFNN4TrainB.eval(): WORKING ON DATA train_vectors["+t+"]",2);
+			}
 			// compute from layer-0 to final hidden layer the node activations
 			int pos = 0;  // the position index in the vector w
 			// get the inputs for the layer. Inputs are same for all nodes in a layer.
@@ -264,12 +239,52 @@ public class FFNN4Train extends FFNN {
 				double[] layeri_outputs = new double[layeri.length];
 				for (int j=0; j<layeri.length; j++) {
 					NNNodeIntf node_i_j = layeri[j];
-					layeri_outputs[j] = node_i_j.eval(layer_i_inputs, w, pos);
-					pos += layer_i_inputs.length;
+					layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, w, pos);
+					// print out diagnostics
+					if (mger.getDebugLvl()>=3) {
+						mger.msg("  FFNN4TrainB.eval(): "+node_i_j.getNodeName()+"[layer="+
+							       i+"][index="+j+"]:",2);
+						String inps = "[ ";
+						for (int k=0; k<layer_i_inputs.length; k++) {
+							inps += layer_i_inputs[k]+" ";
+						}
+						inps += "]";
+						mger.msg("   INPUTS="+inps, 2);
+						String ws = "[ ";
+						for (int k=0; k<layer_i_inputs.length; k++) {
+							ws += w[k+pos]+" ";
+						}
+						ws += w[layer_i_inputs.length+pos]+"(BIAS) ";
+						ws += "]";
+						mger.msg("   WEIGHTS="+ws, 2);
+						mger.msg("   "+node_i_j.getNodeName()+"[layer="+i+"][index="+j+
+							       "] OUTPUT="+
+							       layeri_outputs[j], 2);
+					}  // diagnostics
+					pos += layer_i_inputs.length+1;  // +1 is for the bias
 				}
 				layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
 			}
-			double valt = output_node.eval(layer_i_inputs, w, pos, train_labels[t]);
+			double valt = output_node.evalB(layer_i_inputs, w, pos, train_labels[t]);
+			// print out diagnostics
+			if (mger.getDebugLvl()>=3) {
+				mger.msg("  FFNN4TrainB.eval(): OUTPUT "+output_node.getNodeName()+":", 
+					       2);
+				String inps = "[ ";
+				for (int k=0; k<layer_i_inputs.length; k++) {
+					inps += layer_i_inputs[k]+" ";
+				}
+				inps += "]";
+				mger.msg("   INPUTS="+inps, 2);
+				String ws = "[ ";
+				for (int k=0; k<layer_i_inputs.length; k++) {
+					ws += w[k+pos]+" ";
+				}
+				ws += w[layer_i_inputs.length+pos]+"(BIAS) ";
+				ws += "]";
+				mger.msg("   WEIGHTS="+ws, 2);
+				mger.msg("  FINAL OUTPUT for train_data["+t+"] = "+valt, 2);				
+			}  // diagnostics
 			errors[t] = (valt-train_labels[t]);
 		}
 		// finally, apply the cost function on the errors array, adding to the 
@@ -284,7 +299,7 @@ public class FFNN4Train extends FFNN {
 	/**
 	 * invoke as:
 	 * <CODE>
-	 * java -cp &lt;classpath&gt; popt4jlib.neural.FFNN4Train 
+	 * java -cp &lt;classpath&gt; popt4jlib.neural.FFNN4TrainB 
 	 * &lt;params_file&gt; [num_threads(1)]
 	 * </CODE>.
 	 * <PRE>
@@ -308,6 +323,7 @@ public class FFNN4Train extends FFNN {
 	 * array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr
 	 * matrix,ffnn.traindata,testdata/traindata0.dat
 	 * dblarray,ffnn.trainlabels,testdata/trainlabels0.dat
+	 * array,weights,double, 1,1,0,0,0, 0,0,0,0,0, 1,1,0, 1,1,0, 0,0,0, 1,1,1,1 
 	 * </PRE>
 	 * The training data file is a data file that describes a matrix in a format
 	 * readable by the method <CODE>utils.DataMgr.readMatrixFromFile()</CODE>;each
@@ -330,22 +346,26 @@ public class FFNN4Train extends FFNN {
 					params.put("ffnn.pdbtexecutor",extor);
 				}
 			}
-			// now, produce an array of zero weights: the dimension of this vector
-			// is #features*#nodes(layer_0) + 
-			//    \sum_{i=0}^{i=#layers-2} [#nodes(layer_i)*#nodes(layer_{i+1}] +
-			//    #nodes(layer_{#layers-1})
+			// now, produce an array of weights: the dimension of this vector
+			// is (#features+1)*#nodes(layer_0) + 
+			//    \sum_{i=0}^{i=#layers-2} [(#nodes(layer_i)+1)*#nodes(layer_{i+1}] +
+			//    #nodes(layer_{#layers-1})+1
+			// +1 in various places in the formula above is for bias variables
 			Object[] hidden_layers = (Object[])params.get("hiddenlayers");
 			OutputNNNodeIntf output_node = 
 				(OutputNNNodeIntf) params.get("outputlayer");
+			FunctionIntf costfunc = (FunctionIntf) params.get("costfunc");
 			double[][] train_data = (double[][])params.get("ffnn.traindata");
-			int num_ws = ((Object[])hidden_layers[0]).length*train_data[0].length;
+			int num_ws = ((Object[])hidden_layers[0]).length*(train_data[0].length+1);
 			for (int i=0; i<hidden_layers.length-1; i++) {
-				num_ws += ((Object[])hidden_layers[i]).length *
+				num_ws += (((Object[])hidden_layers[i]).length+1) *
 					        ((Object[])hidden_layers[i+1]).length;
 			}
-			num_ws += ((Object[])hidden_layers[hidden_layers.length-1]).length;
-			double[] weights = new double[num_ws];
-			FFNN4Train func = new FFNN4Train(hidden_layers, output_node, null);
+			num_ws += ((Object[])hidden_layers[hidden_layers.length-1]).length+1;
+			//double[] weights = new double[num_ws];
+			// set weight values
+			double[] weights = (double[]) params.get("weights");
+			FFNN4TrainB func = new FFNN4TrainB(hidden_layers, output_node, costfunc);
 			double result = func.eval(weights, params);
 			final long dur = System.currentTimeMillis()-start;
 			System.out.println("final cost function value = "+result+
@@ -361,7 +381,7 @@ public class FFNN4Train extends FFNN {
 	/**
 	 * static auxiliary class not part of the public API.
 	 */
-	static class FFNNMultiEvalTask implements TaskObject {
+	static class FFNNMultiEvalTaskB implements TaskObject {
 		private double[][] _inputs;
 		private double[] _labels;
 		private NNNodeIntf[][] _hiddenLayers;
@@ -375,9 +395,9 @@ public class FFNN4Train extends FFNN {
 		 * @param labels double[]
 		 * @param weights double[]
 		 * @param hiddenLayers NNNodeIntf[][]
-		 * @param outNode NNNodeIntf
+		 * @param outNode OutputNNNodeIntf
 		 */
-		public FFNNMultiEvalTask(double[][] inputs, double[] labels, 
+		public FFNNMultiEvalTaskB(double[][] inputs, double[] labels, 
 			                       double[] weights, 
 			                       NNNodeIntf[][] hiddenLayers, 
 														 OutputNNNodeIntf outNode) {
@@ -419,14 +439,14 @@ public class FFNN4Train extends FFNN {
 					double[] layeri_outputs = new double[layeri.length];
 					for (int j=0; j<layeri.length; j++) {
 						NNNodeIntf node_i_j = layeri[j];
-						layeri_outputs[j] = node_i_j.eval(layer_i_inputs, _weights, pos);
-						pos += layer_i_inputs.length;
+						layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, _weights, pos);
+						pos += layer_i_inputs.length+1;
 					}
 					layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
 				}
 				// compute the output node output
-				double valt = _outputNode.eval(layer_i_inputs, _weights, pos, 
-					                             _labels[t]);
+				double valt = _outputNode.evalB(layer_i_inputs, _weights, pos, 
+					                              _labels[t]);
 				errors[t] = (valt-_labels[t]);
 			}
 			

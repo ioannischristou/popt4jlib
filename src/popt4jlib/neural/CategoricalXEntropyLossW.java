@@ -1,13 +1,12 @@
 package popt4jlib.neural;
 
+import utils.Messenger;
+
 
 /**
- * class implements the arg-max selector function that can be used as output
- * node when the output layer should consist of more than one node. In this case
- * the "real" output layer is the last hidden layer in the network, and this 
- * class simply chooses as value for the network the node index with the largest
- * activation value. Obviously, weights of the last hidden layer towards this
- * output node are not used.
+ * same as the <CODE>CategoricalXEntropyLoss</CODE> class, but when used as the 
+ * output node, divides the value of the input of the node corresponding to the 
+ * true label by the sum of the input signals of all its inputs.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -15,15 +14,16 @@ package popt4jlib.neural;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class InputSignalMaxPosSelector implements OutputNNNodeIntf {
-		
+public class CategoricalXEntropyLossW implements OutputNNNodeIntf {
+	
+	
 	/**
-	 * public no-arg, no-op constructor.
+	 * (sole) public constructor is a no-op.
 	 */
-	public InputSignalMaxPosSelector() {
+	public CategoricalXEntropyLossW() {
 		// no-op
 	}
-	
+
 	
 	/**
 	 * computes and returns the index in inputSignals argument that has the 
@@ -115,44 +115,68 @@ public class InputSignalMaxPosSelector implements OutputNNNodeIntf {
 		}
 		return bind;
 	}
-	
+
 	
 	/**
-	 * called when the node is used as output node, simply calls
-	 * <CODE>eval(inputSignals,weights,offset)</CODE>.
+	 * called when the node is used as output node, and returns the cross-entropy
+	 * of the given input data instance, for the network with the given weights
+	 * PLUS the true label value.
 	 * @param inputSignals double[]
-	 * @param weights double[]
-	 * @param offset int
-	 * @param true_label double unused
+	 * @param weights double[] unused
+	 * @param offset int unused
+	 * @param true_label double value in {0,...,inputSignals.length-1}
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights, int offset, 
 		                 double true_label) {
-		return eval(inputSignals, weights, offset);
+		final int real_lbl = (int) true_label;
+		double sum = 0.0;
+		for (int i=0; i<inputSignals.length; i++) sum += inputSignals[i];
+		if (Double.compare(Math.abs(sum),1.e-18)<0) 
+			sum = 1.e-18;  // avoid division by zero
+		double arg = inputSignals[real_lbl]/sum;
+		// code below to avoid infinities and the like
+		if (Double.compare(arg, 0.0)==0) arg = 1.e-300;
+		double xent = -Math.log(arg);
+		if (Double.isInfinite(xent) || Double.isNaN(xent)) {
+			Messenger mger = Messenger.getInstance();
+			String data = "CategoricalXEntropyLossW.eval():";
+			data += " inputSignals=[ ";
+			for (int j=0; j<inputSignals.length; j++) data += inputSignals[j]+" ";
+			data += "], weights=[DONT_CARE], offset=DONT_CARE, true_label=";
+			data += true_label;
+			data += " SUM(inputSignals)="+sum;
+			mger.msg(data, 0);
+			throw new Error("eval() results in NaN or Infinity");
+		}
+		return xent + true_label;  // the reason for adding the true label is that
+		                           // the cost function works on the error values:
+		                           // valt-true_label, and we want the error to be
+		                           // exactly xent
 	}
 	
 
 	/**
-	 * called when the node is used as output node, simply calls
-	 * <CODE>evalB(inputSignals,weights,offset)</CODE>.
+	 * called when the node is used as output node is exactly the same as 
+	 * <CODE>eval(inputSignals,weights,offset,true_label)</CODE>.
 	 * @param inputSignals double[]
-	 * @param weights double[]
-	 * @param offset int
-	 * @param true_label double unused
+	 * @param weights double[] unused
+	 * @param offset int unused
+	 * @param true_label double value in {0,...inputSignals.length-1}
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] weights, int offset,
 		                  double true_label) {
-		return evalB(inputSignals, weights, offset);
+		return eval(inputSignals, weights, offset, true_label);
 	}
-	
+
 	
 	/**
 	 * get this node's name.
-	 * @return String "InputSignalMaxPosSelector"
+	 * @return String "CategoricalXEntropyLoss"
 	 */
 	public String getNodeName() {
-		return "InputSignalMaxPosSelector";
+		return "CategoricalXEntropyLoss";
 	}
 
 }

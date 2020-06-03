@@ -8,7 +8,7 @@ import java.util.*;
  * derivative of a differentiable function.
  * Note1: unfortunately, this implementation does not have a way of checking
  * when an nmax value in the Richardson recursion is "too much" or "too little".
- *  Note2: there is currently no way to check if the values returned are
+ * Note2: there is currently no way to check if the values returned are
  * "close" to the real derivative value, or even if the derivative exists.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -34,22 +34,25 @@ public class GradApproximator implements VecFunctionIntf {
    * point x using Richardson extrapolation. The params hash-table may contain
    * the following pairs:
 	 * <ul>
-   * <li> &lt;"gradapproximator.nmax", Integer n&gt; optional, the dimension of the
-   * Richardson extrapolation. Default is 10.
+   * <li> &lt;"gradapproximator.nmax", Integer n&gt; optional, the dimension of 
+   * the Richardson extrapolation. Default is 15.
 	 * </ul>
    * @param x VectorIntf the point at which the gradient must be evaluated.
-   * @param params HashMap any parameters to be passed to the function f
+   * @param params HashMap any parameters to be passed to the function f, may be
+	 * null
    * @throws IllegalArgumentException if x is null
    * @return VectorIntf
    */
-  public VectorIntf eval(VectorIntf x, HashMap params) throws IllegalArgumentException {
+  public VectorIntf eval(VectorIntf x, HashMap params) 
+		throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null arg passed");
     final int n = x.getNumCoords();
     VectorIntf xc = x.newCopy();  // work with copy so as to avoid memory
     // corruption issues in multi-threaded accesses of the vector
     double h = 1.0;
-    int nmax = 10;
-    Integer nmI = (Integer) params.get("gradapproximator.nmax");
+    int nmax = 15;
+    Integer nmI = params != null ? 
+			              (Integer) params.get("gradapproximator.nmax") : null;
     if (nmI!=null && nmI.intValue()>0)
       nmax = nmI.intValue();
     double[][] d = new double[nmax][nmax];
@@ -93,13 +96,14 @@ public class GradApproximator implements VecFunctionIntf {
    * @throws IllegalArgumentException
    * @return double
    */
-  public double evalCoord(VectorIntf x, HashMap params, int coordindex) throws IllegalArgumentException {
+  public double evalCoord(VectorIntf x, HashMap params, int coordindex) 
+		throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null arg passed");
     // final int n = x.getNumCoords();
     VectorIntf xc = x.newCopy();  // work with copy so as to avoid memory
     // corruption issues in multi-threaded accesses of the vector
     double h = 1.0;
-    int nmax = 10;
+    int nmax = 15;
     Integer nmI = (Integer) params.get("gradapproximator.nmax");
     if (nmI!=null && nmI.intValue()>0)
       nmax = nmI.intValue();
@@ -128,6 +132,44 @@ public class GradApproximator implements VecFunctionIntf {
     }
     return d[nmax-1][nmax-1];
   }
+	
+	
+	/** test program to test the gradient aproximation formula; invoke as 
+	 * <CODE>
+	 * java -cp &lt;classpath&gt; analysis.GradApproximator &lt;function_class&lt;
+	 *  &lt;x_1[,x_2...]&gt; [nmax(15)]
+	 * </CODE>. The function to be tested must have a public no-arg constructor.
+	 * @param args 
+	 */
+	public static void main(String[] args) {
+		try {
+			String function_class_name = args[0];
+			Class fc = Class.forName(function_class_name);
+			FunctionIntf f = (FunctionIntf) fc.newInstance();
+			String xstr = args[1];
+			StringTokenizer st = new StringTokenizer(xstr,",");
+			int n = st.countTokens();
+			DblArray1Vector x = new DblArray1Vector(n);
+			int i=0;
+			while (st.hasMoreTokens()) {
+				x.setCoord(i++, Double.parseDouble(st.nextToken()));
+			}
+			int nmax = 15;
+			HashMap params = null;
+			if (args.length>2) {
+				nmax = Integer.parseInt(args[2]);
+				params = new HashMap();
+				params.put("gradapproximator.nmax", new Integer(nmax));
+			}
+			GradApproximator gapprox = new GradApproximator(f);
+			VectorIntf gax = gapprox.eval(x, params);
+			System.out.println("g-approx("+x+")="+gax);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+	}
 
 }
 

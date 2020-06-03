@@ -51,8 +51,8 @@ public class OptFFNNRun {
 	 * <p> There are also a number of other lines specifying mandatory key,value 
 	 * pairs, in addition to what is required by the used classes themselves: one
 	 * line must specify a key-value pair of the form:
-	 * &lt;"opt.function", popt4jlib.neural.FFNN4Train func&gt; which denotes the
-	 * actual function to optimize.
+	 * &lt;"opt.function", popt4jlib.neural.FFNN4Train[B] func&gt; which denotes 
+	 * the actual function to optimize.
 	 * <ul>
 	 * <li> Further, if a key-value pair of the form:
 	 * &lt;"ffnn.outputlabelsfile",&lt;filename&gt;&gt; is in the parameters, that
@@ -121,6 +121,9 @@ public class OptFFNNRun {
       params.put("function",wrapper_func);
 			OptimizerIntf opter = (OptimizerIntf) pl.getObject("ffnn.mainoptimizer");
 			opter.setParams(params);
+			// get training data/labels from the start
+			double[][] matrix = (double[][]) params.get("ffnn.traindata");
+			double[] labels = (double[]) params.get("ffnn.trainlabels");
       // check for an ObserverIntf
       ObserverIntf obs=(ObserverIntf) params.get("opt.observerlocaloptimizer");
       if (obs!=null) {
@@ -161,10 +164,17 @@ public class OptFFNNRun {
           params.put("gradientdescent.x0", x0);
 					// remove any batch-size optimization, as this is a local search 
 					// process about to take place
-					params.remove("ffnn.randombatchsize");
+					// params.remove("ffnn.randombatchsize");
+					// instead, do the following: if there was a randombatchsize specified
+					// quadruple it now for the local-search process
+					if (params.containsKey("ffnn.randombatchsize")) {
+						int orig_size = 
+							((Integer)params.get("ffnn.randombatchsize")).intValue();
+						params.put("ffnn.randombatchsize", new Integer(orig_size*4));
+					}
 					if (nt>1) {  
             // add an executor to the params to allow for parallel evaluation of 
-						// the FFNN4Train function on the training dataset! Use as many 
+						// the FFNN4Train[B] function on the training dataset! Use as many 
 						// threads as there were islands on the DGA.
 						PDBatchTaskExecutor extor = 
 							PDBatchTaskExecutor.newPDBatchTaskExecutor(nt);
@@ -204,12 +214,13 @@ public class OptFFNNRun {
 			if (outputlabelsfile!=null) {
 				// first, add the "hiddenws$i$ and "outputws" key-value pairs in params
 				FFNN4Train ft = (FFNN4Train) func;
+				boolean include_biases = ft instanceof FFNN4TrainB;
 				double[] all_weights = arg;
 				final int num_hidden_layers = ft.getNumHiddenLayers();
-				double[][] matrix = (double[][]) params.get("ffnn.traindata");
-				double[] labels = (double[]) params.get("ffnn.trainlabels");
 				if (matrix==null || labels==null) {
 					// see if data can be read from "ffnn.train[data|labels]file" param
+					System.err.println("OptFFNNRun: matrix or labels is null, "+
+						                 "trying to read from file");
 					String traindatafile = (String) params.get("ffnn.traindatafile");
 					if (traindatafile!=null) 
 						matrix = DataMgr.readMatrixFromFile(traindatafile);
@@ -219,10 +230,14 @@ public class OptFFNNRun {
 				}
 				int num_data_features = matrix[0].length;
 				for (int l=0; l<num_hidden_layers; l++) {
-					double[][] wi = ft.getLayerWeights(l, all_weights, num_data_features);
+					double[][] wi = include_biases ?
+						ft.getLayerWeightsWithBias(l, all_weights, num_data_features) :
+						ft.getLayerWeights(l, all_weights, num_data_features);
 					params.put("hiddenws"+l, wi);
 				}
-				double[] outws = ft.getOutputWeights(all_weights);
+				double[] outws = include_biases ? 
+					                 ft.getOutputWeightsWithBias(all_weights) :
+					                 ft.getOutputWeights(all_weights);
 				params.put("outputws", outws);
 				PrintWriter pw = new PrintWriter(new FileWriter(outputlabelsfile));
 				int num_errors = 0;

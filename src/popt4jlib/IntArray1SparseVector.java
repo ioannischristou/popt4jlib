@@ -506,7 +506,25 @@ public class IntArray1SparseVector implements SparseVectorIntf {
     }
   }
 
-
+	
+	/**
+	 * multiply the components of this vector by the argument h keeping the 
+	 * integer part of the multiplication.
+	 * @param h double
+	 */
+	public void mul(double h) {
+		if (Double.compare(h, 0.0)==0) {
+			_ilen = 0;
+			_indices = null;
+			_values = null;
+			return;
+		}
+		for (int i=0; i<_n; i++) {  // slow but correct version
+			setCoord(i, (int) getCoord(i)*h);
+		}
+	}
+	
+	
   /**
    * return true iff all components are zero.
    * @return boolean

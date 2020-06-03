@@ -2,12 +2,18 @@ package popt4jlib.neural;
 
 
 /**
- * class implements the arg-max selector function that can be used as output
- * node when the output layer should consist of more than one node. In this case
- * the "real" output layer is the last hidden layer in the network, and this 
- * class simply chooses as value for the network the node index with the largest
- * activation value. Obviously, weights of the last hidden layer towards this
- * output node are not used.
+ * class implements the max input signal position selector when acting as an 
+ * input training instance evaluator. However, during FFNN training, the output
+ * it computes is the sum of the square errors of each of its input signals
+ * which must equal the number of classes in the training set. These input 
+ * signals must be in the range [0,1] (thus the <CODE>Sigmoid</CODE> or 
+ * <CODE>TanH01</CODE> classes are best suited for this last hidden layer).
+ * Obviously weights of the last hidden layer towards this output node are not 
+ * used. This class should be used together with the 
+ * <CODE>popt4jlib.neural.costfunction.L1Norm</CODE> (or alternatively, the
+ * <CODE>popt4jlib.neural.costfunction.MAE</CODE>) cost functions, as it already
+ * computes as error the sum of square errors of each of the (sigmoid?) nodes in
+ * the previous layer.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -15,12 +21,12 @@ package popt4jlib.neural;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class InputSignalMaxPosSelector implements OutputNNNodeIntf {
+public class MultiClassSSE implements OutputNNNodeIntf {
 		
 	/**
 	 * public no-arg, no-op constructor.
 	 */
-	public InputSignalMaxPosSelector() {
+	public MultiClassSSE() {
 		// no-op
 	}
 	
@@ -39,7 +45,7 @@ public class InputSignalMaxPosSelector implements OutputNNNodeIntf {
 		double max = Double.NEGATIVE_INFINITY;
 		int bind = -1;
 		for (int i=0; i<inputSignals.length; i++) {
-			if (inputSignals[i]>max) {
+			if (Double.compare(inputSignals[i], max)>0) {
 				max = inputSignals[i];
 				bind = i;
 			}
@@ -62,7 +68,7 @@ public class InputSignalMaxPosSelector implements OutputNNNodeIntf {
 		double max = Double.NEGATIVE_INFINITY;
 		int bind = -1;
 		for (int i=0; i<inputSignals.length; i++) {
-			if (inputSignals[i]>max) {
+			if (Double.compare(inputSignals[i], max)>0) {
 				max = inputSignals[i];
 				bind = i;
 			}
@@ -85,7 +91,7 @@ public class InputSignalMaxPosSelector implements OutputNNNodeIntf {
 		double max = Double.NEGATIVE_INFINITY;
 		int bind = -1;
 		for (int i=0; i<inputSignals.length; i++) {
-			if (inputSignals[i]>max) {
+			if (Double.compare(inputSignals[i],max)>0) {
 				max = inputSignals[i];
 				bind = i;
 			}
@@ -108,7 +114,7 @@ public class InputSignalMaxPosSelector implements OutputNNNodeIntf {
 		double max = Double.NEGATIVE_INFINITY;
 		int bind = -1;
 		for (int i=0; i<inputSignals.length; i++) {
-			if (inputSignals[i]>max) {
+			if (Double.compare(inputSignals[i],max)>0) {
 				max = inputSignals[i];
 				bind = i;
 			}
@@ -118,32 +124,39 @@ public class InputSignalMaxPosSelector implements OutputNNNodeIntf {
 	
 	
 	/**
-	 * called when the node is used as output node, simply calls
-	 * <CODE>eval(inputSignals,weights,offset)</CODE>.
+	 * called when the node is used as output node during training.
 	 * @param inputSignals double[]
-	 * @param weights double[]
-	 * @param offset int
-	 * @param true_label double unused
+	 * @param weights double[] unused
+	 * @param offset int unused
+	 * @param true_label double  // int really
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights, int offset, 
 		                 double true_label) {
-		return eval(inputSignals, weights, offset);
+		double sse = 0.0;
+		final int true_class = (int) true_label;
+		for (int i=0; i<inputSignals.length; i++) {
+			double last_layer_out_i = inputSignals[i];
+			double expected_i = i == true_class ? 1.0 : 0.0;
+			double err_i = last_layer_out_i - expected_i;
+			sse += err_i*err_i;
+		}
+		return sse+true_label;  // add true_label so that the error in the cost
+		                        // function becomes just sse
 	}
 	
 
 	/**
-	 * called when the node is used as output node, simply calls
-	 * <CODE>evalB(inputSignals,weights,offset)</CODE>.
+	 * called when the node is used as output node during training.
 	 * @param inputSignals double[]
-	 * @param weights double[]
-	 * @param offset int
-	 * @param true_label double unused
+	 * @param weights double[] unused
+	 * @param offset int unused
+	 * @param true_label double  // int really
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] weights, int offset,
 		                  double true_label) {
-		return evalB(inputSignals, weights, offset);
+		return eval(inputSignals, weights, offset, true_label);
 	}
 	
 	
@@ -152,7 +165,7 @@ public class InputSignalMaxPosSelector implements OutputNNNodeIntf {
 	 * @return String "InputSignalMaxPosSelector"
 	 */
 	public String getNodeName() {
-		return "InputSignalMaxPosSelector";
+		return "MultiClassSSE";
 	}
 
 }

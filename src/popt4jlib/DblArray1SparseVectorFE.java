@@ -352,6 +352,23 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
     }
   }
 
+	
+  /**
+   * multiply the components of this vector by the argument h.
+   * @param h double
+   */
+  public void mul(double h) {
+		if (Double.compare(h, 0.0)==0) {
+			for (int i=0; i<_x.length; i++) _x[i] = 0.0;
+			_ilen = 0;
+			_indices = null;
+			return;
+		}
+    for (int i=0; i<_ilen; i++) {
+      setCoord(i, _x[_indices[i]]*h);
+    }
+  }
+
 
   /**
    * return true iff all components are zero.

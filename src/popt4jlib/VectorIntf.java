@@ -85,7 +85,8 @@ public interface VectorIntf extends Serializable {
    * and a vector tries to advance a read-lock to a write-lock under unfavorable
    * conditions.
    */
-  public void addMul(double m, VectorIntf other) throws IllegalArgumentException, ParallelException;
+  public void addMul(double m, VectorIntf other) 
+		throws IllegalArgumentException, ParallelException;
 
 
   /**
@@ -97,6 +98,16 @@ public interface VectorIntf extends Serializable {
    * conditions.
    */
   public void div(double h) throws IllegalArgumentException, ParallelException;
+
+	
+	/**
+	 * multiply the components of this vector by the argument h.
+	 * @param h double
+   * @throws ParallelException if the implementation supports multi-threading
+   * and a vector tries to advance a read-lock to a write-lock under unfavorable
+   * conditions.
+	 */
+	public void mul(double h) throws ParallelException;
 
 
   /**

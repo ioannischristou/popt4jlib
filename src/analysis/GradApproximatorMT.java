@@ -13,11 +13,11 @@ import java.io.*;
  * version implemented in GradApproximator class of this package).
  * Note1: unfortunately, this implementation does not have a way of checking
  * when an nmax value in the Richardson recursion is "too much" or "too little".
- *  Note2: there is currently no way to check if the values returned are
+ * Note2: there is currently no way to check if the values returned are
  * "close" to the real derivative value, or even if the derivative exists.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -39,25 +39,28 @@ public class GradApproximatorMT implements VecFunctionIntf {
    * point x using Richardson extrapolation. The params hash-table may contain
    * the following pairs:
 	 * <ul>
-   * <li> &lt;"gradapproximator.nmax", Integer n&gt; optional, the dimension of the
-   * Richardson extrapolation. Default is 10.
-   * <li> &lt;"gradapproximator.numthreads", Integer nt&gt; optional, the number of
+   * <li> &lt;"gradapproximator.nmax", Integer n&gt; optional, the dimension of 
+	 * the Richardson extrapolation. Default is 15.
+   * <li> &lt;"gradapproximator.numthreads", Integer nt&gt; optional, the number
    * threads to use when computing the gradient. Default is 1.
 	 * </ul>
    * @param x VectorIntf the point at which the gradient must be evaluated.
-   * @param params HashMap any parameters to be passed to the function f
+   * @param params HashMap any parameters to be passed to the function f; may be
+	 * null
    * @throws IllegalArgumentException if x is null or if the algorithm fails
    * @return VectorIntf
    */
-  public VectorIntf eval(VectorIntf x, HashMap params) throws IllegalArgumentException {
+  public VectorIntf eval(VectorIntf x, HashMap params) 
+		throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null arg passed");
     final int n = x.getNumCoords();
     int nt = 1;
     try {
-      Integer ntI = (Integer) params.get("gradapproximator.numthreads");
-      if (ntI!=null && ntI.intValue()>0)
-        nt = ntI.intValue();
-      if (nt>n) nt = n;  // cannot have more threads than dimensions
+      if (params!=null) {
+				Integer ntI = (Integer) params.get("gradapproximator.numthreads");
+				if (ntI!=null && ntI.intValue()>0) nt = ntI.intValue();
+				if (nt>n) nt = n;  // cannot have more threads than dimensions
+			}
     }
     catch (ClassCastException e) {
       e.printStackTrace();  // ignore
@@ -75,11 +78,13 @@ public class GradApproximatorMT implements VecFunctionIntf {
     int start = 0;
     List tasks = new ArrayList();  // used to be Vector<GradApproxTaskObject>
     for (int i=0; i<nt-1; i++) {
-      GradApproxTaskObject to = new GradApproxTaskObject(x, _f, params, start, start+wlength-1);
+      GradApproxTaskObject to = 
+				new GradApproxTaskObject(x, _f, params, start, start+wlength-1);
       tasks.add(to);
       start += wlength;
     }
-    GradApproxTaskObject fin = new GradApproxTaskObject(x, _f, params, start, n-1);
+    GradApproxTaskObject fin = 
+			new GradApproxTaskObject(x, _f, params, start, n-1);
     tasks.add(fin);
     try {
       Vector results = executor.executeBatch(tasks);
@@ -87,15 +92,19 @@ public class GradApproximatorMT implements VecFunctionIntf {
         try {
           GradApproxTaskObject ti = (GradApproxTaskObject) results.elementAt(i);
           if (ti.isDone()==false)  // ensure no thread-local values persist
-            throw new IllegalArgumentException("GradApproximatorMT.eval(): executor.executeBatch(): the "+
-                                               i+"-th partial derivative failed");
+            throw new IllegalArgumentException("GradApproximatorMT.eval(): "+
+							                                 "executor.executeBatch(): the "+
+                                               i+"-th partial derivative"+
+							                                 " failed");
           else {
-            for (int k=ti._start; k<=ti._end; k++) grad.setCoord(k, ti._gradf.getCoord(k));
+            for (int k=ti._start; k<=ti._end; k++) 
+							grad.setCoord(k, ti._gradf.getCoord(k));
           }
         }
         catch (ClassCastException e) {
           e.printStackTrace();
-          throw new IllegalArgumentException("GradApproximatorMT.eval(): executor.executeBatch(): the "+
+          throw new IllegalArgumentException("GradApproximatorMT.eval(): "+
+						                                 "executor.executeBatch(): the "+
                                              i+"-th partial derivative failed");
         }
       }
@@ -104,7 +113,8 @@ public class GradApproximatorMT implements VecFunctionIntf {
     }
     catch (ParallelException e) {
       e.printStackTrace();
-      throw new IllegalArgumentException("GradApproximatorMT.eval(): executor.executeBatch(): failed");
+      throw new IllegalArgumentException("GradApproximatorMT.eval(): "+
+				                                 "executor.executeBatch(): failed");
     }
   }
 
@@ -112,21 +122,23 @@ public class GradApproximatorMT implements VecFunctionIntf {
   /**
    * evaluate the partial derivative of the "coordindex"-th variable at x.
    * @param x VectorIntf
-   * @param params HashMap
+   * @param params HashMap may be null
    * @param coordindex int
    * @throws IllegalArgumentException
    * @return double
    */
-  public double evalCoord(VectorIntf x, HashMap params, int coordindex) throws IllegalArgumentException {
+  public double evalCoord(VectorIntf x, HashMap params, int coordindex) 
+		throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null arg passed");
     // final int n = x.getNumCoords();
     VectorIntf xc = x.newCopy();  // work with copy so as to avoid memory
     // corruption issues in multi-threaded accesses of the vector
     double h = 1.0;
-    int nmax = 10;
-    Integer nmI = (Integer) params.get("gradapproximator.nmax");
-    if (nmI!=null && nmI.intValue()>0)
-      nmax = nmI.intValue();
+    int nmax = 15;
+		if (params!=null) {
+			Integer nmI = (Integer) params.get("gradapproximator.nmax");
+			if (nmI!=null && nmI.intValue()>0) nmax = nmI.intValue();
+		}
     double[][] d = new double[nmax][nmax];
     int k = coordindex;
     h = 1.0;  // reset h value for each partial derivative
@@ -159,7 +171,16 @@ public class GradApproximatorMT implements VecFunctionIntf {
 }
 
 
-class GradApproxTaskObject implements TaskObject {
+/**
+ * auxiliary class not part of the API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+final class GradApproxTaskObject implements TaskObject {
   private final static long serialVersionUID = -197598046273744656L;
   private VectorIntf _x;
   private FunctionIntf _f;
@@ -170,7 +191,8 @@ class GradApproxTaskObject implements TaskObject {
   int _end;
 
 
-  GradApproxTaskObject(VectorIntf x, FunctionIntf f, HashMap params, int start, int end) {
+  GradApproxTaskObject(VectorIntf x, FunctionIntf f, HashMap params, 
+		                   int start, int end) {
     _x = x.newInstance();  // work with copy so as to avoid memory corruption 
 		                       // issues in multi-threaded accesses of vector
     _f = f;
@@ -183,11 +205,14 @@ class GradApproxTaskObject implements TaskObject {
 
   public Serializable run() {
     double h = 1.0;
-    int nmax = 10;
-    Integer nmI = (Integer) _params.get("gradapproximator.nmax");
-    if (nmI!=null && nmI.intValue()>0) nmax = nmI.intValue();
+    int nmax = 15;
+		if (_params!=null) {
+			Integer nmI = (Integer) _params.get("gradapproximator.nmax");
+			if (nmI!=null && nmI.intValue()>0) nmax = nmI.intValue();
+		}
     double[][] d = new double[nmax][nmax];
-    System.err.println("Thread computing partial derivatives in ["+_start+", "+_end+"]");
+    System.err.println("Thread computing partial derivatives in ["+
+			                 _start+", "+_end+"]");
     for (int k=_start; k<=_end; k++) {
       h = 1.0;
       try {
@@ -210,7 +235,8 @@ class GradApproxTaskObject implements TaskObject {
       catch (ParallelException e) {  // can never get here
         e.printStackTrace();
       }
-      System.err.println("Setting "+k+"-th coordinate of the gradient to "+ d[nmax-1][nmax-1]);
+      System.err.println("Setting "+k+"-th coordinate of the gradient to " + 
+				                 d[nmax-1][nmax-1]);
       try {
         _gradf.setCoord(k, d[nmax - 1][nmax - 1]);
       }
@@ -232,7 +258,8 @@ class GradApproxTaskObject implements TaskObject {
 
 
   public void copyFrom(TaskObject other) throws IllegalArgumentException {
-    throw new IllegalArgumentException("GradApproxTaskObject.copyFrom(other) operation not supported");
+    throw new IllegalArgumentException("GradApproxTaskObject.copyFrom(other) "+
+			                                 "operation not supported");
   }
 }
 

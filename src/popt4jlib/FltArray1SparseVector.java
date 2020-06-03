@@ -438,6 +438,24 @@ public class FltArray1SparseVector implements SparseVectorIntf {
       _values[i] /= h1;
     }
   }
+	
+	
+	/**
+	 * multiply the components of this vector by the argument h.
+	 * @param h double
+	 * @throws ParallelException
+	 */
+	public void mul(double h) throws ParallelException {
+		if (Double.compare(h, 0.0)==0) {
+			_ilen = 0;
+			_indices = null;
+			_values = null;
+			return;
+		}
+		for (int i=0; i<_n; i++) {  // slow but correct version
+			setCoord(i, getCoord(i)*((float)h));
+		}
+	}
 
 
   /**

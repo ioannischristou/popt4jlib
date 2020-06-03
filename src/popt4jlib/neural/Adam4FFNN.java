@@ -1,4 +1,4 @@
-package popt4jlib.GradientDescent.stochastic;
+package popt4jlib.neural;
 
 import java.util.*;
 import utils.*;
@@ -8,18 +8,10 @@ import popt4jlib.*;
 import popt4jlib.GradientDescent.*;
 
 /**
- * A multi-threaded implementation of the Adam algorithm for stochastic 
- * optimization. See D.P. Kingma and J.L. Ba (2015): "ADAM: A method for 
- * stochastic optimization", arXiv:1412.6980v8 [cs.LG]. The authors of the 
- * paper claim their method to be particularly well-suited for large-scale
- * online sparse learning problems. The method is supposed to work when 
- * the function to be optimized is a noisy objective function f(è) and the 
- * objective is to find the parameters that minimize the expected value E[f(è)] 
- * of the function when evaluated at è. The stochastic nature of the function f
- * in ML problems (when solved especially via ANNs) usually comes forth when the
- * function is evaluated at random samples of the entire training set (see the 
- * <CODE>popt4jlib.neural</CODE> package, and in particular the 
- * <CODE>popt4jlib.neural.FFNN4Train[B]</CODE> classes for more details.)
+ * same as <CODE>popt4jlib.GradientDescent.stochastic.Adam</CODE> but with the
+ * added hard-wired knowledge of mini-batch training, so that when computing
+ * derivatives, it actually maintains the same mini-batch in each derivative
+ * evaluation.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -27,20 +19,22 @@ import popt4jlib.GradientDescent.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class Adam implements LocalOptimizerIntf {
+public class Adam4FFNN implements LocalOptimizerIntf {
   HashMap _params;
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
   FunctionIntf _f;
-  private transient AdamThread[] _threads=null;
+  private transient Adam4FFNNThread[] _threads=null;
   private int _numOK=0;
   private int _numFailed=0;
 
+	private int _randombatchsize = 0;
+	
 
   /**
    * public no-arg constructor
    */
-  public Adam() {
+  public Adam4FFNN() {
   }
 
 
@@ -50,7 +44,7 @@ public class Adam implements LocalOptimizerIntf {
 	 * argument do not affect this object or its methods.
    * @param params HashMap
    */
-  public Adam(HashMap params) {
+  public Adam4FFNN(HashMap params) {
     try {
       setParams(params);
     }
@@ -71,12 +65,12 @@ public class Adam implements LocalOptimizerIntf {
 
 
   /**
-   * return a new empty Adam optimizer object (that must be
+   * return a new empty Adam4FFNN optimizer object (that must be
    * configured via a call to setParams(p) before it is used.)
    * @return LocalOptimizerIntf
    */
   public LocalOptimizerIntf newInstance() {
-    return new Adam();
+    return new Adam4FFNN();
   }
 
 
@@ -91,6 +85,10 @@ public class Adam implements LocalOptimizerIntf {
 			throw new OptimizerException("cannot modify parameters while running");
     _params = null;
     _params = new HashMap(p);  // own the params
+		if (_params.containsKey("ffnn.randombatchsize")) {
+			_randombatchsize = 
+				((Integer) _params.get("ffnn.randombatchsize")).intValue();
+		}
   }
 
 
@@ -105,6 +103,10 @@ public class Adam implements LocalOptimizerIntf {
 	 * starting points to use (must either exist then ntries 
 	 * &lt;"adam.x$i$",VectorIntf v&gt; pairs in the parameters or a pair 
 	 * &lt;"[gradientdescent.]x0",VectorIntf v&gt; pair in params). Default is 1.
+	 * Notice that if no such starting point "[xxx.]x0" is given, then if a number
+	 * for key "adam.numdimensions" exists, a random initial starting point x0 of
+	 * the specified dimensions is costructed and used; otherwise an exception is
+	 * thrown.
    * <li> &lt;"adam.gradient", VecFunctionIntf g&gt; optional the gradient of f,
    * the function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed via Richardson finite differences extrapolation.
@@ -124,6 +126,9 @@ public class Adam implements LocalOptimizerIntf {
 	 * <li> &lt;"adam.eps", Double val&gt; optional the &epsilon; factor in update
 	 * parameter estimation. This value is also used to detect convergence -and so
 	 * stop the algorithm- of the variables x. Default is 1.e-8.
+	 * <li> &lt;"ffnn.randombatchsize", Integer num&gt; optional, the batch size
+	 * used when evaluating a weighted FFNN. Default is 0 which amounts to using
+	 * the entire training set.
    * </ul>
    * @param f FunctionIntf the function to minimize
    * @throws OptimizerException if another thread is currently executing the
@@ -133,11 +138,11 @@ public class Adam implements LocalOptimizerIntf {
    */
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
 		if (f==null) 
-			throw new OptimizerException("Adam.minimize(f): null f");
+			throw new OptimizerException("Adam4FFNN.minimize(f): null f");
     try {
       synchronized (this) {
         if (_f != null)
-          throw new OptimizerException("Adam.minimize(): " +
+          throw new OptimizerException("Adam4FFNN.minimize(): " +
                                        "another thread is concurrently "+
 						                           "executing the method on this object");
         _f = f;
@@ -152,7 +157,7 @@ public class Adam implements LocalOptimizerIntf {
         if (ntI != null && ntI.intValue() > 1) numthreads = ntI.intValue();
       }
       catch (ClassCastException e) { e.printStackTrace(); }
-      _threads = new AdamThread[numthreads];
+      _threads = new Adam4FFNNThread[numthreads];
       int ntries = 1;
       try {
         Integer ntriesI = (Integer) _params.get("adam.numtries");
@@ -163,10 +168,10 @@ public class Adam implements LocalOptimizerIntf {
       int triesperthread = ntries / numthreads;
       int rem = ntries;
       for (int i = 0; i < numthreads - 1; i++) {
-        _threads[i] = new AdamThread(i, triesperthread);
+        _threads[i] = new Adam4FFNNThread(i, triesperthread);
         rem -= triesperthread;
       }
-      _threads[numthreads - 1] = new AdamThread(numthreads - 1, rem);
+      _threads[numthreads - 1] = new Adam4FFNNThread(numthreads - 1, rem);
       for (int i = 0; i < numthreads; i++) {
         _threads[i].start();
       }
@@ -214,7 +219,8 @@ public class Adam implements LocalOptimizerIntf {
    */
   synchronized void setIncumbent(VectorIntf arg, double val) {
     if (val<_incValue) {
-      Messenger.getInstance().msg("Adam: update incumbent w/ new best value="+
+      Messenger.getInstance().msg("Adam4FFNN: update incumbent "+
+				                          "w/ new best value="+
 				                          val,0);
       _incValue=val;
       _inc=arg;
@@ -241,13 +247,13 @@ public class Adam implements LocalOptimizerIntf {
   synchronized void incFailed() { _numFailed++; }
 
   // nested class implementing the threads to be used by Adam main class
-  class AdamThread extends Thread {
+  class Adam4FFNNThread extends Thread {
 
     private int _numtries;
     private int _id;
     private int _uid;
 
-    AdamThread(int id, int numtries) {
+    Adam4FFNNThread(int id, int numtries) {
       _id = id;
       _uid = (int) DataMgr.getUniqueId();
       _numtries=numtries;
@@ -288,18 +294,34 @@ public class Adam implements LocalOptimizerIntf {
 
     private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) 
 			throws OptimizerException {
+			final double init_mul_factor = 5.0;
 			Messenger mger = Messenger.getInstance();
       VecFunctionIntf grad = (VecFunctionIntf) p.get("adam.gradient");
       if (grad==null) grad = new GradApproximator(f);  
       // default: numeric computation of gradient
-      final VectorIntf x0 = 
+      VectorIntf x0 = 
 			  _params.containsKey("adam.x"+solindex)==false ?
           _params.containsKey("gradientdescent.x0") ? 
 			    (VectorIntf) _params.get("gradientdescent.x0") : 
 			      _params.containsKey("x0") ? 
 				      (VectorIntf) _params.get("x0") : null // retrieve generic point?
 			    : (VectorIntf) _params.get("adam.x"+solindex);
-      if (x0==null) 
+			// if x0 is still null, check if "adam.numdimensions" is passed, in which 
+			// case, create a random starting point
+			if (x0==null && _params.containsKey("adam.numdimensions")) {
+				int n = ((Integer) _params.get("adam.numdimensions")).intValue();
+				Random r = RndUtil.getInstance(_uid).getRandom();
+				x0 = new DblArray1Vector(n);
+				for (int i=0; i<n; i++) {
+					try {
+						x0.setCoord(i, init_mul_factor*r.nextGaussian());
+					}
+					catch (ParallelException e) {
+						// can never get here
+					}
+				}
+			}
+			if (x0==null) 
 				throw new OptimizerException("no adam.x"+solindex+
 					                           " initial point in _params passed");
       VectorIntf x = x0.newInstance();  // don't modify the initial soln
@@ -315,7 +337,7 @@ public class Adam implements LocalOptimizerIntf {
       Double b1D = (Double) p.get("adam.b1");
       if (b1D!=null && b1D.doubleValue()>0 && b1D.doubleValue()<1.0)
         b1 = b1D.doubleValue();
-			final double b1_inv = 1.0 / b1;
+			//final double b1_inv = 1.0 / b1;
 			final double one_minus_b1 = 1.0 - b1; 
       double b2 = 0.999;
       Double b2D = (Double) p.get("adam.b2");
@@ -334,23 +356,63 @@ public class Adam implements LocalOptimizerIntf {
 
       // main iteration loop
       double[] xa = new double[n];  // xa is zero at this point
-			VectorIntf m = x0.newInstance(xa);  // first-moment estimate starts at 0
-			VectorIntf v = m.newInstance();  // second-moment estimate starts at 0
-			VectorIntf mhat = m.newInstance();  // same as above
-			VectorIntf vhat = m.newInstance();  // same as above
+			final VectorIntf m = x0.newInstance(xa);  // first-moment est. starts at 0
+			final VectorIntf v = m.newInstance();  // second-moment est. starts at 0
+			final VectorIntf mhat = m.newInstance();  // same as above
+			final VectorIntf vhat = m.newInstance();  // same as above
+			final VectorIntf g_squared = m.newInstance();
 			double b1_t = b1;
 			double b2_t = b2;
+			double[][] all_train_data = (double[][]) p.get("ffnn.traindata");
+			double[] all_train_labels = (double[]) p.get("ffnn.trainlabels");
+			double[][] batch_train_data = null;
+			double[] batch_train_labels = null;
+			if (_randombatchsize>0) {
+				batch_train_data = new double[_randombatchsize][];
+				batch_train_labels = new double[_randombatchsize];
+				p.remove("ffnn.randombatchsize");
+			}
+
+			final Random r = RndUtil.getInstance(_uid).getRandom();			
+			// start main iteration loop
       for (int iter=0; iter<maxiters; iter++) {
-	      mger.msg("AdamThread.min(): #iters="+iter,2);
+	      mger.msg("Adam4FFNNThread.min(): #iters="+iter, 2);
+				if (_randombatchsize>0) { // set the training set to a random mini-batch
+					double prob_enter = _randombatchsize/((double) all_train_data.length);
+					int cnt = 0;
+					while (cnt<_randombatchsize) {
+						for (int i=0; i<all_train_data.length; i++) {
+							if (prob_enter>=r.nextDouble()) {
+								batch_train_data[cnt] = all_train_data[i];
+								batch_train_labels[cnt++] = all_train_labels[i];
+								if (cnt==_randombatchsize) break;
+							}
+						}
+					}
+					p.put("ffnn.traindata", batch_train_data);
+					p.put("ffnn.trainlabels", batch_train_labels);
+					mger.msg("Adam4FFNNThread.min(): p now have "+
+						       "random batch of size "+batch_train_data.length, 2);
+				}
 				VectorIntf g = grad.eval(x, p);
 		    double normg = VecUtil.norm(g,2);
-				mger.msg("AdamThread.min(): normg="+normg,2);
-				VectorIntf g_squared = VecUtil.componentProduct(g, g);				
+				mger.msg("Adam4FFNNThread.min(): normg="+normg,2);
+				//VectorIntf g_squared = VecUtil.componentProduct(g, g);
+				for (int i=0; i<n; i++) {
+					final double gi = g.getCoord(i);
+					try {
+						g_squared.setCoord(i, gi*gi);
+					}
+					catch (ParallelException e) {
+						// can't get here
+					}
+				}
 				fx = f.eval(x, p);
-				mger.msg("f(x)="+fx, 2);
+				mger.msg("Adam4FFNNThread.min(): f(x)="+fx, 2);
+				mger.msg("x="+x, 2);
 				final double norminfg = VecUtil.normInfinity(g);
         if (norminfg <= gtol) {
-          mger.msg("found sol w/ norminfg="+norminfg+
+          mger.msg("Adam4FFNNThread.min(): found sol w/ norminfg="+norminfg+
 						                          " in "+iter+" iterations.",0);
           found = true;
           break;
@@ -383,9 +445,9 @@ public class Adam implements LocalOptimizerIntf {
 					// compute difference from prev x
 					double diff_prev = 0.0;
 					for (int j=0; j<n; j++) diff_prev += Math.abs(xa[j]-x.getCoord(j));
-					mger.msg("AdamThread.min(): ||x - x_prev||_1="+diff_prev, 2);
+					mger.msg("Adam4FFNNThread.min(): ||x - x_prev||_1="+diff_prev, 2);
 					if (diff_prev < eps) {
-						mger.msg("AdamThread.min(): x converged, stopping iterations",0);
+						mger.msg("Adam4FFNNThread.min(): x converged, stop iterations",0);
 						found = true;
 						break;
 					}
@@ -396,11 +458,12 @@ public class Adam implements LocalOptimizerIntf {
 				}				
       }
       // end main iteration loop
-
-      if (found) return new PairObjDouble(x, fx);
-      else throw new OptimizerException("AdamThread did not find a solution"+
-                                        " satisfying tolerance criteria from "+
-                                        "the given initial point x0="+x0);
+			
+			// restore train data/labels
+			p.put("ffnn.traindata", all_train_data);
+			p.put("ffnn.trainlabels", all_train_labels);
+			
+      return new PairObjDouble(x, fx);
     }
 
   }
