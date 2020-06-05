@@ -31,7 +31,10 @@ public class L2Norm implements FunctionIntf {
 	public double eval(Object arg, HashMap params) {
 		double[] x = (double[])arg;
 		double result = 0.0;
-		for (int i=0; i<x.length; i++) result += x[i]*x[i];
+		for (int i=0; i<x.length; i++) {
+			if (Double.isNaN(x[i])) continue;
+			result += x[i]*x[i];
+		}
 		return Math.sqrt(result);
 	}
 }

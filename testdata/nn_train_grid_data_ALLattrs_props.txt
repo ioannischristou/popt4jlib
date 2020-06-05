@@ -1,55 +1,38 @@
 dbglvl,2
-# the following defines an ANN and weights on the nn's connections
-# the ANN looks like this:
-# INP L0    L1    L2    OUT
-# x1
-# x2  N00   N10   N20
-# x3  N01   N11   ...
-# x4  ...   ...   ...   y
-# x5  ...   ...   ...
-# ... N09   N19
-# ...             N30
-# x14
-class,outputlayer,popt4jlib.neural.Linear
-#arrayofcopies,layer1_arr,10,popt4jlib.neural.Sigmoid,1.0
-#arrayofcopies,layer2_arr,10,popt4jlib.neural.Sigmoid,1.0
-#arrayofcopies,layer3_arr,11,popt4jlib.neural.Sigmoid,1.0
-#array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr,layer3_arr
-arrayofcopies,layer1_arr,12,popt4jlib.neural.Sigmoid,1.0
+class,outputlayer,popt4jlib.neural.MultiClassSSE
+arrayofcopies,layer1_arr,10,popt4jlib.neural.Sigmoid,1.0
 arrayofcopies,layer3_arr,11,popt4jlib.neural.Sigmoid,1.0
 array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer3_arr
+class,costfunc,popt4jlib.neural.costfunction.MAE
+class,opt.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,5
 # normalized train data:
 matrix-1_1,ffnn.traindata,testdata/grid_data_ALLattrs_train.dat
 # train labels
 dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train.dat.lbls
-class,costfunc,popt4jlib.neural.costfunction.L2Norm
 # optimizer props
 class,ffnn.mainoptimizer,popt4jlib.GA.DGA
-class,opt.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc
 opt.numthreads,4
 # line below causes non-deterministic function evaluations, of small batches of
 # input vectors, but runs a lot faster!
-#ffnn.randombatchsize,100
+ffnn.randombatchsize,1000
 rndgen,7,4
-class,opt.localoptimizer,popt4jlib.GradientDescent.AlternatingVariablesDescent
-#class,opt.localoptimizer,popt4jlib.neural.Adam4FFNN
-#gradapproximator.nmax,8
-#adam.gtol,0.0
+class,opt.localoptimizer,popt4jlib.neural.SGD4FFNN
+# SGD props next
+gradapproximator.nmax,10
+sgd.a,0.99
+sgd.decay_period,100
+sgd.decay_factor,0.95
+sgd.gtol,0.0
+sgd.maxiters,1000
+sgd.numtries,10
 # DGA props next
 ref,dga.function,opt.function
-# number of connection weights=14*10 + 10*10 + 10*11 + 11 = 361
-# number of biases=10+10+11+1 = 32
-#number of dimensions=393
-#dga.chromosomelength,393
-# new number of connection weights = 14*12 + 12*11 + 11*1 = 168 + 132 + 11 = 311
-# new number of biases = 12 + 11 + 1 = 24
-# number of dimensions = 335
-dga.chromosomelength,335
-dga.maxallelevalue,40.0
-dga.minallelevalue,-20.0
+dga.chromosomelength,283
+dga.maxallelevalue,10.0
+dga.minallelevalue,-10.0
 dga.cutoffage,50
 dga.varage,10.0
-dga.numgens,1000
+dga.numgens,50
 dga.numinitpop,10
 dga.poplimit,100
 ref,dga.numthreads,opt.numthreads
@@ -67,14 +50,14 @@ ffnn.outputlabelsfile,testdata/result_grid_data_ALLattrs_trainlabels.dat
 # notice: the FFNN4Train function will be using dga.numthreads threads to do a 
 # single function evaluation on the train dataset when running the local-opt
 # via the DGAFFNNRun class.
-ref,avd.numdimensions,dga.chromosomelength
-ref,avd.maxargval,dga.maxallelevalue
-ref,avd.minargval,dga.minallelevalue
-avd.numtries,5
-onedopter.maxdetdirstepswithsamefuncval,3
-onedopter.maxnumfuncevals,100
+#ref,avd.numdimensions,dga.chromosomelength
+#ref,avd.maxargval,dga.maxallelevalue
+#ref,avd.minargval,dga.minallelevalue
+#avd.numtries,5
+#onedopter.maxdetdirstepswithsamefuncval,3
+#onedopter.maxnumfuncevals,100
 #avd.minstepsize,0.005
-avd.minstepsize,0.001
-avd.ftol,1.e-6
-avd.niterbnd,3
-avd.tryallparallel,false
+#avd.minstepsize,0.001
+#avd.ftol,1.e-6
+#avd.niterbnd,3
+#avd.tryallparallel,false

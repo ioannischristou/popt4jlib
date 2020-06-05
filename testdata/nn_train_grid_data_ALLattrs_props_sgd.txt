@@ -16,9 +16,11 @@ arrayofcopies,layer1_arr,10,popt4jlib.neural.Sigmoid,1.0
 arrayofcopies,layer3_arr,11,popt4jlib.neural.Sigmoid,1.0
 array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer3_arr
 # normalized train data:
-matrix-1_1,ffnn.traindata,testdata/grid_data_ALLattrs_train_small.dat
+#matrix-1_1,ffnn.traindata,testdata/grid_data_ALLattrs_train_small.dat
+matrix-1_1,ffnn.traindata,testdata/grid_data_ALLattrs_train.dat
 # train labels
-dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train_small.dat.lbls
+#dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train_small.dat.lbls
+dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train.dat.lbls
 #class,costfunc,popt4jlib.neural.costfunction.MSSE
 class,costfunc,popt4jlib.neural.costfunction.MAE
 # optimizer props
@@ -40,4 +42,5 @@ sgd.maxiters,5000
 # number of dimensions = 283
 sgd.numdimensions,283
 # output file below used by [DGA,AVD]FFNNTest class
-ffnn.outputlabelsfile,testdata/result_grid_data_ALLattrs_trainlabels_small.dat
+#ffnn.outputlabelsfile,testdata/result_grid_data_ALLattrs_trainlabels_small.dat
+ffnn.outputlabelsfile,testdata/result_grid_data_ALLattrs_trainlabels.dat

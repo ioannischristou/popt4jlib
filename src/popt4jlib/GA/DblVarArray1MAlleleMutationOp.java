@@ -6,13 +6,19 @@ import java.util.*;
 
 /**
  * implements a multi-allele mutating operator, on chromosomes represented as
- * variable-length double[] objects.
+ * variable-length <CODE>double[]</CODE> objects.
+ * <p>Notes: 
+ * <ul>
+ * <li>2020-05-05: added functionality to change each variable by only an amount
+ * drawn from a Gaussian distribution N(0,ó^2). Also fixed a minor issue for the
+ * computation of amount change for the second chromosome.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class DblVarArray1MAlleleMutationOp implements MutationOpIntf {
 
@@ -36,24 +42,29 @@ public class DblVarArray1MAlleleMutationOp implements MutationOpIntf {
    * any given allele in a chromosome will get mutated. Default is 0.1.
    * <li> &lt;"dga.minallelevalue", $value$&gt; optional, the minimum value for
    * any allele in the chromosome. Default -Infinity.
-   * <li> &lt;"dga.minallelevalue$i$", $value$&gt; optional, the minimum value for
-   * the i-th allele in the chromosome ($i$ must be in the range
+   * <li> &lt;"dga.minallelevalue$i$", $value$&gt; optional, the minimum value 
+	 * for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is less than the global value
    * specified by the "dga.minallelevalue" key, it is ignored.
    * <li> &lt;"dga.maxallelevalue", $value$&gt; optional, the maximum value for
    * any allele in the chromosome. Default +Infinity.
-   * <li> &lt;"dga.maxallelevalue$i$", $value$&gt; optional, the maximum value for
-   * the i-th allele in the chromosome ($i$ must be in the range
+   * <li> &lt;"dga.maxallelevalue$i$", $value$&gt; optional, the maximum value 
+	 * for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}. If this value is greater than the global value
    * specified by the "dga.maxallelevalue" key, it is ignored.
-   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
-   * thread invoking this method; this number is used so as to look-up the right
-   * random-number generator associated with the current thread.
+	 * <li> &lt;"dga.mutgaussiansigma", $value$&gt; optional, if it exists it
+	 * indicates the sigma value of the gaussian distribution from which a value 
+	 * is drawn to be added to the current value of each allele in the chromosome.
+	 * Default is null.
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of 
+	 * the thread invoking this method; this number is used so as to look-up the 
+	 * right random-number generator associated with the current thread.
 	 * </ul>
    * @throws OptimizerException if any of the above params is incorrectly set
    * @return Pair containing the two double[] chromosome arguments
    */
-  public Pair doMutation(Object chromosome1, Object chromosome2, HashMap params) throws OptimizerException {
+  public Pair doMutation(Object chromosome1, Object chromosome2, HashMap params) 
+		throws OptimizerException {
     try {
       final int id = ( (Integer) params.get("thread.id")).intValue();
       double[] a1 = (double[]) chromosome1;
@@ -61,11 +72,13 @@ public class DblVarArray1MAlleleMutationOp implements MutationOpIntf {
       double min = Double.MAX_VALUE;
       double max = Double.NEGATIVE_INFINITY;
       double mut_rate = 0.1;  // default value
+			Double sigmaD = (Double) params.get("dga.mutgaussiansigma");
       Double mrD = (Double) params.get("dga.mutoprate");
       if (mrD!=null && mrD.doubleValue()>=0 && mrD.doubleValue()<=1)
         mut_rate = mrD.doubleValue();
       int n1 = a1.length;
-      double n1m = RndUtil.getInstance(id).getRandom().nextDouble()*mut_rate*n1;
+			final Random r = RndUtil.getInstance(id).getRandom();
+      double n1m = r.nextDouble()*mut_rate*n1;
       int n1_mutations = (int) Math.round(n1m);
       for (int i = 0; i < n1; i++) {
         if (max < a1[i]) max = a1[i];
@@ -75,9 +88,14 @@ public class DblVarArray1MAlleleMutationOp implements MutationOpIntf {
       Double minargval = (Double) params.get("dga.minallelevalue");
       Double maxargval = (Double) params.get("dga.maxallelevalue");
       for (int j=0; j<n1_mutations; j++) {
-        int r1 = RndUtil.getInstance(id).getRandom().nextInt(n1);
-        double rv = RndUtil.getInstance(id).getRandom().nextGaussian();
-        a1[r1] += (max - min) * rv;
+        int r1 = r.nextInt(n1);
+				if (sigmaD!=null) {
+					double rv = r.nextGaussian()*sigmaD.doubleValue();
+					a1[r1] += rv;	
+				} else {
+					double rv = r.nextGaussian();
+					a1[r1] += (max - min) * rv;
+				}
         if (minargval != null && minargval.doubleValue() > a1[r1])
           a1[r1] = minargval.doubleValue();
         Double minargvalr1 = (Double) params.get("dga.minallelevalue" + r1);
@@ -92,16 +110,22 @@ public class DblVarArray1MAlleleMutationOp implements MutationOpIntf {
       }
 
       int n2 = a2.length;
-      double n2m = RndUtil.getInstance(id).getRandom().nextDouble()*mut_rate*n2;
+      min = Double.MAX_VALUE;
+      max = Double.NEGATIVE_INFINITY;
+      double n2m = r.nextDouble()*mut_rate*n2;
       int n2_mutations = (int) Math.round(n2m);
       for (int i = 0; i < n2; i++) {
         if (max < a2[i]) max = a2[i];
         else if (min > a2[i]) min = a2[i];
       }
       for (int j=0; j<n2_mutations; j++) {
-        int r2 = RndUtil.getInstance(id).getRandom().nextInt(n2);
-        double rv = RndUtil.getInstance(id).getRandom().nextGaussian();
-        a2[r2] += (max - min) * rv;
+        int r2 = r.nextInt(n2);
+				if (sigmaD!=null) {
+					a2[r2] += sigmaD.doubleValue() * r.nextGaussian();
+				} else {
+					double rv = r.nextGaussian();
+					a2[r2] += (max - min) * rv;
+				}
         if (minargval != null && minargval.doubleValue() > a2[r2])
           a2[r2] = minargval.doubleValue();
         Double minargvalr2 = (Double) params.get("dga.minallelevalue" + r2);

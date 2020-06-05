@@ -23,7 +23,8 @@ public class MAE implements FunctionIntf {
 	
 	
 	/**
-	 * computes and returns the value (|x_1|+|x_2|+...+|x_n|)/n.
+	 * computes and returns the value (|x_1|+|x_2|+...+|x_n|)/m where m is the 
+	 * number of non-NaN components of x.
 	 * @param arg Object  // double[]
 	 * @param params HashMap unused
 	 * @return double
@@ -31,7 +32,12 @@ public class MAE implements FunctionIntf {
 	public double eval(Object arg, HashMap params) {
 		double[] x = (double[])arg;
 		double result = 0.0;
-		for (int i=0; i<x.length; i++) result += (x[i] > 0.0 ? x[i] : -x[i]);
-		return result/x.length;
+		int len=0;
+		for (int i=0; i<x.length; i++) {
+			if (Double.isNaN(x[i])) continue;
+			result += (x[i] > 0.0 ? x[i] : -x[i]);
+			++len;
+		}
+		return result/len;
 	}
 }

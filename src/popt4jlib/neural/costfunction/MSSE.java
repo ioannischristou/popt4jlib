@@ -23,7 +23,8 @@ public class MSSE implements FunctionIntf {
 	
 	
 	/**
-	 * computes and returns the value (|x_1|^2+|x_2|^2+...+|x_n|^2)/n.
+	 * computes and returns the value (|x_1|^2+|x_2|^2+...+|x_n|^2)/m where m is 
+	 * the number of non NaN components in the vector x.
 	 * @param arg Object  // double[]
 	 * @param params HashMap unused
 	 * @return double
@@ -31,9 +32,12 @@ public class MSSE implements FunctionIntf {
 	public double eval(Object arg, HashMap params) {
 		double[] x = (double[])arg;
 		double result = 0.0;
+		int len = 0;
 		for (int i=0; i<x.length; i++) {
+			if (Double.isNaN(x[i])) continue;
 			result += x[i]*x[i];
+			++len;
 		}
-		return result/x.length;
+		return result/len;
 	}
 }

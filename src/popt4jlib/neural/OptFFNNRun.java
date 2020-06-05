@@ -156,7 +156,7 @@ public class OptFFNNRun {
         System.out.print("best soln found:[");
         for (int i = 0; i < arg.length; i++) System.out.print(arg[i] + " ");
         System.out.println("] VAL=" + p.getDouble());
-      // final local optimization
+				// final local optimization
         LocalOptimizerIntf lasdst = 
 					(LocalOptimizerIntf) params.get("opt.localoptimizer");
         if (lasdst!=null) {

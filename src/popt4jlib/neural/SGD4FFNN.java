@@ -125,9 +125,19 @@ public class SGD4FFNN implements LocalOptimizerIntf {
 	 * <li> &lt;"sgd.decay_factor", Double val&gt; optional, the multiplier that
 	 * multiplies the current value of the step-size when the iteration number 
 	 * indicates a step-size update is needed. Default is 0.7.
+	 * <li> &lt;"sgd.initmulfactor", Double val&gt; optional the sigma for the 
+	 * Gaussian distribution from which to draw co-ordinate values for the initial
+	 * point from which the method starts if no initial point is provided. Default
+	 * is 5.0.
 	 * <li> &lt;"sgd.eps", Double val&gt; optional the &epsilon; factor in update
 	 * parameter estimation. This value is also used to detect convergence -and so
 	 * stop the algorithm- of the variables x. Default is 1.e-8.
+	 * <li> &lt;"sgd.reciprocategradcoords", Boolean bval&gt; optional, if bval is
+	 * true, then the gradient is normalized in infinity norm to one, and then 
+	 * each component is replaced by the max of its reciprocal and 1, so that 
+	 * "large" gradient coordinates cause only a small coordinate update, and vice
+	 * versa; the reasoning is that a large gradient won't stay very large for 
+	 * very long. Default is false.
 	 * <li> &lt;"ffnn.randombatchsize", Integer num&gt; optional, the batch size
 	 * used when evaluating a weighted FFNN. Default is 0 which amounts to using
 	 * the entire training set.
@@ -296,7 +306,14 @@ public class SGD4FFNN implements LocalOptimizerIntf {
 
     private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) 
 			throws OptimizerException {
-			final double init_mul_factor = 5.0;
+			final double init_mul_factor = 
+				p.containsKey("sgd.initmulfactor") ? 
+				  ((Double) p.get("sgd.initmulfactor")).doubleValue() : 5.0;
+			boolean reciprocate_grad = false;
+			Boolean rec_gradB = (Boolean) p.get("sgd.reciprocategradcoords");
+			if (rec_gradB!=null && rec_gradB.booleanValue()) {
+				reciprocate_grad = true;
+			}
 			double best_val = Double.POSITIVE_INFINITY;
 			VectorIntf best_x = null;
 			
@@ -307,7 +324,7 @@ public class SGD4FFNN implements LocalOptimizerIntf {
       VectorIntf x0 = 
 			  _params.containsKey("sgd.x"+solindex)==false ?
           _params.containsKey("gradientdescent.x0") ? 
-			    (VectorIntf) _params.get("gradientdescent.x0") : 
+			      (VectorIntf) _params.get("gradientdescent.x0") : 
 			      _params.containsKey("x0") ? 
 				      (VectorIntf) _params.get("x0") : null // retrieve generic point?
 			    : (VectorIntf) _params.get("sgd.x"+solindex);
@@ -411,9 +428,20 @@ public class SGD4FFNN implements LocalOptimizerIntf {
         // update formulas
 				try {
 					// update x
-					for (int i=0; i<n; i++) {
-						double vi = x.getCoord(i) - a*g.getCoord(i)/normg;
-						x.setCoord(i, vi);
+					if (reciprocate_grad) {
+						final double a2 = a/2.0;
+						for (int i=0; i<n; i++) {
+							double vi = Double.compare(g.getCoord(i),0.0)==0 ? 
+							              1.0 : norminfg / g.getCoord(i);
+							if (Double.compare(vi, a2) > 0) vi = g.getCoord(i);
+							else if (Double.compare(vi, -a2) < 0) vi = g.getCoord(i);
+							x.setCoord(i, x.getCoord(i)-a*vi);
+						}
+					} else {
+						for (int i=0; i<n; i++) {
+							double vi = x.getCoord(i) - a*g.getCoord(i)/normg;
+							x.setCoord(i, vi);
+						}
 					}
 					// update a
 					int q = iter % decay_period;
@@ -439,6 +467,12 @@ public class SGD4FFNN implements LocalOptimizerIntf {
 			p.put("ffnn.traindata", all_train_data);
 			p.put("ffnn.trainlabels", all_train_labels);
 			
+			// finally, check if sgd.x${solindex+1} exists, if not make it best_x
+			int solindexp1 = solindex+1;
+			if (!p.containsKey("sgd.x"+solindexp1)) {
+				p.put("sgd.x"+solindexp1,best_x);
+			}
+			// return best arg,val pair
       return new PairObjDouble(best_x, best_val);
     }
 

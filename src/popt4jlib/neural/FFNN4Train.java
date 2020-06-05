@@ -127,7 +127,7 @@ public class FFNN4Train extends FFNN {
 	 * be evaluated on a different training sample. Further, when only a strict
 	 * subset of the entire training set is evaluated, the resulting errors array
 	 * although it has length equal to the entire training set size, it will 
-	 * contain zeros for those instances that were not evaluated, and in the case
+	 * contain NaNs for those instances that were not evaluated, and in the case
 	 * of parallel execution, the errors will not in general correspond to the 
 	 * positions in the training set that they were created. This should not 
 	 * create any problem for cost function evaluation, because no cost function 
@@ -182,8 +182,11 @@ public class FFNN4Train extends FFNN {
 		final NNNodeIntf[][] hidden_layers = getHiddenLayers();
 		final int num_hidden_layers = hidden_layers.length;
 		final OutputNNNodeIntf output_node = getOutputNode();
+		
 		double[] errors = new double[train_vectors.length];
-			
+		// initialize to NaN for the case where randombatchsize is used
+		for (int i=0; i<errors.length; i++) errors[i] = Double.NaN;
+		
 		Integer tidI = (Integer) params.get("thread.id");
 		Random rnd = null;
 		if (tidI!=null) rnd = RndUtil.getInstance(tidI.intValue()).getRandom();

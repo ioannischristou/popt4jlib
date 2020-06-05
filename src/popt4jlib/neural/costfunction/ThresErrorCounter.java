@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 /**
  * implements an error counter where as error in a vector component counts any
- * quantity that is larger than a threshold in absolute value.
+ * quantity that is (not NaN and) larger than a threshold in absolute value.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -39,7 +39,8 @@ public class ThresErrorCounter implements FunctionIntf {
 		}
 		double result = 0.0;
 		for (int i=0; i<x.length; i++) 
-			if (Double.compare(Math.abs(x[i]),thres)>0) result += 1.0;
+			if (!Double.isNaN(x[i]) && 
+				  Double.compare(Math.abs(x[i]),thres)>0) result += 1.0;
 		return result;
 	}
 }

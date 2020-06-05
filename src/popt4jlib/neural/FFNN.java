@@ -227,9 +227,8 @@ public class FFNN implements FunctionIntf {
 	 * <CODE>
 	 * java -cp &lt;classpath&gt; popt4jlib.neural.FFNN &lt;props_file&gt;
 	 * </CODE>
-	 * It first "reads" an FFNN from 
-	 * appropriate props, and then applies some input feature vectors to it to 
-	 * test the final output values.
+	 * It first "reads" an FFNN from appropriate props, and then applies some 
+	 * input feature vectors to it to test the final output values.
 	 * 
 	 * An example of the contents of a valid test file is the following:
 	 * <PRE>
