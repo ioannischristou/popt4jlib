@@ -38,21 +38,26 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
 
 	
   /**
-   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructing a thread-pool of numthreads 
+	 * threads.
    * @param numthreads int the number of threads in the thread-pool
 	 * @return FasterParallelAsynchBatchPriorityTaskExecutor properly initialized
    * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created.
    */	
-	public static FasterParallelAsynchBatchPriorityTaskExecutor newFasterParallelAsynchBatchPriorityTaskExecutor(int numthreads) throws ParallelException {
-		FasterParallelAsynchBatchPriorityTaskExecutor ex = new FasterParallelAsynchBatchPriorityTaskExecutor(numthreads);
+	public static FasterParallelAsynchBatchPriorityTaskExecutor 
+	  newFasterParallelAsynchBatchPriorityTaskExecutor(int numthreads) 
+			throws ParallelException {
+		FasterParallelAsynchBatchPriorityTaskExecutor ex = 
+			new FasterParallelAsynchBatchPriorityTaskExecutor(numthreads);
 		ex.initialize();
 		return ex;
 	}
 
 	
   /**
-   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructing a thread-pool of numthreads 
+	 * threads.
    * @param numthreads int the number of threads in the thread-pool
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full.
@@ -60,8 +65,13 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created.
    */		
-	public static FasterParallelAsynchBatchPriorityTaskExecutor newFasterParallelAsynchBatchPriorityTaskExecutor(int numthreads, boolean runoncurrent) throws ParallelException {
-		FasterParallelAsynchBatchPriorityTaskExecutor ex = new FasterParallelAsynchBatchPriorityTaskExecutor(numthreads, runoncurrent);
+	public static FasterParallelAsynchBatchPriorityTaskExecutor 
+	  newFasterParallelAsynchBatchPriorityTaskExecutor(int numthreads, 
+			                                               boolean runoncurrent) 
+			throws ParallelException {
+		FasterParallelAsynchBatchPriorityTaskExecutor ex = 
+			new FasterParallelAsynchBatchPriorityTaskExecutor(numthreads, 
+				                                                runoncurrent);
 		ex.initialize();
 		return ex;
 	}
@@ -73,8 +83,10 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created.
    */
-  private FasterParallelAsynchBatchPriorityTaskExecutor(int numthreads) throws ParallelException {
-    if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
+  private FasterParallelAsynchBatchPriorityTaskExecutor(int numthreads) 
+		throws ParallelException {
+    if (numthreads<=0) 
+			throw new ParallelException("constructor arg must be > 0");
     if (numthreads > SimplePriorityMsgPassingCoordinator.getMaxSize()/2)
       throw new ParallelException("cannot construct so many threads");
     _id = getNextObjId();
@@ -86,7 +98,8 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
       _threads[i].start();
     }
     _isRunning = true;
-    _spmpc = SimplePriorityMsgPassingCoordinator.getInstance("FasterParallelAsynchBatchPriorityTaskExecutor" + _id);
+    _spmpc = SimplePriorityMsgPassingCoordinator.
+		           getInstance("FasterParallelAsynchBatchPriorityTaskExecutor"+_id);
 		*/
   }
 
@@ -117,7 +130,8 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
       _threads[i].start();
     }
     _isRunning = true;
-    _spmpc = SimplePriorityMsgPassingCoordinator.getInstance("FasterParallelAsynchBatchPriorityTaskExecutor" + _id);		
+    _spmpc = SimplePriorityMsgPassingCoordinator.
+			         getInstance("FasterParallelAsynchBatchPriorityTaskExecutor"+_id);		
 	}
 	
 
@@ -132,16 +146,17 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
 
   /**
    * the main method of the class. Submits all tasks in the argument collection
-   * (must be objects implementing the <CODE>ComparableTaskObject</CODE> interface in
-   * package <CODE>parallel</CODE>)
+   * (must be objects implementing the <CODE>ComparableTaskObject</CODE> 
+	 * interface in package <CODE>parallel</CODE>)
    * for execution, and the thread-pool will ignore any exceptions any task may
    * throw when its run() method is invoked.
    * The call is asynchronous, so that the method does return immediately
    * without waiting for any task to complete; however, if all threads in the
    * thread-pool are busy and the
-   * <CODE>FasterParallelAsynchBatchPriorityTaskExecutor</CODE> was constructed via the
-   * single-argument constructor, or the second argument in the two-argument
-   * constructor was true, then the next task executes in the current thread.
+   * <CODE>FasterParallelAsynchBatchPriorityTaskExecutor</CODE> was constructed 
+	 * via the single-argument constructor, or the second argument in the 
+	 * two-argument constructor was true, then the next task executes in the 
+	 * current thread.
    * The call will also block in case the queue of tasks in the thread-pool
    * (implemented in <CODE>SimplePriorityMsgPassingCoordinator</CODE> class of
    * this package) is full (default=10000) in which case the current thread will
@@ -155,24 +170,26 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * not happen (the executor cannot do anything to prevent this). See also the
    * discussion in <CODE>parallel.DynamicAsynchTaskExecutor</CODE>.
    *
-   * A synchronous version is implemented in the ParallelBatchTaskExecutor class.
+   * A synchronous version is implemented in ParallelBatchTaskExecutor class.
    * @param tasks Collection a Collection of ComparableTaskObject objects
    * @throws ParallelException if the shutDown() method has been called prior
    * to this call
    * @throws ParallelExceptionUnsubmittedTasks if this object does not allow
    * running tasks in the current thread and some tasks could not be sent to
-   * the thread-pool due to a full <CODE>SimplePriorityMsgPassingCoordinator</CODE>
-   * msg-queue; in this case the un-submitted tasks are returned inside the
-   * exception object, along with any object in the <CODE>tasks</CODE> argument
-	 * that does not implement the <CODE>ComparableTaskObject</CODE> interface (if 
-	 * there is even a single such object, this exception will be thrown as well,
-	 * even though all other <CODE>ComparableTaskObject</CODE> objects in the arg
-	 * will be submitted normally for execution).
+   * the thread-pool due to a full 
+	 * <CODE>SimplePriorityMsgPassingCoordinator</CODE> msg-queue; in this case 
+	 * the un-submitted tasks are returned inside the exception object, along with 
+	 * any object in the <CODE>tasks</CODE> argument that does not implement the 
+	 * <CODE>ComparableTaskObject</CODE> interface (if there is even a single such 
+	 * object, this exception will be thrown as well, even though all other 
+	 * <CODE>ComparableTaskObject</CODE> objects in the arg will be submitted 
+	 * normally for execution).
    */
-  public void executeBatch(Collection tasks) throws ParallelException, ParallelExceptionUnsubmittedTasks {
-    if (tasks == null)return;
+  public void executeBatch(Collection tasks) 
+		throws ParallelException, ParallelExceptionUnsubmittedTasks {
+    if (tasks == null) return;
     Iterator it = tasks.iterator();
-    Vector unsubmitted_tasks = new Vector();  // tasks that couldn't be submitted
+    Vector unsubmitted_tasks = new Vector();  // tasks couldn't be submitted
     Vector tasks_to_run = new Vector();  // tasks to run on same thread
     synchronized (this) {
 			if (!_isRunning) throw new ParallelException("thread-pool not running");
@@ -264,7 +281,8 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
    * @throws ParallelException
    * @throws ParallelExceptionUnsubmittedTasks
    */
-  public synchronized void shutDown() throws ParallelException, ParallelExceptionUnsubmittedTasks {
+  public synchronized void shutDown() 
+		throws ParallelException, ParallelExceptionUnsubmittedTasks {
     if (_isRunning==false)
       throw new ParallelException("shutDown() has been called already");
     final int numthreads = _threads.length;
@@ -364,20 +382,22 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
 		 * the run() method of the thread, loops continuously, waiting for a task
 		 * to arrive via the <CODE>SimplePriorityMsgPassingCoordinator</CODE> class 
 		 * and executes it.
-		 * Any exceptions the task throws are caught &amp; ignored. In case the data that
-		 * arrives is a <CODE>ComparablePoissonPill</CODE>, the thread exits its 
-		 * <CODE>run()</CODE> loop.
+		 * Any exceptions the task throws are caught &amp; ignored. In case the data 
+		 * that arrives is a <CODE>ComparablePoissonPill</CODE>, the thread exits 
+		 * its <CODE>run()</CODE> loop.
 		 */
 		public void run() {
 			final int fpbteid = getObjId(); // _e.getObjId();
-			final SimplePriorityMsgPassingCoordinator fpabptetmpc =
-					SimplePriorityMsgPassingCoordinator.getInstance("FasterParallelAsynchBatchPriorityTaskExecutor"+fpbteid);
+			final SimplePriorityMsgPassingCoordinator fpabptetmpc = 
+				SimplePriorityMsgPassingCoordinator.getInstance(
+					"FasterParallelAsynchBatchPriorityTaskExecutor"+fpbteid);
 			boolean do_run = true;
 			while (do_run) {
 				Object data = fpabptetmpc.recvData(_id);  // used to be recvData();
 				setIdle(false);
 				try {
-					if (data instanceof ComparableTaskObject) ( (ComparableTaskObject) data).run();
+					if (data instanceof ComparableTaskObject) 
+						( (ComparableTaskObject) data).run();
 					else if (data instanceof ComparablePoissonPill) {
 						do_run = false; // done
 						break;
@@ -396,11 +416,11 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
 		/**
 		 * This implementation returns the id this object gets in construction time.
 		 * Therefore, if there exist more than one 
-		 * <CODE>FasterParallelAsynchBatchPriorityTaskExecutor</CODE> objects in a JVM
-		 * there will be more than one <CODE>FPABPTEThread</CODE> objects with the 
-		 * same id. However, if the id is always only used with the same executor,
-		 * there is no problem as there will never be two threads created by the same
-		 * executor, both (threads) having the same id.
+		 * <CODE>FasterParallelAsynchBatchPriorityTaskExecutor</CODE> objects in a 
+		 * JVM there will be more than one <CODE>FPABPTEThread</CODE> objects with 
+		 * the same id. However, if the id is always only used with the same 
+		 * executor, there is no problem as there will never be two threads created 
+		 * by the same executor, both (threads) having the same id.
 		 * @return long _id
 		 */
 		public long getId() { return _id; }
@@ -411,7 +431,7 @@ public final class FasterParallelAsynchBatchPriorityTaskExecutor {
 
 
 	/**
-	 * auxiliary class.
+	 * auxiliary class not part of the public API.
 	 * <p>Title: popt4jlib</p>
 	 * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
 	 * <p>Copyright: Copyright (c) 2011</p>

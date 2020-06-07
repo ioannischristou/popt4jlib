@@ -153,7 +153,8 @@ public final class ParallelAsynchBatchTaskExecutor {
    * not happen (the executor cannot do anything to prevent this). See also the
    * discussion in <CODE>parallel.DynamicAsynchTaskExecutor</CODE>.
    *
-   * A synchronous version is implemented in the ParallelBatchTaskExecutor class.
+   * A synchronous version is implemented in the 
+	 * <CODE>ParallelBatchTaskExecutor</CODE> class.
    * @param tasks Collection
    * @throws ParallelException if the shutDown() method has been called prior
    * to this call

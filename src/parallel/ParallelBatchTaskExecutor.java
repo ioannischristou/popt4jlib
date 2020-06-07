@@ -26,12 +26,18 @@ import java.util.*;
  * dynamic thread management (such as starting more threads upon higher loads, 
  * or modifying threads' priorities etc. as is done in the 
  * <CODE>LimitedTimeTaskExecutor</CODE> class).
+ * <p>Notes:
+ * <ul>
+ * <li> 2020-06-07: modified the methods <CODE>getXXXId()</CODE> to work 
+ * correctly even if the tasks submitted are more than 
+ * <CODE>Integer.MAX_VALUE</CODE> (which is not such a large number after all).
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 1.1
  */
 public final class ParallelBatchTaskExecutor {
   private static int _nextId = 0;
@@ -60,7 +66,8 @@ public final class ParallelBatchTaskExecutor {
 
 	
   /**
-   * public factory constructor, constructing a thread-pool of numthreads threads.
+   * public factory constructor, constructing a thread-pool of numthreads 
+	 * threads.
    * @param numthreads int the number of threads in the thread-pool
    * @param bsize int the batch size to be submitted each time to the threadpool
 	 * @return ParallelBatchTaskExecutor properly initialized
@@ -69,7 +76,8 @@ public final class ParallelBatchTaskExecutor {
 	public static ParallelBatchTaskExecutor 
 				newParallelBatchTaskExecutor(int numthreads, int bsize) 
 								throws ParallelException {
-		ParallelBatchTaskExecutor ex = new ParallelBatchTaskExecutor(numthreads, bsize);
+		ParallelBatchTaskExecutor ex = new ParallelBatchTaskExecutor(numthreads, 
+			                                                           bsize);
 		ex.initialize();
 		return ex;
 	}
@@ -81,7 +89,8 @@ public final class ParallelBatchTaskExecutor {
    * @throws ParallelException if numthreads &le; 0.
    */
   private ParallelBatchTaskExecutor(int numthreads) throws ParallelException {
-    if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
+    if (numthreads<=0) 
+			throw new ParallelException("constructor arg must be > 0");
     _id = getNextObjId();
     _threads = new PBTEThread[numthreads];
   }
@@ -224,8 +233,16 @@ public final class ParallelBatchTaskExecutor {
 
 
   int getObjId() { return _id; }
-  private synchronized static int getNextObjId() { return ++_nextId; }
-  private synchronized int getNextId() { return ++_curId; }
+  private synchronized static int getNextObjId() { 
+		if (++_nextId<0) _nextId = 0;  // overflow occurred, reset to zero
+		return _nextId;
+		// return ++_nextId; 
+	}
+  private synchronized int getNextId() {
+		if (++_curId < 0) _curId = 0;  // overflow occurred, reset to zero
+		return _curId;
+		// return ++_curId; 
+	}
 
 
 	/**
@@ -337,6 +354,7 @@ final class PBTEThread extends Thread {
 		// ParallelBatchTaskExecutor.getNextId() method does. 
 		Integer curId = (Integer) _ids.get(e);
 		int nextid = curId.intValue()+1;
+		if (nextid<0) nextid = 0;  // overflow occurred, reset to zero 
 		_ids.put(e, new Integer(nextid));
 		return nextid;
 	}

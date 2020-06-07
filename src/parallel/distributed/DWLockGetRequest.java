@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package parallel.distributed;
 
 import java.io.IOException;
@@ -30,7 +24,8 @@ public class DWLockGetRequest implements DMsgIntf {
 	
   /**
    * constructor.
-   * @param rwlockname String name of the read-write lock in the receiving DRWLockSrv.
+   * @param rwlockname String name of the read-write lock in the receiving 
+	 * DRWLockSrv.
    */
   public DWLockGetRequest(String rwlockname) {
     _rwlname = rwlockname;
@@ -38,10 +33,11 @@ public class DWLockGetRequest implements DMsgIntf {
 
 
   /**
-   * requests the write-lock (via sockets) from the FairDMCoordinator object named in
-   * the constructor. These methods work only when invoked on the server from 
-	 * the same thread for each remote thread connecting to the server, thus the 
-	 * need for the long-lived connection objects mentioned in the header comments.
+   * requests the write-lock (via sockets) from the FairDMCoordinator object 
+	 * named in the constructor. These methods work only when invoked on the 
+	 * server from the same thread for each remote thread connecting to the server 
+	 * thus the need for the long-lived connection objects mentioned in the header 
+	 * comments.
    * @param oos ObjectOutputStream
    * @throws IOException
    */

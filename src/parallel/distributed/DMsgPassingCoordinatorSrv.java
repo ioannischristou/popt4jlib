@@ -53,11 +53,12 @@ public class DMsgPassingCoordinatorSrv {
    */
   void run() throws IOException, ParallelException {
     ServerSocket ss = new ServerSocket(_port);
+		utils.Messenger mger = utils.Messenger.getInstance();
     while (true) {
-      utils.Messenger.getInstance().msg("DMsgPassingCoordinatorSrv: waiting for socket connection",0);
+      mger.msg("DMsgPassingCoordinatorSrv: waiting for socket connection",0);
       Socket s = ss.accept();
       ++_countConns;
-      System.err.println("Total "+_countConns+" socket connections arrived.");
+      mger.msg("Total "+_countConns+" socket connections arrived.",0);
       handle(s, _countConns);
     }
   }
@@ -65,7 +66,10 @@ public class DMsgPassingCoordinatorSrv {
 
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; parallel.distributed.DMsgPassingCoordinatorSrv [port(7894)] [maxthreads(10000)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; 
+	 * parallel.distributed.DMsgPassingCoordinatorSrv [port(7894)] 
+	 * [maxthreads(10000)]
+	 * </CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -87,15 +91,23 @@ public class DMsgPassingCoordinatorSrv {
     }
   }
 
-
-  private void handle(Socket s, long connum) throws IOException, ParallelException {
+	
+	/**
+	 * creates a task from the arguments and executes it in its thread-pool.
+	 * @param s Socket
+	 * @param connum long
+	 * @throws IOException
+	 * @throws ParallelException 
+	 */
+  private void handle(Socket s, long connum) throws IOException, 
+		                                                ParallelException {
     DMPCTask t = new DMPCTask(s, connum);
     _pool.execute(t);
   }
 
 
   /**
-   * inner helper class
+   * inner helper class, not part of the public API.
    * <p>Title: popt4jlib</p>
    * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
    * <p>Copyright: Copyright (c) 2011</p>
@@ -113,14 +125,15 @@ public class DMsgPassingCoordinatorSrv {
     }
 
     public void run() {
-      utils.Messenger.getInstance().msg("DMPCTask with id="+_conId+" running...",1);
+      utils.Messenger.getInstance().msg("DMPCTask with id="+
+				                                _conId+" running...",1);
       ObjectInputStream ois = null;
       ObjectOutputStream oos = null;
       try {
         oos = new ObjectOutputStream(_s.getOutputStream());
         oos.flush();
         ois = new ObjectInputStream(_s.getInputStream());
-        DMsgIntf msg = (DMsgIntf) ois.readObject();  // read a msg (send or recv)
+        DMsgIntf msg = (DMsgIntf) ois.readObject();  // read msg (send or recv)
         msg.execute(oos);
       }
       catch (IOException e) {

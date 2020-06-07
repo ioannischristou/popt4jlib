@@ -43,13 +43,16 @@ import java.io.Serializable;
  * machine is not over-worked, or so as to run some other demanding process 
  * etc.) However, the throttling-down is undone as soon as the 
  * <CODE>executeTaskOnAllThreads(task)</CODE> method is called.
+ * <li>2020-06-07: modified the <CODE>getXXXId()</CODE> methods to ensure that
+ * even if the total tasks submitted exceed in number the (not so large) 
+ * <CODE>Integer.MAX_VALUE</CODE> value, the class still works as expected.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.1
+ * @version 1.2
  */
 public final class PDBatchTaskExecutor {
   private static int _nextId = 0;
@@ -423,8 +426,14 @@ public final class PDBatchTaskExecutor {
 
 
   int getObjId() { return _id; }
-  private synchronized static int getNextObjId() { return ++_nextId; }
-  private synchronized int getNextId() { return ++_curId; }
+  private synchronized static int getNextObjId() { 
+		if (++_nextId<0) _nextId = 0;  // overflow occurred, start at zero again
+		return _nextId;
+	}
+  private synchronized int getNextId() { 
+		if (++_curId<0) _curId = 0;  // overflow occurred, start at zero again
+		return _curId; 
+	}
 
 
 	/**
@@ -542,6 +551,7 @@ public final class PDBatchTaskExecutor {
 			// return ++_curId;
 			Integer curId = (Integer) _ids.get(e);
 			int nextid = curId.intValue()+1;
+			if (nextid<0) nextid = 0;  // overflow occurred, start at zero again
 			_ids.put(e, new Integer(nextid));
 			return nextid;
 		}

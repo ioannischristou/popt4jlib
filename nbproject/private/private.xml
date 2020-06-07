@@ -175,6 +175,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/OptimizerIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/SparseVectorFile2KDDCup99FileFormatConverter.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/RnQTCnbin.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/RandomDescents.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/Poisson2.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/RnQTCnbinFixedTOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SA/DSA.java</file>
@@ -223,6 +224,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/packing/DBBGASPPacker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/RRObject.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LimitedTimeEvalFunction.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblVarArray1MAlleleMutationOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansNormSqrEvaluator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/Debug.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1Vector2DblArray1AdapterFunction.java</file>

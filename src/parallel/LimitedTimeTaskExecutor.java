@@ -128,7 +128,7 @@ public class LimitedTimeTaskExecutor {
 				try {
 					o.run();
 				}
-				catch (Exception e) {  // TaskObject threw an exception: ignore & continue
+				catch (Exception e) {  // TaskObject threw exception: ignore & continue
 					e.printStackTrace();  // no-op
 				}
 				setIsRunning(false);
@@ -145,7 +145,8 @@ public class LimitedTimeTaskExecutor {
 				if (div>_lastFactor) {
 					_lastFactor = div;
 					int prior = getPriority()-1;
-					if (prior > Thread.MIN_PRIORITY) setPriority(prior);  // lower priority
+					if (prior > Thread.MIN_PRIORITY) 
+						setPriority(prior);  // lower priority
 				}
 			}
 			else _lastFactor = 0;

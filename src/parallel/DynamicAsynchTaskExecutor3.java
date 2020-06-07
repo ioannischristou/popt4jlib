@@ -36,8 +36,11 @@ public final class DynamicAsynchTaskExecutor3 {
 	 * @return DynamicAsynchTaskExecutor3 properly initialized
 	 * @throws ParallelException 
 	 */
-	public static DynamicAsynchTaskExecutor3 newDynamicAsynchTaskExecutor3(int numthreads, int maxthreads) throws ParallelException {
-		DynamicAsynchTaskExecutor3 ex = new DynamicAsynchTaskExecutor3(numthreads, maxthreads);
+	public static DynamicAsynchTaskExecutor3 
+	  newDynamicAsynchTaskExecutor3(int numthreads, int maxthreads) 
+			throws ParallelException {
+		DynamicAsynchTaskExecutor3 ex = 
+			new DynamicAsynchTaskExecutor3(numthreads, maxthreads);
 		ex.initialize();
 		return ex;
 	}
@@ -51,9 +54,12 @@ public final class DynamicAsynchTaskExecutor3 {
 	 * @return DynamicAsynchTaskExecutor3 properly initialized
 	 * @throws ParallelException 
 	 */
-	public static DynamicAsynchTaskExecutor3 newDynamicAsynchTaskExecutor3(int numthreads, int maxthreads, 
-					                                                             boolean runoncurrent) throws ParallelException {
-		DynamicAsynchTaskExecutor3 ex = new DynamicAsynchTaskExecutor3(numthreads, maxthreads, runoncurrent);
+	public static DynamicAsynchTaskExecutor3 
+	  newDynamicAsynchTaskExecutor3(int numthreads, int maxthreads, 
+					                        boolean runoncurrent) 
+		  throws ParallelException {
+		DynamicAsynchTaskExecutor3 ex = 
+			new DynamicAsynchTaskExecutor3(numthreads, maxthreads, runoncurrent);
 		ex.initialize();
 		return ex;
 	}	
@@ -66,8 +72,10 @@ public final class DynamicAsynchTaskExecutor3 {
    * @throws ParallelException if numthreads &le; 0 or 
 	 * if maxthreads &lt; numthreads.
    */
-  private DynamicAsynchTaskExecutor3(int numthreads, int maxthreads) throws ParallelException {
-    if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
+  private DynamicAsynchTaskExecutor3(int numthreads, int maxthreads) 
+		throws ParallelException {
+    if (numthreads<=0) 
+			throw new ParallelException("constructor arg must be > 0");
     if (numthreads > maxthreads)
       throw new ParallelException("maxthreads must be >= numthreads");
     _id = getNextObjId();
@@ -83,7 +91,8 @@ public final class DynamicAsynchTaskExecutor3 {
    * @param maxthreads int the max number of threads in the thread-pool.
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full and no new thread can be created.
-   * @throws ParallelException if numthreads &le; 0 or if numthreads &gt; maxthreads.
+   * @throws ParallelException if numthreads &le; 0 or if numthreads &gt; 
+	 * maxthreads.
    */
   private DynamicAsynchTaskExecutor3(int numthreads, int maxthreads,
                                    boolean runoncurrent)
@@ -105,7 +114,9 @@ public final class DynamicAsynchTaskExecutor3 {
       ti.start();
     }
     _isRunning = true;
-    _sfmpc = UnboundedSimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor3." + _id);		
+    _sfmpc = 
+			UnboundedSimpleFasterMsgPassingCoordinator.
+				getInstance("DynamicAsynchTaskExecutor3." + _id);		
 	}
 	
 
@@ -138,7 +149,8 @@ public final class DynamicAsynchTaskExecutor3 {
     synchronized (this) {
 			if (!_isRunning) throw new ParallelException("thread-pool not running");
       ++_numTasksSubmitted;
-      //utils.Messenger.getInstance().msg("Current total #threads="+getNumThreads(),1);
+      //utils.Messenger.getInstance().msg("Current total #threads="+
+			//                                  getNumThreads(),1);
       if (isOK2SubmitTask() || task instanceof DATEPoissonPill3) {
         _sfmpc.sendData(_id, task);
       }
@@ -148,12 +160,14 @@ public final class DynamicAsynchTaskExecutor3 {
           _threads.add(ti);
           ti.setDaemon(true); // thread will end when main thread ends
           ti.start();
-					utils.Messenger.getInstance().msg("Current total #threads="+_threads.size(),1);
+					utils.Messenger.getInstance().msg("Current total #threads="+
+						                                _threads.size(),1);
           _sfmpc.sendData(_id, task);
         }
         else {  // no capacity remaining
           ++_numTasksHandled;  // for both outcomes of the if-then-else stmt.
-          if (_runOnCurrent && isOK2RunOnCurrentThread(task)) run_on_current = true;
+          if (_runOnCurrent && isOK2RunOnCurrentThread(task)) 
+						run_on_current = true;
           else {
 						_sfmpc.sendData(_id, task);
           }
@@ -163,7 +177,8 @@ public final class DynamicAsynchTaskExecutor3 {
     if (run_on_current) {
       /*
 			utils.Messenger.getInstance().msg(
-          "DynamicAsynchTaskExecutor3.execute(task): running task on current thread",
+          "DynamicAsynchTaskExecutor3.execute(task): "+
+			    "running task on current thread",
           0);
 			*/
       task.run(); // run on current thread
@@ -184,7 +199,8 @@ public final class DynamicAsynchTaskExecutor3 {
 					throws ParallelException, ClassCastException {
 		DATEThread3 cur_thread = (DATEThread3) Thread.currentThread();
 		if (cur_thread._id!=tsto.getThreadIdToRunOn())
-			throw new ParallelException("method invocation not valid from current thread");
+			throw new ParallelException("method invocation not valid from "+
+				                          "current thread");
 		cur_thread._hotLocalQueue.addElement(tsto);
 	}
 
@@ -212,7 +228,8 @@ public final class DynamicAsynchTaskExecutor3 {
 	 */
 	public boolean hotLocalQueueCurrentlyHasCapacity() throws ClassCastException {
 		DATEThread3 cur_thread = (DATEThread3) Thread.currentThread();
-		return cur_thread._hotLocalQueue.size()<cur_thread._hotLocalQueue.getCurrentMaxSize();
+		return cur_thread._hotLocalQueue.size() < 
+			     cur_thread._hotLocalQueue.getCurrentMaxSize();
 	}
 	
 	
@@ -283,7 +300,8 @@ public final class DynamicAsynchTaskExecutor3 {
 	 * @throws ParallelException
 	 * @throws InterruptedException 
 	 */
-	public void shutDownAndWait4Threads() throws ParallelException, InterruptedException {
+	public void shutDownAndWait4Threads() 
+		throws ParallelException, InterruptedException {
 		// the method is unsyncrhonized as it should be: the shutDown() method is 
 		// properly synchronized and sets _isRunning to false. Afterwards, any other
 		// thread trying to call execute(task) will see _isRunning is false and 
@@ -342,7 +360,8 @@ public final class DynamicAsynchTaskExecutor3 {
 		if (task instanceof ThreadSpecificTaskObject) {
 			int tid = ((ThreadSpecificTaskObject) task).getThreadIdToRunOn();
 			if (Thread.currentThread() instanceof IdentifiableIntf) {
-				int cur_thread_id = (int) ((IdentifiableIntf) Thread.currentThread()).getId();
+				int cur_thread_id = 
+					(int) ((IdentifiableIntf) Thread.currentThread()).getId();
 				return tid==cur_thread_id;
 			} else return false;
 		}
@@ -363,13 +382,15 @@ public final class DynamicAsynchTaskExecutor3 {
    * @version 1.0
    */
   class DATEThread3 extends Thread implements IdentifiableIntf {
-    private static final boolean _SEND_REQUEST_4_WORK_WHEN_IDLE=true;  // compile-time constant
+    private static final boolean _SEND_REQUEST_4_WORK_WHEN_IDLE=true;  
+    // compile-time constant
 		private DynamicAsynchTaskExecutor3 _e;
     private int _id;
     private boolean _isIdle=true;
     private UnboundedSimpleFasterMsgPassingCoordinator _datetmpc;
 		private UnboundedBufferArrayUnsynchronized _hotLocalQueue;
-		private UnboundedBufferArrayUnsynchronized _coldLocalQueue;  // used to be ArrayDeque<Runnable>
+		private UnboundedBufferArrayUnsynchronized _coldLocalQueue;  // used to be 
+		// ArrayDeque<Runnable>
 
 		
     /**
@@ -396,10 +417,10 @@ public final class DynamicAsynchTaskExecutor3 {
      * the run() method of the thread, loops continuously, looking for a task
      * in the hot local queue (unsynchronized op); if there is at least one, 
 		 * picks up the first one and executes it; else looks for a task in the 
-		 * global shared queue (synchronized op/non-blocking); if it cannot find one, 
+		 * global shared queue (synchronized op/non-blocking); if it cannot find one 
 		 * it checks its cold local queue (unsynchronized op), and if there is none, 
-		 * then goes waiting for a task from the global queue 
-		 * (synchronized op/blocking).
+		 * then goes waiting for a task from the global queue (synchronized 
+		 * op/blocking).
      * Any exceptions the task throws are caught &amp; ignored. If the data that
      * arrives is a PoissonPill3, the thread exits its run() loop, without any
 		 * regard to the tasks in its local queue.
@@ -412,9 +433,12 @@ public final class DynamicAsynchTaskExecutor3 {
 			long num_workrequests_issued = 0;
 			// end statistics block
       final int fpbteid = _e.getObjId();
-      _datetmpc = UnboundedSimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor3."+fpbteid);
-			_hotLocalQueue = new UnboundedBufferArrayUnsynchronized(1000);  // arg. is init. size
-			_coldLocalQueue = new UnboundedBufferArrayUnsynchronized(2000);  // faster than ArrayList or ArrayDeque 
+      _datetmpc = UnboundedSimpleFasterMsgPassingCoordinator.
+				            getInstance("DynamicAsynchTaskExecutor3."+fpbteid);
+			_hotLocalQueue = 
+				new UnboundedBufferArrayUnsynchronized(1000);  // arg. is init. size
+			_coldLocalQueue = new UnboundedBufferArrayUnsynchronized(2000);  // faster 
+			// than ArrayList or ArrayDeque 
       boolean do_run = true;
 			boolean recvd_from_local;
       while (do_run) {
@@ -464,13 +488,16 @@ public final class DynamicAsynchTaskExecutor3 {
         catch (Exception e) {
           e.printStackTrace();  // task threw an exception, ignore and continue
         }
-        if (!recvd_from_local) incrNumTasksHandled();  // indicate task was "handled".
+        if (!recvd_from_local) 
+					incrNumTasksHandled();  // indicate task was "handled".
         setIdle(true);
       }
 			{  // print statistics block
 				String stats = "DATEThread3-id="+_id+" STATS:\n";
-				stats += " num_hotlocal_tasks_encountered="+num_hotlocal_tasks_encountered;
-				stats += " num_coldlocal_tasks_encountered="+num_coldlocal_tasks_encountered;
+				stats += " num_hotlocal_tasks_encountered="+
+					       num_hotlocal_tasks_encountered;
+				stats += " num_coldlocal_tasks_encountered="+
+					       num_coldlocal_tasks_encountered;
 				stats += " num_global_tasks_encountered="+num_global_tasks_encountered;
 				long total = num_hotlocal_tasks_encountered +
 								     num_coldlocal_tasks_encountered + 

@@ -41,8 +41,11 @@ public final class DynamicAsynchTaskExecutor2 {
 	 * @return DynamicAsynchTaskExecutor2 properly initialized
 	 * @throws ParallelException
 	 */
-	public static DynamicAsynchTaskExecutor2 newDynamicAsynchTaskExecutor2(int numthreads, int maxthreads) throws ParallelException {
-		DynamicAsynchTaskExecutor2 ex = new DynamicAsynchTaskExecutor2(numthreads, maxthreads);
+	public static DynamicAsynchTaskExecutor2 
+	  newDynamicAsynchTaskExecutor2(int numthreads, int maxthreads) 
+			throws ParallelException {
+		DynamicAsynchTaskExecutor2 ex = 
+			new DynamicAsynchTaskExecutor2(numthreads, maxthreads);
 		ex.initialize();
 		return ex;
 	}
@@ -56,9 +59,12 @@ public final class DynamicAsynchTaskExecutor2 {
 	 * @return DynamicAsynchTaskExecutor2 properly initialized
 	 * @throws ParallelException
 	 */
-	public static DynamicAsynchTaskExecutor2 newDynamicAsynchTaskExecutor2(int numthreads, int maxthreads,
-					                                                             boolean runoncurrent) throws ParallelException {
-		DynamicAsynchTaskExecutor2 ex = new DynamicAsynchTaskExecutor2(numthreads, maxthreads, runoncurrent);
+	public static DynamicAsynchTaskExecutor2 
+	  newDynamicAsynchTaskExecutor2(int numthreads, int maxthreads, 
+			                            boolean runoncurrent) 
+			throws ParallelException {
+		DynamicAsynchTaskExecutor2 ex = 
+			new DynamicAsynchTaskExecutor2(numthreads, maxthreads, runoncurrent);
 		ex.initialize();
 		return ex;
 	}
@@ -71,14 +77,16 @@ public final class DynamicAsynchTaskExecutor2 {
    * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created or if maxthreads &lt; numthreads.
    */
-  private DynamicAsynchTaskExecutor2(int numthreads, int maxthreads) throws ParallelException {
-    if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
+  private DynamicAsynchTaskExecutor2(int numthreads, int maxthreads) 
+		throws ParallelException {
+    if (numthreads<=0) 
+			throw new ParallelException("constructor arg must be > 0");
     if (maxthreads > SimpleFasterMsgPassingCoordinator.getMaxSize() ||
         numthreads > maxthreads)
       throw new ParallelException("cannot construct so many threads");
     _id = getNextObjId();
     _threads = new ArrayList(numthreads);  // numthreads arg. denotes capacity
-	_initNumThreads = numthreads;
+		_initNumThreads = numthreads;
     _maxNumThreads = maxthreads;
   }
 
@@ -89,7 +97,8 @@ public final class DynamicAsynchTaskExecutor2 {
    * @param maxthreads int the max number of threads in the thread-pool.
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full and no new thread can be created.
-   * @throws ParallelException if numthreads &le; 0 or if numthreads&gt;maxthreads.
+   * @throws ParallelException if numthreads &le; 0 or if numthreads &gt; 
+	 * maxthreads.
    */
   private DynamicAsynchTaskExecutor2(int numthreads, int maxthreads,
                                    boolean runoncurrent)
@@ -111,7 +120,8 @@ public final class DynamicAsynchTaskExecutor2 {
       ti.start();
     }
     _isRunning = true;
-    _sfmpc = SimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor2." + _id);
+    _sfmpc = SimpleFasterMsgPassingCoordinator.
+			         getInstance("DynamicAsynchTaskExecutor2." + _id);
 	}
 
 
@@ -155,7 +165,8 @@ public final class DynamicAsynchTaskExecutor2 {
     synchronized (this) {
 			if (!_isRunning) throw new ParallelException("thread-pool not running");
       ++_numTasksSubmitted;
-      //utils.Messenger.getInstance().msg("Current total #threads="+getNumThreads(),1);
+      //utils.Messenger.getInstance().msg("Current total #threads="+
+			//                                  getNumThreads(),1);
       if (isOK2SubmitTask() || task instanceof DATEPoissonPill2) {
         _sfmpc.sendDataBlocking(_id, task);
       }
@@ -165,7 +176,8 @@ public final class DynamicAsynchTaskExecutor2 {
           _threads.add(ti);
           ti.setDaemon(true); // thread will end when main thread ends
           ti.start();
-					utils.Messenger.getInstance().msg("Current total #threads="+getNumThreads(),1);
+					utils.Messenger.getInstance().msg("Current total #threads="+
+						                                getNumThreads(),1);
           _sfmpc.sendDataBlocking(_id, task);
         }
         else {  // no capacity remaining
@@ -177,7 +189,9 @@ public final class DynamicAsynchTaskExecutor2 {
 						}
 						catch (ParallelException e) {  // ok, even queue is full, so throw
 							// e.printStackTrace();
-							throw new ParallelException("DynamicAsynchTaskExecutor2.execute(): not enough capacity to submit task now");
+							throw new ParallelException(
+								          "DynamicAsynchTaskExecutor2.execute(): not enough "+
+													"capacity to submit task now");
 						}
           }
         }
@@ -185,9 +199,9 @@ public final class DynamicAsynchTaskExecutor2 {
     }  // end synchronized block
     if (run_on_current) {
       /*
-			utils.Messenger.getInstance().msg(
-          "DynamicAsynchTaskExecutor2.execute(task): running task on current thread",
-          0);
+			utils.Messenger.getInstance().msg("DynamicAsynchTaskExecutor2."+
+			                                  "execute(task): running task on "+
+			                                  "current thread", 0);
 			*/
       task.run(); // run on current thread
     }
@@ -208,7 +222,8 @@ public final class DynamicAsynchTaskExecutor2 {
 					throws ParallelException, ClassCastException, IllegalStateException {
 		DATEThread2 cur_thread = (DATEThread2) Thread.currentThread();
 		if (cur_thread._id!=tsto.getThreadIdToRunOn())
-			throw new ParallelException("method invocation not valid from current thread");
+			throw new ParallelException("method invocation not valid "+
+				                          "from current thread");
 		cur_thread._hotLocalQueue.addElement(tsto);
 	}
 
@@ -235,7 +250,8 @@ public final class DynamicAsynchTaskExecutor2 {
 	 */
 	public boolean hotLocalQueueHasCapacity() throws ClassCastException {
 		DATEThread2 cur_thread = (DATEThread2) Thread.currentThread();
-		return cur_thread._hotLocalQueue.size()<cur_thread._hotLocalQueue.getMaxSize();
+		return cur_thread._hotLocalQueue.size() < 
+			     cur_thread._hotLocalQueue.getMaxSize();
 	}
 
 
@@ -341,7 +357,8 @@ public final class DynamicAsynchTaskExecutor2 {
     private boolean _isIdle=true;
     private SimpleFasterMsgPassingCoordinator _datetmpc;
 		private BoundedBufferArrayUnsynchronized _hotLocalQueue;
-		private UnboundedBufferArrayUnsynchronized _coldLocalQueue;  // serves as ArrayDeque<Runnable>
+		private UnboundedBufferArrayUnsynchronized _coldLocalQueue;  // serves as 
+		// ArrayDeque<Runnable>
 
 
     /**
@@ -366,20 +383,24 @@ public final class DynamicAsynchTaskExecutor2 {
 
     /**
      * the run() method of the thread, loops continuously, looking for a task
-     * in the hot local queue; if there is, executes it;
-		 * else looks for a task in the global shared queue; if it cannot find one,
-		 * it checks its old local queue, and if there is none, then
-		 * goes waiting for a task from the global queue.
+     * in the hot local queue; if there is, executes it; else looks for a task 
+		 * in the global shared queue; if it cannot find one, it checks its old 
+		 * local queue, and if there is none, then goes waiting for a task from the 
+		 * global queue.
      * Any exceptions the task throws are caught &amp; ignored. If the data that
      * arrives is a PoissonPill2, the thread exits its run() loop, without any
 		 * regard to the tasks in its local queue.
      */
     public void run() {
       final int fpbteid = _e.getObjId();
-      _datetmpc = SimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor2."+fpbteid);
-			_hotLocalQueue = new BoundedBufferArrayUnsynchronized(1000*SimpleFasterMsgPassingCoordinator.getMaxSize());
+      _datetmpc = 
+				SimpleFasterMsgPassingCoordinator.getInstance(
+					                                  "DynamicAsynchTaskExecutor2."+
+																						fpbteid);
+			final int ms = SimpleFasterMsgPassingCoordinator.getMaxSize();
+			_hotLocalQueue = new BoundedBufferArrayUnsynchronized(1000*ms);
 			// _coldLocalQueue = new ArrayDeque();  // claimed faster than ArrayList
-      _coldLocalQueue = new UnboundedBufferArrayUnsynchronized(SimpleFasterMsgPassingCoordinator.getMaxSize());
+      _coldLocalQueue = new UnboundedBufferArrayUnsynchronized(ms);
       boolean do_run = true;
 			boolean recvd_from_local;
       while (do_run) {
@@ -399,7 +420,8 @@ public final class DynamicAsynchTaskExecutor2 {
 					if (data == null) {  // 3. go to the cold queue
 						if (_coldLocalQueue.size()>0) {
 							recvd_from_local = true;
-							data = _coldLocalQueue.remove();  // used to be poll();  // FIFO order processing
+							data = _coldLocalQueue.remove();  // used to be poll();  
+              // FIFO order processing
 						}
 					}
 				}
@@ -419,7 +441,8 @@ public final class DynamicAsynchTaskExecutor2 {
         catch (Exception e) {
           e.printStackTrace();  // task threw an exception, ignore and continue
         }
-        if (!recvd_from_local) incrNumTasksHandled();  // indicate task was "handled".
+        if (!recvd_from_local) 
+					incrNumTasksHandled();  // indicate task was "handled".
         setIdle(true);
       }
     }

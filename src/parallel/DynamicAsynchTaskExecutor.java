@@ -59,8 +59,11 @@ public final class DynamicAsynchTaskExecutor {
 	 * @return DynamicAsynchTaskExecutor properly initialized
 	 * @throws ParallelException 
 	 */
-	public static DynamicAsynchTaskExecutor newDynamicAsynchTaskExecutor(int numthreads, int maxthreads) throws ParallelException {
-		DynamicAsynchTaskExecutor ex = new DynamicAsynchTaskExecutor(numthreads, maxthreads);
+	public static DynamicAsynchTaskExecutor 
+	  newDynamicAsynchTaskExecutor(int numthreads, int maxthreads) 
+			throws ParallelException {
+		DynamicAsynchTaskExecutor ex = new DynamicAsynchTaskExecutor(numthreads, 
+			                                                           maxthreads);
 		ex.initialize();
 		return ex;
 	}
@@ -74,9 +77,13 @@ public final class DynamicAsynchTaskExecutor {
 	 * @return DynamicAsynchTaskExecutor properly initialized
 	 * @throws ParallelException 
 	 */
-	public static DynamicAsynchTaskExecutor newDynamicAsynchTaskExecutor(int numthreads, int maxthreads, 
-					                                                             boolean runoncurrent) throws ParallelException {
-		DynamicAsynchTaskExecutor ex = new DynamicAsynchTaskExecutor(numthreads, maxthreads, runoncurrent);
+	public static DynamicAsynchTaskExecutor 
+	  newDynamicAsynchTaskExecutor(int numthreads, int maxthreads, 
+			                           boolean runoncurrent) 
+			throws ParallelException {
+		DynamicAsynchTaskExecutor ex = new DynamicAsynchTaskExecutor(numthreads, 
+			                                                           maxthreads, 
+			                                                           runoncurrent);
 		ex.initialize();
 		return ex;
 	}	
@@ -89,8 +96,10 @@ public final class DynamicAsynchTaskExecutor {
    * @throws ParallelException if numthreads &le; 0 or if too many threads are
    * asked to be created or if maxthreads &lt; numthreads.
    */
-  private DynamicAsynchTaskExecutor(int numthreads, int maxthreads) throws ParallelException {
-    if (numthreads<=0) throw new ParallelException("constructor arg must be > 0");
+  private DynamicAsynchTaskExecutor(int numthreads, int maxthreads) 
+		throws ParallelException {
+    if (numthreads<=0) 
+			throw new ParallelException("constructor arg must be > 0");
     if (maxthreads > SimpleFasterMsgPassingCoordinator.getMaxSize() ||
         numthreads > maxthreads)
       throw new ParallelException("cannot construct so many threads");
@@ -105,7 +114,8 @@ public final class DynamicAsynchTaskExecutor {
       ti.start();
     }
     _isRunning = true;
-    _sfmpc = SimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor" + _id);
+    _sfmpc = SimpleFasterMsgPassingCoordinator.
+		           getInstance("DynamicAsynchTaskExecutor" + _id);
 		*/
   }
 
@@ -116,7 +126,8 @@ public final class DynamicAsynchTaskExecutor {
    * @param maxthreads int the max number of threads in the thread-pool.
    * @param runoncurrent boolean if false no task will run on current thread in
    * case the threads in the pool are full and no new thread can be created.
-   * @throws ParallelException if numthreads &le; 0 or if numthreads&gt;maxthreads.
+   * @throws ParallelException if numthreads &le; 0 or if numthreads &gt; 
+	 * maxthreads.
    */
   private DynamicAsynchTaskExecutor(int numthreads, int maxthreads,
                                    boolean runoncurrent)
@@ -138,7 +149,8 @@ public final class DynamicAsynchTaskExecutor {
       ti.start();
     }
     _isRunning = true;
-    _sfmpc = SimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor" + _id);		
+    _sfmpc = SimpleFasterMsgPassingCoordinator.
+			         getInstance("DynamicAsynchTaskExecutor" + _id);		
 	}
 	
 
@@ -179,7 +191,8 @@ public final class DynamicAsynchTaskExecutor {
     synchronized (this) {
 			if (!_isRunning) throw new ParallelException("thread-pool not running");
       ++_numTasksSubmitted;
-      utils.Messenger.getInstance().msg("Current total #threads="+getNumThreads(),1);
+      utils.Messenger.getInstance().msg("Current total #threads="+
+				                                getNumThreads(),1);
       if (isOK2SubmitTask() || task instanceof DATEPoissonPill) {
         _sfmpc.sendDataBlocking(_id, task);
       }
@@ -195,14 +208,16 @@ public final class DynamicAsynchTaskExecutor {
           ++_numTasksHandled;  // for both outcomes of the if-then-else stmt.
           if (_runOnCurrent) run_on_current = true;
           else {  // throw exception
-            throw new ParallelException("DynamicAsynchTaskExecutor.execute(): not enough capacity to submit task now");
+            throw new ParallelException("DynamicAsynchTaskExecutor.execute(): "+
+							                          "not enough capacity to submit task");
           }
         }
       }
     }  // end synchronized block
     if (run_on_current) {
       utils.Messenger.getInstance().msg(
-          "DynamicAsynchTaskExecutor.execute(task): running task on current thread",
+          "DynamicAsynchTaskExecutor.execute(task): running task "+
+					"on current thread",
           0);
       task.run(); // run on current thread
     }
@@ -301,12 +316,14 @@ public final class DynamicAsynchTaskExecutor {
     /**
      * the run() method of the thread, loops continuously, waiting for a task
      * to arrive via the SimpleFasterMsgPassingCoordinator class and executes it.
-     * Any exceptions the task throws are caught &amp; ignored. In case the data that
-     * arrives is a PoissonPill, the thread exits its run() loop.
+     * Any exceptions the task throws are caught &amp; ignored. In case the data 
+		 * that arrives is a PoissonPill, the thread exits its run() loop.
      */
     public void run() {
-      final int fpbteid = _e.getObjId();
-      _datetmpc = SimpleFasterMsgPassingCoordinator.getInstance("DynamicAsynchTaskExecutor"+fpbteid);
+      final int fpbtid = _e.getObjId();
+      _datetmpc = 
+				SimpleFasterMsgPassingCoordinator.getInstance(
+					                                  "DynamicAsynchTaskExecutor"+fpbtid);
       boolean do_run = true;
       while (do_run) {
         Object data = _datetmpc.recvData(_id);

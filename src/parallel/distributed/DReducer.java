@@ -7,8 +7,8 @@ import java.io.*;
 /**
  * class implements a distributed reducer object across many threads living
  * in many (remote) JVMs. The following constraint is imposed on DReducer
- * objects use: the <CODE>reduce(data,op)</CODE> method can only be called from the
- * same thread that created this DReducer object (otherwise an exception is
+ * objects use: the <CODE>reduce(data,op)</CODE> method can only be called from
+ * the same thread that created this DReducer object (otherwise an exception is
  * thrown).
  * Notice that this implementation is modeled after the DBarrier class in this
  * package.
@@ -22,7 +22,8 @@ import java.io.*;
 public class DReducer {
   private String _host = "localhost";
   private int _port = 7901;
-  private String _coordname = "DReduceCoord_"+_host+"_"+_port;  // coordname and reducer name are the same
+  private String _coordname = "DReduceCoord_"+_host+"_"+_port;  // coordname and 
+	// reducer name are the same
   private DActiveMsgPassingCoordinatorLongLivedConnClt _coordclt=null;
   private Thread _originatingThread = null;
 
@@ -35,17 +36,20 @@ public class DReducer {
    * <li> reducer/coord name = "DReduceCoord_localhost_7901"
 	 * </ul>.
    * The constructor will actually register the current thread with the reducer
-   * object of the server, so that later invocations of the <CODE>reduce(.,.)</CODE>
-   * method of this object will synchronize the current thread with all other
-   * threads in all JVMs having constructed DReducer objects connected to the
-   * default server, default port, and default reducer name.
+   * object of the server, so that later invocations of the 
+	 * <CODE>reduce(.,.)</CODE> method of this object will synchronize the current 
+	 * thread with all other threads in all JVMs having constructed DReducer 
+	 * objects connected to the default server, default port, and default reducer 
+	 * name.
    * @throws UnknownHostException
    * @throws IOException
    * @throws ClassNotFoundException
    * @throws ParallelException
    */
-  public DReducer() throws UnknownHostException, IOException, ClassNotFoundException, ParallelException {
-    _coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, _coordname);
+  public DReducer() throws UnknownHostException, IOException, 
+		                       ClassNotFoundException, ParallelException {
+    _coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, 
+			                                                           _coordname);
     _originatingThread = Thread.currentThread();
     DReduceAddRequest addreq = new DReduceAddRequest(_coordname);
     _coordclt.sendData(-1, addreq);
@@ -75,7 +79,8 @@ public class DReducer {
     _port = port;
     _coordname = coordname;
     _originatingThread = Thread.currentThread();
-    _coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, _coordname);
+    _coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, 
+			                                                           _coordname);
     // 1. send a Reduce Add Thread request: when the method terminates, done.
     DReduceAddRequest addreq = new DReduceAddRequest(_coordname);
     _coordclt.sendData(-1, addreq);
@@ -99,13 +104,17 @@ public class DReducer {
    * @throws ParallelException if this DReducer object was constructed by a
    * different thread than the one calling this method.
    */
-  public Object reduce(Serializable data, ReduceOperator op) throws IOException, ClassNotFoundException, ParallelException {
+  public Object reduce(Serializable data, ReduceOperator op) 
+		throws IOException, ClassNotFoundException, ParallelException {
     // 0. check if thread is ok
     if (Thread.currentThread()!=_originatingThread) {
-      throw new ParallelException("reduce(data,op): method called from thread different than the one originating the object");
+      throw new ParallelException("reduce(data,op): method called from thread"+
+				                          " different than one originating the object");
     }
     // 1. send a reduce request: when the method terminates, we're done
-    Object result = _coordclt.sendAndRecvData(-1, new DReduceRequest(_coordname, data, op));  // reducer and coord names are the same
+    Object result = 
+			_coordclt.sendAndRecvData(-1, new DReduceRequest(_coordname, data, op));  
+    // reducer and coord names are the same
 		return result;
   }
 
@@ -118,13 +127,17 @@ public class DReducer {
    * @throws ParallelException if calling thread is not the same as creation
    * thread.
    */
-  public void removeCurrentThread() throws IOException, ClassNotFoundException, ParallelException {
+  public void removeCurrentThread() 
+		throws IOException, ClassNotFoundException, ParallelException {
     // 0. check if thread is ok
     if (Thread.currentThread()!=_originatingThread) {
-      throw new ParallelException("removeCurrentThread(): method called from thread different than the one originating the object");
+      throw new ParallelException("removeCurrentThread(): method called from "+
+				                          "thread different than the one originating "+
+				                          "the object");
     }
     // 1. send a DReducerRmRequest request: when the method terminates, we're ok
-    _coordclt.sendData(-1, new DReduceRmRequest(_coordname));  // Reducer and coord names are the same
+    _coordclt.sendData(-1, new DReduceRmRequest(_coordname));  
+    // Reducer and coord names are the same
     // 2. finally, close the connection.
     _coordclt.closeConnection();
   }

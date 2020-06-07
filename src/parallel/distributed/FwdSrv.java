@@ -43,17 +43,24 @@ public final class FwdSrv {
 	private static Socket _forwardSocket;  // for long-lived fwd connections
 	private static ObjectInputStream _forwardOIS;  // for long-lived fwd conns
 	private static ObjectOutputStream _forwardOOS;  // for long-lived fwd conns
-	private static List _freeFwdConns = new ArrayList();  // List<SocketIOS s> is a cache
+	private static List _freeFwdConns = new ArrayList();  // List<SocketIOS s> is 
+	                                                      // a cache
 	private static final int _MAX_WORKING_SHORT_LIVED_CONNS=1000;
 	private static int _numWorkingFwdConns=0;
-	private static final int _MAX_FREE_SHORT_LIVED_FWD_CONNS=10;  // cache-size of socket connections to the central server
-	private static final Object _sync = new Object();  // used for synchronizing long-lived conns
-	private static DynamicAsynchTaskExecutor _executor;  // used for short-lived conns only
+	private static final int _MAX_FREE_SHORT_LIVED_FWD_CONNS=10;  // cache-size of 
+	// socket connections to the central server
+	private static final Object _sync = new Object();  // used for synchronizing 
+	                                                   // long-lived conns
+	private static DynamicAsynchTaskExecutor _executor;  // used for short-lived 
+	                                                     // conns only
 
 	
 	/**
 	 * invoke as:
-	 * <CODE>java -cp &lt;classpath&gt; parallel.distributed.FwdSrv [forwardinghost(localhost):]&lt;forwardingport&gt; [long-lived-conns-port(8901)] [short-lived-conns-port(8902)]</CODE>
+	 * <CODE>java -cp &lt;classpath&gt; parallel.distributed.FwdSrv 
+	 * [forwardinghost(localhost):]&lt;forwardingport&gt; 
+	 * [long-lived-conns-port(8901)] 
+	 * [short-lived-conns-port(8902)]</CODE>.
 	 * @param args 
 	 */
 	public static void main(String[] args) {
@@ -81,7 +88,9 @@ public final class FwdSrv {
 			_shortLivedConnPort = Integer.parseInt(args[2]);
 		}
 		try {
-			_executor = DynamicAsynchTaskExecutor.newDynamicAsynchTaskExecutor(2, _MAX_WORKING_SHORT_LIVED_CONNS);
+			_executor = 
+				DynamicAsynchTaskExecutor.
+				  newDynamicAsynchTaskExecutor(2, _MAX_WORKING_SHORT_LIVED_CONNS);
 		}
 		catch (ParallelException e) {
 			e.printStackTrace();
@@ -116,7 +125,7 @@ public final class FwdSrv {
 					ServerSocket ss = new ServerSocket(_shortLivedConnPort);
 					while (true) {
 						Socket s = ss.accept();
-						// wait until the number of concurrent working conns has dropped enough
+						// wait until the number of concurrent working conns drops enough
 						synchronized (FwdSrv.class) {
 							while (_numWorkingFwdConns>_MAX_WORKING_SHORT_LIVED_CONNS) {
 								try {
@@ -338,7 +347,7 @@ public final class FwdSrv {
 				synchronized (_sync) {
 					if (_forwardSocket==null || _forwardSocket.isClosed()) {
 						// try to re-establish connection
-						// if attempt fails, quit and stop accepting connections on the long-
+						// if attempt fails, quit and stop accepting connections on the long
 						// lived connections port
 						try {
 							_forwardSocket.shutdownOutput();
@@ -358,8 +367,8 @@ public final class FwdSrv {
 						catch (Exception e) {
 							System.err.println("FwdSrv: long-lived connection to fwd-server "+
 								                 "lost and cannot be re-established"+
-								                 ", will stop accepting long-lived connections "+
-								                 "from clients");
+								                 ", will stop accepting long-lived connections"+
+								                 " from clients");
 							LLCHdlrThread.stopLLCHdlrThread();
 						}
 					}
