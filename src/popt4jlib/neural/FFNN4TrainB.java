@@ -166,7 +166,7 @@ public class FFNN4TrainB extends FFNN4Train {
 		// check if there is a PDBatchTaskExecutor to use
 		PDBatchTaskExecutor extor = 
 			(PDBatchTaskExecutor) params.get("ffnn.pdbtexecutor");
-		if (extor==null) {  // see if we have built-in parallel!
+		if (_extor!=null) {  // see if we have built-in parallel!
 			extor = _extor;
 		}
 		if (extor!=null) {  // create task-objects to do the work for each t

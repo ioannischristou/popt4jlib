@@ -4,7 +4,8 @@ arrayofcopies,layer1_arr,10,popt4jlib.neural.Sigmoid,1.0
 arrayofcopies,layer3_arr,11,popt4jlib.neural.Sigmoid,1.0
 array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer3_arr
 class,costfunc,popt4jlib.neural.costfunction.MAE
-class,opt.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,5
+class,opt.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,20
+#class,opt.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc
 # normalized train data:
 matrix-1_1,ffnn.traindata,testdata/grid_data_ALLattrs_train.dat
 # train labels
@@ -14,17 +15,17 @@ class,ffnn.mainoptimizer,popt4jlib.GA.DGA
 opt.numthreads,4
 # line below causes non-deterministic function evaluations, of small batches of
 # input vectors, but runs a lot faster!
-ffnn.randombatchsize,1000
+ffnn.randombatchsize,500
 rndgen,7,4
 class,opt.localoptimizer,popt4jlib.neural.SGD4FFNN
 # SGD props next
-gradapproximator.nmax,10
+gradapproximator.nmax,7
 sgd.a,0.99
-sgd.decay_period,100
+sgd.decay_period,5
 sgd.decay_factor,0.95
 sgd.gtol,0.0
-sgd.maxiters,1000
-sgd.numtries,10
+sgd.maxiters,10
+sgd.numtries,100
 # DGA props next
 ref,dga.function,opt.function
 dga.chromosomelength,283

@@ -42,7 +42,7 @@ public class FFNN4Train extends FFNN {
 
 	protected FunctionIntf _costFunc = null;
 
-	protected final static int _numInputsPerTask = 512;  // used in shared-memory
+	protected final static int _numInputsPerTask = 128;  // used in shared-memory
 	                                                     // parallel evaluation
 
 	protected transient PDBatchTaskExecutor _extor = null;  // set by 4-arg ctor
@@ -195,7 +195,7 @@ public class FFNN4Train extends FFNN {
 		// check if there is a PDBatchTaskExecutor to use
 		PDBatchTaskExecutor extor = 
 			(PDBatchTaskExecutor) params.get("ffnn.pdbtexecutor");
-		if (extor==null) {  // see if we have built-in parallel!
+		if (_extor!=null) {  // see if we have built-in parallel!
 			extor = _extor;
 		}
 		if (extor!=null) {  // create task-objects to do the work for each t

@@ -132,6 +132,11 @@ public class SGD4FFNN implements LocalOptimizerIntf {
 	 * <li> &lt;"sgd.eps", Double val&gt; optional the &epsilon; factor in update
 	 * parameter estimation. This value is also used to detect convergence -and so
 	 * stop the algorithm- of the variables x. Default is 1.e-8.
+	 * <li> &lt;"sgd.use_best,Boolean val&gt; optional, if it exists and the value
+	 * is true, then at each outer iteration of the SGD method, the best found 
+	 * value in each inner-iteration will be used to start the next outer 
+	 * iteration, else the last iterate will be used. Default is null, so the last
+	 * computed iterate point is used for the next outer iteration.
 	 * <li> &lt;"sgd.reciprocategradcoords", Boolean bval&gt; optional, if bval is
 	 * true, then the gradient is normalized in infinity norm to one, and then 
 	 * each component is replaced by the max of its reciprocal and 1, so that 
@@ -275,6 +280,9 @@ public class SGD4FFNN implements LocalOptimizerIntf {
       HashMap p = getParams();  // was new HashMap(_master._params);
       p.put("thread.localid", new Integer(_id));
       p.put("thread.id", new Integer(_uid));  // used to be _id
+			boolean use_best = false;
+			Boolean use_bestB = (Boolean) p.get("sgd.use_best");
+			if (use_bestB!=null && use_bestB.booleanValue()) use_best = true;
       VectorIntf best = null;
       double bestval = Double.MAX_VALUE;
       FunctionIntf f = getFunction();  // was _master._f;
@@ -283,7 +291,7 @@ public class SGD4FFNN implements LocalOptimizerIntf {
           int index = _id*_numtries+i;  // this is the starting point soln index
           PairObjDouble pair = min(f, index, p);
           double val = pair.getDouble();
-          if (val<bestval) {
+          if (use_best && val<bestval) {
             bestval=val;
             best=(VectorIntf) pair.getArg();
           }
@@ -296,6 +304,11 @@ public class SGD4FFNN implements LocalOptimizerIntf {
         }
       }
       try {
+				if (!use_best) {
+					int new_ind = _id*_numtries+_numtries;
+					best = (VectorIntf) p.get("sgd.solindex"+new_ind);
+					bestval = f.eval(best, p);					
+				}
         setIncumbent(best, bestval);
       }
       catch (Exception e) {
@@ -387,7 +400,7 @@ public class SGD4FFNN implements LocalOptimizerIntf {
 			final Random r = RndUtil.getInstance(_uid).getRandom();			
 			// start main iteration loop
       for (int iter=0; iter<maxiters; iter++) {
-	      mger.msg("SGD4FFNNThread.min(): #iters="+iter, 2);
+	      mger.msg("SGD4FFNNThread.min(): #iters="+iter+" solindex="+solindex, 2);
 				if (_randombatchsize>0 && iter % decay_period==0) { 
           // set the training set to new mini-batch
 					double prob_enter = _randombatchsize/((double) all_train_data.length);
@@ -467,15 +480,17 @@ public class SGD4FFNN implements LocalOptimizerIntf {
 			p.put("ffnn.traindata", all_train_data);
 			p.put("ffnn.trainlabels", all_train_labels);
 			
-			// finally, check if sgd.x${solindex+1} exists, if not make it best_x
+			// finally, check if sgd.x${solindex+1} exists, if not make it best_x or x
 			int solindexp1 = solindex+1;
 			if (!p.containsKey("sgd.x"+solindexp1)) {
-				p.put("sgd.x"+solindexp1,best_x);
+				Boolean use_bestB = (Boolean) p.get("sgd.use_best");
+				if (use_bestB!=null && use_bestB.booleanValue())
+					p.put("sgd.x"+solindexp1, best_x);
+				else p.put("sgd.x"+solindexp1, x);
 			}
 			// return best arg,val pair
       return new PairObjDouble(best_x, best_val);
     }
-
   }
 }
 
