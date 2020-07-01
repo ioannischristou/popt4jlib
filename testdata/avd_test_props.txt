@@ -1,0 +1,13 @@
+dbglvl,2
+class,avd.function,tests.RosenbrockFunction
+dblarray,avd.x0,testdata\rosenbrock_x0_2D.txt
+avd.numdimensions,2
+#avd.numdimensions,100
+#avd.numtries,20000
+avd.numtries,5000
+avd.nitercnt,3
+avd.ftol,1.e-15
+#avd.maxiters,5000
+avd.minargval,-10.0
+avd.maxargval,10.0
+avd.minstepsize,1.e-12

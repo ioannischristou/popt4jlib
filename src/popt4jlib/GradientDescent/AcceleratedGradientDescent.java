@@ -107,8 +107,6 @@ public class AcceleratedGradientDescent implements LocalOptimizerIntf {
    * <li> &lt;"agd.maxiters", Integer miters&gt; optional, the maximum number of 
 	 * major iterations of the AGD search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * <li> &lt;"agd.looptol", Double v&gt; optional, the minimum step-size 
-	 * allowed. Default is 1.e-21.
 	 * <li> &lt;"agd.L", double v&gt; optional, the L constant that is supposed to 
 	 * be the L-smoothness factor of the objective function. Default is 1.0.
    * </ul>
@@ -279,17 +277,17 @@ public class AcceleratedGradientDescent implements LocalOptimizerIntf {
 			if (p.containsKey("agd.L")) {
 				L = ((Double)p.get("agd.L")).doubleValue();
 			}
-			final double L_inv = 1.0/L;
+			double L_inv = 1.0/L;
       VecFunctionIntf grad = (VecFunctionIntf) p.get("agd.gradient");
       if (grad==null) grad = new GradApproximator(f);  // default: numeric 
 			                                                 // gradient computation
-    final VectorIntf x0 = 
-			_params.containsKey("agd.x"+solindex)==false ?
-         _params.containsKey("gradientdescent.x0") ? 
-			    (VectorIntf) _params.get("gradientdescent.x0") : 
-			      _params.containsKey("x0") ? (VectorIntf) _params.get("x0") : null 
-            // attempt to retrieve generic point
-			: (VectorIntf) _params.get("agd.x"+solindex);
+			final VectorIntf x0 = 
+				p.containsKey("agd.x"+solindex)==false ?
+					p.containsKey("gradientdescent.x0") ? 
+						(VectorIntf) p.get("gradientdescent.x0") : 
+							p.containsKey("x0") ? (VectorIntf) p.get("x0") : null 
+							// attempt to retrieve generic point
+				  : (VectorIntf) p.get("agd.x"+solindex);
       if (x0==null) 
 				throw new OptimizerException("no agd.x"+solindex+
 					                           " initial point in _params passed");
@@ -303,20 +301,21 @@ public class AcceleratedGradientDescent implements LocalOptimizerIntf {
 			double thetaprev = 1.0;
 			double theta = 1.0;
 			double theta2 = 1.0;
-			double beta;
+			double beta = 0.0;
       double fx = Double.NaN;
       int maxiters = Integer.MAX_VALUE;
       Integer miI = (Integer) p.get("agd.maxiters");
       if (miI!=null && miI.intValue()>0)
         maxiters = miI.intValue();
-      double looptol = 1.e-21;
-      Double ltD = (Double) p.get("agd.looptol");
-      if (ltD!=null && ltD.doubleValue() > 0) looptol = ltD.doubleValue();
       boolean found=false;
 
       fx = f.eval(x, p);
       DblArray1Vector y = new DblArray1Vector(n);
 
+			// use these variables to update L at each iteration
+			VectorIntf y_prev = y.newInstance();
+			VectorIntf g_prev = grad.eval(y_prev, p);
+			
 			// main iteration loop
 			
       for (int iter=0; iter<maxiters; iter++) {
@@ -345,6 +344,20 @@ public class AcceleratedGradientDescent implements LocalOptimizerIntf {
 					}
 					// update x, xprev
 					VectorIntf g_y = grad.eval(y, p);
+					// update L, and then update g_prev and y_prev
+					double g_dist = VecUtil.getEuclideanDistance(g_prev, g_y);
+					double y_dist = VecUtil.getEuclideanDistance(y_prev, y);
+					double L_cand = g_dist/y_dist;
+					if (Double.isFinite(L_cand) && Double.compare(L_cand,L)>0) {
+						mger.msg("AGDThread.min(): updating L <- "+L_cand, 1);
+						L = L_cand;
+						L_inv = 1.0/L;
+					}
+					// y_prev = y
+					for (int i=0; i<n; i++) y_prev.setCoord(i, y.getCoord(i));
+					// g_prev = g_y
+					for (int i=0; i<n; i++) g_prev.setCoord(i, g_y.getCoord(i));
+					
 					y.addMul(-L_inv, g_y);
 					//xprev = x;
 					for (int i=0; i<n; i++) xprev.setCoord(i, x.getCoord(i));

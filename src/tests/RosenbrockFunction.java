@@ -4,7 +4,7 @@ import popt4jlib.*;
 import java.util.*;
 
 /**
- * This class implements the Rosenbrock Function in n-dimensions
+ * This class implements the Rosenbrock Function in n-dimensions.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -21,11 +21,12 @@ public class RosenbrockFunction implements FunctionIntf {
 
 
   /**
-   * evaluates the Rosenbrock function at x=arg
-   * @param arg Object must be a <CODE>double[]</CODE> or <CODE>VectorIntf</CODE>
+   * evaluates the Rosenbrock function at x=arg.
+   * @param arg Object must be a <CODE>double[]</CODE> or 
+	 * <CODE>VectorIntf</CODE>
    * @param p HashMap unused
    * @return double
-   * @throws IllegalArgumentException if arg does not adhere to the specification
+   * @throws IllegalArgumentException if arg does not adhere to specification
    * above.
    */
   public double eval(Object arg, HashMap p) throws IllegalArgumentException {
@@ -61,7 +62,10 @@ public class RosenbrockFunction implements FunctionIntf {
 
 
   /**
-   * invoke as <CODE>java -cp &lt;classpath&gt; tests.RosenbrockFunction &lt;x_1&gt; &lt;x_n&gt;</CODE>
+   * invoke as 
+	 * <CODE>
+	 * java -cp &lt;classpath&gt; tests.RosenbrockFunction &lt;x_1&gt; &lt;x_n&gt;
+	 * </CODE>
    * where the parameters are the components of the vector point at which the
    * function must be evaluated.
    * @param args String[]

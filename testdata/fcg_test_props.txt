@@ -1,0 +1,14 @@
+class,fcg.function,tests.RosenbrockFunction
+class,fcg.gradient,tests.RosenbrockFunctionGrad
+fcg.numdimensions,2
+fcg.functionargmaxval,10.0
+fcg.functionargminval,-10.0
+rndgen,7,4
+fcg.numthreads,1
+fcg.numtries,1
+fcg.maxiters,100000
+fcg.gtol,1.e-5
+fcg.maxbracketingiters,1000000
+fcg.maxsectioningiters,1000000
+dbglvl,2
+

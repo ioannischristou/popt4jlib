@@ -1,0 +1,8 @@
+dbglvl,2
+class,asd.function,tests.RosenbrockFunction
+asd.numdimensions,2
+asd.numtries,1
+asd.maxiters,100000
+asd.functionargmaxval,10.0
+asd.functionargminval,-10.0
+asd.rho,0.7

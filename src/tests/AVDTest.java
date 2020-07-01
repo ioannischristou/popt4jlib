@@ -47,6 +47,9 @@ public class AVDTest {
    * <li> avd.maxargval, $val$ mandatory, a double number that is an upper
    * bound for all variables of the optimization process, i.e. all variables
    * must satisfy x_i &le; val.
+	 * <li> dblarray,avd.x0,$filename$ optional, if present provides the file name
+	 * of a text file containing lines having the values for the co-ordinates of 
+	 * the initial point x0 from which to start the search (one value per line).
    * <li> avd.tryorder$i$, $n$ optional, an integer value specifying which
    * variable to be optimized in the i-th inner iteration. If no such line
    * exists, and also, the pair ("avd.tryallparallel",true) exists in params,
@@ -101,12 +104,17 @@ public class AVDTest {
       double maxargval = ((Double) params.get("avd.maxargval")).doubleValue();
       double minargval = ((Double) params.get("avd.minargval")).doubleValue();
       // add the initial point
-      VectorIntf x0 = new DblArray1Vector(new double[n]);
-      for (int j=0; j<n; j++) {
-        double val = minargval+RndUtil.getInstance().getRandom().nextDouble()*
-					           (maxargval-minargval);
-        x0.setCoord(j, val);
-      }
+      VectorIntf x0 = null;
+			if (params.containsKey("avd.x0")) 
+				x0 = new DblArray1Vector((double[]) params.get("avd.x0"));
+			else {
+				x0 = new DblArray1Vector(new double[n]);
+				for (int j=0; j<n; j++) {
+					double val = minargval+RndUtil.getInstance().getRandom().nextDouble()*
+						           (maxargval-minargval);
+					x0.setCoord(j, val);
+				}
+			}
       // check out any tryorder points
       int[] tryorder = new int[n];
       boolean toexists = false;

@@ -157,7 +157,7 @@ public final class AlternatingVariablesDescent extends GLockingObserverBase
 	 * false, then even if no "avd.tryorder" array exists in the parameters, the
 	 * result is still a sequential optimization process. Default is null (thus
 	 * true).
-   * <li> &lt;"avd.niterbnd", Integer n&gt; optional, the number of inner-
+   * <li> &lt;"avd.nitercnt", Integer n&gt; optional, the number of inner-
 	 * iterations in the <CODE>OneDStepQuantumOptimizer</CODE> process before 
 	 * changing the length of the step-size. Default is 5.
    * <li> &lt;"avd.multfactor", Integer n&gt; optional, the multiplication 

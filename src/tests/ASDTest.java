@@ -26,7 +26,10 @@ public class ASDTest {
 
   /**
    * invoke from the command-line as:
-   * <CODE> java -cp &lt;classpath&gt; tests.ASDTest &lt;params_file&gt; [random_seed] [maxfuncevals]</CODE>.
+   * <CODE> 
+	 * java -cp &lt;classpath&gt; tests.ASDTest &lt;params_file&gt; 
+	 * [random_seed] [maxfuncevals]
+	 * </CODE>.
    * The params_file must contain lines of the following form:
 	 * <ul>
    * <li> asd.numdimensions, $num$ mandatory, number of dimensions
@@ -48,13 +51,11 @@ public class ASDTest {
    *
    * <li> asd.numthreads, $num$ optional, the number of threads to use in
    * the optimization process. Default is 1.
-   * <li> asd.numtries, $num$ optional, the number of tries (starting
-   * from different initial points). Default is 1.
    * <li> class,asd.gradient, &lt;fullclassnameofgradient&gt; optional, grad. of
    * f, the function to be minimized. If this param-value pair doesn't exist the
    * gradient will be computed using Richardson finite differences extrapolation
-   * &lt;asd.gtol, $num$&gt; optional, the minimum absolute value for each of the
-   * gradient's coordinates, below which if all coordinates of the gradient
+   * &lt;asd.gtol, $num$&gt; optional, the minimum absolute value for each of 
+   * the gradient's coordinates, below which if all coordinates of the gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-6.
    * <li> asd.maxiters, $num$ optional, the maximum number of major
@@ -84,7 +85,7 @@ public class ASDTest {
       HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
       if (args.length>1) {
         long seed = Long.parseLong(args[1]);
-        RndUtil.getInstance().setSeed(seed);  // updates all extra instances too!
+        RndUtil.getInstance().setSeed(seed);  // updates all extra instances too
       }
       if (args.length>2) {
         long num = Long.parseLong(args[2]);
@@ -94,14 +95,17 @@ public class ASDTest {
       FunctionBase wrapper_func = new FunctionBase(func);
       params.put("asd.function",wrapper_func);
       int n = ((Integer) params.get("asd.numdimensions")).intValue();
-      double maxargval = ((Double) params.get("asd.functionargmaxval")).doubleValue();
-      double minargval = ((Double) params.get("asd.functionargminval")).doubleValue();
+      double maxargval = 
+				((Double) params.get("asd.functionargmaxval")).doubleValue();
+      double minargval = 
+				((Double) params.get("asd.functionargminval")).doubleValue();
       // add the initial points
       int numtries = ((Integer) params.get("asd.numtries")).intValue();
+			Random r = RndUtil.getInstance().getRandom();
       for (int i=0; i<numtries; i++) {
         VectorIntf x0 = new DblArray1Vector(new double[n]);
         for (int j=0; j<n; j++) {
-          double val = minargval+RndUtil.getInstance().getRandom().nextDouble()*(maxargval-minargval);
+          double val = minargval + r.nextDouble()*(maxargval-minargval);
           x0.setCoord(j, val);
         }
         params.put("asd.x"+i, x0);
@@ -111,13 +115,18 @@ public class ASDTest {
       utils.PairObjDouble p = opter.minimize(wrapper_func);
       VectorIntf arg = (VectorIntf) p.getArg();
       System.out.print("best soln found:[");
-      for (int i=0;i<arg.getNumCoords();i++) System.out.print(arg.getCoord(i)+" ");
+      for (int i=0;i<arg.getNumCoords();i++) 
+				System.out.print(arg.getCoord(i)+" ");
       System.out.println("] VAL="+p.getDouble());
-      System.err.println("numSolutionsFound="+opter.getNumOK()+" numFailed="+opter.getNumFailed());
-      System.err.println("Total Num Function Evaluations="+wrapper_func.getEvalCount());
+      System.err.println("numSolutionsFound="+opter.getNumOK()+
+				                 " numFailed="+opter.getNumFailed());
+      System.err.println("Total Num Function Evaluations="+
+				                 wrapper_func.getEvalCount());
       long dur = System.currentTimeMillis()-start_time;
       System.out.println("total time (msecs): "+dur);
-      System.out.println("VVV,"+p.getDouble()+",TTT,"+dur+",NNN,"+wrapper_func.getEvalCount()+",PPP,ASD,FFF,"+args[0]);  // for parser program to extract from output
+      System.out.println("VVV,"+p.getDouble()+",TTT,"+dur+",NNN,"+
+				                 wrapper_func.getEvalCount()+",PPP,ASD,FFF,"+args[0]);  
+      // for parser program to extract from output
     }
     catch (Exception e) {
       e.printStackTrace();

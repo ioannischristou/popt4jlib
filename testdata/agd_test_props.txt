@@ -1,0 +1,7 @@
+dbglvl,1
+class,agd.function,tests.RosenbrockFunction
+agd.numdimensions,2
+agd.numtries,1
+agd.maxiters,50000
+agd.L,1.0
+

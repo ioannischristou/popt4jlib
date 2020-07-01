@@ -73,13 +73,14 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
 
 
   /**
-   * the optimization params are set to p
+   * the optimization params are set to p.
    * @param p HashMap
    * @throws OptimizerException if another thread is currently executing the
    * <CODE>minimize(f)</CODE> method of this object.
    */
   public synchronized void setParams(HashMap p) throws OptimizerException {
-    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    if (_f!=null) 
+			throw new OptimizerException("cannot modify parameters while running");
     _params = null;
     _params = new HashMap(p);  // own the params
   }
@@ -90,42 +91,43 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
    * must have been set (via the parameters passed in the constructor, or via
    * a later call to <CODE>setParams(p)</CODE>). These are:
 	 * <ul>
-   * <li>&lt;"fcg.numtries", ntries&gt; optional, the number of initial starting points
-   * to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; pairs in the
-   * parameters or a pair &lt;"[gradientdescent.]x0",VectorIntf v&gt; pair in params).
-   * Default is 1.
-   * <li>&lt;fcg.numthreads", Integer nt&gt; optional, the number of threads to use.
-   * Default is 1.
-   * <li>&lt;"fcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
-   * function to be minimized. If this param-value pair does not exist, the
+   * <li>&lt;"fcg.numtries", ntries&gt; optional, the number of initial starting 
+	 * points to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; 
+	 * pairs in the parameters or a pair 
+	 * &lt;"[gradientdescent.]x0",VectorIntf v&gt; 
+	 * pair in params). Default is 1.
+   * <li>&lt;fcg.numthreads", Integer nt&gt; optional, the number of threads to 
+	 * use. Default is 1.
+   * <li>&lt;"fcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f, 
+	 * the function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * <li>&lt;"fcg.gtol", Double v&gt; optional, the minimum abs. value for each of the
-   * gradient's coordinates, below which if all coordinates of the gradient
+   * <li>&lt;"fcg.gtol", Double v&gt; optional, the minimum abs. value for each 
+	 * of the gradient's coordinates, below which if all coordinates of gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-8.
-   * <li>&lt;"fcg.maxiters", Integer miters&gt; optional, the maximum number of major
-   * iterations of the CG search before the algorithm stops. Default is
+   * <li>&lt;"fcg.maxiters", Integer miters&gt; optional, the maximum number of 
+	 * major iterations of the CG search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * <li>&lt;"fcg.rho", Double v&gt; optional, the value of the parameter &rho; in approximate
-   * line search step-size determination obeying the two Wolfe-Powell conditions
-   * Default is 0.1.
-   * <li>&lt;"fcg.sigma", Double v&gt; optional, the value of the parameter &sigma; in the
-   * approximate line search step-size determination obeying the Wolfe-Powell
-   * conditions. Default is 0.9
-   * <li>&lt;"fcg.t1", Double v&gt; optional, the value of the parameter t_1 in the
-   * Al-Baali - Fletcher bracketing-sectioning algorithm for step-size
+   * <li>&lt;"fcg.rho", Double v&gt; optional, the value of the parameter &rho; 
+	 * in approximate line search step-size determination obeying the two 
+	 * Wolfe-Powell conditions. Default is 0.1.
+   * <li>&lt;"fcg.sigma", Double v&gt; optional, the value of the parameter 
+	 * &sigma; in the approximate line search step-size determination obeying the 
+	 * Wolfe-Powell conditions. Default is 0.9.
+   * <li>&lt;"fcg.t1", Double v&gt; optional, the value of the parameter t_1 in 
+	 * the Al-Baali - Fletcher bracketing-sectioning algorithm for step-size
    * determination. Default is 9.0.
-   * <li>&lt;"fcg.t2", Double v&gt; optional, the value of the parameter t_2 in the
-   * Al-Baali - Fletcher algorithm. Default is 0.1.
-   * <li>&lt;"fcg.t3", Double v&gt; optional, the value of the parameter t_3 in the
-   * Al-Baali - Fletcher algorithm. Default is 0.5
-   * <li>&lt;"fcg.redrate", Double v&gt; optional, a user acceptable reduction rate on the
-   * function f for stopping the Al-Baali - Fletcher algorithm in the bracketing
-   * phase. Default is 2.0.
-   * <li>&lt;"fcg.fbar", Double v&gt; optional, a user-specified acceptable function value
-   * to stop the Al-Baali - Fletcher algorithm in the bracketing phase. Default
-   * is null (with the effect of utilizing the "fcg.redrate" value for stopping
-   * criterion of the bracketing phase).
+   * <li>&lt;"fcg.t2", Double v&gt; optional, the value of the parameter t_2 in 
+	 * the Al-Baali - Fletcher algorithm. Default is 0.1.
+   * <li>&lt;"fcg.t3", Double v&gt; optional, the value of the parameter t_3 in 
+	 * the Al-Baali - Fletcher algorithm. Default is 0.5.
+   * <li>&lt;"fcg.redrate", Double v&gt; optional, a user acceptable reduction 
+	 * rate on the function f for stopping the Al-Baali - Fletcher algorithm in 
+	 * the bracketing phase. Default is 2.0.
+   * <li>&lt;"fcg.fbar", Double v&gt; optional, a user-specified acceptable 
+	 * function value to stop the Al-Baali - Fletcher algorithm in the bracketing 
+	 * phase. Default is null (with the effect of utilizing the "fcg.redrate" 
+	 * value for stopping criterion of the bracketing phase).
    * </ul>
    * @param f FunctionIntf the function to minimize
    * @throws OptimizerException if another thread is currently executing the
@@ -138,8 +140,10 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
 		if (f==null) throw new OptimizerException("FCG.minimize(f): null f");
     try {
       synchronized (this) {
-        if (_f != null)throw new OptimizerException("FCG.minimize(): " +
-            "another thread is concurrently executing the method on the same object");
+        if (_f != null)
+					throw new OptimizerException("FCG.minimize(): another thread is "+
+						                           "concurrently executing the method on "+
+						                           "this object");
         _f = f;
         _inc = null;
         _incValue = Double.MAX_VALUE;
@@ -227,14 +231,16 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
    * <CODE>Constants.FCG</CODE> or some other value containing the given bit
    * must have been called before for this method to possibly throw)
    */
-  synchronized void setIncumbent(VectorIntf arg, double val) throws OptimizerException {
+  synchronized void setIncumbent(VectorIntf arg, double val) 
+		throws OptimizerException {
     if (val<_incValue) {
       if (Debug.debug(Constants.FCG)!=0) {
         // sanity check
         double incval = _f.eval(arg, _params);
         if (Math.abs(incval - _incValue) > 1.e-25) {
-          Messenger.getInstance().msg("FCG.setIncumbent(): arg-val originally=" +
-                                      _incValue + " fval=" + incval + " ???", 0);
+					Messenger mger = Messenger.getInstance();
+          mger.msg("FCG.setIncumbent(): arg-val originally=" +
+                   _incValue + " fval=" + incval + " ???", 0);
           throw new OptimizerException(
               "FCG.setIncumbent(): insanity detected; " +
               "most likely evaluation function is " +
@@ -285,6 +291,7 @@ class FCGThread extends Thread {
   private int _id;
   private int _uid;
 
+	
   public FCGThread(int id, int numtries, FletcherConjugateGradient master) {
     _id = id;
     _uid = (int) DataMgr.getUniqueId();
@@ -292,6 +299,7 @@ class FCGThread extends Thread {
     _numtries=numtries;
   }
 
+	
   public void run() {
     HashMap p = _master.getParams();
     p.put("thread.localid", new Integer(_id));
@@ -326,24 +334,29 @@ class FCGThread extends Thread {
 
 
   /**
-   * the implementation method of the class
+   * the implementation method of the class implements the CG algorithm with 
+	 * Fletcher step-size updates.
    * @param f FunctionIntf
    * @param solindex int
    * @param p HashMap
    * @throws OptimizerException
    * @return PairObjDouble
    */
-  private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) throws OptimizerException {
+  private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) 
+		throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("fcg.gradient");
-    if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
+    if (grad==null) 
+			grad = new GradApproximator(f);  // default: numeric gradient computation
     final VectorIntf x0 = 
 			p.containsKey("fcg.x"+solindex)==false ?
          p.containsKey("gradientdescent.x0") ? 
 			    (VectorIntf) p.get("gradientdescent.x0") : 
-			      p.containsKey("x0") ? (VectorIntf) p.get("x0") : null // attempt to retrieve generic point
+			      p.containsKey("x0") ? (VectorIntf) p.get("x0") : null // x0 exists?
 			: (VectorIntf) p.get("fcg.x"+solindex);
-    if (x0==null) throw new OptimizerException("no fcg.x"+solindex+" initial point in _params passed");
-    VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
+    if (x0==null) 
+			throw new OptimizerException("no fcg.x"+solindex+
+				                           " initial point in _params passed");
+    VectorIntf x = x0.newInstance();  // don't modify the initial soln
     final int n = x.getNumCoords();
     double gtol = 1e-8;
     try {
@@ -407,25 +420,29 @@ class FCGThread extends Thread {
     boolean found=false;
     double b = 0.0;
     DblArray1Vector s = new DblArray1Vector(new double[n]);
+		Messenger mger = Messenger.getInstance();
     for (int iter=0; iter<maxiters; iter++) {
-      Messenger.getInstance().msg("FCGThread.min(): Thread-id="+_id+" In iteration "+iter+", prevh="+h+", fx="+fx,1);
+      mger.msg("FCGThread.min(): Thread-id="+_id+" In iteration "+iter+
+				       ", prevh="+h+", fx="+fx,1);
       VectorIntf g = grad.eval(x, p);
       fx = f.eval(x, p);
+			System.err.println("fx="+fx+"x="+x);  // itc: HERE rm asap
       final double norminfg = VecUtil.normInfinity(g);
       final double normg = VecUtil.norm(g,2);
-      if (norminfg <= gtol) {
-        Messenger.getInstance().msg("found sol w/ value="+fx+" normg="+norminfg+" in "+iter+" iterations.",0);
+      if (Double.compare(norminfg, gtol) <= 0) {
+        mger.msg("FCGThread.min(): found sol w/ value="+fx+" normg="+norminfg+
+					       " in "+iter+" iterations.",0);
         found = true;
         break;
       }
-      if (iter % n ==0) {
+      if (iter % n ==0) {  // reset search direction: conjugacy is likely lost
         for (int i=0; i<n; i++) {
-          s.setCoord(i, -g.getCoord(i)/normg);  // reset search direction
+          s.setCoord(i, -g.getCoord(i)/normg);
         }
       }
       else {
         for (int i=0; i<n; i++)
-          s.setCoord(i,s.getCoord(i)*b-g.getCoord(i));  // s update
+          s.setCoord(i, s.getCoord(i)*b - g.getCoord(i));  // s update
         double norms = VecUtil.norm2(s);
         for (int i=0; i<n; i++)
           s.setCoord(i, s.getCoord(i)/norms);  // normalize search direction
@@ -433,22 +450,23 @@ class FCGThread extends Thread {
       // Al-Baali-Fletcher Bracketing-Sectioning Algorithm implementation
       // determine step-size h
       double sTg = VecUtil.innerProduct(s,g);
-      if (sTg>=0) {  // reset search direction
-        Messenger.getInstance().msg("FCGThread.min(): Thread-id="+_id+
-                                    " resetting search direction",0);
+      if (Double.compare(sTg,0) >= 0) {  // reset search direction
+        mger.msg("FCGThread.min(): Thread-id="+_id+
+                 " resetting search direction",0);
         for (int i=0; i<n; i++) s.setCoord(i, -g.getCoord(i)/normg);
         sTg = -normg;
       }
-      // init. guess on acceptable lower bound along f(h)
+      // initial guess on acceptable lower bound along f(h)
       double red_rate = 2.0;
       if (red_rateD!=null && red_rateD.doubleValue()>1.0)
         red_rate = red_rateD.doubleValue();
-      double fbar = fx > 0 ? fx/red_rate :
-                            (fx==0.0 ? -1 : red_rate*fx);
+      double fbar = Double.compare(fx, 0)>0 ? 
+				              fx/red_rate :
+                      (Double.compare(fx, 0.0)==0 ? -1 : red_rate*fx);
       if (fbarD!=null) fbar = fbarD.doubleValue();
       h = findStepSize(f, grad, x, fx, s, sTg, fbar, rho, sigma, t1, t2, t3, p);
-      if (h<=0) {
-        Messenger.getInstance().msg("FCG will stop at x=" + x +
+      if (Double.compare(h, 0)<= 0) {
+        mger.msg("FCGTHread.min(): FCG will stop at x=" + x +
                                     " as it could not find a valid h", 0);
         return new PairObjDouble(x, fx);
       }
@@ -509,16 +527,20 @@ class FCGThread extends Thread {
     double a = alpha;
     double b = alpha;
     double faprev = fx;
+		
     // 1. bracketing phase: compute [a,b] or return with appropriate h
+		
     int count=Integer.MAX_VALUE;
     Integer cI = (Integer) p.get("fcg.maxbracketingiters");
     if (cI!=null) count = cI.intValue();
-    Messenger.getInstance().msg("max iter count in bracketing phase="+count,2);
+    Messenger mger = Messenger.getInstance();
+		mger.msg("FCGThread.findStepSize(): max iter count in bracketing phase="+
+			       count,2);
     while (true) {
       if (--count==0) {
-        Messenger.getInstance().msg("max allowed count exceeded "+
-                                    "in bracketing phase. "+
-                                    "(alpha="+alpha+", a="+a+", b="+b+")",0);
+        mger.msg("FCGThread.findStepSize(): max allowed count exceeded "+
+                 "in bracketing phase. "+
+                 "(alpha="+alpha+", a="+a+", b="+b+")",0);
         return -1;
       }
       // compute f(x+alpha*s)
@@ -532,13 +554,14 @@ class FCGThread extends Thread {
         }
       }
       double fa = f.eval(xa, p);
-      if (fa<=fbar) {
+      if (Double.compare(fa, fbar) <= 0) {
 				if (xa instanceof PoolableObjectIntf) {
 					((PoolableObjectIntf) xa).release();
 				}
 				return alpha;
 			}
-      if (fa>fx+rho*alpha*sTg || fa>=faprev) {
+      if (Double.compare(fa, fx+rho*alpha*sTg) > 0 || 
+				  Double.compare(fa, faprev) >= 0) {
         b = alpha;
         a=aprev;
 				if (xa instanceof PoolableObjectIntf) {
@@ -549,7 +572,7 @@ class FCGThread extends Thread {
       // evaluate f'(alpha)
       VectorIntf ga = grad.eval(xa,p);
       double fpa = VecUtil.innerProduct(s,ga);
-      if (Math.abs(fpa) <= -sigma*sTg) {
+      if (Double.compare(Math.abs(fpa), -sigma*sTg) <= 0) {
 				if (xa instanceof PoolableObjectIntf) {
 					((PoolableObjectIntf) xa).release();
 				}
@@ -563,7 +586,7 @@ class FCGThread extends Thread {
         break;
       }
       double a2aprev = 2.0*alpha - aprev;
-      if (miu <= a2aprev) {
+      if (Double.compare(miu, a2aprev) <= 0) {
         aprev = alpha;
         alpha = miu;
       }
@@ -577,20 +600,23 @@ class FCGThread extends Thread {
 				((PoolableObjectIntf) xa).release();
 			}
     }
+		
     // 2. sectioning phase: find the right h to return
+		
     aprev = a;
     count = Integer.MAX_VALUE;
     cI = (Integer) p.get("fcg.maxsectioningiters");
     if (cI!=null) count = cI.intValue();
-    Messenger.getInstance().msg("max iter count in sectioning phase="+count,2);
+    mger.msg("FCGThread.findStepSize(): max iter count in sectioning phase="+
+			       count,2);
     while (true) {
       if (--count==0) {
-        Messenger.getInstance().msg("max allowed count exceeded "+
-                                    "in sectioning phase. "+
-                                    "(alpha="+alpha+", a="+a+", b="+b+")",0);
+        mger.msg("FCGThread.findStepSize(): max allowed count exceeded "+
+                 "in sectioning phase. "+
+                 "(alpha="+alpha+", a="+a+", b="+b+")",0);
         return -1;
       }
-      alpha = (a + t2 * (b - a) + b - t3 * (b - a)) / 2.0;
+      alpha = (a + t2*(b - a) + b - t3*(b - a)) / 2.0;
       // compute f(x+alpha*s)
       VectorIntf xa = x.newCopy();
       for (int i = 0; i < n; i++) {
@@ -613,7 +639,8 @@ class FCGThread extends Thread {
         }
       }
       double faj = f.eval(xaj, p);
-      if (falpha > fx + rho * alpha * sTg || falpha >= faj) {
+      if (Double.compare(falpha, fx + rho * alpha * sTg) > 0 || 
+				  Double.compare(falpha, faj) >= 0) {
         b = alpha;
         aprev = a;
       }
@@ -621,7 +648,7 @@ class FCGThread extends Thread {
         // evaluate f'(alpha)
         VectorIntf ga = grad.eval(xa,p);
         double fpa = VecUtil.innerProduct(s,ga);
-        if (Math.abs(fpa) <= -sigma*sTg) {
+        if (Double.compare(Math.abs(fpa), -sigma*sTg) <= 0) {
 					if (xa instanceof PoolableObjectIntf) {
 						((PoolableObjectIntf) xa).release();
 					}		
@@ -632,7 +659,7 @@ class FCGThread extends Thread {
 				}
         aprev = a;
         // a = alpha;
-        if ((b-a)*fpa>=0) {
+        if (Double.compare((b-a)*fpa, 0) >= 0) {
           b = a;
         }
       }
