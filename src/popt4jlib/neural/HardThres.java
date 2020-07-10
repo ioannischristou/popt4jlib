@@ -11,7 +11,7 @@ package popt4jlib.neural;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class HardThres implements OutputNNNodeIntf {
+public class HardThres extends BaseNNNode implements OutputNNNodeIntf {
 	
 	private double _theta = 0.0;
 	

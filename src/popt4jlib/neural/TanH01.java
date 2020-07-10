@@ -12,7 +12,7 @@ package popt4jlib.neural;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class TanH01 implements NNNodeIntf {
+public class TanH01 extends BaseNNNode implements NNNodeIntf {
 	
 	/**
 	 * public no-arg no-op constructor.

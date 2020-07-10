@@ -1,7 +1,8 @@
 package popt4jlib.neural;
 
 import popt4jlib.*;
-import popt4jlib.neural.costfunction.L2Norm;
+import popt4jlib.neural.costfunction.FFNNCostFunctionIntf;
+import popt4jlib.neural.costfunction.MSSE;
 import parallel.TaskObject;
 import parallel.distributed.PDBatchTaskExecutor;
 import utils.DataMgr;
@@ -40,7 +41,7 @@ import java.io.Serializable;
  */
 public class FFNN4Train extends FFNN {
 
-	protected FunctionIntf _costFunc = null;
+	protected FFNNCostFunctionIntf _costFunc = null;
 
 	protected final static int _numInputsPerTask = 128;  // used in shared-memory
 	                                                     // parallel evaluation
@@ -54,15 +55,15 @@ public class FFNN4Train extends FFNN {
 	 * "right" params are passed to the <CODE>eval()</CODE> method.)
 	 * @param hiddenlayers Object[]  // NodeIntf[][]
 	 * @param outputnode OutputNNNodeIntf
-	 * @param f FunctionIntf the cost (error) function to measure the "cost" of 
-	 * the network as a function of its errors on the training set; if null, the 
-	 * L2 norm is used by default (essentially corresponding to a regression 
-	 * problem).
+	 * @param f FFNNCostFunctionIntf the cost (error) function to measure the 
+	 * "cost" of the network as a function of its errors on the training set; if 
+	 * null, the MSSE norm is used by default (essentially corresponding to a 
+	 * regression problem).
 	 */
 	public FFNN4Train(Object[] hiddenlayers, OutputNNNodeIntf outputnode, 
-		                FunctionIntf f) {
+		                FFNNCostFunctionIntf f) {
 		super(hiddenlayers, outputnode);
-		if (f==null) f = new L2Norm();
+		if (f==null) f = new MSSE();
 		_costFunc = f;
 		// ++_numObjs;  // deliberately not counting such objects
 	}
@@ -73,16 +74,16 @@ public class FFNN4Train extends FFNN {
 	 * evaluation.
 	 * @param hiddenlayers Object[]  // NodeIntf[][]
 	 * @param outputnode OutputNNNodeIntf
-	 * @param f FunctionIntf the cost (error) function to measure the "cost" of 
-	 * the network as a function of its errors on the training set; if null, the 
-	 * L2 norm is used by default (essentially corresponding to a regression 
-	 * problem).
+	 * @param f FFNNCostFunctionIntf the cost (error) function to measure the 
+	 * "cost" of the network as a function of its errors on the training set; if 
+	 * null, the MSSE is used by default (essentially corresponding to a 
+	 * regression problem).
 	 * @param numthreads int if &gt; 1, parallel training set evaluation occurs.
 	 */
 	public FFNN4Train(Object[] hiddenlayers, OutputNNNodeIntf outputnode, 
-		                FunctionIntf f, int numthreads) {
+		                FFNNCostFunctionIntf f, int numthreads) {
 		super(hiddenlayers, outputnode);
-		if (f==null) f = new L2Norm();
+		if (f==null) f = new MSSE();
 		_costFunc = f;
 		if (++_numObjs4 > 1) {
 			System.err.println("2nd FFNN4Train being constructed via 4-arg ctor???");

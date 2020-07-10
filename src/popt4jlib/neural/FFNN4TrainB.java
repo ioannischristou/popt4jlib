@@ -1,6 +1,7 @@
 package popt4jlib.neural;
 
 import popt4jlib.*;
+import popt4jlib.neural.costfunction.FFNNCostFunctionIntf;
 import parallel.TaskObject;
 import parallel.distributed.PDBatchTaskExecutor;
 import utils.DataMgr;
@@ -33,13 +34,13 @@ public class FFNN4TrainB extends FFNN4Train {
 	 * "right" params are passed to the <CODE>eval()</CODE> method.)
 	 * @param hiddenlayers Object[]  // NodeIntf[][]
 	 * @param outputnode OutputNNNodeIntf
-	 * @param f FunctionIntf the cost (error) function to measure the "cost" of 
-	 * the network as a function of its errors on the training set; if null, the 
-	 * L2 norm is used by default (essentially corresponding to a regression 
-	 * problem).
+	 * @param f FFNNCostFunctionIntf the cost (error) function to measure the 
+	 * "cost" of the network as a function of its errors on the training set; 
+	 * if null, the MSSE is used by default (essentially corresponding to a 
+	 * regression problem).
 	 */
 	public FFNN4TrainB(Object[] hiddenlayers, OutputNNNodeIntf outputnode, 
-		                FunctionIntf f) {
+		                FFNNCostFunctionIntf f) {
 		super(hiddenlayers, outputnode, f);
 	}
 
@@ -49,15 +50,55 @@ public class FFNN4TrainB extends FFNN4Train {
 	 * evaluation.
 	 * @param hiddenlayers Object[]  // NodeIntf[][]
 	 * @param outputnode OutputNNNodeIntf
-	 * @param f FunctionIntf the cost (error) function to measure the "cost" of 
-	 * the network as a function of its errors on the training set; if null, the 
-	 * L2 norm is used by default (essentially corresponding to a regression 
-	 * problem).
+	 * @param f FFNNCostFunctionIntf the cost (error) function to measure the 
+	 * "cost" of the network as a function of its errors on the training set; 
+	 * if null, the MSSE norm is used by default (essentially corresponding to a 
+	 * regression problem).
 	 * @param numthreads int if &gt; 1, parallel training set evaluation occurs.
 	 */
 	public FFNN4TrainB(Object[] hiddenlayers, OutputNNNodeIntf outputnode, 
-		                FunctionIntf f, int numthreads) {
+		                 FFNNCostFunctionIntf f, int numthreads) {
 		super(hiddenlayers, outputnode, f, numthreads);
+	}
+	
+	
+	/**
+	 * finalize this FFNN4TrainB network's initialization by setting every node to
+	 * belong to this network. Must be called once, right after construction of 
+	 * this object.
+	 * @param num_input_signals int the number of input signals for this network.
+	 */
+	public void finalizeInitialization(int num_input_signals) {
+		final NNNodeIntf[][] hiddenLayers = getHiddenLayers();
+		final int num_layers = getNumHiddenLayers();
+		int pos = 0;
+		for (int i=0; i<num_layers; i++) {
+			NNNodeIntf[] li = hiddenLayers[i];
+			if (i==0) {  // compute total #weights and set it on the first layer nodes
+				int num_wgts = 0;
+				int num_layer_inputs = num_input_signals;
+				for (int j=0; j<num_layers; j++) {
+					num_wgts += hiddenLayers[j].length * (num_layer_inputs+1);
+					num_layer_inputs = hiddenLayers[j].length;
+				}
+				num_wgts += num_layer_inputs+1;  // weights of output node
+				for (int j=0; j<hiddenLayers[0].length; j++) {
+					hiddenLayers[0][j].setTotalNumWeights(num_wgts);
+				}
+			}
+			for (int j=0; j<li.length; j++) {
+				NNNodeIntf n_ij = li[j];
+				n_ij.setFFNN4TrainB(this);
+				final int len = i>0 ? hiddenLayers[i-1].length : num_input_signals;
+				n_ij.setWeightRange(pos, pos+len);
+				System.err.println("node_"+i+","+j+" = "+n_ij);  // itc: HERE rm asap
+				pos += len+1;  // +1 is for bias term
+			}
+		}
+		final OutputNNNodeIntf outnode = getOutputNode();
+		outnode.setFFNN4TrainB(this);
+		outnode.setWeightRange(pos, pos+hiddenLayers[hiddenLayers.length-1].length);
+		_costFunc.setFFNN(this);
 	}
 	
 	
@@ -299,6 +340,37 @@ public class FFNN4TrainB extends FFNN4Train {
 	
 	
 	/**
+	 * compute the partial derivative of the entire network with respect to the 
+	 * weight variable indexed by index.
+	 * @param weights double[] the values array for the variables of the function
+	 * @param index int the index of the function to compute its partial 
+	 * derivative at (range in {0,1,...weights.length-1})
+	 * @param p HashMap must contain the "ffnn.traindata" and "ffnn.trainlabels"
+	 * keys.
+	 * @return double 
+	 */
+	public double evalPartialDerivativeB(double[] weights, int index, HashMap p) {
+		final double[][] traindata = (double[][]) p.get("ffnn.traindata");
+		final double[] trainlabels = (double[]) p.get("ffnn.trainlabels");
+		final int num_instances = traindata.length;
+		
+		double result;
+		double[] results = new double[num_instances];
+		for (int i=0; i<num_instances; i++) results[i] = Double.NaN;
+		for (int i=0; i<num_instances; i++) {
+			final double[] train_instance = traindata[i];
+			final double train_lbl = trainlabels[i];
+			double ri = _costFunc.evalPartialDerivativeB(weights, index, 
+				                                           train_instance, train_lbl, 
+																									 p);
+			results[i] = ri;
+		}
+		result = _costFunc.evalPartialDerivativeB(results);
+		return result;
+	}
+	
+	
+	/**
 	 * invoke as:
 	 * <CODE>
 	 * java -cp &lt;classpath&gt; popt4jlib.neural.FFNN4TrainB 
@@ -356,7 +428,8 @@ public class FFNN4TrainB extends FFNN4Train {
 			Object[] hidden_layers = (Object[])params.get("hiddenlayers");
 			OutputNNNodeIntf output_node = 
 				(OutputNNNodeIntf) params.get("outputlayer");
-			FunctionIntf costfunc = (FunctionIntf) params.get("costfunc");
+			FFNNCostFunctionIntf costfunc = 
+				(FFNNCostFunctionIntf) params.get("costfunc");
 			double[][] train_data = (double[][])params.get("ffnn.traindata");
 			int num_ws = ((Object[])hidden_layers[0]).length*(train_data[0].length+1);
 			for (int i=0; i<hidden_layers.length-1; i++) {

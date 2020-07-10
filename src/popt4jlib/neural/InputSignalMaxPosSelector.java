@@ -15,7 +15,8 @@ package popt4jlib.neural;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class InputSignalMaxPosSelector implements OutputNNNodeIntf {
+public class InputSignalMaxPosSelector extends BaseNNNode 
+                                       implements OutputNNNodeIntf {
 		
 	/**
 	 * public no-arg, no-op constructor.

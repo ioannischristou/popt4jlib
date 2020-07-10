@@ -1,6 +1,7 @@
 package popt4jlib.neural;
 
 import java.io.Serializable;
+import java.util.HashMap;
 
 /**
  * common interface for a Neural Network node at any hidden layer.
@@ -50,7 +51,7 @@ public interface NNNodeIntf extends Serializable {
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] inputWeights, 
-		                 int inputWeightsStartOffset);
+		                  int inputWeightsStartOffset);
 	
 	
 	/**
@@ -67,6 +68,90 @@ public interface NNNodeIntf extends Serializable {
 	 * @return String
 	 */
 	public String getNodeName();
+
+	
+	/**
+	 * set the network this node belongs to.
+	 * @param ffnn FFNN4TrainB
+	 */
+	public void setFFNN4TrainB(FFNN4TrainB ffnn);
+	
+	
+	/**
+	 * get the network this node belongs to.
+	 * @return FFNN4TrainB
+	 */
+	public FFNN4TrainB getFFNN4TrainB();
+
+	
+	/**
+	 * sets the total number of variables (weights plus biases) for the FFNN that
+	 * this node participates in.
+	 * @param num_weights int
+	 */
+	public void setTotalNumWeights(int num_weights);
+	
+	
+	/**
+	 * sets the range of indices in the weights vector variable that are fed into
+	 * this node. These are the weights that are directly input to this node and 
+	 * includes the bias variable weight for this node.
+	 * @param start int inclusive
+	 * @param end int inclusive
+	 */
+	public void setWeightRange(int start, int end);
+	
+	
+	/**
+	 * adds the indices of weight variables that are input to nodes in previous
+	 * layers that eventually connect to this one.
+	 * @param start int inclusive
+	 * @param end int inclusive
+	 */
+	public void addPreviousWeightsRange(int start, int end);
+	
+	
+	/**
+	 * gets the index of the first weight variable connected directly as  
+	 * input to this node.
+	 * @return int
+	 */
+	public int getDirectInputWeightStartIndex();
+
+	
+	/**
+	 * gets the index of the last weight variable connected directly as  
+	 * input to this node.
+	 * @return int
+	 */
+	public int getDirectInputWeightEndIndex();
+	
+	
+	/**
+	 * returns true if and only if the index represented a connection weight that
+	 * connects to a node that is eventually connected to this node.
+	 * @param index int
+	 * @return boolean
+	 */
+	public boolean isWeightVariableAntecedent(int index);
+	
+	
+	/**
+	 * evaluates the partial derivative of this node (as a function of weights)
+	 * with respect to the weight variable whose weight is given by the value of 
+	 * the weights array in the given index.
+	 * @param weights double[] all variables (including biases) array
+	 * @param index int the index of the partial derivative to take
+	 * @param input_signals double[] the input signals for the network (an 
+	 * instance of the training data)
+	 * @param true_lbl double the true label corresponding to the input_signals
+	 * vector
+	 * @param p HashMap includes the train-data matrix and train-labels array.
+	 * @return double
+	 */	
+	public double evalPartialDerivativeB(double[] weights, int index, 
+		                                   double[] input_signals, double true_lbl, 
+																			 HashMap p);
 	
 }
 

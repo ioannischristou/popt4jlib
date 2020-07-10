@@ -15,8 +15,10 @@ package parallel;
  */
 public class UnboundedBufferArrayUnsynchronized implements BufferIntf {
   private Object[] _buffer;
-  private int _head;  // points to first element, remove from head (-1 if no elems in buffer)
-  private int _tail;  // points to last element, add into tail (-1 if no elems in buffer)
+  private int _head;  // points to first element, remove from head (-1 if no 
+	                    // elems in buffer)
+  private int _tail;  // points to last element, add into tail (-1 if no elems 
+	                    // in buffer)
 
   /**
    * public constructor.
@@ -36,7 +38,8 @@ public class UnboundedBufferArrayUnsynchronized implements BufferIntf {
 	 * @throws IllegalArgumentException if argument is null
    */
   public void addElement(Object obj) throws IllegalArgumentException {
-		if (obj==null) throw new IllegalArgumentException("null argument cannot be passed in");
+		if (obj==null) 
+			throw new IllegalArgumentException("null argument cannot be passed in");
     if (_head!=-1 && prev(_head)==_tail) {  // buffer full, resize and copy
 			final int cur_buf_len = _buffer.length;
 			Object[] buf = new Object[2*cur_buf_len];
@@ -63,7 +66,7 @@ public class UnboundedBufferArrayUnsynchronized implements BufferIntf {
   /**
    * remove the first object that was inserted in the buffer.
    * @throws IllegalStateException if the buffer is empty.
-   * @return Object
+   * @return Object the object that is removed from the buffer
    */
   public Object remove() throws IllegalStateException {
     if (_head==-1)
@@ -86,11 +89,13 @@ public class UnboundedBufferArrayUnsynchronized implements BufferIntf {
 	 * in which case, the operation is O(1) also.
 	 * @param i int 
 	 * @return Object the element previously in the <CODE>i</CODE>-th position.
-	 * @throws IndexOutOfBoundsException if the index is out of the range {0,...size()-1} 
+	 * @throws IndexOutOfBoundsException if the index is out of the range 
+	 * {0,...size()-1} 
 	 */
 	public Object remove(int i) throws IndexOutOfBoundsException {
 		if (i==0) return remove();  // remove the first element (pointed by _head)
-		if (i<0 || i>=size()) throw new IndexOutOfBoundsException("index "+i+" out of range");
+		if (i<0 || i>=size()) 
+			throw new IndexOutOfBoundsException("index "+i+" out of range");
 		Object res=null;
 		int opos = _head+i;
 		if (opos>=_buffer.length) opos -= _buffer.length;
@@ -111,7 +116,8 @@ public class UnboundedBufferArrayUnsynchronized implements BufferIntf {
    * @return Object
    */
   public Object elementAt(int i) throws IndexOutOfBoundsException {
-    if (i<0 || i>= size()) throw new IndexOutOfBoundsException("index "+i+"out of range");
+    if (i<0 || i>= size()) 
+			throw new IndexOutOfBoundsException("index "+i+"out of range");
     int opos = _head+i;
     if (opos<_buffer.length) return _buffer[opos];
     else return _buffer[i - (_buffer.length - _head)];

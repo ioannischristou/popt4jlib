@@ -59,10 +59,10 @@ public class FFNN implements FunctionIntf {
 	
 	
 	/**
-	 * allow sub-classes access to the <CODE>_outputNode</CODE> field.
+	 * allow access to the <CODE>_outputNode</CODE> field.
 	 * @return NNNodeIntf  // _outputNode
 	 */
-	protected OutputNNNodeIntf getOutputNode() {
+	public OutputNNNodeIntf getOutputNode() {
 		return _outputNode;
 	}
 	

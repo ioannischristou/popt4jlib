@@ -416,17 +416,19 @@ class FCGThread extends Thread {
       red_rateD = (Double) p.get("fcg.redrate");
     }
     catch (ClassCastException e) { e.printStackTrace(); }
+		
     // main loop
+		
     boolean found=false;
     double b = 0.0;
     DblArray1Vector s = new DblArray1Vector(new double[n]);
 		Messenger mger = Messenger.getInstance();
+		VectorIntf gnew = null;
     for (int iter=0; iter<maxiters; iter++) {
       mger.msg("FCGThread.min(): Thread-id="+_id+" In iteration "+iter+
 				       ", prevh="+h+", fx="+fx,1);
-      VectorIntf g = grad.eval(x, p);
+      VectorIntf g = gnew==null ? grad.eval(x, p) : gnew;
       fx = f.eval(x, p);
-			System.err.println("fx="+fx+"x="+x);  // itc: HERE rm asap
       final double norminfg = VecUtil.normInfinity(g);
       final double normg = VecUtil.norm(g,2);
       if (Double.compare(norminfg, gtol) <= 0) {
@@ -437,15 +439,18 @@ class FCGThread extends Thread {
       }
       if (iter % n ==0) {  // reset search direction: conjugacy is likely lost
         for (int i=0; i<n; i++) {
-          s.setCoord(i, -g.getCoord(i)/normg);
+          // s.setCoord(i, -g.getCoord(i)/normg);
+					s.setCoord(i, -g.getCoord(i));
         }
       }
       else {
         for (int i=0; i<n; i++)
           s.setCoord(i, s.getCoord(i)*b - g.getCoord(i));  // s update
-        double norms = VecUtil.norm2(s);
+        /*
+				double norms = VecUtil.norm2(s);
         for (int i=0; i<n; i++)
           s.setCoord(i, s.getCoord(i)/norms);  // normalize search direction
+				*/
       }
       // Al-Baali-Fletcher Bracketing-Sectioning Algorithm implementation
       // determine step-size h
@@ -453,8 +458,10 @@ class FCGThread extends Thread {
       if (Double.compare(sTg,0) >= 0) {  // reset search direction
         mger.msg("FCGThread.min(): Thread-id="+_id+
                  " resetting search direction",0);
-        for (int i=0; i<n; i++) s.setCoord(i, -g.getCoord(i)/normg);
-        sTg = -normg;
+        for (int i=0; i<n; i++) // s.setCoord(i, -g.getCoord(i)/normg);
+					s.setCoord(i, -g.getCoord(i));
+        // sTg = -normg;
+				sTg = -normg*normg;
       }
       // initial guess on acceptable lower bound along f(h)
       double red_rate = 2.0;
@@ -480,7 +487,7 @@ class FCGThread extends Thread {
         }
       }
       // update b according to Fletcher-Reeves formula
-      VectorIntf gnew = grad.eval(x, p);
+      gnew = grad.eval(x, p);
       b = VecUtil.innerProduct(gnew,gnew)/(normg*normg);
     }
     // end main loop
@@ -523,9 +530,9 @@ class FCGThread extends Thread {
     final double miu = (fbar - fx)/(rho*sTg);
     final int n = x.getNumCoords();
     double alpha = 0.99*miu;
-    double aprev = 0.0;
+    double alpha_prev = 0.0;
     double a = alpha;
-    double b = alpha;
+    double b = Double.NaN;
     double faprev = fx;
 		
     // 1. bracketing phase: compute [a,b] or return with appropriate h
@@ -562,8 +569,8 @@ class FCGThread extends Thread {
 			}
       if (Double.compare(fa, fx+rho*alpha*sTg) > 0 || 
 				  Double.compare(fa, faprev) >= 0) {
-        b = alpha;
-        a=aprev;
+        a=alpha_prev;
+				b=alpha;
 				if (xa instanceof PoolableObjectIntf) {
 					((PoolableObjectIntf) xa).release();
 				}
@@ -578,21 +585,21 @@ class FCGThread extends Thread {
 				}
 				return alpha;
 			}
-      if (fpa >= 0) {
-        a = alpha; b = aprev;
+      if (Double.compare(fpa, 0) >= 0) {
+        a = alpha; b = alpha_prev;
 				if (xa instanceof PoolableObjectIntf) {
 					((PoolableObjectIntf) xa).release();
 				}
         break;
       }
-      double a2aprev = 2.0*alpha - aprev;
+      double a2aprev = 2.0*alpha - alpha_prev;
       if (Double.compare(miu, a2aprev) <= 0) {
-        aprev = alpha;
+        alpha_prev = alpha;
         alpha = miu;
       }
       else {
-        double min_miu_aaprev = Math.min(miu, alpha+t1*(alpha-aprev));
-        aprev = alpha;
+        double min_miu_aaprev = Math.min(miu, alpha+t1*(alpha-alpha_prev));
+        alpha_prev = alpha;
         alpha = (a2aprev + min_miu_aaprev) / 2.0;
       }
       faprev = fa;
@@ -602,8 +609,8 @@ class FCGThread extends Thread {
     }
 		
     // 2. sectioning phase: find the right h to return
-		
-    aprev = a;
+
+		final double abtol = 1.e-8;
     count = Integer.MAX_VALUE;
     cI = (Integer) p.get("fcg.maxsectioningiters");
     if (cI!=null) count = cI.intValue();
@@ -614,6 +621,8 @@ class FCGThread extends Thread {
         mger.msg("FCGThread.findStepSize(): max allowed count exceeded "+
                  "in sectioning phase. "+
                  "(alpha="+alpha+", a="+a+", b="+b+")",0);
+				// if a and b are close, return their average
+				if (Double.compare(Math.abs(b-a), abtol) < 0) return (a+b)/2.0;
         return -1;
       }
       alpha = (a + t2*(b - a) + b - t3*(b - a)) / 2.0;
@@ -642,7 +651,7 @@ class FCGThread extends Thread {
       if (Double.compare(falpha, fx + rho * alpha * sTg) > 0 || 
 				  Double.compare(falpha, faj) >= 0) {
         b = alpha;
-        aprev = a;
+        //aprev = a;
       }
       else {
         // evaluate f'(alpha)
@@ -657,11 +666,11 @@ class FCGThread extends Thread {
 					}
 					return alpha;
 				}
-        aprev = a;
-        // a = alpha;
+        // aprev = a;
         if (Double.compare((b-a)*fpa, 0) >= 0) {
           b = a;
         }
+				a = alpha;
       }
     }
   }

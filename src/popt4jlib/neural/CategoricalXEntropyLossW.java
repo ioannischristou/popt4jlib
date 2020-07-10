@@ -14,7 +14,8 @@ import utils.Messenger;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class CategoricalXEntropyLossW implements OutputNNNodeIntf {
+public class CategoricalXEntropyLossW extends BaseNNNode 
+                                      implements OutputNNNodeIntf {
 	
 	
 	/**

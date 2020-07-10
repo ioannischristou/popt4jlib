@@ -21,7 +21,7 @@ package popt4jlib.neural;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class MultiClassSSE implements OutputNNNodeIntf {
+public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 		
 	/**
 	 * public no-arg, no-op constructor.

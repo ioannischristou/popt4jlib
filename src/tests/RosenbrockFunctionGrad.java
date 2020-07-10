@@ -2,6 +2,7 @@ package tests;
 
 import popt4jlib.*;
 import java.util.*;
+import popt4jlib.GradientDescent.VecUtil;
 
 /**
  * This class implements the Rosenbrock Function Gradient in n-dimensions.
@@ -60,13 +61,36 @@ public class RosenbrockFunctionGrad implements VecFunctionIntf {
 			throw new IllegalArgumentException("i="+i+" is outside "+
 			                                   "valid range [0,"+n+")");
 		final double xi = x.getCoord(i);
-		double gi = -2*(1.0 - xi);
-		if (i<n-1) gi -= 400*(x.getCoord(i+1)-xi*xi)*xi;
+		double gi = 0;
+		if (i<n-1) {
+			gi -= 2*(1.0 - xi);
+			gi -= 400*(x.getCoord(i+1)-xi*xi)*xi;
+		}
 		if (i>0) {
 			final double xim1 = x.getCoord(i-1);
 			gi += 200*(xi - xim1*xim1);
 		}
 		return gi;
   }
+	
+	
+	/**
+	 * test driver of the Rosenbrock function gradient.
+	 * @param args 
+	 */
+	public static void main(String[] args) {
+		double[] x = new double[args.length];
+		for (int i=0; i<x.length; i++) x[i] = Double.parseDouble(args[i]);
+		VectorIntf xv = new DblArray1Vector(x);
+		RosenbrockFunctionGrad g = new RosenbrockFunctionGrad();
+		VectorIntf y = g.eval(xv, null);
+		System.out.println("g(x="+xv+")="+y);
+		analysis.GradApproximator gapprox = 
+			new analysis.GradApproximator(new RosenbrockFunction());
+		VectorIntf ya = gapprox.eval(xv, null);
+		double normdiff = VecUtil.getEuclideanDistance(y, ya);
+		System.out.println("ga="+ya);
+		System.out.println("||g-ga||="+normdiff);
+	}
 }
 

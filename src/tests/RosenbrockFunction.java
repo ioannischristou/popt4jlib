@@ -39,7 +39,7 @@ public class RosenbrockFunction implements FunctionIntf {
           double xi = x.getCoord(i);
           double xip1 = x.getCoord(i + 1);
           res += (1 - xi) * (1 - xi) +
-              100 * (xip1 - xi * xi) * (xip1 - xi * xi);
+              100 * (xip1 - xi*xi) * (xip1 - xi*xi);
         }
         return res;
       }
@@ -49,7 +49,7 @@ public class RosenbrockFunction implements FunctionIntf {
         double res = 0;
         for (int i = 0; i < n - 1; i++) {
           res += (1 - x[i]) * (1 - x[i]) +
-              100 * (x[i + 1] - x[i] * x[i]) * (x[i + 1] - x[i] * x[i]);
+              100 * (x[i+1] - x[i] * x[i]) * (x[i+1] - x[i] * x[i]);
         }
         return res;
       }
