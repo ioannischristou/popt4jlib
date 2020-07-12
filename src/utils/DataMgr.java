@@ -104,7 +104,7 @@ public class DataMgr {
 	 * starting with the keyword "class". This is a convenient short-cut so that
 	 * arrays of identically constructed (but different) objects can be stored in
 	 * an array. The array is stored with type <CODE>Object[]</CODE>.
-	 * <p> In case key is the keywrod "dblarray", then the value is the name of 
+	 * <p> In case key is the keyword "dblarray", then the value is the name of 
 	 * the property, and the next token is the filename of a text file describing
 	 * the array of doubles to be read via the method 
 	 * <CODE>readDoubleLabelsFromFile(filename)</CODE>. The resulting value object

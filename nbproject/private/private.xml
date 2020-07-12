@@ -3,6 +3,7 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/gauto_test_props.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/ReentrantFunctionBase.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/ArmijoSteepestDescent.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/KDDCup992SparseVectorFileFormatConverter.java</file>
@@ -38,6 +39,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FFNN4Train.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/analysis/IntegralApproximator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutorClt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/Messenger.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/ParallelBatchTaskExecutor.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/stochastic/Adam.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_train_grid_data_ALLattrs_props_sgd.txt</file>
@@ -146,6 +148,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/AVDTest2.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/FletcherConjugateGradientST.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/traindata0.dat</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FFNN4TrainBGradTest2.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/RRObject.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LimitedTimeEvalFunction.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/ASDTest.java</file>

@@ -137,6 +137,36 @@ public interface NNNodeIntf extends Serializable {
 	
 	
 	/**
+	 * sets the layer in the FFNN that this node belongs to.
+	 * @param layerno int can be in {0,...#hidden_layers} with #hidden_layers
+	 * indicating the output layer.
+	 */
+	public void setNodeLayer(int layerno);
+	
+	
+	/**
+	 * get the layer number of this node in the FFNN (
+	 * @return 
+	 */
+	public int getNodeLayer();
+	
+	
+	/**
+	 * sets the position of this node in the layer containing it.
+	 * @param pos_in_layer int in {0,...,#nodes_in_layer-1}
+	 */
+	public void setPositionInLayer(int pos_in_layer);
+	
+	
+	/**
+	 * returns the position index of this node in the layer it's part of in the 
+	 * FFNN.
+	 * @return int in {0,...,#nodes_in_layer-1} 
+	 */
+	public int getPositionInLayer();
+
+	
+	/**
 	 * evaluates the partial derivative of this node (as a function of weights)
 	 * with respect to the weight variable whose weight is given by the value of 
 	 * the weights array in the given index.

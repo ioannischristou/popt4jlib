@@ -15,7 +15,7 @@ import popt4jlib.GradientDescent.VecUtil;
  * Neural Networks with bias accepting.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0

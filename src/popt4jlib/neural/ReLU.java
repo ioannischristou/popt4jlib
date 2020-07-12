@@ -6,7 +6,10 @@ import utils.Messenger;
 
 /**
  * ReLU implements the x_{+} function known in ANN literature as RectiLinear
- * Activation Unit. Can be used only as hidden layer node.
+ * Activation Unit. The class knows how to differentiate itself when gradient 
+ * information is required via the <CODE>evalPartialDerivativeB()</CODE> method 
+ * that essentially implements automatic differentiation for FeedForward Neural 
+ * Networks. Can be used only as hidden layer node.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -15,6 +18,9 @@ import utils.Messenger;
  * @version 1.0
  */
 public class ReLU extends BaseNNNode implements NNNodeIntf {
+	
+	private Linear _linearUnit = new Linear();  // used to compute node input sum
+	
 	
 	/**
 	 * public no-arg no-op constructor.
@@ -66,7 +72,11 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
 		prod += weights[inputSignals.length];  // bias term
-		return Math.max(prod, 0.0);
+		double result = Math.max(prod, 0.0);
+		// cache values for speeding up auto-differentiation
+		setLastInputsCache(inputSignals);
+		setLastEvalCache(result);
+		return result;
 	}
 
 	
@@ -83,7 +93,11 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
 		prod += weights[offset+inputSignals.length];  // bias term
-		return Math.max(prod, 0.0);
+		double result = Math.max(prod, 0.0);
+		// cache values for speeding up auto-differentiation
+		setLastInputsCache(inputSignals);
+		setLastEvalCache(result);
+		return result;
 	}
 	
 	
@@ -114,16 +128,8 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 																			 HashMap p) {
 		Messenger mger = Messenger.getInstance();
 		// 0. see if the value is already computed before
-		DerivEvalData data = 
-			new DerivEvalData(weights, inputSignals, true_lbl, index);
-		final HashMap nodecache = getDerivEvalCache();
-		if (nodecache.containsKey(data)) {
-			final double result = ((Double) nodecache.get(data)).doubleValue();
-			if (nodecache.size()>_MAX_ALLOWED_CACHE_SIZE) {
-				removeOldData(_NUM_DATA_2_RM_FROM_CACHE);
-			}
-			return result;
-		}
+		double cache = getLastDerivEvalCache();
+		if (!Double.isNaN(cache)) return cache;
 		// 1. if index is after input weights, derivative is zero
 		if (index > _biasInd) {
 			final double result = 0.0;
@@ -139,13 +145,30 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 					       ", index="+index+
 						     ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
 			}
-			nodecache.put(data, new Double(result));
+			setLastDerivEvalCache(result);
 			return result;
 		}
 		// 2. if index is for bias, derivative is one if node inputs sum positive,
 		//    zero else
 		else if (index == _biasInd) {
 			// compute this node's input-sum
+			double[] last_inputs = getLastInputsCache();
+			if (last_inputs!=null) {  // last_inputs exists in the cache!
+				final int layerno = getNodeLayer();
+				final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
+				int pos = 0;
+				int prev_layer_no = inputSignals.length;
+				for (int i=0; i<layerno; i++) {
+					pos += hidden_layers[i].length*(prev_layer_no+1);  // +1 for bias
+					prev_layer_no = hidden_layers[i].length;
+				}
+				pos += getPositionInLayer()*(prev_layer_no+1);
+				double node_input = _linearUnit.evalB(last_inputs,weights,pos);
+				final double result = Double.compare(node_input,0) > 0 ? 1.0 : 0.0;
+				setLastDerivEvalCache(result);
+				return result;
+			}
+			// nope, node inputs must be computed from scratch
 			double node_input = Double.NaN;
 			final int num_inputs = inputSignals.length;  // get the #input_signals
 			final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
@@ -173,10 +196,10 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 					layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
 			}
 			if (found) {
-				node_input = (new Linear()).evalB(layer_i_inputs, weights, pos);
+				node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 			}
 			else if (output_node==this) {  // our node is the output node
-				node_input = (new Linear()).evalB(layer_i_inputs, weights, pos);
+				node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 			}
 			else {
 				throw new IllegalStateException("couldn't find this node in FFNN");
@@ -194,13 +217,32 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 					       ", index="+index+
 						     ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
 			}
-			nodecache.put(data, new Double(result));
+			setLastInputsCache(layer_i_inputs);
+			setLastDerivEvalCache(result);
 			return result;
 		}
 		// 3. if index is for direct input weights, derivative is the input-signal
 		//    applied to this weight, as long as the node_input is positive, else
 		//    it's zero.
 		else if (_startWeightInd <= index && index <= _endWeightInd) {
+			double[] last_inputs = getLastInputsCache();
+			if (last_inputs!=null) {
+				final int layerno = getNodeLayer();
+				final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
+				int pos = 0;
+				int prev_layer_no = inputSignals.length;
+				for (int i=0; i<layerno; i++) {
+					pos += hidden_layers[i].length*(prev_layer_no+1);  // +1 for bias
+					prev_layer_no = hidden_layers[i].length;
+				}
+				pos += getPositionInLayer()*(prev_layer_no+1);
+				double node_input=_linearUnit.evalB(last_inputs,weights,pos);
+				double result = Double.compare(node_input, 0) > 0 ?
+					                last_inputs[index-pos] : 0.0;
+				setLastDerivEvalCache(result);
+				return result;
+			}
+			// nope, not in cache, do the work
 			final int num_inputs = inputSignals.length;  // get the #input_signals
 			final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
 			final int num_hidden_layers = hidden_layers.length;
@@ -217,7 +259,7 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 				for (int j=0; j<layeri.length; j++) {
 					NNNodeIntf node_i_j = layeri[j];
 					if (node_i_j == this) {  // this is the node we're looking for
-						double node_input=(new Linear()).evalB(layer_i_inputs,weights,pos);
+						double node_input=_linearUnit.evalB(layer_i_inputs,weights,pos);
 						double result = Double.compare(node_input, 0) > 0 ?
 							                layer_i_inputs[index-pos] : 0.0;
 						if (mger.getDebugLvl()>=2) {
@@ -234,7 +276,8 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 						             ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
 									       result, 2);
 						}
-						nodecache.put(data, new Double(result));
+						setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
+						setLastDerivEvalCache(result);
 						return result;
 					}
 					layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, weights, pos);
@@ -243,7 +286,7 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 				layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
 			}	
 			if (output_node==this) {  // our node is the output node
-  			double node_input = (new Linear()).evalB(layer_i_inputs, weights, pos);
+  			double node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 				double result = Double.compare(node_input, 0) > 0 ?
 				                  layer_i_inputs[index-pos] : 0.0;
 				if (mger.getDebugLvl()>=2) {
@@ -260,7 +303,8 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 					         ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
 					         result, 2);
 				}				
-				nodecache.put(data, new Double(result));
+				setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
+				setLastDerivEvalCache(result);
 				return result;
 			}
 			throw new IllegalStateException("for weight-index="+index+" cannot find "+
@@ -283,7 +327,7 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 				         ", index="+index+
 				         ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
 			}				
-			nodecache.put(data, new Double(0.0));
+			setLastDerivEvalCache(0.0);
 			return 0.0;
 		}
 		// 5. else index is for a previous signal weight, and derivative is the 
@@ -292,47 +336,65 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 		//    with respect to the weight represented by index, as long as the 
 		//    node input sum is positive, else the derivative is zero.
 		else {
+			/*
 			int layer_of_node = _ffnn.getOutputNode()==this ? 
 				                    _ffnn.getNumHiddenLayers() :
 				                    getHiddenNodeLayer();
+			*/
+			int layer_of_node = getNodeLayer();
 			if (layer_of_node==0) {
 				throw new IllegalStateException("node="+this+" index="+index+
 					                              " layer_of_node="+layer_of_node);
 			}			
 			double node_input = Double.NaN;
-			final int num_inputs = inputSignals.length;  // get the #input_signals
-			final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
-			final int num_hidden_layers = hidden_layers.length;
-			final OutputNNNodeIntf output_node = _ffnn.getOutputNode();
-			// compute from layer-0 to this node
-			int pos = 0;  // the position index in the vector weights
-			// get inputs for the layer. Inputs are same for all nodes in a layer.
-			double[] layer_i_inputs = new double[num_inputs];
-			for (int i=0; i<num_inputs; i++) layer_i_inputs[i] = inputSignals[i];
-			boolean found = false;
-			for (int i=0; i<num_hidden_layers && !found; i++) {
-				NNNodeIntf[] layeri = hidden_layers[i];
-				double[] layeri_outputs = new double[layeri.length];
-				for (int j=0; j<layeri.length; j++) {
-					NNNodeIntf node_i_j = layeri[j];
-					if (node_i_j == this) {  // this is the node we're looking for
-						found = true;
-						break;
-					}
-					layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, weights, pos);
-					pos += layer_i_inputs.length + 1;  // +1 is for the bias
+			double[] last_inputs = getLastInputsCache();
+			if (last_inputs != null) {
+				final int layerno = getNodeLayer();
+				final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
+				int pos = 0;
+				int prev_layer_no = inputSignals.length;
+				for (int i=0; i<layerno; i++) {
+					pos += hidden_layers[i].length*(prev_layer_no+1);  // +1 for bias
+					prev_layer_no = hidden_layers[i].length;
 				}
-				if (!found)
-					layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
-			}
-			if (found) {
-				node_input = (new Linear()).evalB(layer_i_inputs, weights, pos);
-			}
-			else if (output_node==this) {  // our node is the output node
-				node_input = (new Linear()).evalB(layer_i_inputs, weights, pos);
+				pos += getPositionInLayer()*(prev_layer_no+1);
+				node_input=_linearUnit.evalB(last_inputs,weights,pos);
 			}
 			else {
-				throw new IllegalStateException("couldn't find this node in FFNN");
+				final int num_inputs = inputSignals.length;  // get the #input_signals
+				final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
+				final int num_hidden_layers = hidden_layers.length;
+				final OutputNNNodeIntf output_node = _ffnn.getOutputNode();
+				// compute from layer-0 to this node
+				int pos = 0;  // the position index in the vector weights
+				// get inputs for the layer. Inputs are same for all nodes in a layer.
+				double[] layer_i_inputs = new double[num_inputs];
+				for (int i=0; i<num_inputs; i++) layer_i_inputs[i] = inputSignals[i];
+				boolean found = false;
+				for (int i=0; i<num_hidden_layers && !found; i++) {
+					NNNodeIntf[] layeri = hidden_layers[i];
+					double[] layeri_outputs = new double[layeri.length];
+					for (int j=0; j<layeri.length; j++) {
+						NNNodeIntf node_i_j = layeri[j];
+						if (node_i_j == this) {  // this is the node we're looking for
+							found = true;
+							break;
+						}
+						layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, weights, pos);
+						pos += layer_i_inputs.length + 1;  // +1 is for the bias
+					}
+					if (!found)
+						layer_i_inputs = layeri_outputs;  // set inputs for next iteration
+				}
+				if (found) {
+					node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
+				}
+				else if (output_node==this) {  // our node is the output node
+					node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
+				}
+				else {
+					throw new IllegalStateException("couldn't find this node in FFNN");
+				}
 			}
 			double result = 0.0;			
 			if (Double.compare(node_input, 0.0) > 0) {
@@ -360,7 +422,7 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 				         ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
 				         result, 2);
 			}							
-			nodecache.put(data, new Double(result));
+			setLastDerivEvalCache(result);
 			return result;
 		}
 	}

@@ -109,7 +109,6 @@ public class MSSE implements FFNNCostFunctionIntf {
 			mger.msg("MSSE.evalPartialDerivativeB(weights="+wstr+
 				       ", index="+index+
 					     ", input_signals="+isstr+", lbl="+true_lbl+",p)="+res, 2);
-			mger.msg("MSSE cont: err="+err+" g_index="+g_index,2);  // itc: HERE rm asap
 		}
 		return res;
 	}

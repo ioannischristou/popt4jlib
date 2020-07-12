@@ -84,11 +84,15 @@ public class FFNN4TrainB extends FFNN4Train {
 				num_wgts += num_layer_inputs+1;  // weights of output node
 				for (int j=0; j<hiddenLayers[0].length; j++) {
 					hiddenLayers[0][j].setTotalNumWeights(num_wgts);
+					hiddenLayers[0][j].setNodeLayer(0);
+					hiddenLayers[0][j].setPositionInLayer(j);
 				}
 			}
 			for (int j=0; j<li.length; j++) {
 				NNNodeIntf n_ij = li[j];
 				n_ij.setFFNN4TrainB(this);
+				n_ij.setNodeLayer(i);
+				n_ij.setPositionInLayer(j);
 				final int len = i>0 ? hiddenLayers[i-1].length : num_input_signals;
 				n_ij.setWeightRange(pos, pos+len);
 				System.err.println("node_"+i+","+j+" = "+n_ij);  // itc: HERE rm asap
@@ -97,6 +101,8 @@ public class FFNN4TrainB extends FFNN4Train {
 		}
 		final OutputNNNodeIntf outnode = getOutputNode();
 		outnode.setFFNN4TrainB(this);
+		outnode.setNodeLayer(num_layers);
+		outnode.setPositionInLayer(0);
 		outnode.setWeightRange(pos, pos+hiddenLayers[hiddenLayers.length-1].length);
 		_costFunc.setFFNN(this);
 	}
@@ -350,23 +356,56 @@ public class FFNN4TrainB extends FFNN4Train {
 	 * @return double 
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index, HashMap p) {
+		final Messenger mger = Messenger.getInstance();
 		final double[][] traindata = (double[][]) p.get("ffnn.traindata");
 		final double[] trainlabels = (double[]) p.get("ffnn.trainlabels");
 		final int num_instances = traindata.length;
-		
+		long st = -1;
+		if (mger.getDebugLvl()>=1) st = System.currentTimeMillis();
+		HashMap p2 = new HashMap(p);
+		// remove the hiddenws$i$ and outputws from p2
+		int num_layers = getNumHiddenLayers();
+		for (int i=0; i<num_layers; i++) p2.remove("hiddenws"+i);
+		p2.remove("outputws");
 		double result;
 		double[] results = new double[num_instances];
 		for (int i=0; i<num_instances; i++) results[i] = Double.NaN;
+		// main loop over the training instances
 		for (int i=0; i<num_instances; i++) {
+			resetDerivCaches();
 			final double[] train_instance = traindata[i];
 			final double train_lbl = trainlabels[i];
 			double ri = _costFunc.evalPartialDerivativeB(weights, index, 
 				                                           train_instance, train_lbl, 
-																									 p);
+																									 p2);
 			results[i] = ri;
 		}
+		// end main loop
 		result = _costFunc.evalPartialDerivativeB(results);
+		if (mger.getDebugLvl()>=1) {
+			long d2 = System.currentTimeMillis()-st;
+			mger.msg("FFNN4TrainB.evalPartialDerivativeB(index="+index+")"+
+				       " with training set size="+traindata.length+" took "+
+				       d2+" msecs",1);
+		}
 		return result;
+	}
+	
+	
+	/**
+	 * resets the derivative-related cache of every node in this ffnn.
+	 */
+	private void resetDerivCaches() {
+		BaseNNNode outn = (BaseNNNode) getOutputNode();
+		outn.resetCache();
+		NNNodeIntf[][] hnodes = getHiddenLayers();
+		for (int i=0; i<hnodes.length; i++) {
+			final int ilen = hnodes[i].length;
+			for (int j=0; j<ilen; j++) {
+				BaseNNNode hnij = (BaseNNNode) hnodes[i][j];
+				hnij.resetCache();
+			}
+		}
 	}
 	
 	
