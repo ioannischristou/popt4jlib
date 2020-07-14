@@ -34,7 +34,7 @@ public class BaseNNNode {
 	 */
 	private ThreadLocal _lastDerivEvalCache = new ThreadLocal() {
     protected Object initialValue() {
-      return new Double(Double.NaN);
+      return _NaN;
     }
   };
 	
@@ -60,6 +60,17 @@ public class BaseNNNode {
 	public void setTotalNumWeights(int num_weights) {
 		if (_antecedentWeights==null)
 			_antecedentWeights = new BoolVector(num_weights);
+	}
+	
+	
+	/**
+	 * return the total number of weight variables (including bias terms) for the 
+	 * network this node belongs to. The <CODE>finalizeInitialization(num)</CODE>
+	 * method of the containing network must have been called first.
+	 * @return int
+	 */
+	public int getTotalNumWeights() {
+		return _antecedentWeights.reqSize();
 	}
 	
 	

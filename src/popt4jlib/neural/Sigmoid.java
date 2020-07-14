@@ -19,6 +19,8 @@ import utils.Messenger;
  */
 public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 	
+	private final static Messenger _mger = Messenger.getInstance();
+	
 	private Linear _linearUnit = new Linear();  // used to compute node input sum
 	
 	private double _a = 5.0;  // reasonable values for a in (1,10)
@@ -128,24 +130,25 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] inputSignals, double true_lbl,
 																			 HashMap p) {
-		Messenger mger = Messenger.getInstance();
 		// 0. see if the value is already computed before
 		double cache = getLastDerivEvalCache();
-		if (!Double.isNaN(cache)) return cache;
+		if (!Double.isNaN(cache)) {
+			return cache;
+		}
 		// 1. if index is after input weights, derivative is zero
 		if (index > _biasInd) {
 			final double result = 0.0;
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
 				String isstr="[ ";
 				for (int i=0; i<inputSignals.length; i++) isstr += inputSignals[i]+" ";
 				isstr += "]";
-				mger.msg("Sigmoid<"+_startWeightInd+
-					       ">.evalPartialDerivativeB(weights="+wstr+
-					       ", index="+index+
-						     ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+				_mger.msg("Sigmoid<"+_startWeightInd+
+				 	        ">.evalPartialDerivativeB(weights="+wstr+
+					        ", index="+index+
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -204,17 +207,17 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 				}
 			}
 			final double result = sPrime(node_input);
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
 				String isstr="[ ";
 				for (int i=0; i<inputSignals.length; i++) isstr += inputSignals[i]+" ";
 				isstr += "]";
-				mger.msg("Sigmoid<"+_startWeightInd+
-					       ">.evalPartialDerivativeB(weights="+wstr+
-					       ", index="+index+
-						     ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+				_mger.msg("Sigmoid<"+_startWeightInd+
+				 	        ">.evalPartialDerivativeB(weights="+wstr+
+					        ", index="+index+
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -257,7 +260,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 						double node_input = 
 							_linearUnit.evalB(layer_i_inputs, weights, pos);
 						double result = sPrime(node_input)*layer_i_inputs[index-pos]; 
-						if (mger.getDebugLvl()>=2) {
+						if (_mger.getDebugLvl()>=2) {
 							String wstr="[ ";
 								for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 								wstr += "]";
@@ -265,11 +268,11 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 								for (int k=0; k<inputSignals.length; k++) 
 									isstr += inputSignals[k]+" ";
 								isstr += "]";
-								mger.msg("Sigmoid<"+_startWeightInd+
-					               ">.evalPartialDerivativeB(weights="+wstr+
-					               ", index="+index+
-						             ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-									       result, 2);
+								_mger.msg("Sigmoid<"+_startWeightInd+
+					                ">.evalPartialDerivativeB(weights="+wstr+
+					                ", index="+index+
+						              ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
+									        result, 2);
 						}
 						setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
 						setLastDerivEvalCache(result);
@@ -283,7 +286,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 			if (output_node==this) {  // our node is the output node
   			double node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 				double result = sPrime(node_input)*layer_i_inputs[index-pos];
-				if (mger.getDebugLvl()>=2) {
+				if (_mger.getDebugLvl()>=2) {
 					String wstr="[ ";
 					for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 					wstr += "]";
@@ -291,11 +294,11 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 					for (int k=0; k<inputSignals.length; k++) 
 						isstr += inputSignals[k]+" ";
 					isstr += "]";
-					mger.msg("Sigmoid<"+_startWeightInd+
-					         ">.evalPartialDerivativeB(weights="+wstr+
-					         ", index="+index+
-					         ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-					         result, 2);
+					_mger.msg("Sigmoid<"+_startWeightInd+
+					          ">.evalPartialDerivativeB(weights="+wstr+
+					          ", index="+index+
+					          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
+					          result, 2);
 				}				
 				setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
 				setLastDerivEvalCache(result);
@@ -308,7 +311,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 		//    belongs to with another node of this layer (but not this node), 
 		//    result is zero
 		else if (!isWeightVariableAntecedent(index)) {
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -316,10 +319,10 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 				for (int k=0; k<inputSignals.length; k++) 
 					isstr += inputSignals[k]+" ";
 				isstr += "]";
-				mger.msg("Sigmoid<"+_startWeightInd+
-				         ">.evalPartialDerivativeB(weights="+wstr+
-				         ", index="+index+
-				         ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
+				_mger.msg("Sigmoid<"+_startWeightInd+
+				          ">.evalPartialDerivativeB(weights="+wstr+
+				          ", index="+index+
+				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
 			}				
 			setLastDerivEvalCache(0.0);
 			return 0.0;
@@ -401,7 +404,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 																											  p);
 			}
 			result *= sPrime(node_input);
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -409,11 +412,11 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 				for (int k=0; k<inputSignals.length; k++) 
 					isstr += inputSignals[k]+" ";
 				isstr += "]";
-				mger.msg("Sigmoid<"+_startWeightInd+
-				         ">.evalPartialDerivativeB(weights="+wstr+
-				         ", index="+index+
-				         ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-				         result, 2);
+				_mger.msg("Sigmoid<"+_startWeightInd+
+				          ">.evalPartialDerivativeB(weights="+wstr+
+				          ", index="+index+
+				          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
+				          result, 2);
 			}							
 			setLastDerivEvalCache(result);
 			return result;

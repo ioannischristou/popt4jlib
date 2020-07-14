@@ -19,6 +19,8 @@ import utils.Messenger;
  */
 public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 	
+	private final static Messenger _mger = Messenger.getInstance();
+	
 	/**
 	 * public no-arg no-op constructor.
 	 */
@@ -161,24 +163,23 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] inputSignals, double true_lbl,
 																			 HashMap p) {
-		Messenger mger = Messenger.getInstance();
 		// 0. see if the value is already computed before
 		double cache = getLastDerivEvalCache();
 		if (!Double.isNaN(cache)) return cache;
 		// 1. if index is after input weights, derivative is zero
 		if (index > _biasInd) {
 			final double result = 0.0;
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
 				String isstr="[ ";
 				for (int i=0; i<inputSignals.length; i++) isstr += inputSignals[i]+" ";
 				isstr += "]";
-				mger.msg("Linear<"+_startWeightInd+
-					       ">.evalPartialDerivativeB(weights="+wstr+
-					       ", index="+index+
-						     ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+				_mger.msg("Linear<"+_startWeightInd+
+				 	        ">.evalPartialDerivativeB(weights="+wstr+
+					        ", index="+index+
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -186,14 +187,14 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 		// 2. if index is for bias, derivative is one
 		else if (index == _biasInd) {
 			final double result = 1.0;
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
 				String isstr="[ ";
 				for (int i=0; i<inputSignals.length; i++) isstr += inputSignals[i]+" ";
 				isstr += "]";
-				mger.msg("Linear<"+_startWeightInd+
+				_mger.msg("Linear<"+_startWeightInd+
 					       ">.evalPartialDerivativeB(weights="+wstr+
 					       ", index="+index+
 						     ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
@@ -236,7 +237,7 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 					NNNodeIntf node_i_j = layeri[j];
 					if (node_i_j == this) {  // this is the node we're looking for
 						double result = layer_i_inputs[index-pos];
-						if (mger.getDebugLvl()>=2) {
+						if (_mger.getDebugLvl()>=2) {
 							String wstr="[ ";
 								for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 								wstr += "]";
@@ -244,11 +245,11 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 								for (int k=0; k<inputSignals.length; k++) 
 									isstr += inputSignals[k]+" ";
 								isstr += "]";
-								mger.msg("Linear<"+_startWeightInd+
-					               ">.evalPartialDerivativeB(weights="+wstr+
-					               ", index="+index+
-						             ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-									       result, 2);
+								_mger.msg("Linear<"+_startWeightInd+
+					                ">.evalPartialDerivativeB(weights="+wstr+
+					                ", index="+index+
+						              ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
+									        result, 2);
 						}
 						setLastInputsCache(layer_i_inputs);  // cache the layer_i_inputs too
 						setLastDerivEvalCache(result);
@@ -261,7 +262,7 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 			}	
 			if (output_node==this) {  // our node is the output node
 				double result = layer_i_inputs[index-pos];
-				if (mger.getDebugLvl()>=2) {
+				if (_mger.getDebugLvl()>=2) {
 					String wstr="[ ";
 					for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 					wstr += "]";
@@ -269,11 +270,11 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 					for (int k=0; k<inputSignals.length; k++) 
 						isstr += inputSignals[k]+" ";
 					isstr += "]";
-					mger.msg("Linear<"+_startWeightInd+
-					         ">.evalPartialDerivativeB(weights="+wstr+
-					         ", index="+index+
-					         ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-					         result, 2);
+					_mger.msg("Linear<"+_startWeightInd+
+					          ">.evalPartialDerivativeB(weights="+wstr+
+					          ", index="+index+
+					          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
+					          result, 2);
 				}				
 				setLastInputsCache(layer_i_inputs);  // cache the last inputs too
 				setLastDerivEvalCache(result);
@@ -286,7 +287,7 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 		//    belongs to with another node of this layer (but not this node), 
 		//    result is zero
 		else if (!isWeightVariableAntecedent(index)) {
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -294,10 +295,10 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 				for (int k=0; k<inputSignals.length; k++) 
 					isstr += inputSignals[k]+" ";
 				isstr += "]";
-				mger.msg("Linear<"+_startWeightInd+
-				         ">.evalPartialDerivativeB(weights="+wstr+
-				         ", index="+index+
-				         ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
+				_mger.msg("Linear<"+_startWeightInd+
+				          ">.evalPartialDerivativeB(weights="+wstr+
+				          ", index="+index+
+				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
 			}
 			setLastDerivEvalCache(0.0);
 			return 0.0;
@@ -326,7 +327,7 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 										                                    inputSignals, true_lbl,
 																												p);
 			}
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -334,11 +335,11 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 				for (int k=0; k<inputSignals.length; k++) 
 					isstr += inputSignals[k]+" ";
 				isstr += "]";
-				mger.msg("Linear<"+_startWeightInd+
-				         ">.evalPartialDerivativeB(weights="+wstr+
-				         ", index="+index+
-				         ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-				         result, 2);
+				_mger.msg("Linear<"+_startWeightInd+
+				          ">.evalPartialDerivativeB(weights="+wstr+
+				          ", index="+index+
+				          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
+				          result, 2);
 			}							
 			setLastDerivEvalCache(result);
 			return result;

@@ -93,6 +93,14 @@ public interface NNNodeIntf extends Serializable {
 	
 	
 	/**
+	 * gets the total number of weight variables (weights plus biases) for the 
+	 * FFNN that this node participates in.
+	 * @return int
+	 */
+	public int getTotalNumWeights();
+	
+	
+	/**
 	 * sets the range of indices in the weights vector variable that are fed into
 	 * this node. These are the weights that are directly input to this node and 
 	 * includes the bias variable weight for this node.

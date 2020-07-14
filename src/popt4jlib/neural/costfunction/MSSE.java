@@ -16,6 +16,9 @@ import java.util.HashMap;
  * @version 1.0
  */
 public class MSSE implements FFNNCostFunctionIntf {
+	
+	private final static Messenger _mger = Messenger.getInstance();
+	
 	private FFNN4TrainB _ffnn;
 	
 	/**
@@ -80,7 +83,6 @@ public class MSSE implements FFNNCostFunctionIntf {
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] input_signals, double true_lbl, 
 																			 HashMap p) {
-		Messenger mger = Messenger.getInstance();
 		// evaluate the output node of this network on the (x,y) training pair
 		// compute the output node's derivative, and double the product of the two
 		OutputNNNodeIntf outn = _ffnn.getOutputNode();
@@ -99,16 +101,16 @@ public class MSSE implements FFNNCostFunctionIntf {
 		double g_index = outn.evalPartialDerivativeB(weights, index, 
 			                                           input_signals, true_lbl, p);
 		final double res = 2.0*err*g_index;
-		if (mger.getDebugLvl()>=2) {
+		if (_mger.getDebugLvl()>=2) {
 			String wstr="[ ";
 			for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 			wstr += "]";
 			String isstr="[ ";
 			for (int i=0; i<input_signals.length; i++) isstr += input_signals[i]+" ";
 			isstr += "]";
-			mger.msg("MSSE.evalPartialDerivativeB(weights="+wstr+
-				       ", index="+index+
-					     ", input_signals="+isstr+", lbl="+true_lbl+",p)="+res, 2);
+			_mger.msg("MSSE.evalPartialDerivativeB(weights="+wstr+
+			 	        ", index="+index+
+					      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+res, 2);
 		}
 		return res;
 	}

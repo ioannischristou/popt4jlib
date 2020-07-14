@@ -32,6 +32,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/VecUtil.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RastriginFunctionGrad.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/Norm2Function.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/SimpleFasterMsgPassingCoordinator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansCC.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/MCS.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/fcg_test_props.txt</file>
@@ -39,7 +40,6 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FFNN4Train.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/analysis/IntegralApproximator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutorClt.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/Messenger.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/ParallelBatchTaskExecutor.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/stochastic/Adam.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_train_grid_data_ALLattrs_props_sgd.txt</file>
@@ -50,7 +50,6 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoisson.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/poisson/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonOpt.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/MSSE.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/avd_test_props.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/AlternatingVariablesDescent.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FCGTest.java</file>
@@ -115,6 +114,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/det/sSTCdetFixedTOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/TrainData.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_train_test_props5.txt</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/UnboundedMsgPassingCoordinator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/ShiftedArgFunctionBase.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RosenbrockFunctionGrad.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/asd_test_props.txt</file>
@@ -156,6 +156,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansNormSqrEvaluator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/L1Norm.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/Debug.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/DMCoordinator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1Vector2DblArray1AdapterFunction.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/KDDCup992NumericCSVFileFormatConverter.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/package.html</file>
@@ -170,7 +171,6 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/LimitedTimeTaskExecutor.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RosenbrockFunctionCEC20XXShifted.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/SGD4FFNN.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/IntVarArray1AlleleMutationOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/optffnnrundbatch.bat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/ThreadAccessTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/InputSignalMaxPosSelector.java</file>

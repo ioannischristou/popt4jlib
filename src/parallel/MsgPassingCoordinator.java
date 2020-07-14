@@ -51,8 +51,10 @@ public class MsgPassingCoordinator {
   private static MsgPassingCoordinator _instance=null;
   private static HashMap _instances=new HashMap();  // map<String name, 
 	                                                  //     MPC instance>
+	
+	private final static utils.Messenger _mger = utils.Messenger.getInstance();
 
-
+	
   /**
    * private constructor in accordance with the Singleton Design Pattern
    */
@@ -167,7 +169,7 @@ public class MsgPassingCoordinator {
     */
     while (_data.size()>= _maxSize) {
       try {
-				utils.Messenger.getInstance().msg(
+				_mger.msg(
 					"WARNING: MsgPassingCoordinator.sendDataBlocking(myid,data): "+
 					"data queue is full.",0);
         wait();
@@ -228,7 +230,7 @@ public class MsgPassingCoordinator {
     if (myid==threadId) throw new ParallelException("cannot send to self");
     while (_data.size()>= _maxSize) {
       try {
-				utils.Messenger.getInstance().msg(
+				_mger.msg(
 					"WARNING: MsgPassingCoordinator.sendDataBlocking(myid,tid,data): "+
 					"data queue is full.",0);
         wait();

@@ -19,6 +19,8 @@ import utils.Messenger;
  */
 public class ReLU extends BaseNNNode implements NNNodeIntf {
 	
+	private final static Messenger _mger = Messenger.getInstance();
+	
 	private Linear _linearUnit = new Linear();  // used to compute node input sum
 	
 	
@@ -126,24 +128,23 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] inputSignals, double true_lbl,
 																			 HashMap p) {
-		Messenger mger = Messenger.getInstance();
 		// 0. see if the value is already computed before
 		double cache = getLastDerivEvalCache();
 		if (!Double.isNaN(cache)) return cache;
 		// 1. if index is after input weights, derivative is zero
 		if (index > _biasInd) {
 			final double result = 0.0;
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
 				String isstr="[ ";
 				for (int i=0; i<inputSignals.length; i++) isstr += inputSignals[i]+" ";
 				isstr += "]";
-				mger.msg("ReLU<"+_startWeightInd+
-					       ">.evalPartialDerivativeB(weights="+wstr+
-					       ", index="+index+
-						     ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+				_mger.msg("ReLU<"+_startWeightInd+
+				 	        ">.evalPartialDerivativeB(weights="+wstr+
+					        ", index="+index+
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -205,17 +206,17 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 				throw new IllegalStateException("couldn't find this node in FFNN");
 			}
 			final double result = Double.compare(node_input,0) > 0 ? 1.0 : 0.0;
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
 				String isstr="[ ";
 				for (int i=0; i<inputSignals.length; i++) isstr += inputSignals[i]+" ";
 				isstr += "]";
-				mger.msg("ReLU<"+_startWeightInd+
-					       ">.evalPartialDerivativeB(weights="+wstr+
-					       ", index="+index+
-						     ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+				_mger.msg("ReLU<"+_startWeightInd+
+					        ">.evalPartialDerivativeB(weights="+wstr+
+					        ", index="+index+
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
 			}
 			setLastInputsCache(layer_i_inputs);
 			setLastDerivEvalCache(result);
@@ -262,7 +263,7 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 						double node_input=_linearUnit.evalB(layer_i_inputs,weights,pos);
 						double result = Double.compare(node_input, 0) > 0 ?
 							                layer_i_inputs[index-pos] : 0.0;
-						if (mger.getDebugLvl()>=2) {
+						if (_mger.getDebugLvl()>=2) {
 							String wstr="[ ";
 								for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 								wstr += "]";
@@ -270,11 +271,11 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 								for (int k=0; k<inputSignals.length; k++) 
 									isstr += inputSignals[k]+" ";
 								isstr += "]";
-								mger.msg("ReLU<"+_startWeightInd+
-					               ">.evalPartialDerivativeB(weights="+wstr+
-					               ", index="+index+
-						             ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-									       result, 2);
+								_mger.msg("ReLU<"+_startWeightInd+
+					                ">.evalPartialDerivativeB(weights="+wstr+
+					                ", index="+index+
+						              ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
+									        result, 2);
 						}
 						setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
 						setLastDerivEvalCache(result);
@@ -289,7 +290,7 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
   			double node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 				double result = Double.compare(node_input, 0) > 0 ?
 				                  layer_i_inputs[index-pos] : 0.0;
-				if (mger.getDebugLvl()>=2) {
+				if (_mger.getDebugLvl()>=2) {
 					String wstr="[ ";
 					for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 					wstr += "]";
@@ -297,11 +298,11 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 					for (int k=0; k<inputSignals.length; k++) 
 						isstr += inputSignals[k]+" ";
 					isstr += "]";
-					mger.msg("ReLU<"+_startWeightInd+
-					         ">.evalPartialDerivativeB(weights="+wstr+
-					         ", index="+index+
-					         ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-					         result, 2);
+					_mger.msg("ReLU<"+_startWeightInd+
+					          ">.evalPartialDerivativeB(weights="+wstr+
+					          ", index="+index+
+					          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
+					          result, 2);
 				}				
 				setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
 				setLastDerivEvalCache(result);
@@ -314,7 +315,7 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 		//    belongs to with another node of this layer (but not this node), 
 		//    result is zero
 		else if (!isWeightVariableAntecedent(index)) {
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -322,10 +323,10 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 				for (int k=0; k<inputSignals.length; k++) 
 					isstr += inputSignals[k]+" ";
 				isstr += "]";
-				mger.msg("ReLU<"+_startWeightInd+
-				         ">.evalPartialDerivativeB(weights="+wstr+
-				         ", index="+index+
-				         ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
+				_mger.msg("ReLU<"+_startWeightInd+
+				          ">.evalPartialDerivativeB(weights="+wstr+
+				          ", index="+index+
+				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
 			}				
 			setLastDerivEvalCache(0.0);
 			return 0.0;
@@ -408,7 +409,7 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 																												  p);
 				}
 			}
-			if (mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=2) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -416,11 +417,11 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 				for (int k=0; k<inputSignals.length; k++) 
 					isstr += inputSignals[k]+" ";
 				isstr += "]";
-				mger.msg("ReLU<"+_startWeightInd+
-				         ">.evalPartialDerivativeB(weights="+wstr+
-				         ", index="+index+
-				         ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-				         result, 2);
+				_mger.msg("ReLU<"+_startWeightInd+
+				          ">.evalPartialDerivativeB(weights="+wstr+
+				          ", index="+index+
+				          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
+				          result, 2);
 			}							
 			setLastDerivEvalCache(result);
 			return result;

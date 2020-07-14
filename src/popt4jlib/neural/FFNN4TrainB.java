@@ -28,6 +28,9 @@ import java.io.Serializable;
  */
 public class FFNN4TrainB extends FFNN4Train {
 		
+	private final static int _numDerivInputsPerTask = 4096;  // compile-time const
+	
+	private final static Messenger _mger = Messenger.getInstance();
 	
 	/**
 	 * 3-arg public constructor for serial training set evaluation (unless the 
@@ -95,7 +98,6 @@ public class FFNN4TrainB extends FFNN4Train {
 				n_ij.setPositionInLayer(j);
 				final int len = i>0 ? hiddenLayers[i-1].length : num_input_signals;
 				n_ij.setWeightRange(pos, pos+len);
-				System.err.println("node_"+i+","+j+" = "+n_ij);  // itc: HERE rm asap
 				pos += len+1;  // +1 is for bias term
 			}
 		}
@@ -105,6 +107,16 @@ public class FFNN4TrainB extends FFNN4Train {
 		outnode.setPositionInLayer(0);
 		outnode.setWeightRange(pos, pos+hiddenLayers[hiddenLayers.length-1].length);
 		_costFunc.setFFNN(this);
+	}
+
+	
+	/**
+	 * get the total number of weights variables (including biases) for this net.
+	 * @return 
+	 */
+	public int getTotalNumWeights() {
+		final NNNodeIntf[][] hiddenLayers = getHiddenLayers();
+		return hiddenLayers[0][0].getTotalNumWeights();
 	}
 	
 	
@@ -178,7 +190,6 @@ public class FFNN4TrainB extends FFNN4Train {
 	 * @return double
 	 */
 	public double eval(Object x, HashMap params) {
-		Messenger mger = Messenger.getInstance();
 		double result = 0.0;
 		// w is the weights+biases of the network connections
 		final double[] w = (x instanceof double[]) ?   
@@ -274,8 +285,9 @@ public class FFNN4TrainB extends FFNN4Train {
 				continue;
 			} 			
 			double[] inputs_t = train_vectors[t];
-			if (mger.getDebugLvl()>=3) {  // diagnostics
-				mger.msg(" FFNN4TrainB.eval(): WORKING ON DATA train_vectors["+t+"]",2);
+			if (_mger.getDebugLvl()>=3) {  // diagnostics
+				_mger.msg(" FFNN4TrainB.eval(): WORKING ON DATA train_vectors["+t+"]",
+					        2);
 			}
 			// compute from layer-0 to final hidden layer the node activations
 			int pos = 0;  // the position index in the vector w
@@ -290,23 +302,23 @@ public class FFNN4TrainB extends FFNN4Train {
 					NNNodeIntf node_i_j = layeri[j];
 					layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, w, pos);
 					// print out diagnostics
-					if (mger.getDebugLvl()>=3) {
-						mger.msg("  FFNN4TrainB.eval(): "+node_i_j.getNodeName()+"[layer="+
-							       i+"][index="+j+"]:",2);
+					if (_mger.getDebugLvl()>=3) {
+						_mger.msg("  FFNN4TrainB.eval(): "+node_i_j.getNodeName()+"[layer="+
+							        i+"][index="+j+"]:",2);
 						String inps = "[ ";
 						for (int k=0; k<layer_i_inputs.length; k++) {
 							inps += layer_i_inputs[k]+" ";
 						}
 						inps += "]";
-						mger.msg("   INPUTS="+inps, 2);
+						_mger.msg("   INPUTS="+inps, 2);
 						String ws = "[ ";
 						for (int k=0; k<layer_i_inputs.length; k++) {
 							ws += w[k+pos]+" ";
 						}
 						ws += w[layer_i_inputs.length+pos]+"(BIAS) ";
 						ws += "]";
-						mger.msg("   WEIGHTS="+ws, 2);
-						mger.msg("   "+node_i_j.getNodeName()+"[layer="+i+"][index="+j+
+						_mger.msg("   WEIGHTS="+ws, 2);
+						_mger.msg("   "+node_i_j.getNodeName()+"[layer="+i+"][index="+j+
 							       "] OUTPUT="+
 							       layeri_outputs[j], 2);
 					}  // diagnostics
@@ -316,23 +328,23 @@ public class FFNN4TrainB extends FFNN4Train {
 			}
 			double valt = output_node.evalB(layer_i_inputs, w, pos, train_labels[t]);
 			// print out diagnostics
-			if (mger.getDebugLvl()>=3) {
-				mger.msg("  FFNN4TrainB.eval(): OUTPUT "+output_node.getNodeName()+":", 
-					       2);
+			if (_mger.getDebugLvl()>=3) {
+				_mger.msg("  FFNN4TrainB.eval(): OUTPUT "+output_node.getNodeName()+":", 
+				          2);
 				String inps = "[ ";
 				for (int k=0; k<layer_i_inputs.length; k++) {
 					inps += layer_i_inputs[k]+" ";
 				}
 				inps += "]";
-				mger.msg("   INPUTS="+inps, 2);
+				_mger.msg("   INPUTS="+inps, 2);
 				String ws = "[ ";
 				for (int k=0; k<layer_i_inputs.length; k++) {
 					ws += w[k+pos]+" ";
 				}
 				ws += w[layer_i_inputs.length+pos]+"(BIAS) ";
 				ws += "]";
-				mger.msg("   WEIGHTS="+ws, 2);
-				mger.msg("  FINAL OUTPUT for train_data["+t+"] = "+valt, 2);				
+				_mger.msg("   WEIGHTS="+ws, 2);
+				_mger.msg("  FINAL OUTPUT for train_data["+t+"] = "+valt, 2);				
 			}  // diagnostics
 			errors[t] = (valt-train_labels[t]);
 		}
@@ -347,21 +359,26 @@ public class FFNN4TrainB extends FFNN4Train {
 	
 	/**
 	 * compute the partial derivative of the entire network with respect to the 
-	 * weight variable indexed by index.
+	 * weight variable indexed by index. Before calling this method, the 
+	 * <CODE>finalizeInitialization(n)</CODE> method must have been called first
+	 * on this object to set up the nodes in the neural net.
 	 * @param weights double[] the values array for the variables of the function
 	 * @param index int the index of the function to compute its partial 
 	 * derivative at (range in {0,1,...weights.length-1})
 	 * @param p HashMap must contain the "ffnn.traindata" and "ffnn.trainlabels"
-	 * keys.
+	 * keys, else the data will be fetched from the <CODE>TrainData</CODE> class.
 	 * @return double 
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index, HashMap p) {
-		final Messenger mger = Messenger.getInstance();
-		final double[][] traindata = (double[][]) p.get("ffnn.traindata");
-		final double[] trainlabels = (double[]) p.get("ffnn.trainlabels");
+		final double[][] traindata = p.containsKey("ffnn.traindata") ?
+			                             (double[][]) p.get("ffnn.traindata") :
+			                             TrainData.getTrainingVectors();
+		final double[] trainlabels = p.containsKey("ffnn.trainlabels") ?
+			                             (double[]) p.get("ffnn.trainlabels") :
+			                             TrainData.getTrainingLabels();
 		final int num_instances = traindata.length;
 		long st = -1;
-		if (mger.getDebugLvl()>=1) st = System.currentTimeMillis();
+		if (_mger.getDebugLvl()>=2) st = System.currentTimeMillis();
 		HashMap p2 = new HashMap(p);
 		// remove the hiddenws$i$ and outputws from p2
 		int num_layers = getNumHiddenLayers();
@@ -370,23 +387,66 @@ public class FFNN4TrainB extends FFNN4Train {
 		double result;
 		double[] results = new double[num_instances];
 		for (int i=0; i<num_instances; i++) results[i] = Double.NaN;
-		// main loop over the training instances
-		for (int i=0; i<num_instances; i++) {
-			resetDerivCaches();
-			final double[] train_instance = traindata[i];
-			final double train_lbl = trainlabels[i];
-			double ri = _costFunc.evalPartialDerivativeB(weights, index, 
-				                                           train_instance, train_lbl, 
-																									 p2);
-			results[i] = ri;
+		// are we going parallel?
+		// check if there is a PDBatchTaskExecutor to use
+		PDBatchTaskExecutor extor = (PDBatchTaskExecutor)p.get("ffnn.pdbtexecutor");
+		if (_extor!=null) {  // see if we have built-in parallel!
+			extor = _extor;
 		}
-		// end main loop
+		if (extor!=null) {  // create task-objects to do the work for each t
+			List tasks = 
+				new ArrayList((int)Math.ceil(num_instances/_numDerivInputsPerTask));
+      // List<FFNNMultiEvalPartialDerivTaskB>
+			int start = 0;
+			int end = _numDerivInputsPerTask;
+			while (end <= traindata.length) {
+				FFNNMultiEvalPartialDerivTaskB met = 
+					new FFNNMultiEvalPartialDerivTaskB(traindata, trainlabels,
+						                                 start, end-1,
+						                                 weights, index, p2);
+				tasks.add(met);
+				start = end;
+				end += _numDerivInputsPerTask;
+			}
+			if (end != traindata.length + _numDerivInputsPerTask) {  // remainder
+				FFNNMultiEvalPartialDerivTaskB met = 
+					new FFNNMultiEvalPartialDerivTaskB(traindata, trainlabels,
+						                                 start, traindata.length-1,
+						                                 weights, index, p2);
+				tasks.add(met);
+			}
+			try {
+				Vector resi = extor.executeBatch(tasks);
+				// every element of the resi vector is a double[]
+				int pos = 0;
+				for (int i=0; i<resi.size(); i++) {
+					double[] erri = (double[]) resi.get(i);
+					for (int j=0; j<erri.length; j++) results[pos++] = erri[j];
+				}
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}  // if extor != null
+		else {
+			// main sequential loop over the training instances
+			for (int i=0; i<num_instances; i++) {
+				resetDerivCaches();
+				final double[] train_instance = traindata[i];
+				final double train_lbl = trainlabels[i];
+				double ri = _costFunc.evalPartialDerivativeB(weights, index, 
+																										 train_instance, train_lbl, 
+																										 p2);
+				results[i] = ri;
+			}
+			// end main sequential loop
+		}
 		result = _costFunc.evalPartialDerivativeB(results);
-		if (mger.getDebugLvl()>=1) {
+		if (_mger.getDebugLvl()>=2) {
 			long d2 = System.currentTimeMillis()-st;
-			mger.msg("FFNN4TrainB.evalPartialDerivativeB(index="+index+")"+
+			_mger.msg("FFNN4TrainB.evalPartialDerivativeB(index="+index+")"+
 				       " with training set size="+traindata.length+" took "+
-				       d2+" msecs",1);
+				       d2+" msecs",2);
 		}
 		return result;
 	}
@@ -565,6 +625,71 @@ public class FFNN4TrainB extends FFNN4Train {
 			}
 			
 			return errors;
+		}
+		
+		
+	  public boolean isDone() {
+			throw new UnsupportedOperationException("not implemented");
+		}
+		public void copyFrom(TaskObject other) {
+			throw new UnsupportedOperationException("not implemented");
+		}
+	}
+	
+	
+	/**
+	 * auxiliary helper class, NOT part of the API.
+	 */
+	class FFNNMultiEvalPartialDerivTaskB implements TaskObject {
+		private double[][] _inputs;
+		private double[] _labels;
+		private int _start;
+		private int _end;
+		private double[] _weights;
+		private int _index;
+		private HashMap _p2;
+
+
+		/**
+		 * sole constructor.
+		 * @param train_data double[][]
+		 * @param train_labels double[]
+		 * @param start int inclusive
+		 * @param end int inclusive
+		 * @param weights double[]
+		 * @param index int
+		 * @param p2 HashMap
+		 */
+		public FFNNMultiEvalPartialDerivTaskB(double[][] train_data, 
+			                                    double[] train_labels,
+																					int start, int end,
+																					double[] weights, int index, 
+																					HashMap p2) {
+			_inputs = train_data;
+			_labels = train_labels;
+			_start = start;
+			_end = end;
+			_weights = weights;
+			_index = index;
+			_p2 = new HashMap(p2);
+		}
+		
+		
+		/**
+		 * runs the required partial derivative evaluation method in parallel.
+		 * @return double[]
+		 */
+		public Serializable run() {
+			final int len = _end-_start+1;
+			double[] results = new double[len];
+			int cnt = 0;
+			for (int i=_start; i<=_end; i++) {
+				resetDerivCaches();
+				results[cnt++] = _costFunc.evalPartialDerivativeB(_weights, _index, 
+					                                                _inputs[i],_labels[i], 
+																											    _p2);
+			}
+			return results;
 		}
 		
 		
