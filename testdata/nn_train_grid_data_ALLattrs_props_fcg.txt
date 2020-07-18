@@ -1,0 +1,42 @@
+dbglvl,1
+# the following defines an ANN and weights on the nn's connections
+# the ANN looks like this:
+# INP L0    L1    OUT
+# x1
+# x2  N00   N10   
+# x3  N01   N11   
+# x4  ...   ...   y
+# x5  ...   ...
+# ... ...   N20
+# ... N09
+# x14
+class,outputlayer,popt4jlib.neural.Linear
+arrayofcopies,layer1_arr,10,popt4jlib.neural.ReLU
+arrayofcopies,layer3_arr,11,popt4jlib.neural.ReLU
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer3_arr
+# normalized train data:
+#matrix-1_1,ffnn.traindata,testdata/grid_data_ALLattrs_train_small.dat
+matrix-1_1,ffnn.traindata,testdata/grid_data_ALLattrs_train.dat
+# train labels
+#dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train_small.dat.lbls
+dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train.dat.lbls
+fcg.numdimensions,283
+class,costfunc,popt4jlib.neural.costfunction.MSSE
+class,fcg.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,8
+class,fcg.gradient,popt4jlib.neural.FFNN4TrainBGrad,fcg.function,14
+fcg.functionargmaxval,1.0
+fcg.functionargminval,-1.0
+#rndgen,7,4
+fcg.numthreads,1
+fcg.numtries,1
+fcg.maxiters,100000
+fcg.gtol,1.e-5
+#fcg.fbar,0.0
+fcg.maxbracketingiters,10
+fcg.maxsectioningiters,30
+# optimizer props
+class,ffnn.mainoptimizer,popt4jlib.GradientDescent.FletcherConjugateGradient
+ref,opt.function,fcg.function
+#opt.numthreads,4
+#rndgen,7,4
+ffnn.outputlabelsfile,testdata/result_grid_data_ALLattrs_trainlabels.dat

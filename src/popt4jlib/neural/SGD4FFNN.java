@@ -109,7 +109,10 @@ public class SGD4FFNN implements LocalOptimizerIntf {
 	 * thrown.
    * <li> &lt;"sgd.gradient", VecFunctionIntf g&gt; optional the gradient of f,
    * the function to be minimized. If this param-value pair does not exist, the
-   * gradient will be computed via Richardson finite differences extrapolation.
+   * auto-gradient <CODE>FFNN4TrainBGrad</CODE> will be used instead of the 
+	 * common Richardson interpolation scheme which suffers from high computation
+	 * cost plus leads to inaccuracies in some cases of nodes that are not 
+	 * differentiable everywhere.
    * <li> &lt;"sgd.gtol", Double v&gt; optional, the minimum abs. value for 
 	 * each of the gradient's coordinates, below which if all coordinates of the 
 	 * gradient happen to be, the search stops assuming it has reached a 
@@ -168,6 +171,35 @@ public class SGD4FFNN implements LocalOptimizerIntf {
         _inc = null;
         _incValue = Double.MAX_VALUE;  // reset
       }
+			FunctionIntf func = f;
+			if (!(func instanceof FFNN4Train)) {  // it's a wrapper function, and the
+				// underlying function is stored in params in opt.function
+				func = (FFNN4Train) _params.get("opt.function");
+			}
+			if (func instanceof FFNN4TrainB) {
+				if (!((FFNN4TrainB)func).isInitialized()) {
+					// finalize initialization of f
+					double[][] matrix = (double[][]) _params.get("ffnn.traindata");
+					if (matrix==null) {
+						String tdatafile = (String) _params.get("ffnn.traindatafile");
+						String tlabelsfile = (String) _params.get("ffnn.trainlabelsfile");
+						try {
+							TrainData.readTrainingDataFromFiles(tdatafile, tlabelsfile);
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+							throw new OptimizerException("_params doesn't contain "+
+																					 "ffnn.traindata/trainlabels and "+
+																					 " couldn't read "+
+																					 tdatafile+" and/or "+tlabelsfile+
+																					 " either...");
+						}
+						matrix = TrainData.getTrainingVectors();
+					}
+					final int num_input_signals = matrix[0].length;
+					((FFNN4TrainB) func).finalizeInitialization(num_input_signals);
+				}
+			}
       int numthreads = 1;
       try {
         Integer ntI = (Integer) _params.get("sgd.numthreads");
@@ -332,7 +364,23 @@ public class SGD4FFNN implements LocalOptimizerIntf {
 			
 			Messenger mger = Messenger.getInstance();
       VecFunctionIntf grad = (VecFunctionIntf) p.get("sgd.gradient");
-      if (grad==null) grad = new GradApproximator(f);  
+      if (grad==null) {  
+        // used to be: grad = new GradApproximator(f);
+				if (f instanceof FFNN4TrainB) {
+					FFNN4TrainB f2 = (FFNN4TrainB) f;  // it is already finalized
+					grad = new FFNN4TrainBGrad(f2);
+				}
+				else if (p.containsKey("opt.function")) {
+					FFNN4Train f2 = (FFNN4Train) p.get("opt.function");
+					if (f2 instanceof FFNN4TrainB) {
+						grad = new FFNN4TrainBGrad((FFNN4TrainB)f2);  // it's already inited
+					}
+				}
+				if (grad==null) {  // nope, still null
+					mger.msg("SGD4FFNN.min(): reverting to using GradApproximator", 0);
+					grad = new GradApproximator(f);
+				}
+			}
       // default: numeric computation of gradient
       VectorIntf x0 = 
 			  _params.containsKey("sgd.x"+solindex)==false ?
@@ -400,7 +448,7 @@ public class SGD4FFNN implements LocalOptimizerIntf {
 			final Random r = RndUtil.getInstance(_uid).getRandom();			
 			// start main iteration loop
       for (int iter=0; iter<maxiters; iter++) {
-	      mger.msg("SGD4FFNNThread.min(): #iters="+iter+" solindex="+solindex, 2);
+	      mger.msg("SGD4FFNNThread.min(): #iters="+iter+" solindex="+solindex, 1);
 				if (_randombatchsize>0 && iter % decay_period==0) { 
           // set the training set to new mini-batch
 					double prob_enter = _randombatchsize/((double) all_train_data.length);
@@ -421,13 +469,13 @@ public class SGD4FFNN implements LocalOptimizerIntf {
 				}
 				VectorIntf g = grad.eval(x, p);
 		    double normg = VecUtil.norm(g,2);
-				mger.msg("SGD4FFNNThread.min(): normg="+normg,2);
+				mger.msg("SGD4FFNNThread.min(): normg="+normg,1);
 				fx = f.eval(x, p);
 				if (Double.compare(fx, best_val)<0) {
 					best_val = fx;
 					best_x = x.newInstance();
 				}
-				mger.msg("SGD4FFNNThread.min(): f(x)="+fx, 2);
+				mger.msg("SGD4FFNNThread.min(): f(x)="+fx, 1);
 				mger.msg("x="+x, 3);
 				final double norminfg = VecUtil.normInfinity(g);
         if (norminfg <= gtol) {

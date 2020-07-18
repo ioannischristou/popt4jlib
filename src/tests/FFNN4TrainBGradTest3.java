@@ -52,7 +52,7 @@ public class FFNN4TrainBGradTest3 {
 			
 			for (int k=0; k<num_tries; k++) {
 				// create random weights values
-				for (int j=0; j<num_weights; j++) weights[j] = r.nextDouble();
+				for (int j=0; j<num_weights; j++) weights[j] = 10*r.nextGaussian();
 				
 				GradApproximator g_approx = new GradApproximator(ffnnb);
 				VectorIntf x = new DblArray1Vector(weights);

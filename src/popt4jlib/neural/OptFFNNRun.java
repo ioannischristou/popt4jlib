@@ -1,7 +1,5 @@
 package popt4jlib.neural;
 
-import java.io.FileWriter;
-import java.io.PrintWriter;
 import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.*;
 import java.util.*;
@@ -9,6 +7,8 @@ import parallel.distributed.PDBatchTaskExecutor;
 import utils.DataMgr;
 import utils.LightweightParams;
 import utils.RndUtil;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 
 
 /**
@@ -97,6 +97,27 @@ public class OptFFNNRun {
       HashMap params = utils.DataMgr.readPropsFromFile(args[0]);
 			LightweightParams pl = new LightweightParams(params);
       FunctionIntf func = (FunctionIntf) pl.getObject("opt.function");
+			// get training data/labels from the start
+			// check for existence of the "ffnn.train[data|labels]file" key in which
+			// case we must invoke the TrainData.readTrainingDataFromFiles() function
+			if (params.containsKey("ffnn.traindatafile")) {
+				String tdatafile = (String) params.get("ffnn.traindatafile");
+				String tlabelsfile = (String) params.get("ffnn.trainlabelsfile");
+				TrainData.readTrainingDataFromFiles(tdatafile, tlabelsfile);
+			}
+			final double[][] matrix = params.containsKey("ffnn.traindata") ?
+				(double[][]) params.get("ffnn.traindata") :
+				TrainData.getTrainingVectors();
+			final double[] labels = params.containsKey("ffnn.trainlabels") ?
+			  (double[]) params.get("ffnn.trainlabels") :
+				TrainData.getTrainingLabels();			
+			// finalize ffnnb initialization in case it's a FFFNN4TrainB object 
+			// and needs initialization
+			if (func instanceof FFNN4TrainB) {
+				FFNN4TrainB f2 = (FFNN4TrainB) func;
+				if (!f2.isInitialized())
+					f2.finalizeInitialization(matrix[0].length);
+			}
       Integer maxfuncevalI = pl.getInteger("function.maxevaluationtime");
       Boolean doreentrantMT = pl.getBoolean("function.reentrantMT");
 			int nt = 1;
@@ -121,22 +142,67 @@ public class OptFFNNRun {
       params.put("function",wrapper_func);
 			OptimizerIntf opter = (OptimizerIntf) pl.getObject("ffnn.mainoptimizer");
 			opter.setParams(params);
-			// get training data/labels from the start
-			double[][] matrix = (double[][]) params.get("ffnn.traindata");
-			double[] labels = (double[]) params.get("ffnn.trainlabels");
       // check for an ObserverIntf
       ObserverIntf obs=(ObserverIntf) params.get("opt.observerlocaloptimizer");
       if (obs!=null) {
         ((GLockingObservableObserverBase) opter).registerObserver(obs);
         ((LocalOptimizerIntf) obs).setParams(params);
       }
-			// check for existence of the "ffnn.train[data|labels]file" key in which
-			// case we must invoke the TrainData.readTrainingDataFromFiles() function
-			if (params.containsKey("ffnn.traindatafile")) {
-				String tdatafile = (String) params.get("ffnn.traindatafile");
-				String tlabelsfile = (String) params.get("ffnn.trainlabelsfile");
-				TrainData.readTrainingDataFromFiles(tdatafile, tlabelsfile);
+
+      // register handle to show soln if we stop the program via ctrl-c
+      Runtime.getRuntime().addShutdownHook(new Thread() {
+        public void run() {
+					if (opter instanceof IncumbentProviderIntf) {
+							final double val = 
+								((IncumbentProviderIntf)opter).getIncumbentValue();
+						double[] arg=null;
+						try {
+							arg = 
+								(double[]) ((IncumbentProviderIntf)opter).getIncumbent();
+							
+						}
+						catch (ClassCastException e) {
+							VectorIntf arg2 = 
+								(VectorIntf) ((IncumbentProviderIntf)opter).getIncumbent();
+							arg = arg2.getDblArray1();  // makes copy, but nevermind here
+						}
+						if (arg==null) {
+							System.err.println("OptFFNN Shutdown hook: null weights...");
+							return;
+						}
+						System.out.println("best val found so far: "+val);
+						// compute accuracy
+						// first, add the "hiddenws$i$ and "outputws" key-value pairs in p
+						final FFNN4Train ft = (FFNN4Train) func;
+						final boolean include_biases = ft instanceof FFNN4TrainB;
+						final double[] all_weights = arg;
+						final int num_hidden_layers = ft.getNumHiddenLayers();
+						int num_data_features = matrix[0].length;
+						for (int l=0; l<num_hidden_layers; l++) {
+							double[][] wi = include_biases ?
+								ft.getLayerWeightsWithBias(l, all_weights, num_data_features) :
+								ft.getLayerWeights(l, all_weights, num_data_features);
+							params.put("hiddenws"+l, wi);
+						}
+						double[] outws = include_biases ? 
+															 ft.getOutputWeightsWithBias(all_weights) :
+															 ft.getOutputWeights(all_weights);
+						params.put("outputws", outws);
+						int num_errors = 0;
+						for (int row=0; row<matrix.length; row++) {
+							double c_label = ft.evalNetworkOnInputData(matrix[row], params);
+							// calculate the number of errors as well, assuming labels are
+							// integer -consecutive- numbers.
+							int comp_lbl = (int)Math.round(c_label);
+							if (comp_lbl != (int) labels[row]) ++num_errors;
+						}
+						final double acc = 100*(1.0-((double)num_errors)/labels.length);
+						System.out.println("accuracy on training set="+acc+"%");
+					}
+				}
 			}
+			);
+			
       utils.PairObjDouble p = opter.minimize(wrapper_func);
       double[] arg = null;
       try {
@@ -174,8 +240,7 @@ public class OptFFNNRun {
 					}
 					if (nt>1) {  
             // add an executor to the params to allow for parallel evaluation of 
-						// the FFNN4Train[B] function on the training dataset! Use as many 
-						// threads as there were islands on the DGA.
+						// the FFNN4Train[B] function on the training dataset! 
 						PDBatchTaskExecutor extor = 
 							PDBatchTaskExecutor.newPDBatchTaskExecutor(nt);
 						params.put("ffnn.pdbtexecutor",extor);
@@ -213,10 +278,11 @@ public class OptFFNNRun {
 			String outputlabelsfile = (String) params.get("ffnn.outputlabelsfile");
 			if (outputlabelsfile!=null) {
 				// first, add the "hiddenws$i$ and "outputws" key-value pairs in params
-				FFNN4Train ft = (FFNN4Train) func;
-				boolean include_biases = ft instanceof FFNN4TrainB;
-				double[] all_weights = arg;
+				final FFNN4Train ft = (FFNN4Train) func;
+				final boolean include_biases = ft instanceof FFNN4TrainB;
+				final double[] all_weights = arg;
 				final int num_hidden_layers = ft.getNumHiddenLayers();
+				/*
 				if (matrix==null || labels==null) {
 					// see if data can be read from "ffnn.train[data|labels]file" param
 					System.err.println("OptFFNNRun: matrix or labels is null, "+
@@ -228,6 +294,7 @@ public class OptFFNNRun {
 					if (trainlabelsfile!=null) 
 						labels = DataMgr.readDoubleLabelsFromFile(trainlabelsfile);
 				}
+				*/
 				int num_data_features = matrix[0].length;
 				for (int l=0; l<num_hidden_layers; l++) {
 					double[][] wi = include_biases ?

@@ -22,7 +22,7 @@ import java.util.*;
 public class FCGTest {
 
   /**
-   * public no-arg constructor
+   * public no-arg constructor.
    */
   public FCGTest() {
   }
@@ -124,18 +124,20 @@ public class FCGTest {
       Random r = RndUtil.getInstance().getRandom();
 			for (int i=0; i<numtries; i++) {
         VectorIntf x0 = new DblArray1Vector(new double[n]);
-        for (int j=0; j<n; j++) {
-          double maxargvalj = maxargval;
-          Double maxargvaljD = (Double) params.get("fcg.functionargmaxval"+j);
-          if (maxargvaljD!=null && maxargvaljD.doubleValue()<maxargval)
-            maxargvalj = maxargvaljD.doubleValue();
-          double minargvalj = minargval;
-          Double minargvaljD = (Double) params.get("fcg.functionargminval"+j);
-          if (minargvaljD!=null && minargvaljD.doubleValue()>minargval)
-            minargvalj = minargvaljD.doubleValue();
-          double val = minargvalj + r.nextDouble()*(maxargvalj-minargvalj);
-          x0.setCoord(j, val);
-        }
+        //if (i>0) {  // when i==0, try the zero vector solution
+					for (int j=0; j<n; j++) {
+		        double maxargvalj = maxargval;
+			      Double maxargvaljD = (Double) params.get("fcg.functionargmaxval"+j);
+				    if (maxargvaljD!=null && maxargvaljD.doubleValue()<maxargval)
+					    maxargvalj = maxargvaljD.doubleValue();
+						double minargvalj = minargval;
+						Double minargvaljD = (Double) params.get("fcg.functionargminval"+j);
+						if (minargvaljD!=null && minargvaljD.doubleValue()>minargval)
+							minargvalj = minargvaljD.doubleValue();
+						double val = minargvalj + r.nextDouble()*(maxargvalj-minargvalj);
+						x0.setCoord(j, val);
+					}
+				//}
         params.put("fcg.x"+i, x0);
       }
       FletcherConjugateGradient opter = new FletcherConjugateGradient(params);

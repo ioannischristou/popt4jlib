@@ -1,10 +1,11 @@
 package popt4jlib.GradientDescent;
 
-import popt4jlib.LocalOptimizerIntf;
-import java.util.*;
-import utils.*;
-import analysis.*;
 import popt4jlib.*;
+import analysis.*;
+import utils.*;
+import parallel.ParallelException;
+import java.util.*;
+
 
 /**
  * Implementation of the Conjugate-Gradient method for nonlinear optimization,
@@ -21,7 +22,8 @@ import popt4jlib.*;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class FletcherConjugateGradient implements LocalOptimizerIntf {
+public class FletcherConjugateGradient implements LocalOptimizerIntf, 
+	                                                IncumbentProviderIntf {
   HashMap _params;
   private double _incValue=Double.MAX_VALUE;
   private VectorIntf _inc=null;  // incumbent vector
@@ -96,6 +98,9 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
 	 * pairs in the parameters or a pair 
 	 * &lt;"[gradientdescent.]x0",VectorIntf v&gt; 
 	 * pair in params). Default is 1.
+	 * Notice that when no such point x0 is contained in the parameters, a random
+	 * starting point is created. In this case, the parameters 
+	 * "fcg.functionarg[max|min]val[$i$]" and "fcg.numdimensions" must be present.
    * <li>&lt;fcg.numthreads", Integer nt&gt; optional, the number of threads to 
 	 * use. Default is 1.
    * <li>&lt;"fcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f, 
@@ -217,6 +222,24 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf {
    */
   public synchronized int getNumFailed() { return _numFailed; }
 
+	
+	/**
+	 * implementation of <CODE>IncumbentProviderIntf</CODE> method.
+	 * @return double  // may be Double.MAX_VALUE
+	 */
+	public synchronized double getIncumbentValue() {
+		return _incValue;
+	}
+	
+	
+	/**
+	 * implementation of <CODE>IncumbentProviderIntf</CODE> method.
+	 * @return Object  // VectorIntf may be null
+	 */
+	public synchronized Object getIncumbent() {
+		return _inc;
+	}
+	
 
   /**
    * sets the passed VectorIntf arg as the incumbent solution iff its val value
@@ -347,12 +370,40 @@ class FCGThread extends Thread {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("fcg.gradient");
     if (grad==null) 
 			grad = new GradApproximator(f);  // default: numeric gradient computation
-    final VectorIntf x0 = 
+    VectorIntf x0 = 
 			p.containsKey("fcg.x"+solindex)==false ?
          p.containsKey("gradientdescent.x0") ? 
 			    (VectorIntf) p.get("gradientdescent.x0") : 
 			      p.containsKey("x0") ? (VectorIntf) p.get("x0") : null // x0 exists?
 			: (VectorIntf) p.get("fcg.x"+solindex);
+			// if x0 is still null, check if "adam.numdimensions" is passed, in which 
+			// case, create a random starting point
+		if (x0==null && p.containsKey("fcg.numdimensions")) {
+      final double maxargval = p.containsKey("fcg.functionargmaxval") ?
+				((Double) p.get("fcg.functionargmaxval")).doubleValue() : 1.0;
+		  final double minargval = p.containsKey("fcg.functionargminval") ?
+				((Double) p.get("fcg.functionargminval")).doubleValue() : -1.0;
+			int n = ((Integer) p.get("fcg.numdimensions")).intValue();
+			x0 = new DblArray1Vector(n);
+			final Random r = RndUtil.getInstance(_uid).getRandom();
+			for (int j=0; j<n; j++) {
+        double maxargvalj = maxargval;
+	      Double maxargvaljD = (Double) p.get("fcg.functionargmaxval"+j);
+		    if (maxargvaljD!=null && maxargvaljD.doubleValue()<maxargval)
+			    maxargvalj = maxargvaljD.doubleValue();
+				double minargvalj = minargval;
+				Double minargvaljD = (Double) p.get("fcg.functionargminval"+j);
+				if (minargvaljD!=null && minargvaljD.doubleValue()>minargval)
+					minargvalj = minargvaljD.doubleValue();
+				double val = minargvalj + r.nextDouble()*(maxargvalj-minargvalj);
+				try {
+					x0.setCoord(j, val);
+				}
+				catch (ParallelException e) {  // cannot get here
+					e.printStackTrace();
+				}
+			}
+		}
     if (x0==null) 
 			throw new OptimizerException("no fcg.x"+solindex+
 				                           " initial point in _params passed");
@@ -429,6 +480,7 @@ class FCGThread extends Thread {
 				       ", prevh="+h+", fx="+fx,1);
       VectorIntf g = gnew==null ? grad.eval(x, p) : gnew;
       fx = f.eval(x, p);
+			_master.setIncumbent(x.newCopy(), fx);  // call incumbent update
       final double norminfg = VecUtil.normInfinity(g);
       final double normg = VecUtil.norm(g,2);
       if (Double.compare(norminfg, gtol) <= 0) {

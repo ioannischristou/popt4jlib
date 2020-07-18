@@ -28,9 +28,12 @@ import java.io.Serializable;
  */
 public class FFNN4TrainB extends FFNN4Train {
 		
-	private final static int _numDerivInputsPerTask = 4096;  // compile-time const
+	private final static int _numDerivInputsPerTask = 512;  // compile-time const
 	
 	private final static Messenger _mger = Messenger.getInstance();
+	
+	private boolean _isInited = false;
+	
 	
 	/**
 	 * 3-arg public constructor for serial training set evaluation (unless the 
@@ -71,7 +74,10 @@ public class FFNN4TrainB extends FFNN4Train {
 	 * this object.
 	 * @param num_input_signals int the number of input signals for this network.
 	 */
-	public void finalizeInitialization(int num_input_signals) {
+	public synchronized void finalizeInitialization(int num_input_signals) {
+		if (_isInited) {
+			throw new IllegalStateException("network has already been initialized");
+		}
 		final NNNodeIntf[][] hiddenLayers = getHiddenLayers();
 		final int num_layers = getNumHiddenLayers();
 		int pos = 0;
@@ -107,6 +113,18 @@ public class FFNN4TrainB extends FFNN4Train {
 		outnode.setPositionInLayer(0);
 		outnode.setWeightRange(pos, pos+hiddenLayers[hiddenLayers.length-1].length);
 		_costFunc.setFFNN(this);
+		_isInited = true;
+	}
+	
+	
+	/**
+	 * synchronized method that returns true if and only if the 
+	 * <CODE>finalizeInitialization(num)</CODE> method has been called on this
+	 * object.
+	 * @return boolean 
+	 */
+	public synchronized boolean isInitialized() {
+		return _isInited;
 	}
 
 	
@@ -431,7 +449,7 @@ public class FFNN4TrainB extends FFNN4Train {
 		else {
 			// main sequential loop over the training instances
 			for (int i=0; i<num_instances; i++) {
-				resetDerivCaches();
+				resetDerivCaches();  // critical for correct computation
 				final double[] train_instance = traindata[i];
 				final double train_lbl = trainlabels[i];
 				double ri = _costFunc.evalPartialDerivativeB(weights, index, 
@@ -684,7 +702,7 @@ public class FFNN4TrainB extends FFNN4Train {
 			double[] results = new double[len];
 			int cnt = 0;
 			for (int i=_start; i<=_end; i++) {
-				resetDerivCaches();
+				resetDerivCaches();  // critical for correct computation
 				results[cnt++] = _costFunc.evalPartialDerivativeB(_weights, _index, 
 					                                                _inputs[i],_labels[i], 
 																											    _p2);

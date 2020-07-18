@@ -1,9 +1,11 @@
 dbglvl,1
-class,outputlayer,popt4jlib.neural.Linear
+#class,outputlayer,popt4jlib.neural.Linear
+class,outputlayer,popt4jlib.neural.MultiClassSSE
 arrayofcopies,layer1_arr,10,popt4jlib.neural.Sigmoid,1.0
 arrayofcopies,layer3_arr,11,popt4jlib.neural.Sigmoid,1.0
 array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer3_arr
-class,costfunc,popt4jlib.neural.costfunction.MSSE
+#class,costfunc,popt4jlib.neural.costfunction.MSSE
+class,costfunc,popt4jlib.neural.costfunction.MAE
 class,ffnnb,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,8
 # normalized train data:
 matrix-1_1,ffnn.traindata,testdata/grid_data_ALLattrs_train.dat
