@@ -45,7 +45,10 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
-		return 1.0 / (1.0 + Math.exp(-_a*prod));
+		final double aprod = _a*prod;
+		if (Double.compare(aprod, 45)>0) return 1.0;
+		else if (Double.compare(aprod, -45)<0) return 0.0;  // if-else from weka
+		return 1.0 / (1.0 + Math.exp(-aprod));
 	}
 	
 	
@@ -61,7 +64,10 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
-		return 1.0 / (1.0 + Math.exp(-_a*prod));
+		final double aprod = _a*prod;
+		if (Double.compare(aprod, 45)>0) return 1.0;
+		else if (Double.compare(aprod, -45)<0) return 0.0;  // if-else from weka
+		return 1.0 / (1.0 + Math.exp(-aprod));
 	}
 
 	
@@ -77,7 +83,11 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
 		prod += weights[inputSignals.length];
-		double result = 1.0 / (1.0 + Math.exp(-_a*prod));
+		double result;
+		final double aprod = _a*prod;
+		if (Double.compare(aprod, 45)>0) result = 1.0;
+		else if (Double.compare(aprod, -45)<0) result = 0.0;  // if-else from weka
+		else result = 1.0 / (1.0 + Math.exp(-aprod));
 		// cache result for speeding up auto-differentiation
 		setLastInputsCache(inputSignals);
 		setLastEvalCache(result);
@@ -98,7 +108,11 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
 		prod += weights[offset+inputSignals.length];  // bias term
-		double result = 1.0 / (1.0 + Math.exp(-_a*prod));
+		double result;
+		final double aprod = _a*prod;
+		if (Double.compare(aprod, 45)>0) result = 1.0;
+		else if (Double.compare(aprod, -45)<0) result = 0.0;  // if-else from weka
+		else result = 1.0 / (1.0 + Math.exp(-aprod));
 		// cache result for speeding up auto-differentiation
 		setLastInputsCache(inputSignals);
 		setLastEvalCache(result);
@@ -138,7 +152,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 		// 1. if index is after input weights, derivative is zero
 		if (index > _biasInd) {
 			final double result = 0.0;
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
@@ -148,7 +162,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 				_mger.msg("Sigmoid<"+_startWeightInd+
 				 	        ">.evalPartialDerivativeB(weights="+wstr+
 					        ", index="+index+
-						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 5);
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -207,7 +221,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 				}
 			}
 			final double result = sPrime(node_input);
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
@@ -217,7 +231,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 				_mger.msg("Sigmoid<"+_startWeightInd+
 				 	        ">.evalPartialDerivativeB(weights="+wstr+
 					        ", index="+index+
-						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 5);
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -260,7 +274,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 						double node_input = 
 							_linearUnit.evalB(layer_i_inputs, weights, pos);
 						double result = sPrime(node_input)*layer_i_inputs[index-pos]; 
-						if (_mger.getDebugLvl()>=2) {
+						if (_mger.getDebugLvl()>=5) {
 							String wstr="[ ";
 								for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 								wstr += "]";
@@ -272,7 +286,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 					                ">.evalPartialDerivativeB(weights="+wstr+
 					                ", index="+index+
 						              ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-									        result, 2);
+									        result, 5);
 						}
 						setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
 						setLastDerivEvalCache(result);
@@ -286,7 +300,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 			if (output_node==this) {  // our node is the output node
   			double node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 				double result = sPrime(node_input)*layer_i_inputs[index-pos];
-				if (_mger.getDebugLvl()>=2) {
+				if (_mger.getDebugLvl()>=5) {
 					String wstr="[ ";
 					for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 					wstr += "]";
@@ -298,7 +312,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 					          ">.evalPartialDerivativeB(weights="+wstr+
 					          ", index="+index+
 					          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-					          result, 2);
+					          result, 5);
 				}				
 				setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
 				setLastDerivEvalCache(result);
@@ -311,7 +325,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 		//    belongs to with another node of this layer (but not this node), 
 		//    result is zero
 		else if (!isWeightVariableAntecedent(index)) {
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -322,7 +336,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 				_mger.msg("Sigmoid<"+_startWeightInd+
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
-				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
+				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 5);
 			}				
 			setLastDerivEvalCache(0.0);
 			return 0.0;
@@ -404,7 +418,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 																											  p);
 			}
 			result *= sPrime(node_input);
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -416,7 +430,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
 				          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-				          result, 2);
+				          result, 5);
 			}							
 			setLastDerivEvalCache(result);
 			return result;
@@ -430,10 +444,16 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	private double sPrime(double x) {
+		/*
 		double eax = Math.exp(-_a*x);
 		double oneplusexp2 = 1.0 + eax;
 		oneplusexp2 *= oneplusexp2;
-		return _a*eax / oneplusexp2; 
+		return _a*eax / oneplusexp2;
+		*/
+		if (Double.compare(Math.abs(_a*x), 45) > 0) return 0.0;  // from weka
+		final double eax = Math.exp(_a*x);
+		final double emax = Math.exp(-_a*x);
+		return _a / ((1.0+eax)*(1+emax));
 	}
 
 }

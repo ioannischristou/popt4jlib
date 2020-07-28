@@ -52,7 +52,7 @@ public class FFNN4TrainBGradTest2 {
 			VectorIntf gauto = new DblArray1Vector(weights);
 			long sauto = System.currentTimeMillis();
 			for (int i=0; i<weights.length; i++) {
-				double g_auto_i = ffnnb.evalPartialDerivativeB(weights, i, params);
+				double g_auto_i = ffnnb.evalPartialDerivativeB(weights,i,params,false);
 				gauto.setCoord(i, g_auto_i);
 			}
 			long dauto = System.currentTimeMillis()-sauto;

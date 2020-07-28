@@ -1,11 +1,12 @@
 package popt4jlib.neural;
 
-import java.util.*;
 import utils.*;
 import analysis.*;
 import parallel.*;
 import popt4jlib.*;
 import popt4jlib.GradientDescent.*;
+import java.util.*;
+
 
 /**
  * same as <CODE>popt4jlib.GradientDescent.stochastic.Adam</CODE> but with the
@@ -294,7 +295,7 @@ public class Adam4FFNN implements LocalOptimizerIntf {
 
     private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) 
 			throws OptimizerException {
-			final double init_mul_factor = 5.0;
+			final double init_mul_factor = 1.0;
 			Messenger mger = Messenger.getInstance();
       VecFunctionIntf grad = (VecFunctionIntf) p.get("adam.gradient");
       if (grad==null) grad = new GradApproximator(f);  
@@ -308,6 +309,10 @@ public class Adam4FFNN implements LocalOptimizerIntf {
 			    : (VectorIntf) _params.get("adam.x"+solindex);
 			// if x0 is still null, check if "adam.numdimensions" is passed, in which 
 			// case, create a random starting point
+			if (x0==null && _params.containsKey("adam.init_weights")) {
+				double[] w0 = (double[]) _params.get("adam.init_weights");
+				x0 = new DblArray1Vector(w0);
+			}
 			if (x0==null && _params.containsKey("adam.numdimensions")) {
 				int n = ((Integer) _params.get("adam.numdimensions")).intValue();
 				Random r = RndUtil.getInstance(_uid).getRandom();
@@ -376,7 +381,7 @@ public class Adam4FFNN implements LocalOptimizerIntf {
 			final Random r = RndUtil.getInstance(_uid).getRandom();			
 			// start main iteration loop
       for (int iter=0; iter<maxiters; iter++) {
-	      mger.msg("Adam4FFNNThread.min(): #iters="+iter, 2);
+	      mger.msg("Adam4FFNNThread.min(): #iters="+iter, 1);
 				if (_randombatchsize>0) { // set the training set to a random mini-batch
 					double prob_enter = _randombatchsize/((double) all_train_data.length);
 					int cnt = 0;
@@ -392,11 +397,19 @@ public class Adam4FFNN implements LocalOptimizerIntf {
 					p.put("ffnn.traindata", batch_train_data);
 					p.put("ffnn.trainlabels", batch_train_labels);
 					mger.msg("Adam4FFNNThread.min(): p now have "+
-						       "random batch of size "+batch_train_data.length, 2);
+						       "random batch of size "+batch_train_data.length, 1);
 				}
 				VectorIntf g = grad.eval(x, p);
 		    double normg = VecUtil.norm(g,2);
-				mger.msg("Adam4FFNNThread.min(): normg="+normg,2);
+				mger.msg("Adam4FFNNThread.min(): normg="+normg,1);
+				if (mger.getDebugLvl()>=2) {  // print out x and the derivative
+					if (grad instanceof FFNN4TrainBGrad) {
+						String xstr = ((FFNN4TrainBGrad) grad).toString(x, p);
+						mger.msg("x="+xstr, 2);
+						String gstr = ((FFNN4TrainBGrad) grad).toString(g, p);
+						mger.msg("g="+gstr, 2);
+					}
+				}
 				//VectorIntf g_squared = VecUtil.componentProduct(g, g);
 				for (int i=0; i<n; i++) {
 					final double gi = g.getCoord(i);
@@ -408,7 +421,7 @@ public class Adam4FFNN implements LocalOptimizerIntf {
 					}
 				}
 				fx = f.eval(x, p);
-				mger.msg("Adam4FFNNThread.min(): f(x)="+fx, 2);
+				mger.msg("Adam4FFNNThread.min(): f(x)="+fx, 1);
 				mger.msg("x="+x, 2);
 				final double norminfg = VecUtil.normInfinity(g);
         if (norminfg <= gtol) {
@@ -445,7 +458,7 @@ public class Adam4FFNN implements LocalOptimizerIntf {
 					// compute difference from prev x
 					double diff_prev = 0.0;
 					for (int j=0; j<n; j++) diff_prev += Math.abs(xa[j]-x.getCoord(j));
-					mger.msg("Adam4FFNNThread.min(): ||x - x_prev||_1="+diff_prev, 2);
+					mger.msg("Adam4FFNNThread.min(): ||x - x_prev||_1="+diff_prev, 1);
 					if (diff_prev < eps) {
 						mger.msg("Adam4FFNNThread.min(): x converged, stop iterations",0);
 						found = true;

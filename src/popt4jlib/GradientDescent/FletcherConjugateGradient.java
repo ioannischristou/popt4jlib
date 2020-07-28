@@ -483,6 +483,7 @@ class FCGThread extends Thread {
 			_master.setIncumbent(x.newCopy(), fx);  // call incumbent update
       final double norminfg = VecUtil.normInfinity(g);
       final double normg = VecUtil.norm(g,2);
+			mger.msg("FCGThread.min(): normg="+normg+" normg_inf="+norminfg,1);
       if (Double.compare(norminfg, gtol) <= 0) {
         mger.msg("FCGThread.min(): found sol w/ value="+fx+" normg="+norminfg+
 					       " in "+iter+" iterations.",0);

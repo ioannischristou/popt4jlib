@@ -8,11 +8,12 @@ import popt4jlib.DblArray1Vector;
 import popt4jlib.DblArray1SparseVector;
 import popt4jlib.DblArray1SparseVectorMT;
 import popt4jlib.DblArray1SparseVectorFE;
+import popt4jlib.IntArray1SparseVector;
 import popt4jlib.GradientDescent.VecUtil;
+import java.text.NumberFormat;
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.*;
-import popt4jlib.IntArray1SparseVector;
 
 
 /**
@@ -31,6 +32,9 @@ import popt4jlib.IntArray1SparseVector;
  * <li>2020-04-22: expanded same method as above to allow storing keys with null
  * values. Also modified slightly code dealing with setting debug levels when
  * reading props.
+ * <li>2020-07-22: added functionality to convert the columns of a dataset to 
+ * have zero mean and standard deviation one.
+ * <li>2020-07-24: added functionality to write a double array to a text file.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -121,7 +125,9 @@ public class DataMgr {
 	 * the column minimum and dividing the difference by the difference of the 
 	 * column max minus the column min.
 	 * <p> In case key is the keyword "matrix-1_1" then things work as above, but 
-	 * now the cells of the matrix are all in [-1,1]. 
+	 * now the cells of the matrix are all in [-1,1].
+	 * <p> In case key is the keyword "matrixN01" then things work as above but 
+	 * now the columns of the matrix have zero mean and standard deviation one.
 	 * <p> In case key is the keyword "sparsematrix", the the value is the name of
 	 * the property, and the next token is the filename of a text file describing
 	 * the matrix to be read via the method <CODE>readSparseVectorsFromFile</CODE>
@@ -290,16 +296,16 @@ public class DataMgr {
 								else {
 									// ignore name, just interpret value and add to arrels
 									if ("int".equals(type)) {
-										arrels.add(Integer.parseInt(name));
+										arrels.add(new Integer(Integer.parseInt(name)));
 									}
 									else if ("long".equals(type)) {
-										arrels.add(Long.parseLong(name));
+										arrels.add(new Long(Long.parseLong(name)));
 									}
 									else if ("double".equals(type)) {
-										arrels.add(Double.parseDouble(name));
+										arrels.add(new Double(Double.parseDouble(name)));
 									}
 									else if ("boolean".equals(type)) {
-										arrels.add(Boolean.parseBoolean(name));
+										arrels.add(new Boolean(Boolean.parseBoolean(name)));
 									}
 									else if ("string".equals(type)) arrels.add(name);
 									else throw new IllegalArgumentException(
@@ -449,6 +455,14 @@ public class DataMgr {
 						props.put(key,matrix);
 						continue;
 					}
+					else if ("matrixN01".equals(key)) {
+						key = strval;
+						String matfile = st.nextToken();
+						double[][] matrix = 
+							readMatrixFromFileAndNormalizeCols(matfile);
+						props.put(key,matrix);
+						continue;
+					}
 					else if ("sparsematrix".equals(key)) {
 						key = strval;
 						String smatfile = st.nextToken();
@@ -541,8 +555,10 @@ public class DataMgr {
               while (it.hasNext()) {
                 String k = (String) it.next();
                 if (k.endsWith(".function")) {
-                  popt4jlib.FunctionIntf f = (popt4jlib.FunctionIntf) props.get(k);
-                  if (rfb==null) rfb = new popt4jlib.ReentrantFunctionBaseMT(f,nthreads);
+                  popt4jlib.FunctionIntf f = 
+										(popt4jlib.FunctionIntf) props.get(k);
+                  if (rfb==null) rfb = 
+										new popt4jlib.ReentrantFunctionBaseMT(f,nthreads);
                   props.put(k, rfb);
                   break;
                 }
@@ -553,8 +569,10 @@ public class DataMgr {
               while (it.hasNext()) {
                 String k = (String) it.next();
                 if (k.endsWith(".function")) {
-                  popt4jlib.FunctionIntf f = (popt4jlib.FunctionIntf) props.get(k);
-                  popt4jlib.ReentrantFunctionBase rfb = new popt4jlib.ReentrantFunctionBase(f);
+                  popt4jlib.FunctionIntf f = 
+										(popt4jlib.FunctionIntf) props.get(k);
+                  popt4jlib.ReentrantFunctionBase rfb = 
+										new popt4jlib.ReentrantFunctionBase(f);
                   props.put(k, rfb);
                   break;
                 }
@@ -613,7 +631,8 @@ public class DataMgr {
     while (st.hasMoreTokens()) {
       //String objname = st.nextToken();
       String objval = st.nextToken();
-      // figure out what is strval: try int, long, double, boolean, already-read-in-prop, string
+      // figure out what is strval: 
+			// try int, long, double, boolean, already-read-in-prop, string
       try {
         Integer v = new Integer(objval);
         argtypes[i] = int.class;  // used to be v.getClass();
@@ -672,15 +691,15 @@ public class DataMgr {
 	 * </PRE>
    * dim is in [1...totaldimensions]
    * the documents are represented as a vector representation of
-   * a vector in a vector space of dimension totaldimensions. If a &lt;dim,val&gt;
-   * pair does not appear for a vector, the value for this coordinate is assumed
-   * zero.
+   * a vector in a vector space of dimension totaldimensions. If a 
+	 * &lt;dim,val&gt; pair does not appear for a vector, the value for this 
+	 * coordinate is assumed zero.
    * @param filename String
    * @return Vector // Vector&lt;VectorIntf&gt;
    * @throws IOException
    */
   public static Vector readVectorsFromFile(String filename)
-      throws IOException {
+    throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       Vector v = new Vector();
@@ -725,17 +744,18 @@ public class DataMgr {
 	 * @param toIndex int
 	 * @return List // ArrayList&lt;DblArray1Vector&gt;
 	 * @throws IOException 
-	 * @throws IllegalArgumentException if fromIndex &gt; toIndex or any of the two
+	 * @throws IllegalArgumentException if fromIndex &gt; toIndex or any of the 2
 	 * is outside the valid range of indices.
 	 * @throws IndexOutOfBoundsException if fromIndex or toIndex are out of range.
 	 */
-	public static List readVectorsFromFileInRange(String filename, int fromIndex, int toIndex)
-	    throws IOException, IllegalArgumentException, IndexOutOfBoundsException {
+	public static List readVectorsFromFileInRange(String filename, 
+		                                            int fromIndex, int toIndex)
+	  throws IOException, IllegalArgumentException, IndexOutOfBoundsException {
 		if (fromIndex>toIndex) 
 			throw new IllegalArgumentException("fromIndex("+fromIndex+
 							                           ") cannot be > toIndex("+toIndex+")");
 		if (fromIndex < 0 || toIndex < 0)
-			throw new IndexOutOfBoundsException("fromIndex or toIndex is less than zero");
+			throw new IndexOutOfBoundsException("fromIndex or toIndex less than 0");
 		Messenger mger = Messenger.getInstance();
 		long start_time = System.currentTimeMillis();
     BufferedReader br = new BufferedReader(new FileReader(filename));
@@ -745,7 +765,9 @@ public class DataMgr {
         String line = br.readLine();
         StringTokenizer st = new StringTokenizer(line, " ");
         int numdocs = Integer.parseInt(st.nextToken());
-				if (toIndex>=numdocs) throw new IndexOutOfBoundsException("toIndex is >= #docs in file "+filename);
+				if (toIndex>=numdocs) 
+					throw new IndexOutOfBoundsException("toIndex is >= #docs in file "+
+						                                  filename);
         int totaldims = Integer.parseInt(st.nextToken());
         Integer dim = null;
         double val = 0.0;
@@ -770,7 +792,8 @@ public class DataMgr {
           v.add(d);
         }
 				if (lcnt!=numdocs && toIndex > lcnt) 
-					throw new IOException("bad file header (numdocs="+numdocs+" but there are only "+lcnt+" data lines.");
+					throw new IOException("bad file header (numdocs="+numdocs+
+						                    " but there are only "+lcnt+" data lines.");
       }
 			long dur = System.currentTimeMillis()-start_time;
 			mger.msg("DataMgr.readVectorsFromFileInRange("+filename+","+
@@ -800,7 +823,7 @@ public class DataMgr {
    * @throws IOException
    */
   public static Vector readSparseVectorsFromFile(String filename)
-      throws IOException {
+    throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       Vector v = new Vector();
@@ -831,10 +854,11 @@ public class DataMgr {
             }
             else d.setCoord(dim.intValue(), val);
           }
-          if (d==null) d = new DblArray1SparseVector(totaldims);  // empty vector
+          if (d==null) d = new DblArray1SparseVector(totaldims);  // empty vec
           v.addElement(d);
         }
-      } else throw new IOException("readSparseVectorsFromFile("+filename+"): failed");
+      } else throw new IOException("readSparseVectorsFromFile("+filename+
+				                           "): failed");
       return v;
     }
     catch (ParallelException e) {  // can never get here
@@ -862,7 +886,7 @@ public class DataMgr {
    * @throws IOException
    */
   public static Vector readIntSparseVectorsFromFile(String filename)
-      throws IOException {
+    throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       Vector v = new Vector();
@@ -893,10 +917,11 @@ public class DataMgr {
             }
             else d.setCoord(dim.intValue(), val);
           }
-          if (d==null) d = new IntArray1SparseVector(totaldims);  // empty vector
+          if (d==null) d = new IntArray1SparseVector(totaldims);  // empty vec
           v.addElement(d);
         }
-      } else throw new IOException("readIntSparseVectorsFromFile("+filename+"): failed");
+      } else throw new IOException("readIntSparseVectorsFromFile("+filename+
+				                           "): failed");
       return v;
     }
     catch (ParallelException e) {  // can never get here
@@ -926,7 +951,7 @@ public class DataMgr {
    * @throws IOException
    */
   public static Vector readSparseVectorsFEFromFile(String filename)
-      throws IOException {
+    throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       Vector v = new Vector();
@@ -957,10 +982,11 @@ public class DataMgr {
             }
             else d.setCoord(dim.intValue(), val);
           }
-          if (d==null) d = new DblArray1SparseVectorFE(totaldims);  // empty vector
+          if (d==null) d = new DblArray1SparseVectorFE(totaldims);  // empty vec
           v.addElement(d);
         }
-      } else throw new IOException("readSparseVectorsFromFile("+filename+"): failed");
+      } else throw new IOException("readSparseVectorsFEFromFile("+filename+
+				                           "): failed");
       return v;
     }
     catch (ParallelException e) {  // can never get here
@@ -988,7 +1014,7 @@ public class DataMgr {
    * @throws IOException
    */
   public static Vector readSparseVectorsMTFromFile(String filename)
-      throws IOException {
+    throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       Vector v = new Vector();
@@ -1019,10 +1045,11 @@ public class DataMgr {
             }
             else d.setCoord(dim.intValue(), val);
           }
-          if (d==null) d = new DblArray1SparseVectorMT(totaldims);  // empty vector
+          if (d==null) d = new DblArray1SparseVectorMT(totaldims);  // empty vec
           v.addElement(d);
         }
-      } else throw new IOException("readSparseVectorsFromFile("+filename+"): failed");
+      } else throw new IOException("readSparseVectorsMTFromFile("+filename+
+				                           "): failed");
       return v;
     }
     catch (ParallelException e) {  // can never get here
@@ -1044,7 +1071,7 @@ public class DataMgr {
    * @return Vector // Vector&lt;VectorIntf&gt;
    */
   public static Vector readVectorsFromFileAndNormalize(String filename)
-      throws IOException {
+    throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       Vector v = new Vector();
@@ -1095,7 +1122,7 @@ public class DataMgr {
    * @return Vector // Vector&lt;VectorIntf&gt;
    */
   public static Vector readSparseVectorsMTFromFileAndNormalize(String filename)
-      throws IOException {
+    throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       Vector v = new Vector();
@@ -1177,7 +1204,8 @@ public class DataMgr {
    * @throws IOException
    * @return double[][]
    */
-  public static double[][] readMatrixFromFile(String filename) throws IOException, IllegalArgumentException {
+  public static double[][] readMatrixFromFile(String filename) 
+		throws IOException, IllegalArgumentException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       double[][] v = null;
@@ -1214,7 +1242,7 @@ public class DataMgr {
       if (br!=null) br.close();
     }
   }
-	
+
 	
 	/**
 	 * same as <CODE>readMatrixFromFile(filename)</CODE> but it also converts 
@@ -1245,12 +1273,50 @@ public class DataMgr {
 			}
 			// do the column update
 			for (int i=0; i<rows; i++) {
-				//matrix[i][j] = (matrix[i][j] - col_min[j]) / (col_max[j] - col_min[j]);
+				//matrix[i][j] = (matrix[i][j]-col_min[j]) / (col_max[j]-col_min[j]);
 				if (Double.compare(col_max, col_min)>0)
 					matrix[i][j] = (matrix[i][j] - col_min) / (col_max - col_min);
 				else matrix[i][j] = 0.0;
 			}
 		}
+		return matrix;
+	}
+
+	
+	/**
+	 * same as <CODE>readMatrixFromFile(filename)</CODE> but it also ensures 
+	 * every column has zero mean and unit standard deviation.
+	 * @param fname
+	 * @return double[][] where each cell value is in [0,1]
+	 * @throws IOException 
+	 */
+	public static double[][] readMatrixFromFileAndNormalizeCols(String fname)
+		throws IOException {
+		double[][] matrix = readMatrixFromFile(fname);
+		final int rows = matrix.length;
+		final int cols = matrix[0].length;
+		double min_el = Double.MAX_VALUE;
+		double max_el = Double.NEGATIVE_INFINITY;
+		for (int j=0; j<cols; j++) {
+			double col_sum_x = 0.0;
+			double col_sum_x2 = 0.0;
+			for (int i=0; i<rows; i++) {
+				final double aij = matrix[i][j];
+				col_sum_x += aij;
+				col_sum_x2 += aij*aij;
+			}
+			final double col_mean = col_sum_x / rows;
+			final double col_std = Math.sqrt((rows*col_sum_x2-col_sum_x*col_sum_x)/
+				                               (rows*(rows-1)));
+			// do the column update
+			for (int i=0; i<rows; i++) {
+				matrix[i][j] = (matrix[i][j]-col_mean) / col_std;
+				if (Double.compare(matrix[i][j], max_el) > 0) max_el = matrix[i][j];
+				if (Double.compare(matrix[i][j], min_el) < 0) min_el = matrix[i][j];
+			}
+		}
+		Messenger.getInstance().msg("DataMgr.readMatrixFromFileAndNormalizeCols("+
+			                          fname+"): max_el="+max_el+", min_el="+min_el,1);
 		return matrix;
 	}
 
@@ -1285,7 +1351,7 @@ public class DataMgr {
 			double base = (col_max+col_min)/2.0;
 			double range = (col_max-col_min)/2.0;
 			for (int i=0; i<rows; i++) {
-				//matrix[i][j] = (matrix[i][j] - col_min[j]) / (col_max[j] - col_min[j]);
+				//matrix[i][j] = (matrix[i][j]-col_min[j]) / (col_max[j]-col_min[j]);
 				if (Double.compare(range,0)!=0)
 					matrix[i][j] = (matrix[i][j] - base) / range;
 				else matrix[i][j] = 0.0;
@@ -1412,7 +1478,7 @@ public class DataMgr {
 	 * @return IntSet
 	 * @throws IOException 
 	 */
-	public static IntSet readIntegersFromFile(String filename) throws IOException {
+	public static IntSet readIntegersFromFile(String filename) throws IOException{
 		BufferedReader br = new BufferedReader(new FileReader(filename));
 		if (br.ready()) {
 			IntSet set = new IntSet();
@@ -1420,7 +1486,7 @@ public class DataMgr {
 				String line = br.readLine();
 				if (line==null) break;
 				if (line.length()==0) continue;
-				StringTokenizer st = new StringTokenizer(line);  // uses default delimiter set
+				StringTokenizer st = new StringTokenizer(line);  //default delimiter set
 				while (st.hasMoreTokens()) {
 					String n = st.nextToken();
 					int num = Integer.parseInt(n);
@@ -1439,7 +1505,7 @@ public class DataMgr {
    * numnodes numarcs
    * starta enda [weighta]
    * [...]
-   * </PRE>
+   * </PRE>.
    * The starta, enda are in [0...num_nodes-1]
    * weighta is double (non-negative)
    * @param filename String
@@ -1448,7 +1514,7 @@ public class DataMgr {
    * @return Graph
    */
   public synchronized static Graph readGraphFromFile(String filename)
-      throws IOException, GraphException {
+    throws IOException, GraphException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       Graph g = null;
@@ -1502,7 +1568,7 @@ public class DataMgr {
    * starta enda [weighta]
    * [...]
    * [weight_node1...]
-   * </PRE>
+   * </PRE>.
    * The starta, enda are in [1...num_nodes]
    * weighta is double (non-negative)
    * node weights after arcs listing, if they exist, are double (non-negative)
@@ -1512,7 +1578,7 @@ public class DataMgr {
    * @return Graph
    */
   public synchronized static Graph readGraphFromFile2(String filename)
-      throws IOException, GraphException {
+    throws IOException, GraphException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       Graph g = null;
@@ -1577,7 +1643,7 @@ public class DataMgr {
    * numarcs numnodes 1
    * weighta starta enda
    * [...]
-	 * </PRE>
+	 * </PRE>.
    * The starta, enda are in [1...num_nodes]
    * weighta is int (non-negative)
    * @param filename String
@@ -1586,7 +1652,7 @@ public class DataMgr {
    * @return Graph
    */
   public synchronized static Graph readGraphFromhMeTiSFile(String filename)
-      throws IOException, GraphException {
+    throws IOException, GraphException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       Graph g = null;
@@ -1642,7 +1708,7 @@ public class DataMgr {
    */
   public synchronized static Graph readGraphFromhMeTiSFile(String filename,
                                                            String labelfile)
-      throws IOException, GraphException {
+    throws IOException, GraphException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     BufferedReader br2 = new BufferedReader(new FileReader(labelfile));
     try {
@@ -1658,7 +1724,9 @@ public class DataMgr {
         Integer[] labels = new Integer[numnodes];
         for (int j=0; j<numnodes; j++) {
           String l2 = br2.readLine();
-          if (l2==null) throw new GraphException("filename and labelfile don't agree in dimensions");
+          if (l2==null) 
+						throw new GraphException("filename and labelfile "+
+							                       "don't agree in dimensions");
           int labelj = Integer.parseInt(l2);
           labels[j] = new Integer(labelj);
         }
@@ -1713,7 +1781,7 @@ public class DataMgr {
    * @return HGraph
    */
   public synchronized static HGraph readHGraphFromhMeTiSFile(String filename)
-      throws IOException, GraphException {
+    throws IOException, GraphException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     try {
       HGraph g = null;
@@ -1771,7 +1839,7 @@ public class DataMgr {
    * @throws IOException
    */
   public synchronized static void writeGraphToFile(Graph g, String filename)
-      throws IOException {
+    throws IOException {
     final int numarcs = g.getNumArcs();
     final int numnodes = g.getNumNodes();
     PrintWriter pw = new PrintWriter(new FileOutputStream(filename));
@@ -1804,14 +1872,15 @@ public class DataMgr {
    * @throws IOException
    */
   public synchronized static void writeGraphToFile2(Graph g, String filename)
-      throws IOException {
+    throws IOException {
     final int numarcs = g.getNumArcs();
     final int numnodes = g.getNumNodes();
     PrintWriter pw = new PrintWriter(new FileOutputStream(filename));
     pw.println(numarcs + " " + numnodes);
     for (int i=0; i<numarcs; i++) {
       Link arci = g.getLink(i);
-      pw.println((arci.getStart()+1) + " " +(arci.getEnd()+1) + " " + arci.getWeight());
+      pw.println((arci.getStart()+1) + " " +(arci.getEnd()+1) + " " + 
+				          arci.getWeight());
     }
     for (int i=0; i<numnodes; i++) {
       Double vi = g.getNode(i).getWeightValue("value");
@@ -1825,13 +1894,14 @@ public class DataMgr {
   /**
    * takes as input an already constructed graph, and prints it in HMeTiS format
    * in the file specified in the second argument. The format of this output
-   * file is specified in the comments for method writeClusterEnsembleToHGRFile()
+   * file is specified in the comments for method 
+	 * <CODE>writeClusterEnsembleToHGRFile()</CODE>
    * @param g Graph
    * @param filename String
    * @throws IOException
    */
   public synchronized static void writeGraphToHGRFile(Graph g, String filename)
-      throws IOException {
+    throws IOException {
     final int numarcs = g.getNumArcs();
     final int numnodes = g.getNumNodes();
     PrintWriter pw = new PrintWriter(new FileOutputStream(filename));
@@ -1841,7 +1911,8 @@ public class DataMgr {
       Node startn = g.getNode(l.getStart());
       Node endn = g.getNode(l.getEnd());
       if (startn.getId()<endn.getId()) {
-        long w = (long) (2.0*Math.ceil(l.getWeight()));  // *MeTiS accepts int weights
+        long w = 
+					(long) (2.0*Math.ceil(l.getWeight()));  // *MeTiS accepts int weights
         pw.println(w+" "+(startn.getId()+1)+" "+(endn.getId()+1));
       }
     }
@@ -1866,7 +1937,7 @@ public class DataMgr {
       Node startn = g.getNode(l.getStart());
       Node endn = g.getNode(l.getEnd());
       if (startn.getId()<endn.getId()) {
-        long w = (long) (Math.ceil(l.getWeight()));  // *MeTiS accepts int weights
+        long w = (long) (Math.ceil(l.getWeight()));  // *MeTiS accepts int wgts
         pw.println(w+" "+(startn.getId()+1)+" "+(endn.getId()+1));
       }
     }
@@ -1881,7 +1952,9 @@ public class DataMgr {
    * @param filename String
    * @throws IOException
    */
-  public synchronized static void writeHGraphDirectToHGRFile(HGraph g, String filename) throws IOException {
+  public synchronized static void writeHGraphDirectToHGRFile(HGraph g, 
+		                                                         String filename) 
+		throws IOException {
     final int numarcs = g.getNumArcs();
     final int numnodes = g.getNumNodes();
     PrintWriter pw = new PrintWriter(new FileOutputStream(filename));
@@ -1908,7 +1981,9 @@ public class DataMgr {
    * @param filename String
    * @throws IOException
    */
-  public synchronized static void writeWeightedHGraphDirectToHGRFile(HGraph g, String filename) throws IOException {
+  public synchronized static void 
+	  writeWeightedHGraphDirectToHGRFile(HGraph g, String filename) 
+			throws IOException {
     final int numarcs = g.getNumArcs();
     final int numnodes = g.getNumNodes();
     PrintWriter pw = new PrintWriter(new FileOutputStream(filename));
@@ -1946,7 +2021,8 @@ public class DataMgr {
    * @param filename String
    * @throws IOException
    */
-  public synchronized static void writeGraphToGRFile(Graph g, String filename) throws IOException {
+  public synchronized static void writeGraphToGRFile(Graph g, String filename) 
+		throws IOException {
     final int numarcs = g.getNumArcs();
     final int numnodes = g.getNumNodes();
     PrintWriter pw = new PrintWriter(new FileOutputStream(filename));
@@ -1986,7 +2062,8 @@ public class DataMgr {
    * @param filename String
    * @throws IOException
    */
-  public static void writeVectorsToFile(Vector docs, int tot_dims, String filename) throws IOException {
+  public static void writeVectorsToFile(Vector docs, int tot_dims, 
+		                                    String filename) throws IOException {
     PrintWriter pw = new PrintWriter(new FileOutputStream(filename));
     final int docs_size = docs.size();
     pw.println(docs_size+" "+tot_dims);
@@ -2021,7 +2098,9 @@ public class DataMgr {
    * @param filename String
    * @throws IOException
    */
-  public static void writeSparseVectorsToFile(Vector docs, int tot_dims, String filename) throws IOException {
+  public static void writeSparseVectorsToFile(Vector docs, int tot_dims, 
+		                                          String filename) 
+		throws IOException {
     PrintWriter pw = new PrintWriter(new FileOutputStream(filename));
     final int docs_size = docs.size();
     pw.println(docs_size+" "+tot_dims);
@@ -2067,12 +2146,37 @@ public class DataMgr {
    * @throws IllegalArgumentException
    * @throws FileNotFoundException
    */
-  public static void writeIntArrayToFile(int indices[], String filename) throws IllegalArgumentException, FileNotFoundException {
+  public static void writeIntArrayToFile(int indices[], String filename) 
+		throws IllegalArgumentException, FileNotFoundException {
     //System.err.println("writing labels to file "+filename);
     PrintWriter pw = new PrintWriter(new FileOutputStream(filename));
-    if (indices==null) throw new IllegalArgumentException("no clustering soln available");
+    if (indices==null) 
+			throw new IllegalArgumentException("no clustering soln available");
     for (int i=0; i<indices.length; i++) {
       pw.println(indices[i]);  // used to be pw.println(indices[i] - 1);
+    }
+    pw.flush();
+    pw.close();
+  }
+
+
+  /**
+   * writes the double[] given in the first argument to the file given in the
+   * second argument (one number per line, US Locale).
+   * @param arr double[] the numbers to write
+   * @param filename String
+   * @throws IllegalArgumentException
+   * @throws FileNotFoundException
+   */
+  public static void writeDoubleArrayToFile(double arr[], String filename) 
+		throws IllegalArgumentException, FileNotFoundException {
+    PrintWriter pw = new PrintWriter(new FileOutputStream(filename));
+    if (arr==null) throw new IllegalArgumentException("null arr");
+		NumberFormat df = NumberFormat.getInstance(Locale.US);
+		df.setGroupingUsed(false);
+		df.setMaximumFractionDigits(6);
+    for (int i=0; i<arr.length; i++) {
+      pw.println(df.format(arr[i])); 
     }
     pw.flush();
     pw.close();

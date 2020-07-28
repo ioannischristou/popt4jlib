@@ -218,7 +218,7 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 		// 2. if index is for direct input weights (or bias) derivative is zero
 		else if (_startWeightInd <= index && index <= _biasInd) {
 			final double result = 0.0;
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
@@ -228,7 +228,7 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 				_mger.msg("MultiClassSSE<"+_startWeightInd+
 				 	        ">.evalPartialDerivativeB(weights="+wstr+
 					        ", index="+index+
-						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 5);
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -237,7 +237,7 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 		//    belongs to with another node of this layer (but not this node), 
 		//    result is zero
 		else if (!isWeightVariableAntecedent(index)) {
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -248,7 +248,7 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 				_mger.msg("MultiClassSSE<"+_startWeightInd+
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
-				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
+				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 5);
 			}				
 			setLastDerivEvalCache(0.0);
 			return 0.0;
@@ -288,12 +288,12 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 				double errj = last_inputs[j] - expected_j;
 				result += errj * 
 				          prev_layer[j].evalPartialDerivativeB(weights, index, 
-									                                      inputSignals, 
-																												true_lbl,
-																											  p);
+									                                     inputSignals, 
+																											 true_lbl,
+																											 p);
 			}
 			result += result;  // 2*result
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -305,7 +305,11 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
 				          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-				          result, 2);
+				          result, 0);
+				String listr="[ ";
+				for (int k=0; k<last_inputs.length; k++) listr += last_inputs[k]+" ";
+				listr += "]";
+				_mger.msg("last_inputs="+listr,0);
 			}
 			setLastInputsCache(last_inputs);
 			setLastDerivEvalCache(result);

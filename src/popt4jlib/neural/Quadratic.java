@@ -175,7 +175,7 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 		// 1. if index is after input weights, derivative is zero
 		if (index > _biasInd) {
 			final double result = 0.0;
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
@@ -185,7 +185,7 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 				_mger.msg("Quadratic<"+_startWeightInd+
 				 	        ">.evalPartialDerivativeB(weights="+wstr+
 					        ", index="+index+
-						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 5);
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -245,7 +245,7 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 				}
 			}
 			final double result = node_input + node_input;  // 2*node_input
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
@@ -255,7 +255,7 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 				_mger.msg("Quadratic<"+_startWeightInd+
 				 	        ">.evalPartialDerivativeB(weights="+wstr+
 					        ", index="+index+
-						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 5);
 			}
 			setLastDerivEvalCache(result);
 			return result;			
@@ -298,7 +298,7 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 						double node_input = 
 							_linearUnit.evalB(layer_i_inputs, weights, pos);
 						double result = (node_input+node_input)*layer_i_inputs[index-pos]; 
-						if (_mger.getDebugLvl()>=2) {
+						if (_mger.getDebugLvl()>=5) {
 							String wstr="[ ";
 								for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 								wstr += "]";
@@ -310,9 +310,9 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 					                ">.evalPartialDerivativeB(weights="+wstr+
 					                ", index="+index+
 						              ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-									        result, 2);
+									        result, 5);
 						}
-						setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
+						setLastInputsCache(layer_i_inputs);
 						setLastDerivEvalCache(result);
 						return result;
 					}
@@ -324,7 +324,7 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 			if (output_node==this) {  // our node is the output node
   			double node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 				double result = (node_input+node_input)*layer_i_inputs[index-pos];
-				if (_mger.getDebugLvl()>=2) {
+				if (_mger.getDebugLvl()>=5) {
 					String wstr="[ ";
 					for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 					wstr += "]";
@@ -336,9 +336,9 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 					          ">.evalPartialDerivativeB(weights="+wstr+
 					          ", index="+index+
 					          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-					          result, 2);
+					          result, 5);
 				}				
-				setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
+				setLastInputsCache(layer_i_inputs);
 				setLastDerivEvalCache(result);
 				return result;
 			}
@@ -349,7 +349,7 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 		//    belongs to with another node of this layer (but not this node), 
 		//    result is zero
 		else if (!isWeightVariableAntecedent(index)) {
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -360,7 +360,7 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 				_mger.msg("Quadratic<"+_startWeightInd+
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
-				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
+				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 5);
 			}
 			setLastDerivEvalCache(0.0);
 			return 0.0;
@@ -437,7 +437,7 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 																											  p);
 			}
 			result *= (node_input+node_input);
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -449,7 +449,7 @@ public class Quadratic extends BaseNNNode implements OutputNNNodeIntf  {
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
 				          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-				          result, 2);
+				          result, 5);
 			}							
 			setLastDerivEvalCache(result);
 			return result;

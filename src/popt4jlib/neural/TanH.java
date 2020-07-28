@@ -131,17 +131,17 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 		// 1. if index is after input weights, derivative is zero
 		if (index > _biasInd) {
 			final double result = 0.0;
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
 				String isstr="[ ";
 				for (int i=0; i<inputSignals.length; i++) isstr += inputSignals[i]+" ";
 				isstr += "]";
-				_mger.msg("Tanh<"+_startWeightInd+
+				_mger.msg("TanH<"+_startWeightInd+
 				 	        ">.evalPartialDerivativeB(weights="+wstr+
 					        ", index="+index+
-						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 5);
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -200,17 +200,17 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 				}
 			}
 			final double result = tPrime(node_input);
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
 				String isstr="[ ";
 				for (int i=0; i<inputSignals.length; i++) isstr += inputSignals[i]+" ";
 				isstr += "]";
-				_mger.msg("Tanh<"+_startWeightInd+
+				_mger.msg("TanH<"+_startWeightInd+
 				 	        ">.evalPartialDerivativeB(weights="+wstr+
 					        ", index="+index+
-						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 5);
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -253,7 +253,7 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 						double node_input = 
 							_linearUnit.evalB(layer_i_inputs, weights, pos);
 						double result = tPrime(node_input)*layer_i_inputs[index-pos]; 
-						if (_mger.getDebugLvl()>=2) {
+						if (_mger.getDebugLvl()>=5) {
 							String wstr="[ ";
 								for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 								wstr += "]";
@@ -261,13 +261,13 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 								for (int k=0; k<inputSignals.length; k++) 
 									isstr += inputSignals[k]+" ";
 								isstr += "]";
-								_mger.msg("Tanh<"+_startWeightInd+
+								_mger.msg("TanH<"+_startWeightInd+
 					                ">.evalPartialDerivativeB(weights="+wstr+
 					                ", index="+index+
 						              ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-									        result, 2);
+									        result, 5);
 						}
-						setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
+						setLastInputsCache(layer_i_inputs);
 						setLastDerivEvalCache(result);
 						return result;
 					}
@@ -279,7 +279,7 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 			if (output_node==this) {  // our node is the output node
   			double node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 				double result = tPrime(node_input)*layer_i_inputs[index-pos];
-				if (_mger.getDebugLvl()>=2) {
+				if (_mger.getDebugLvl()>=5) {
 					String wstr="[ ";
 					for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 					wstr += "]";
@@ -287,13 +287,13 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 					for (int k=0; k<inputSignals.length; k++) 
 						isstr += inputSignals[k]+" ";
 					isstr += "]";
-					_mger.msg("Tanh<"+_startWeightInd+
+					_mger.msg("TanH<"+_startWeightInd+
 					          ">.evalPartialDerivativeB(weights="+wstr+
 					          ", index="+index+
 					          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-					          result, 2);
+					          result, 5);
 				}				
-				setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
+				setLastInputsCache(layer_i_inputs);
 				setLastDerivEvalCache(result);
 				return result;
 			}
@@ -304,7 +304,7 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 		//    belongs to with another node of this layer (but not this node), 
 		//    result is zero
 		else if (!isWeightVariableAntecedent(index)) {
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -312,10 +312,10 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 				for (int k=0; k<inputSignals.length; k++) 
 					isstr += inputSignals[k]+" ";
 				isstr += "]";
-				_mger.msg("Tanh<"+_startWeightInd+
+				_mger.msg("TanH<"+_startWeightInd+
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
-				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
+				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 5);
 			}				
 			setLastDerivEvalCache(0.0);
 			return 0.0;
@@ -397,7 +397,7 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 																											  p);
 			}
 			result *= tPrime(node_input);
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -405,11 +405,11 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 				for (int k=0; k<inputSignals.length; k++) 
 					isstr += inputSignals[k]+" ";
 				isstr += "]";
-				_mger.msg("Tanh<"+_startWeightInd+
+				_mger.msg("TanH<"+_startWeightInd+
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
 				          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-				          result, 2);
+				          result, 5);
 			}							
 			setLastDerivEvalCache(result);
 			return result;

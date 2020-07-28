@@ -16,6 +16,12 @@ import java.io.PrintWriter;
  * the meta-heuristic optimizers available in this library. Post-processing 
  * local optimization is possible via the optional "opt.localoptimizer" 
  * parameter.
+ * Notes:
+ * <ul>
+ * <li> 2020-07-22: the wrapper function in the <CODE>minimize(f)</CODE> main
+ * method will not create a <CODE>popt4jlib.FunctionBase</CODE> to pass to the
+ * minimizer, but passes the function f directly.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -138,7 +144,8 @@ public class OptFFNNRun {
       else if (doreentrantMT!=null && doreentrantMT.booleanValue()==true) {
         wrapper_func = new ReentrantFunctionBaseMT(func, nt);
       }
-      else wrapper_func = new FunctionBase(func);
+      // else wrapper_func = new FunctionBase(func);
+			else wrapper_func = func;
       params.put("function",wrapper_func);
 			OptimizerIntf opter = (OptimizerIntf) pl.getObject("ffnn.mainoptimizer");
 			opter.setParams(params);
@@ -267,7 +274,7 @@ public class OptFFNNRun {
         System.out.println("total function evaluations="+
 					                 ((ReentrantFunctionBaseMT) wrapper_func).
 														 getEvalCount());
-      else {
+      else if (wrapper_func instanceof LimitedTimeEvalFunction) {
         LimitedTimeEvalFunction f = (LimitedTimeEvalFunction) wrapper_func;
         System.out.println("total function evaluations="+f.getEvalCount()+
                            " total SUCCESSFUL function evaluations="+

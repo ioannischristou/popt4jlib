@@ -43,8 +43,8 @@ public class FFNN4Train extends FFNN {
 
 	protected FFNNCostFunctionIntf _costFunc = null;
 
-	protected final static int _numInputsPerTask = 128;  // used in shared-memory
-	                                                     // parallel evaluation
+	protected final static int _numInputsPerTask = 64;  // used in shared-memory
+	                                                    // parallel evaluation
 
 	protected transient PDBatchTaskExecutor _extor = null;  // set by 4-arg ctor
 	static volatile int _numObjs4 = 0;  // used to check 4 FFNN4Train objs

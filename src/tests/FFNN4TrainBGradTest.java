@@ -37,8 +37,8 @@ public class FFNN4TrainBGradTest {
 				hidden_nodes[i][j] = new Sigmoid(1.0);
 			}
 		}
-		OutputNNNodeIntf outnode = new Linear();
-		FFNN4TrainB ffnnb = new FFNN4TrainB(hidden_nodes, outnode, new MSSE());
+		OutputNNNodeIntf outnode = new MultiClassSSE();  // Linear();
+		FFNN4TrainB ffnnb = new FFNN4TrainB(hidden_nodes, outnode, new MAE());
 		ffnnb.finalizeInitialization(3);  // # of columns in dataset that follows
 		
 		GradApproximator g_approx = new GradApproximator(ffnnb);
@@ -46,17 +46,21 @@ public class FFNN4TrainBGradTest {
 		final int num_weights = (3+1)*2+(2+1)*2+2+1;
 		// create dataset: 8 rows, 3 cols each 
 		// x1 x2 x3     LBL
-		// 1  0  0  --> 1.0
-		// 0  1  0  --> 2.0
-		// 0  0  1  --> 3.0
+		// 1  0  0  --> 0.0
+		// 0  1  0  --> 1.0
+		// 0  0  1  --> 1.0
 		// 1  1  0  --> 1.0
-		// 0  1  1  --> 2.0
+		// 0  1  1  --> 0.0
 		// 1  0  1  --> 1.0
 		// 0  0  0  --> 0.0
-		// 1  1  1  --> 3.0
+		// 1  1  1  --> 0.0
 		double[][] traindata = {{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},
 			                      {1,0,1},{0,0,0},{1,1,1}};
-		double[] trainlabels = {1, 2, 3, 1, 2, 1, 0, 3};
+		double[] trainlabels = {0, 1, 1, 1, 0, 1, 0, 0};
+		/*
+		double[][] traindata = {{1,0,0}};
+		double[] trainlabels = {0};
+		*/
 		HashMap p = new HashMap();
 		p.put("ffnn.traindata", traindata);
 		p.put("ffnn.trainlabels", trainlabels);
@@ -82,7 +86,7 @@ public class FFNN4TrainBGradTest {
 		VectorIntf gauto = new DblArray1Vector(weights);
 		long sauto = System.currentTimeMillis();
 		for (int i=0; i<num_weights; i++) {
-			double g_auto_i = ffnnb.evalPartialDerivativeB(weights, i, p);
+			double g_auto_i = ffnnb.evalPartialDerivativeB(weights, i, p, false);
 			try {
 				gauto.setCoord(i, g_auto_i);
 			}

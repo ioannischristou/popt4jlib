@@ -140,7 +140,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 		// 1. if index is after input weights, derivative is zero
 		if (index > _biasInd) {
 			final double result = 0.0;
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
@@ -150,7 +150,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 				_mger.msg("GELU<"+_startWeightInd+
 				 	        ">.evalPartialDerivativeB(weights="+wstr+
 					        ", index="+index+
-						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 5);
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -211,7 +211,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 				throw new IllegalStateException("couldn't find this node in FFNN");
 			}
 			final double result = gPrime(node_input);
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 				wstr += "]";
@@ -221,7 +221,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 				_mger.msg("GELU<"+_startWeightInd+
 					        ">.evalPartialDerivativeB(weights="+wstr+
 					        ", index="+index+
-						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 2);
+						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 5);
 			}
 			setLastInputsCache(layer_i_inputs);
 			setLastDerivEvalCache(result);
@@ -266,7 +266,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 					if (node_i_j == this) {  // this is the node we're looking for
 						double node_input=_linearUnit.evalB(layer_i_inputs,weights,pos);
 						double result = gPrime(node_input)*layer_i_inputs[index-pos];
-						if (_mger.getDebugLvl()>=2) {
+						if (_mger.getDebugLvl()>=5) {
 							String wstr="[ ";
 								for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 								wstr += "]";
@@ -278,9 +278,9 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 					                ">.evalPartialDerivativeB(weights="+wstr+
 					                ", index="+index+
 						              ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-									        result, 2);
+									        result, 5);
 						}
-						setLastInputsCache(layer_i_inputs);  // itc: HERE is this correct?
+						setLastInputsCache(layer_i_inputs);
 						setLastDerivEvalCache(result);
 						return result;
 					}
@@ -299,7 +299,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 		//    belongs to with another node of this layer (but not this node), 
 		//    result is zero
 		else if (!isWeightVariableAntecedent(index)) {
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -310,7 +310,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 				_mger.msg("GELU<"+_startWeightInd+
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
-				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 2);
+				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 5);
 			}				
 			setLastDerivEvalCache(0.0);
 			return 0.0;
@@ -387,7 +387,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 																											  p);
 			}
 			result *= gPrime(node_input);
-			if (_mger.getDebugLvl()>=2) {
+			if (_mger.getDebugLvl()>=5) {
 				String wstr="[ ";
 				for (int k=0; k<weights.length; k++) wstr += weights[k]+" ";
 				wstr += "]";
@@ -399,7 +399,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
 				          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-				          result, 2);
+				          result, 5);
 			}							
 			setLastDerivEvalCache(result);
 			return result;

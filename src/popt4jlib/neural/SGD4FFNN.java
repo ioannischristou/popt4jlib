@@ -510,7 +510,7 @@ public class SGD4FFNN implements LocalOptimizerIntf {
 					// compute difference from prev x
 					double diff_prev = 0.0;
 					for (int j=0; j<n; j++) diff_prev += Math.abs(xa[j]-x.getCoord(j));
-					mger.msg("SGD4FFNNThread.min(): ||x - x_prev||_1="+diff_prev, 2);
+					mger.msg("SGD4FFNNThread.min(): ||x - x_prev||_1="+diff_prev, 1);
 					if (diff_prev < eps) {
 						mger.msg("SGD4FFNNThread.min(): x converged, stop iterations",0);
 						found = true;

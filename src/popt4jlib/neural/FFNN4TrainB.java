@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.Random;
+import java.util.Locale;
+import java.text.NumberFormat;
 import java.io.Serializable;
 
 
@@ -28,7 +30,9 @@ import java.io.Serializable;
  */
 public class FFNN4TrainB extends FFNN4Train {
 		
-	private final static int _numDerivInputsPerTask = 512;  // compile-time const
+	private final static int _numDerivInputsPerTask = 256;  // compile-time const
+
+	private NumberFormat _df = null;
 	
 	private final static Messenger _mger = Messenger.getInstance();
 	
@@ -48,6 +52,9 @@ public class FFNN4TrainB extends FFNN4Train {
 	public FFNN4TrainB(Object[] hiddenlayers, OutputNNNodeIntf outputnode, 
 		                FFNNCostFunctionIntf f) {
 		super(hiddenlayers, outputnode, f);
+		_df = NumberFormat.getInstance(Locale.US);
+		_df.setGroupingUsed(false);
+		_df.setMaximumFractionDigits(4);
 	}
 
 	
@@ -65,6 +72,9 @@ public class FFNN4TrainB extends FFNN4Train {
 	public FFNN4TrainB(Object[] hiddenlayers, OutputNNNodeIntf outputnode, 
 		                 FFNNCostFunctionIntf f, int numthreads) {
 		super(hiddenlayers, outputnode, f, numthreads);
+		_df = NumberFormat.getInstance(Locale.US);
+		_df.setGroupingUsed(false);
+		_df.setMaximumFractionDigits(4);
 	}
 	
 	
@@ -139,6 +149,35 @@ public class FFNN4TrainB extends FFNN4Train {
 	
 	
 	/**
+	 * return an int[] containing the indices of the bias terms in the all weights
+	 * variables for this network.
+	 * @param num_input_signals int
+	 * @return int[] values in {0, ..., all_weights.length-1}
+	 */
+	public int[] getIndices4BiasInWgts(int num_input_signals) {
+		final NNNodeIntf[][] hlayers = getHiddenLayers();
+		int num_nodes=1;  // output node
+		for (int l=0; l<hlayers.length; l++) {
+			num_nodes += hlayers[l].length;
+		}
+		int[] bias_inds = new int[num_nodes];
+		int pos = 0;
+		int layerl_inputs = num_input_signals;
+		int offset = 0;
+		for (int l=0; l<hlayers.length; l++) {
+			NNNodeIntf[] layerl = hlayers[l];
+			for (int k=0; k<layerl.length; k++) 
+				bias_inds[pos++] = offset + (layerl_inputs+1)*(k+1)-1;
+			offset += (layerl_inputs+1)*layerl.length;  // +1 is for bias term
+			layerl_inputs = layerl.length;
+		}
+		// bias term for last (output) node
+		bias_inds[bias_inds.length-1] = getTotalNumWeights()-1;
+		return bias_inds;
+	}
+	
+	
+	/**
 	 * allows clients to call the base-class <CODE>eval()</CODE> method.
 	 * @param arg Object  // double[] inputSignal
 	 * @param params HashMap  // must contain &lt;"hiddenws$i$", double[][]&gt;
@@ -152,6 +191,44 @@ public class FFNN4TrainB extends FFNN4Train {
 		return super.evalNetworkOnInputData(arg, p2);
 	}
 	
+	
+	/**
+	 * evaluates the output of the output node of the network when an input 
+	 * (train_instance, train_label) pair is given.
+	 * @param weights double[] all weights array (includes bias terms)
+	 * @param train_instance double[] the training instance
+	 * @param train_label double the training label
+	 * @param params HashMap unused
+	 * @return double
+	 */
+	public double evalNetworkOutputOnTrainingData(double[] weights,
+		                                            double[] train_instance, 
+		                                            double train_label,
+																								HashMap params) {		
+		// compute from layer-0 to final hidden layer the node activations
+		final OutputNNNodeIntf outn = getOutputNode();
+		final int num_inputs = train_instance.length;
+		final int num_hidden_layers = getNumHiddenLayers();
+		final NNNodeIntf[][] hidden_layers = getHiddenLayers();
+		int pos = 0;  // the position index in the vector w
+		// get the inputs for the layer. Inputs are same for all nodes in a layer.
+		double[] layer_i_inputs = new double[num_inputs];
+		for (int i=0; i<num_inputs; i++) layer_i_inputs[i] = train_instance[i];
+		for (int i=0; i<num_hidden_layers; i++) {
+			NNNodeIntf[] layeri = hidden_layers[i];
+			double[] layeri_outputs = new double[layeri.length];
+			for (int j=0; j<layeri.length; j++) {
+				NNNodeIntf node_i_j = layeri[j];
+				layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, weights, pos);
+				// print out diagnostics
+				pos += layer_i_inputs.length+1;  // +1 is for the bias
+			}
+			layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
+		}
+		double valt = outn.evalB(layer_i_inputs, weights, pos, train_label);
+		return valt;
+	}
+
 	
 	/**
 	 * evaluates this feed-forward neural network with single output on a given
@@ -303,9 +380,9 @@ public class FFNN4TrainB extends FFNN4Train {
 				continue;
 			} 			
 			double[] inputs_t = train_vectors[t];
-			if (_mger.getDebugLvl()>=3) {  // diagnostics
+			if (_mger.getDebugLvl()>=4) {  // diagnostics
 				_mger.msg(" FFNN4TrainB.eval(): WORKING ON DATA train_vectors["+t+"]",
-					        2);
+					        4);
 			}
 			// compute from layer-0 to final hidden layer the node activations
 			int pos = 0;  // the position index in the vector w
@@ -320,25 +397,25 @@ public class FFNN4TrainB extends FFNN4Train {
 					NNNodeIntf node_i_j = layeri[j];
 					layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, w, pos);
 					// print out diagnostics
-					if (_mger.getDebugLvl()>=3) {
+					if (_mger.getDebugLvl()>=4) {
 						_mger.msg("  FFNN4TrainB.eval(): "+node_i_j.getNodeName()+"[layer="+
-							        i+"][index="+j+"]:",2);
+							        i+"][index="+j+"]:", 4);
 						String inps = "[ ";
 						for (int k=0; k<layer_i_inputs.length; k++) {
-							inps += layer_i_inputs[k]+" ";
+							inps += _df.format(layer_i_inputs[k])+" ";
 						}
 						inps += "]";
-						_mger.msg("   INPUTS="+inps, 2);
+						_mger.msg("   INPUTS="+inps, 4);
 						String ws = "[ ";
 						for (int k=0; k<layer_i_inputs.length; k++) {
-							ws += w[k+pos]+" ";
+							ws += _df.format(w[k+pos])+" ";
 						}
-						ws += w[layer_i_inputs.length+pos]+"(BIAS) ";
+						ws += _df.format(w[layer_i_inputs.length+pos])+"(BIAS) ";
 						ws += "]";
-						_mger.msg("   WEIGHTS="+ws, 2);
+						_mger.msg("   WEIGHTS="+ws, 4);
 						_mger.msg("   "+node_i_j.getNodeName()+"[layer="+i+"][index="+j+
 							       "] OUTPUT="+
-							       layeri_outputs[j], 2);
+							       _df.format(layeri_outputs[j]), 4);
 					}  // diagnostics
 					pos += layer_i_inputs.length+1;  // +1 is for the bias
 				}
@@ -346,23 +423,23 @@ public class FFNN4TrainB extends FFNN4Train {
 			}
 			double valt = output_node.evalB(layer_i_inputs, w, pos, train_labels[t]);
 			// print out diagnostics
-			if (_mger.getDebugLvl()>=3) {
+			if (_mger.getDebugLvl()>=4) {
 				_mger.msg("  FFNN4TrainB.eval(): OUTPUT "+output_node.getNodeName()+":", 
-				          2);
+				          4);
 				String inps = "[ ";
 				for (int k=0; k<layer_i_inputs.length; k++) {
-					inps += layer_i_inputs[k]+" ";
+					inps += _df.format(layer_i_inputs[k])+" ";
 				}
 				inps += "]";
-				_mger.msg("   INPUTS="+inps, 2);
+				_mger.msg("   INPUTS="+inps, 4);
 				String ws = "[ ";
 				for (int k=0; k<layer_i_inputs.length; k++) {
-					ws += w[k+pos]+" ";
+					ws += _df.format(w[k+pos])+" ";
 				}
-				ws += w[layer_i_inputs.length+pos]+"(BIAS) ";
+				ws += _df.format(w[layer_i_inputs.length+pos])+"(BIAS) ";
 				ws += "]";
-				_mger.msg("   WEIGHTS="+ws, 2);
-				_mger.msg("  FINAL OUTPUT for train_data["+t+"] = "+valt, 2);				
+				_mger.msg("   WEIGHTS="+ws, 4);
+				_mger.msg("  FINAL OUTPUT for train_data["+t+"] = "+valt, 4);				
 			}  // diagnostics
 			errors[t] = (valt-train_labels[t]);
 		}
@@ -385,9 +462,15 @@ public class FFNN4TrainB extends FFNN4Train {
 	 * derivative at (range in {0,1,...weights.length-1})
 	 * @param p HashMap must contain the "ffnn.traindata" and "ffnn.trainlabels"
 	 * keys, else the data will be fetched from the <CODE>TrainData</CODE> class.
+	 * @param clearParams boolean if true, any "hiddenws$i$" and "outputws" keys
+	 * will be removed from the parameters p hashmap that is passed to the nodes
+	 * of the neural network for automatic differentiation. Notice that this 
+	 * parameter must become true when the weights argument no longer corresponds
+	 * to the keys mentioned above in the hashmap, but should otherwise be false.
 	 * @return double 
 	 */
-	public double evalPartialDerivativeB(double[] weights, int index, HashMap p) {
+	public double evalPartialDerivativeB(double[] weights, int index, HashMap p,
+		                                   boolean clearParams) {
 		final double[][] traindata = p.containsKey("ffnn.traindata") ?
 			                             (double[][]) p.get("ffnn.traindata") :
 			                             TrainData.getTrainingVectors();
@@ -396,12 +479,13 @@ public class FFNN4TrainB extends FFNN4Train {
 			                             TrainData.getTrainingLabels();
 		final int num_instances = traindata.length;
 		long st = -1;
-		if (_mger.getDebugLvl()>=2) st = System.currentTimeMillis();
+		if (_mger.getDebugLvl()>=3) st = System.currentTimeMillis();
 		HashMap p2 = new HashMap(p);
-		// remove the hiddenws$i$ and outputws from p2
-		int num_layers = getNumHiddenLayers();
-		for (int i=0; i<num_layers; i++) p2.remove("hiddenws"+i);
-		p2.remove("outputws");
+		if (clearParams) {// remove the hiddenws$i$ and outputws from p2
+			int num_layers = getNumHiddenLayers();
+			for (int i=0; i<num_layers; i++) p2.remove("hiddenws"+i);
+			p2.remove("outputws");
+		}
 		double result;
 		double[] results = new double[num_instances];
 		for (int i=0; i<num_instances; i++) results[i] = Double.NaN;
@@ -460,11 +544,11 @@ public class FFNN4TrainB extends FFNN4Train {
 			// end main sequential loop
 		}
 		result = _costFunc.evalPartialDerivativeB(results);
-		if (_mger.getDebugLvl()>=2) {
+		if (_mger.getDebugLvl()>=3) {
 			long d2 = System.currentTimeMillis()-st;
 			_mger.msg("FFNN4TrainB.evalPartialDerivativeB(index="+index+")"+
 				       " with training set size="+traindata.length+" took "+
-				       d2+" msecs",2);
+				       d2+" msecs",3);
 		}
 		return result;
 	}

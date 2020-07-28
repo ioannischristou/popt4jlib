@@ -243,6 +243,9 @@ public class BaseNNNode {
 	 * @param val 
 	 */
 	protected void setLastDerivEvalCache(double val) {
+		if (!Double.isFinite(val)) {
+			throw new IllegalStateException("setLastDerivEvalCache(v): NOT finite v");
+		}
 		_lastDerivEvalCache.set(new Double(val));
 	}
 	
@@ -261,6 +264,9 @@ public class BaseNNNode {
 	 * @param val 
 	 */
 	protected void setLastEvalCache(double val) {
+		if (!Double.isFinite(val)) {
+			throw new IllegalStateException("setLastDerivEvalCache(v): NOT finite v");
+		}
 		_lastEvalCache.set(new Double(val));
 	}
 	

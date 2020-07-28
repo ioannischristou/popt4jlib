@@ -63,8 +63,13 @@ public class FFNN4TrainBGradTest3 {
 
 				VectorIntf gauto = new DblArray1Vector(weights);
 				long sauto = System.currentTimeMillis();
+				// clear "hiddenws" and "outputws" from params
+				int num_hidden_layers = ffnnb.getNumHiddenLayers();
+				for (int i=0; i<num_hidden_layers; i++) params.remove("hiddenws"+i);
+				params.remove("outputws");
 				for (int i=0; i<weights.length; i++) {
-					double g_auto_i = ffnnb.evalPartialDerivativeB(weights, i, params);
+					double g_auto_i = ffnnb.evalPartialDerivativeB(weights, i, params,
+						                                             false);
 					gauto.setCoord(i, g_auto_i);
 				}
 				long dauto = System.currentTimeMillis()-sauto;

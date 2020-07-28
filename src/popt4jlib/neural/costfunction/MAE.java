@@ -98,12 +98,15 @@ public class MAE implements FFNNCostFunctionIntf {
 			double[] outwgts = _ffnn.getOutputWeightsWithBias(weights);
 			p.put("outputws", outwgts);
 		}
-		final double err = _ffnn.evalNetworkOnInputData(input_signals, p)-true_lbl;
+		//final double err=_ffnn.evalNetworkOnInputData(input_signals, p)-true_lbl;
+		double err = _ffnn.evalNetworkOutputOnTrainingData(weights, 
+			                                                 input_signals, true_lbl, 
+																											 p) - true_lbl;
 		final double g_index = outn.evalPartialDerivativeB(weights, index, 
 			                                                 input_signals, true_lbl, 
 																											 p);
 		final double res = Double.compare(err, 0.0) >= 0 ? g_index : -g_index;
-		if (_mger.getDebugLvl()>=2) {
+		if (_mger.getDebugLvl()>=3) {
 			String wstr="[ ";
 			for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
 			wstr += "]";
@@ -112,7 +115,7 @@ public class MAE implements FFNNCostFunctionIntf {
 			isstr += "]";
 			_mger.msg("MAE.evalPartialDerivativeB(weights="+wstr+
 			 	        ", index="+index+
-					      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+res, 2);
+					      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+res, 3);
 		}
 		return res;
 	}
