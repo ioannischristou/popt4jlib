@@ -2,6 +2,7 @@ package popt4jlib.neural.costfunction;
 
 import utils.Messenger;
 import popt4jlib.neural.FFNN4TrainB;
+import popt4jlib.neural.BaseNNNode;
 import popt4jlib.neural.OutputNNNodeIntf;
 import java.util.HashMap;
 
@@ -118,6 +119,51 @@ public class MSSE implements FFNNCostFunctionIntf {
 		return res;
 	}
 	
+
+	/**
+	 * same as 
+	 * <CODE>
+	 * evalPartialDerivativeB(weights, index, input_signals, true_lbl, p)
+	 * </CODE>
+	 * but uses the grad-vector and the last-eval thread-local caches instead of 
+	 * the last deriv cache.
+	 * @param weights double[] all variables (including biases) array
+	 * @param index int the index of the partial derivative to take
+	 * @param input_signals double[] the input signals for the network (an
+	 * instance of the training data)
+	 * @param true_lbl double the true label corresponding to the input_signals
+	 * vector
+	 * @return double 
+	 */
+	public double evalPartialDerivativeB(double[] weights, int index,
+		                                   double[] input_signals, double true_lbl){
+		// evaluate the output node of this network on the (x,y) training pair
+		// compute the output node's derivative, and double the product of the two
+		OutputNNNodeIntf outn = _ffnn.getOutputNode();
+		BaseNNNode boutn = (BaseNNNode) outn;
+		final double cache = boutn.getLastEvalCache();
+		double ffnn_eval = Double.isNaN(cache)==false ? 
+		  cache : 
+		  _ffnn.evalNetworkOutputOnTrainingData(weights, input_signals, true_lbl, 
+																					  null);  
+		double err = ffnn_eval - true_lbl;
+		final double g_index = outn.evalPartialDerivativeB(weights, index, 
+			                                                 input_signals, true_lbl);
+		final double res = 2.0*err*g_index;
+		if (_mger.getDebugLvl()>=3) {
+			String wstr="[ ";
+			for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
+			wstr += "]";
+			String isstr="[ ";
+			for (int i=0; i<input_signals.length; i++) isstr += input_signals[i]+" ";
+			isstr += "]";
+			_mger.msg("MSSE.evalPartialDerivativeB(weights="+wstr+
+			 	        ", index="+index+
+					      ", input_signals="+isstr+", lbl="+true_lbl+")="+res, 3);
+		}
+		return res;
+	}
+
 	
 	/**
 	 * computes the partial derivative of this function on an array of values that

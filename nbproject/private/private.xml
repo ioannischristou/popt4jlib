@@ -27,6 +27,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_train_grid_data_ALLattrs_props.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecSingleCltWrkInitSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/Adam4FFNN.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FFNN4TrainBGradTest4.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/TestPoisson.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/FFNNCostFunctionIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/CategoricalXEntropyLossW.java</file>
@@ -143,11 +144,13 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/IntArray1Test.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_train_test_props_grid_data2.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/DblArray1ArgMaker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/ffnn_test_props_grid_data__ALLattrs.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/RndUtil.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/FletcherConjugateGradient.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearchFunctionEvaluationTask.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RosenbrockFunction.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/L2Norm.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FastFFNN4TrainBGrad.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FFNN.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_train_test_props2.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/ReentrantSocketEvalFunctionBase.java</file>

@@ -6,7 +6,8 @@ import java.util.HashMap;
 /**
  * class implements the Categorical Cross-Entropy loss function, that can only
  * be used as the output layer node of multi-class classification problems, 
- * where the previous layer has 1 (sigmoid) node for each class.
+ * where the previous layer has 1 node for each class and these last hidden 
+ * layer nodes output values in [0,1] (for example, Sigmoid or TanH01).
  * Notice that the standard <CODE>FFNN.eval[B]()</CODE> methods that do not 
  * require knowledge of the true label are implemented with the same logic as 
  * that of the <CODE>InputSignalMaxPosSelector</CODE> class.
@@ -195,26 +196,84 @@ public class CategoricalXEntropyLoss extends BaseNNNode
 			// compute from layer-0 to last layer
 			int pos = 0;  // the position index in the vector weights
 			// get inputs for the layer. Inputs are same for all nodes in a layer.
-			double[] layer_i_inputs = new double[num_inputs];
-			for (int i=0; i<num_inputs; i++) 
-				layer_i_inputs[i] = inputSignals[i];
-			for (int i=0; i<num_hidden_layers; i++) {
-				NNNodeIntf[] layeri = hidden_layers[i];
-				double[] layeri_outputs = new double[layeri.length];
-				for (int j=0; j<layeri.length; j++) {
-					NNNodeIntf node_i_j = layeri[j];
-					layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, weights, pos);
-					pos += layer_i_inputs.length+1;  // +1 is for the bias
+			double[] last_inputs = getLastInputsCache();
+			if (last_inputs==null) {
+				double[] layer_i_inputs = new double[num_inputs];
+				for (int i=0; i<num_inputs; i++) layer_i_inputs[i] = inputSignals[i];
+				for (int i=0; i<num_hidden_layers; i++) {
+					NNNodeIntf[] layeri = hidden_layers[i];
+					double[] layeri_outputs = new double[layeri.length];
+					for (int j=0; j<layeri.length; j++) {
+						NNNodeIntf node_i_j = layeri[j];
+						layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, weights, pos);
+						pos += layer_i_inputs.length+1;  // +1 is for the bias
+					}
+					layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
 				}
-				layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
-			}	
-			double result = -1.0 / layer_i_inputs[(int)true_lbl];
+				last_inputs = layer_i_inputs;
+				setLastInputsCache(last_inputs);
+			}
+			double result = -1.0 / last_inputs[(int)true_lbl];
 			// finally, multiply by the derivative of the true_lbl-th node in the 
 			// last layer:
 			final int ll = num_hidden_layers-1;
 			NNNodeIntf tln = _ffnn.getHiddenLayers()[ll][(int)true_lbl];
 			double last_der = 
 				tln.evalPartialDerivativeB(weights, index, inputSignals, true_lbl, p);
+			result *= last_der;
+			return result;
+		}
+	}
+
+	
+	/**
+	 * evaluates the partial derivative of this node (as a function of weights)
+	 * with respect to the weight variable whose weight is given by the value of 
+	 * the weights array in the given index.
+	 * @param weights double[] all variables (including biases) array
+	 * @param index int the index of the partial derivative to take
+	 * @param inputSignals double[] the training instance 
+	 * @param true_lbl double the training label
+	 * @return double
+	 */
+	public double evalPartialDerivativeB(double[] weights, int index, 
+		                                   double[] inputSignals, double true_lbl) {
+		// weights attached directly to this output node are irrelevant
+		if (index >= _startWeightInd) return 0.0; 
+		// else index is for a previous signal weight, and derivative is 
+		// (-1 / this_node_inputSignals[true_lbl]) times the derivative of the 
+		// previous layer node corresponding to the true_lbl
+		else {
+			final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
+			final int num_hidden_layers = hidden_layers.length;
+			double[] layer_i_inputs = getLastInputsCache();
+			if (layer_i_inputs==null) {  // do the work
+				final int num_inputs = inputSignals.length;  // get the #input_signals
+				// compute from layer-0 to last layer
+				int pos = 0;  // the position index in the vector weights
+				// get inputs for the layer. Inputs are same for all nodes in a layer.
+				layer_i_inputs = new double[num_inputs];
+				for (int i=0; i<num_inputs; i++) 
+					layer_i_inputs[i] = inputSignals[i];
+				for (int i=0; i<num_hidden_layers; i++) {
+					NNNodeIntf[] layeri = hidden_layers[i];
+					double[] layeri_outputs = new double[layeri.length];
+					for (int j=0; j<layeri.length; j++) {
+						NNNodeIntf node_i_j = layeri[j];
+						layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, weights, pos);
+						pos += layer_i_inputs.length+1;  // +1 is for the bias
+					}
+					layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
+				}
+				setLastInputsCache(layer_i_inputs);
+			}
+			double result = -1.0 / layer_i_inputs[(int)true_lbl];
+			// finally, multiply by the derivative of the true_lbl-th node in the 
+			// last layer:
+			final int ll = num_hidden_layers-1;
+			NNNodeIntf tln = _ffnn.getHiddenLayers()[ll][(int)true_lbl];
+			double last_der = 
+				tln.evalPartialDerivativeB(weights, index, inputSignals, true_lbl);
 			
 			result *= last_der;
 			return result;

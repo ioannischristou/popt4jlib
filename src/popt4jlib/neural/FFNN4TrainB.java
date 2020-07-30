@@ -226,6 +226,8 @@ public class FFNN4TrainB extends FFNN4Train {
 			layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
 		}
 		double valt = outn.evalB(layer_i_inputs, weights, pos, train_label);
+		// save valt in cache
+		((BaseNNNode) outn).setLastEvalCache(valt);
 		return valt;
 	}
 
@@ -554,6 +556,16 @@ public class FFNN4TrainB extends FFNN4Train {
 	}
 	
 	
+	public double[] evalGradient4TermB(double[] wgts, 
+		                                 double[] train_inst, double train_lbl) {
+		final double[] grad4inst = new double[wgts.length];
+		for (int i=0; i<wgts.length; i++) {
+			grad4inst[i] = _costFunc.evalPartialDerivativeB(wgts, i, train_inst, train_lbl);
+		}
+		return grad4inst;
+	}
+	
+	
 	/**
 	 * resets the derivative-related cache of every node in this ffnn.
 	 */
@@ -569,7 +581,24 @@ public class FFNN4TrainB extends FFNN4Train {
 			}
 		}
 	}
+
 	
+	/**
+	 * resets the gradient vector cache of every node in this ffnn.
+	 */
+	private void resetGradVectorCaches() {
+		BaseNNNode outn = (BaseNNNode) getOutputNode();
+		outn.resetGradVectorCache();
+		NNNodeIntf[][] hnodes = getHiddenLayers();
+		for (int i=0; i<hnodes.length; i++) {
+			final int ilen = hnodes[i].length;
+			for (int j=0; j<ilen; j++) {
+				BaseNNNode hnij = (BaseNNNode) hnodes[i][j];
+				hnij.resetGradVectorCache();
+			}
+		}
+	}
+
 	
 	/**
 	 * invoke as:

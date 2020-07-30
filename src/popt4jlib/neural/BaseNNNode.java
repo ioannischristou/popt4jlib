@@ -30,7 +30,8 @@ public class BaseNNNode {
 	
 	/**
 	 * the only caches we need: double for lastDerivEval, double[] for lastinputs
-	 * and double for lastEval
+	 * and double for lastEval. Add to that the gradient vector cache stored also
+	 * as double[].
 	 */
 	private ThreadLocal _lastDerivEvalCache = new ThreadLocal() {
     protected Object initialValue() {
@@ -49,7 +50,24 @@ public class BaseNNNode {
 			return _NaN;
 		}
 	};
-		
+
+	private ThreadLocal _lastGradVectorCache = new ThreadLocal() {
+		protected Object initialValue() {
+			return null;
+		}
+	};
+	/**
+	 * the _lastDerivEvalCache2 cache holds for a node with activation function
+	 * f, the value f'(net_input_sum), which is constant for the same (x,y) 
+	 * training pair.
+	 */
+	private ThreadLocal _lastDerivEvalCache2 = new ThreadLocal() {
+    protected Object initialValue() {
+      return _NaN;
+    }
+  };
+	
+
 	
 	/**
 	 * sets the total number of variables (weights plus biases) for the FFNN that
@@ -236,11 +254,25 @@ public class BaseNNNode {
 																			 HashMap p) {
 		throw new UnsupportedOperationException("method not implemented");
 	}
+
 	
+	/**
+	 * catch-all method for NNNodeIntf classes that do not implement this method.
+	 * @param weights double[] all variables (including biases) array
+	 * @param index int the index of the partial derivative to take
+	 * @param inputSignals double[]
+	 * @param true_lbl double
+	 * @return double
+	 */
+	public double evalPartialDerivativeB(double[] weights, int index, 
+		                                   double[] inputSignals, double true_lbl) {
+		throw new UnsupportedOperationException("method not implemented");
+	}
+
 	
 	/**
 	 * cache last derivative evaluation.
-	 * @param val 
+	 * @param val double 
 	 */
 	protected void setLastDerivEvalCache(double val) {
 		if (!Double.isFinite(val)) {
@@ -261,7 +293,7 @@ public class BaseNNNode {
 	
 	/**
 	 * cache last evaluation.
-	 * @param val 
+	 * @param val double
 	 */
 	protected void setLastEvalCache(double val) {
 		if (!Double.isFinite(val)) {
@@ -275,7 +307,7 @@ public class BaseNNNode {
 	 * get the last evaluation.
 	 * @return double maybe NaN.
 	 */
-	protected double getLastEvalCache() {
+	public double getLastEvalCache() {
 		return ((Double)_lastEvalCache.get()).doubleValue();
 	}
 	
@@ -293,7 +325,7 @@ public class BaseNNNode {
 	 * get the last inputs.
 	 * @return double maybe NaN.
 	 */
-	protected double[] getLastInputsCache() {
+	public double[] getLastInputsCache() {
 		return (double[]) _lastInputsCache.get();
 	}
 
@@ -306,6 +338,76 @@ public class BaseNNNode {
 		_lastInputsCache.set(null);
 		_lastEvalCache.set(_NaN);
 	}
-		
+	
+	
+	/**
+	 * get the last grad vector. If it's null, a new array is created and stored
+	 * in the cache (with NaN values) before being returned to the caller.
+	 * @return double[]
+	 */
+	protected double[] getGradVectorCache() {
+		double[] arr = (double[]) _lastGradVectorCache.get();
+		if (arr==null) {
+			arr = new double[getTotalNumWeights()];  
+      for (int i=0; i<arr.length; i++) 
+				arr[i] = Double.NaN;  // init to NaN values
+			_lastGradVectorCache.set(arr);
+		}
+		return arr;
+	}
+	
+	
+	/**
+	 * update the last grad vector of this node.
+	 * @param g double[]
+	 */
+	protected void setGradVectorCache(double[] g) {
+		_lastGradVectorCache.set(g);
+	}
+	
+	
+	/**
+	 * set the i-th coordinate of the last grad vector of this node.
+	 * @param i int in {0,1,...#weights-1}
+	 * @param gi double the value of the ith component of this node's gradient 
+	 */
+	protected void setGradVectorCache(int i, double gi) {
+		double[] g = (double[]) _lastGradVectorCache.get();
+		g[i] = gi;
+	}
+	
+	
+	/**
+	 * reset all components of the grad vector cache of this node to NaN values.
+	 */
+	protected void resetGradVectorCache() {
+		double[] arr = (double[]) _lastGradVectorCache.get();
+		if (arr==null) return;
+		for (int i=0; i<arr.length; i++) arr[i] = Double.NaN;
+		_lastDerivEvalCache2.set(_NaN);
+	}
+
+	
+	/**
+	 * cache last derivative evaluation for use with the grad-vector caches.
+	 * @param val double
+	 */
+	protected void setLastDerivEvalCache2(double val) {
+		if (!Double.isFinite(val)) {
+			throw new IllegalStateException("setLastDerivEvalCache2(v): "+
+				                              "NOT finite v");
+		}
+		_lastDerivEvalCache2.set(new Double(val));
+	}
+	
+	
+	/**
+	 * get the last derivative evaluation that is for use with grad-vector caches.
+	 * @return double maybe NaN.
+	 */
+	protected double getLastDerivEvalCache2() {
+		return ((Double)_lastDerivEvalCache2.get()).doubleValue();
+	}
+
 }
 

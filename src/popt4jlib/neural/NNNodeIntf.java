@@ -191,5 +191,23 @@ public interface NNNodeIntf extends Serializable {
 		                                   double[] input_signals, double true_lbl, 
 																			 HashMap p);
 	
+	
+	/**
+	 * same as the <CODE>evalPartialDerivativeB(w,i,train_inst,train_lbl,p)</CODE>
+	 * method except that the computations are for whole gradient calculations, in
+	 * that the grad-vector cache is used without being reset in a full gradient 
+	 * computation.
+	 * @param weights double[] all variables (including biases) array
+	 * @param index int the index of the partial derivative to take
+	 * @param input_signals double[] the input signals for the network (an 
+	 * instance of the training data)
+	 * @param true_lbl double the true label corresponding to the input_signals
+	 * vector
+	 * @return double
+	 */	
+	public double evalPartialDerivativeB(double[] weights, int index, 
+		                                   double[] input_signals, double true_lbl);
+
+	
 }
 

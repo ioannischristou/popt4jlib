@@ -87,6 +87,24 @@ public class CategoricalAccuracy implements FFNNCostFunctionIntf {
 			                                      "evaluate derivative of FFNN");
 	}
 	
+	/**
+	 * throws <CODE>UnsupportedOperationException</CODE>, since categorical 
+	 * accuracy is not a differentiable function.
+	 * @param weights double[] all variables (including biases) array
+	 * @param index int the index of the partial derivative to take
+	 * @param input_signals double[] the input signals for the network (an
+	 * instance of the training data)
+	 * @param true_lbl double the true label corresponding to the input_signals
+	 * vector
+	 * @return double 
+	 * @throws UnsupportedOperationException always
+	 */
+	public double evalPartialDerivativeB(double[] weights, int index,
+		                                   double[] input_signals, double true_lbl){
+		throw new UnsupportedOperationException("CategoricalAccuracy cannot "+
+			                                      "evaluate derivative of FFNN");		
+	}
+	
 	
 	/**
 	 * throws <CODE>UnsupportedOperationException</CODE>, since categorical 

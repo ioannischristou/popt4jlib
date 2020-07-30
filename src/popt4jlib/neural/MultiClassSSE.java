@@ -280,6 +280,7 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 					layer_i_inputs = layeri_outputs;  // set inputs for next iteration
 				}
 				last_inputs = layer_i_inputs;
+				setLastInputsCache(last_inputs);
 			}
 			double result = 0.0;			
 			NNNodeIntf[] prev_layer = _ffnn.getHiddenLayers()[layer_of_node-1];
@@ -311,8 +312,99 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 				listr += "]";
 				_mger.msg("last_inputs="+listr,0);
 			}
-			setLastInputsCache(last_inputs);
 			setLastDerivEvalCache(result);
+			return result;
+		}
+	}
+
+	
+	/**
+	 * evaluates the partial derivative of this node (as a function of weights)
+	 * with respect to the weight variable whose weight is given by the value of 
+	 * the weights array in the given index, using the grad vector thread local 
+	 * cache. The derivative for this node exists everywhere when it is used as 
+	 * the output node.
+	 * @param weights double[] all variables (including biases) array
+	 * @param index int the index of the partial derivative to take
+	 * @param inputSignals double[]
+	 * @param true_lbl double
+	 * @return double
+	 * @throws IllegalStateException if this node is not the output node of the 
+	 * network it belongs to
+	 */
+	public double evalPartialDerivativeB(double[] weights, int index, 
+		                                   double[] inputSignals, double true_lbl) {
+		if (_ffnn.getOutputNode()!=this) {
+			throw new IllegalStateException("MultiClassSSE node used as hidden node");
+		}
+		// 0. see if the value is already computed before
+		//double cache = getLastDerivEvalCache();
+		double cache = getGradVectorCache()[index];
+		if (!Double.isNaN(cache)) {
+			return cache;
+		}
+		// 1. if index is after input weights, throw exception!
+		if (index > _biasInd) {
+			throw new IllegalArgumentException("MultiClassSSE node is output but "+
+				                                 "index="+index+" > _bias="+_biasInd);
+		}
+		// 2. if index is for direct input weights (or bias) derivative is zero
+		else if (_startWeightInd <= index && index <= _biasInd) {
+			final double result = 0.0;
+			//setLastDerivEvalCache(result);
+			setGradVectorCache(index, result);
+			return result;
+		}
+		// 3. if index is for a weight connecting the previous layer that this node
+		//    belongs to with another node of this layer (but not this node), 
+		//    result is zero
+		else if (!isWeightVariableAntecedent(index)) {
+			//setLastDerivEvalCache(0.0);
+			setGradVectorCache(index, 0.0);
+			return 0.0;
+		}
+		// 4. else index is for a previous signal weight, and derivative is the 
+		//    sum of the errors si-ei of each input signal to this node minus the
+		//    "correct" value for that signal multiplied by the partial derivative
+		//    of the input signal; all that multiplied by 2
+		else {
+			int layer_of_node = _ffnn.getNumHiddenLayers();  // it's the output node
+			double[] last_inputs = getLastInputsCache();
+			if (last_inputs == null) {  // nope, not in cache, must work from scratch
+				final int num_inputs = inputSignals.length;  // get the #input_signals
+				final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
+				final int num_hidden_layers = hidden_layers.length;
+				// compute from layer-0 to this node
+				int pos = 0;  // the position index in the vector weights
+				// get inputs for the layer. Inputs are same for all nodes in a layer.
+				double[] layer_i_inputs = new double[num_inputs];
+				for (int i=0; i<num_inputs; i++) layer_i_inputs[i] = inputSignals[i];
+				for (int i=0; i<num_hidden_layers; i++) {
+					NNNodeIntf[] layeri = hidden_layers[i];
+					double[] layeri_outputs = new double[layeri.length];
+					for (int j=0; j<layeri.length; j++) {
+						NNNodeIntf node_i_j = layeri[j];
+						layeri_outputs[j] = node_i_j.evalB(layer_i_inputs, weights, pos);
+						pos += layer_i_inputs.length + 1;  // +1 is for the bias
+					}
+					layer_i_inputs = layeri_outputs;  // set inputs for next iteration
+				}
+				last_inputs = layer_i_inputs;
+				setLastInputsCache(last_inputs);
+			}
+			double result = 0.0;			
+			NNNodeIntf[] prev_layer = _ffnn.getHiddenLayers()[layer_of_node-1];
+			for (int j=0; j<last_inputs.length; j++) {
+				double expected_j = j == (int)true_lbl ? 1.0 : 0.0;
+				double errj = last_inputs[j] - expected_j;
+				result += errj * 
+				          prev_layer[j].evalPartialDerivativeB(weights, index, 
+									                                     inputSignals, 
+																											 true_lbl);
+			}
+			result += result;  // 2*result
+			//setLastDerivEvalCache(result);
+			setGradVectorCache(index, result);
 			return result;
 		}
 	}

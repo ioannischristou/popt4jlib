@@ -36,6 +36,24 @@ public interface FFNNCostFunctionIntf extends FunctionIntf {
 	
 	
 	/**
+	 * same as 
+	 * <CODE>
+	 * evalPartialDerivativeB(weights, index, input_signals, true_lbl, p)
+	 * </CODE>
+	 * but uses the grad-vector caches instead of the last deriv cache.
+	 * @param weights double[] all variables (including biases) array
+	 * @param index int the index of the partial derivative to take
+	 * @param input_signals double[] the input signals for the network (an
+	 * instance of the training data)
+	 * @param true_lbl double the true label corresponding to the input_signals
+	 * vector
+	 * @return double 
+	 */
+	public double evalPartialDerivativeB(double[] weights, int index,
+		                                   double[] input_signals, double true_lbl);
+	
+	
+	/**
 	 * computes the partial derivative of this function on an array of values that
 	 * is the derivative of this function on a set of training instances and 
 	 * labels.

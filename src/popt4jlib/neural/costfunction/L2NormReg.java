@@ -111,6 +111,26 @@ public class L2NormReg extends L2Norm {
 	
 	
 	/**
+	 * always throws exception, as this method is not supported by this class. The
+	 * reason for not being supported is that the &lambda; term that multiplies
+	 * the L2-norm of the weights cannot be accessed here since we eliminated the
+	 * parameters hash-map from the argument list in the signature of this method.
+	 * @param weights double[] all variables (including biases) array
+	 * @param index int the index of the partial derivative to take
+	 * @param input_signals double[] the input signals for the network (an
+	 * instance of the training data)
+	 * @param true_lbl double the true label corresponding to the input_signals
+	 * vector
+	 * @throws UnsupportedOperationException always
+	 * @return double 
+	 */
+	public double evalPartialDerivativeB(double[] weights, int index,
+		                                   double[] input_signals, double true_lbl){
+		throw new UnsupportedOperationException("method not supported");
+	}
+
+	
+	/**
 	 * computes the partial derivative of this function on an array of values that
 	 * is the derivative of this function on a set of training instances and 
 	 * labels.
