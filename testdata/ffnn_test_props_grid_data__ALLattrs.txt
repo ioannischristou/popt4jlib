@@ -11,9 +11,12 @@ dbglvl,1
 # ... N09
 # x14
 class,outputlayer,popt4jlib.neural.MultiClassSSE
-arrayofcopies,layer1_arr,10,popt4jlib.neural.Sigmoid,1.0
-arrayofcopies,layer3_arr,11,popt4jlib.neural.Sigmoid,1.0
-array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer3_arr
+arrayofcopies,layera_arr,10,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layerb_arr,10,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layerc_arr,30,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layerd_arr,50,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layerf_arr,11,popt4jlib.neural.Sigmoid,1.0
+array,hiddenlayers,[Ljava.lang.Object;,layera_arr,layerb_arr,layerc_arr,layerd_arr,layerf_arr
 # normalized train data:
 matrixN01,ffnn.traindata,testdata/grid_data_ALLattrs_train.dat
 # train labels

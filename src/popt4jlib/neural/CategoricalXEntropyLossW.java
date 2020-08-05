@@ -179,6 +179,15 @@ public class CategoricalXEntropyLossW extends BaseNNNode
 	public String getNodeName() {
 		return "CategoricalXEntropyLoss";
 	}
+	
+	
+	/**
+	 * can only be output node.
+	 * @return false always
+	 */
+	public boolean isDropout() {
+		return false;
+	}
 
 }
 

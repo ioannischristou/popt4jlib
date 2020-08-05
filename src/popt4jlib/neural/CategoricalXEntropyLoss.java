@@ -157,6 +157,7 @@ public class CategoricalXEntropyLoss extends BaseNNNode
 	 */
 	public double evalB(double[] inputSignals, double[] weights, int offset,
 		                  double true_label) {
+		setLastDerivEvalCache2(-1.0 / inputSignals[(int)true_label]);
 		return eval(inputSignals, weights, offset, true_label);
 	}
 
@@ -278,6 +279,15 @@ public class CategoricalXEntropyLoss extends BaseNNNode
 			result *= last_der;
 			return result;
 		}
+	}
+	
+	
+	/**
+	 * can never become drop-out node.
+	 * @return false always
+	 */
+	public boolean isDropout() {
+		return false;
 	}
 
 }

@@ -23,6 +23,8 @@ public class BaseNNNode {
 	private int _nodeLayer=-1;
 	private int _posInLayer=-1;
 	
+	private volatile boolean _isDropout = false;
+	
 	protected FFNN4TrainB _ffnn;
 	
 	// compile-time constant (minor optimization for the caches)
@@ -407,6 +409,24 @@ public class BaseNNNode {
 	 */
 	protected double getLastDerivEvalCache2() {
 		return ((Double)_lastDerivEvalCache2.get()).doubleValue();
+	}
+	
+	
+	/**
+	 * sets the dropout property of this node.
+	 * @param val boolean
+	 */
+	public void setDropout(boolean val) {
+		_isDropout = val;
+	}
+	
+	
+	/**
+	 * gets the dropout property of this node.
+	 * @return boolean
+	 */
+	public boolean isDropout() {
+		return _isDropout;
 	}
 
 }

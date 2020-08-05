@@ -38,6 +38,9 @@ public class FFNN4TrainB extends FFNN4Train {
 	
 	private boolean _isInited = false;
 	
+	// defines the order of computing the partial derivatives w.r.t the weights
+	private boolean _computingOrderAsc = false;
+	
 	
 	/**
 	 * 3-arg public constructor for serial training set evaluation (unless the 
@@ -175,7 +178,74 @@ public class FFNN4TrainB extends FFNN4Train {
 		bias_inds[bias_inds.length-1] = getTotalNumWeights()-1;
 		return bias_inds;
 	}
+
 	
+	/**
+	 * get the NNNodeIntf node that is the "source" of the weight whose index is
+	 * the given 2nd argument.
+	 * @param numInputSignals int the number of input features in this FFNN4TrainB
+	 * object
+	 * @param weightIndex int
+	 * @return NNNodeIntf may be null if weight connects input features to 1st 
+	 * hidden layer or if weight is for bias term
+	 * @throws IllegalArgumentException if weightIndex is invalid
+	 */
+	public NNNodeIntf getStartNode(int numInputSignals, int weightIndex) {
+		if (weightIndex<0 || weightIndex >= getTotalNumWeights()) 
+			throw new IllegalArgumentException("windex="+weightIndex+" out of range"+
+				                                 "[0,"+getTotalNumWeights()+"]");
+		NNNodeIntf[][] hlayers = getHiddenLayers();
+		// weight connects inputs to hidden layer
+		if ((numInputSignals+1)*hlayers[0].length <= weightIndex) return null;
+		int cnt = (numInputSignals+1)*hlayers[0].length;
+		int i=1;
+		int numSignalsi = hlayers[0].length;
+		while (true) {
+			if (cnt+(numSignalsi+1)*hlayers[i].length >= weightIndex) {
+				// requested node is in layer i-1
+				NNNodeIntf[] layerim1 = hlayers[i-1];
+				int start_ind = layerim1[0].getDirectInputWeightStartIndex();
+				int pos = (weightIndex-start_ind) % (numSignalsi+1);
+				if (pos==numSignalsi) return null;  // weight is bias term
+				return layerim1[pos];
+			}
+			cnt += hlayers[i].length*(numSignalsi+1);
+			++i;
+			numSignalsi = hlayers[i].length;
+		}		
+	}
+	
+	
+	/**
+	 * get the NNNodeIntf node that is the "sink" of the weight whose index is
+	 * the given 2nd argument.
+	 * @param numInputSignals int the number of input features in this FFNN4TrainB
+	 * object
+	 * @param weightIndex int
+	 * @return NNNodeIntf
+	 * @throws IllegalArgumentException if weightIndex is invalid
+	 */
+	public NNNodeIntf getEndNode(int numInputSignals, int weightIndex) {
+		if (weightIndex<0 || weightIndex >= getTotalNumWeights()) 
+			throw new IllegalArgumentException("windex="+weightIndex+" out of range"+
+				                                 "[0,"+getTotalNumWeights()+"]");
+		NNNodeIntf[][] hlayers = getHiddenLayers();
+		int i=0;
+		int cnt = 0;
+		int numSignalsi = numInputSignals;
+		while (true) {
+			if (cnt+(numSignalsi+1)*hlayers[i].length >= weightIndex) {
+				// requested node is in layer i
+				NNNodeIntf[] layeri = hlayers[i];
+				int ind_in_layer = (weightIndex-cnt) / (numSignalsi+1);
+				return layeri[ind_in_layer];
+			}
+			cnt += hlayers[i].length*(numSignalsi+1);
+			++i;
+			numSignalsi = hlayers[i].length;
+		}
+	}
+
 	
 	/**
 	 * allows clients to call the base-class <CODE>eval()</CODE> method.
@@ -556,11 +626,44 @@ public class FFNN4TrainB extends FFNN4Train {
 	}
 	
 	
+	/**
+	 * sets the order in which the partial derivatives are to be computed in the 
+	 * method <CODE>evalGradient4TermB()</CODE>.
+	 * @param do_asc boolean
+	 */
+	public void setComputingOrderAsc(boolean do_asc) {
+		_computingOrderAsc = do_asc;
+	}
+	
+	
+	/**
+	 * evaluates the entire gradient of this feed-forward neural network on a 
+	 * single training pair (x,y). The order of computing the partial derivatives
+	 * is by default descending, meaning that the derivatives corresponding to the
+	 * first hidden layer's weights will be computed last, but can be reversed
+	 * by calling the method <CODE>setComputingOrderAsc(true)</CODE> of this 
+	 * object before calling this method.
+	 * @param wgts double[] the point at which to compute automatically the 
+	 * derivative
+	 * @param train_inst double[] the training instance x
+	 * @param train_lbl double the training label y
+	 * @return double[] the gradient of this network on the point wgts given the 
+	 * training pair (train_inst, train_lbl)
+	 */
 	public double[] evalGradient4TermB(double[] wgts, 
 		                                 double[] train_inst, double train_lbl) {
 		final double[] grad4inst = new double[wgts.length];
-		for (int i=0; i<wgts.length; i++) {
-			grad4inst[i] = _costFunc.evalPartialDerivativeB(wgts, i, train_inst, train_lbl);
+		if (_computingOrderAsc) {
+			for (int i=0; i<wgts.length; i++) {
+				grad4inst[i] = 
+					_costFunc.evalPartialDerivativeB(wgts, i, train_inst, train_lbl);
+			}
+		}
+		else {
+			for (int i=wgts.length-1; i>=0; i--) {
+				grad4inst[i] = 
+					_costFunc.evalPartialDerivativeB(wgts, i, train_inst, train_lbl);
+			}			
 		}
 		return grad4inst;
 	}

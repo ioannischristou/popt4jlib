@@ -29,6 +29,7 @@ public class TanH01 extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
@@ -45,6 +46,7 @@ public class TanH01 extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights, int offset) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
@@ -60,6 +62,7 @@ public class TanH01 extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] weights) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
@@ -77,6 +80,7 @@ public class TanH01 extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] weights, int offset) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];

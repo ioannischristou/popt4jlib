@@ -155,6 +155,15 @@ public class InputSignalMaxPosSelector extends BaseNNNode
 	public String getNodeName() {
 		return "InputSignalMaxPosSelector";
 	}
+	
+	
+	/**
+	 * an object of this class can never be hidden node.
+	 * @return false always
+	 */
+	public boolean isDropout() {
+		return false;
+	}
 
 }
 

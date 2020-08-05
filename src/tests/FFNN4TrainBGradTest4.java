@@ -12,8 +12,8 @@ import java.util.Random;
 /**
  * tests the "auto" gradient computation (per training instance) for FeedForward
  * Neural Networks with bias accepting. Differs from FFNN4TrainBGradTest3 in 
- * that the tests are made between the FFNN4TrainBGrad and FastFFNN4TrainBGrad
- * classes.
+ * that the tests are made between the FFNN4TrainBGrad, FastFFNN4TrainBGrad and
+ * FasterFFNN4TrainBGrad classes.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -26,7 +26,7 @@ public class FFNN4TrainBGradTest4 {
 	/** builds a very simple FFNN and tests its gradient. Invoke as:
 	 * <CODE>
 	 * java -cp &lt;classpath&gt; tests.FFNN4TrainBGradTest4 &lt;params_file&gt;
-	 * [num_random_tries(1)] [num_threads(1)]
+	 * [num_random_tries(1)] [num_threads(1)] [do_wgts_asc(true)]
 	 * </CODE>.
 	 * @param args 
 	 */
@@ -41,6 +41,10 @@ public class FFNN4TrainBGradTest4 {
 		if (args.length>2) {
 			num_threads = Integer.parseInt(args[2]);
 		}
+		boolean do_wgts_asc = true;
+		if (args.length>3) {
+			do_wgts_asc = Boolean.parseBoolean(args[3]);
+		}
 		try {
 			HashMap params = DataMgr.readPropsFromFile(params_file);
 
@@ -48,12 +52,12 @@ public class FFNN4TrainBGradTest4 {
 			double[][] traindata = (double[][]) params.get("ffnn.traindata");
 			double[] trainlabels = (double[]) params.get("ffnn.trainlabels");
 			ffnnb.finalizeInitialization(traindata[0].length);  // #columns in dataset
-
+			ffnnb.setComputingOrderAsc(do_wgts_asc);
+			
 			final int num_features = traindata[0].length;
 			final int num_weights = ffnnb.getTotalNumWeights();
 			double[] weights = new double[num_weights];
 			Random r = RndUtil.getInstance().getRandom();
-			
 			
 			for (int k=0; k<num_tries; k++) {
 				// create random weights values
@@ -61,12 +65,27 @@ public class FFNN4TrainBGradTest4 {
 				
 				FastFFNN4TrainBGrad gf_auto = 
 					new FastFFNN4TrainBGrad(ffnnb, num_features, num_threads);
+				System.err.println("done initializing FastFFNN4TrainBGrad");
+				FasterFFNN4TrainBGrad gf_auto2 = 
+					new FasterFFNN4TrainBGrad(ffnnb, num_features, num_threads);
+				System.err.println("done initializing FasterFFNN4TrainBGrad");
 				VectorIntf x = new DblArray1Vector(weights);
 				long sfauto = System.currentTimeMillis();
 				VectorIntf ga2 = gf_auto.eval(x, params);
 				long dfauto = System.currentTimeMillis()-sfauto;
 				System.err.println("gfast_auto computed in "+dfauto+" msecs");
 
+				VectorIntf ga3=null;
+				try {
+					long sfauto2 = System.currentTimeMillis();
+					ga3 = gf_auto2.eval(x, params);
+					long dfauto2 = System.currentTimeMillis()-sfauto2;
+					System.err.println("gfast_auto2 computed in "+dfauto2+" msecs");
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+				
 				VectorIntf gauto = new DblArray1Vector(weights);
 				long sauto = System.currentTimeMillis();
 				// clear "hiddenws" and "outputws" from params
@@ -85,6 +104,13 @@ public class FFNN4TrainBGradTest4 {
 				double norm_diff_1 = VecUtil.norm(diff, 1);
 				//System.out.println("gapprox="+ga);
 				System.err.println("MAIN--- ||gfast_auto - g_auto||_1="+norm_diff_1);
+
+				if (ga3!=null) {
+					VectorIntf diff2 = VecUtil.subtract(ga3, gauto);
+					double norm_diff_2 = VecUtil.norm(diff2, 1);
+					System.err.println("MAIN--- ||gfast_auto2 - g_auto||_1="+norm_diff_2);
+				}
+				
 				System.err.println("gauto time="+dauto+" msecs,"+
 													 " gfast_auto time="+dfauto+" msecs");
 			}

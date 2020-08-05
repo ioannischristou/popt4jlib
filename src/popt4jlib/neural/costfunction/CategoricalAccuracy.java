@@ -28,6 +28,18 @@ public class CategoricalAccuracy implements FFNNCostFunctionIntf {
 	
 	
 	/**
+	 * always throws UnsupportedOperationException.
+	 * @param x double
+	 * @return double
+	 * @throws UnsupportedOperationException
+	 */
+	public double evalDerivative(double x) {
+		throw new UnsupportedOperationException("CategoricalAccuracy cannot "+
+			                                      "evaluate derivative of FFNN");		
+	}
+	
+	
+	/**
 	 * computes and returns the number of components that deviate from zero by 
 	 * more than 1/2 divided by the total number of non NaN components, multiplied
 	 * by 100 (the percentage error which is 100 - accuracy).

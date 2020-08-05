@@ -46,6 +46,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
@@ -62,6 +63,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights, int offset) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
@@ -77,6 +79,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] weights) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
@@ -98,6 +101,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] weights, int offset) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
@@ -106,6 +110,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 		// cache values for speeding up auto-differentiation
 		setLastInputsCache(inputSignals);
 		setLastEvalCache(result);
+		setLastDerivEvalCache2(gPrime(prod));
 		return result;
 	}
 	
@@ -134,6 +139,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] inputSignals, double true_lbl,
 																			 HashMap p) {
+		if (isDropout()) return 0.0;
 		// 0. see if the value is already computed before
 		double cache = getLastDerivEvalCache();
 		if (!Double.isNaN(cache)) return cache;
@@ -422,6 +428,7 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] inputSignals, double true_lbl) {
+		if (isDropout()) return 0.0;
 		// 0. see if the value is already computed before
 		double cache = getGradVectorCache()[index];
 		if (!Double.isNaN(cache)) return cache;

@@ -20,7 +20,9 @@ import java.io.Serializable;
  * doesn't compute each partial derivative with separate function calls, but 
  * all in the same call per training instance, thus maintaining in the cache the
  * computations. It uses the auto-differentiation functionality built-into the 
- * <CODE>FFNN4TrainB</CODE> class.
+ * <CODE>FFNN4TrainB</CODE> class. It is still way slower than the standard 
+ * Back-Propagation algorithm implemented in <CODE>FasterFFNN4TrainBGrad</CODE>
+ * class.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -59,7 +61,15 @@ public class FastFFNN4TrainBGrad implements VecFunctionIntf {
 			_ffnn.finalizeInitialization(num_input_signals);
 	}
 	
-	
+
+	/**
+	 * same as two-arg constructor, but also initializes a thread-pool for 
+	 * running the gradient computation for the different training pairs (x,y)
+	 * in parallel.
+	 * @param ffnn
+	 * @param num_input_signals
+	 * @param num_threads 
+	 */
 	public FastFFNN4TrainBGrad(FFNN4TrainB ffnn, int num_input_signals, 
 		                         int num_threads) {
 		this(ffnn, num_input_signals);
@@ -112,7 +122,8 @@ public class FastFFNN4TrainBGrad implements VecFunctionIntf {
 		}  // go serial
 		else {  // go parallel
 			// break training instances into up to 10 x num_threads tasks
-			final int task_size = traindata.length / (_extor.getNumThreads()*10);
+			final int task_size = 
+				Math.max(traindata.length / (_extor.getNumThreads()*10), 1);
 			List tasks = new ArrayList();  // List<FastFFNN4TrainBGradTask>
 			int start = 0;
 			int end = task_size;

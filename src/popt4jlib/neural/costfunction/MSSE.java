@@ -31,6 +31,16 @@ public class MSSE implements FFNNCostFunctionIntf {
 	
 	
 	/**
+	 * computes the value 2x.
+	 * @param x double
+	 * @return double
+	 */
+	public double evalDerivative(double x) {
+		return x+x;
+	}
+
+		
+	/**
 	 * computes and returns the value (|x_1|^2+|x_2|^2+...+|x_n|^2)/m where m is 
 	 * the number of non NaN components in the vector x.
 	 * @param arg Object  // double[]

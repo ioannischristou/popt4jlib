@@ -31,6 +31,16 @@ public class L2Norm implements FFNNCostFunctionIntf {
 	
 	
 	/**
+	 * computes the value 2x.
+	 * @param x double
+	 * @return double
+	 */
+	public double evalDerivative(double x) {
+		return x+x;
+	}
+
+	
+	/**
 	 * computes and returns ||x||_2.
 	 * @param arg Object  // double[]
 	 * @param params HashMap unused

@@ -158,6 +158,7 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 		// cache result for speeding up auto-differentiation
 		setLastInputsCache(inputSignals);
 		setLastEvalCache(result);
+		setLastDerivEvalCache2(0.0);
 		return result;
 	}
 	
@@ -407,6 +408,15 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 			setGradVectorCache(index, result);
 			return result;
 		}
+	}
+	
+	
+	/**
+	 * can only be used as output node.
+	 * @return false always
+	 */
+	public boolean isDropout() {
+		return false;
 	}
 
 }

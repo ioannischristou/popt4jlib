@@ -1,5 +1,7 @@
 package popt4jlib.neural;
 
+import popt4jlib.VectorIntf;
+import popt4jlib.DblArray1Vector;
 import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.FunctionIntf;
 import popt4jlib.IncumbentProviderIntf;
@@ -15,14 +17,17 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.io.IOException;
+import popt4jlib.GradientDescent.VecUtil;
 
 
 /**
  * implements a parallel/distributed version of the mini-batch Back Propagation
- * classical algorithm for neural network training. It works on mini batches of
- * the entire training set (could be batches of size 1, in which case it 
- * degenerates to the classical online BackProp) to compute the gradient of the
- * <CODE>FFNN4TrainB</CODE> object that the algorithm essentially trains. The 
+ * classical algorithm for neural network training (BackProp here means not just
+ * the automatic differentiation of the feed-forward neural network, but the 
+ * stochastic gradient descent with fixed step-size as well). It works on mini 
+ * batches of the entire training set (could be batches of size 1, in which case 
+ * it degenerates to the classical online BackProp) to compute the gradient of
+ * the <CODE>FFNN4TrainB</CODE> object the algorithm essentially trains. The 
  * extra feature it adds is that instead of modifying each time the current
  * iterate point (i.e. weights vector) by subtracting from it a multiple of the
  * gradient (the multiple being the "learning rate"), it evaluates in parallel
@@ -52,6 +57,8 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 	// default values for decaying learning rates
 	private double _c1 = 10.0;
 	private double _c2 = 10.0;
+	// indicates whether to normalize the gradient to have L2-norm of 1 or not
+	private boolean _normalizeGrad = false;
 	
 	private double[] _inc;
 	private double _incVal = Double.MAX_VALUE;
@@ -164,6 +171,9 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 				}
 			}
 		}
+		if (_params.containsKey("pdmbbp.normgrad")) {
+			_normalizeGrad = ((Boolean)_params.get("pdmbbp.normgrad")).booleanValue();
+		}
   }
 	
 	
@@ -242,6 +252,10 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 	 * that will be used to compute the derivative of the network. Default is 1 
 	 * (online learning). Notice that in general, the larger the mini-batch size
 	 * the faster an epoch completes!.
+	 * <li>&lt;"pdmbbp.normgrad", Boolean&gt; optional whether the gradient 
+	 * computed will also be normalized to have unit L2-norm. Default is false.
+	 * <li>&lt;"pdmbbp.num_threads", Integer&gt; optional, the number of threads
+	 * that the fast auto-differentiator will use. Default is 1.
 	 * <li>&lt;"pdmbbp.num_epochs", Integer&gt; optional, the number of "epochs" 
 	 * (ie iterations) the algorithm will run for. Default is 100.
 	 * <li>&lt;"pdmbbp.shuffle", Boolean&gt; optional, indicates whether to 
@@ -301,6 +315,9 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 				_params.containsKey("pdmbbp.num_epochs") ?
 					((Integer)_params.get("pdmbbp.num_epochs")).intValue() :
 					100;  // default
+			final int nt = _params.containsKey("pdmbbp.num_threads") ?
+				               ((Integer) _params.get("pdmbbp.num_threads")).intValue():
+				               1;
 			final int div = _allTrainData.length / _mbSize;
 			final int rem = _allTrainData.length % _mbSize;
 			final boolean shuffle = 
@@ -324,6 +341,9 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 			final double[][] train_data_batch = new double[_mbSize][];
 			final double[] train_labels_batch = new double[_mbSize];
 			final double[] wgts_deriv = new double[wgts.length];
+			final FastFFNN4TrainBGrad derivator = 
+				new FastFFNN4TrainBGrad(_ffnn, _allTrainData[0].length, nt);
+			DblArray1Vector wgts_vec = new DblArray1Vector(wgts.length);
 			// prev_wgts_diff is used for momentum update
 			final double[] prev_wgts_diff = new double[wgts.length];  // init to zero
 			final List indx = new ArrayList(_allTrainData.length);
@@ -355,12 +375,21 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 					// first setup the params for this batch
 					_params.put("ffnn.traindata", train_data_batch);
 					_params.put("ffnn.trainlabels", train_labels_batch);	
-					// add "hiddenws$i$" and "outputws" in _params
-					setHiddenAndOutputWsInParams(wgts);					
-					for (int j=0; j<wgts.length; j++) {
-						wgts_deriv[j] = _ffnn.evalPartialDerivativeB(wgts, j, _params, 
-							                                           false);
-					}
+					// compute the derivative automatically
+					for (int i=0; i<wgts_deriv.length; i++) wgts_vec.setCoord(i, wgts[i]);
+					VectorIntf g = derivator.eval(wgts_vec, _params);
+					if (_normalizeGrad) {
+						final double g_norm = VecUtil.norm2(g);
+						_mger.msg("PDMiniBatchBackPropagation.minimize(): in epoch "+
+							        epoch+" mini-batch ||grad||_2="+g_norm,2);
+						try {
+							g.div(g_norm);
+						}
+						catch (ParallelException e) {  // can never get here
+							e.printStackTrace();
+						}
+					} 
+					for (int i=0; i<wgts_deriv.length; i++) wgts_deriv[i] = g.getCoord(i);
 					// now try with all the different learning rates to see which gives
 					// the best f(new_wgts) value
 					double[][] ws = new double[learning_rates.length][];
@@ -368,12 +397,19 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 					double best_a_val = Double.POSITIVE_INFINITY;
 					if (learning_rates.length==1) { // don't evaluate, just update weights
 						final double lrate = learning_rates[0]*_c1 / (epoch+_c2);
+						/*
 						for (int j=0; j<wgts.length; j++) {
 							wgts[j] -= (lrate*wgts_deriv[j] - 
 								          momentum*prev_wgts_diff[j]);
 							prev_wgts_diff[j] = momentum*prev_wgts_diff[j] - 
 								                  lrate*wgts_deriv[j];
 						}
+						*/
+						for (int j=0; j<wgts.length; j++) {
+							prev_wgts_diff[j] = momentum*prev_wgts_diff[j] - 
+								                  lrate*wgts_deriv[j];
+							wgts[j] += prev_wgts_diff[j];
+						}						
 					}
 					else {
 						// compute the error of the network on ws[i] on the WHOLE dataset
@@ -415,12 +451,29 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 					final double a = learning_rates[0]*_c1 / (_c2+epoch);
 					_params.put("ffnn.traindata", last_train_data);
 					_params.put("ffnn.trainlabels", last_train_labels);
+					/*
 					// add "hiddenws$i$" and "outputws" in _params
 					setHiddenAndOutputWsInParams(wgts);
 					for (int j=0; j<wgts.length; j++) {
 						wgts_deriv[j] = _ffnn.evalPartialDerivativeB(wgts, j, _params, 
 							                                           false);
 					}
+					*/					
+					// compute the derivative automatically
+					for (int i=0; i<wgts_deriv.length; i++) wgts_vec.setCoord(i, wgts[i]);
+					VectorIntf g = derivator.eval(wgts_vec, _params);
+					if (_normalizeGrad) {
+						final double g_norm = VecUtil.norm2(g);
+						_mger.msg("PDMiniBatchBackPropagation.minimize(): in epoch "+
+							        epoch+" LAST mini-batch ||grad||_2="+g_norm,2);
+						try {
+							g.div(g_norm);
+						}
+						catch (ParallelException e) {  // can never get here
+							e.printStackTrace();
+						}
+					} 
+					for (int i=0; i<wgts_deriv.length; i++) wgts_deriv[i] = g.getCoord(i);
 					// update the weights
 					for (int j=0; j<wgts.length; j++) {
 						wgts[j] -= (wgts_deriv[j]*a - momentum*prev_wgts_diff[j]);

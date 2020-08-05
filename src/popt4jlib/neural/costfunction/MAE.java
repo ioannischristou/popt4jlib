@@ -29,6 +29,16 @@ public class MAE implements FFNNCostFunctionIntf {
 	public MAE() {
 		// no-op
 	}
+
+	
+	/**
+	 * computes the value 1 or -1 depending on the sign of the argument.
+	 * @param x double
+	 * @return double
+	 */
+	public double evalDerivative(double x) {
+		return Double.compare(x, 0.0) > 0 ? 1 : -1;
+	}
 	
 	
 	/**

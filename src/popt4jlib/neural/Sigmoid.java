@@ -9,7 +9,7 @@ import utils.Messenger;
  * node. The class knows how to differentiate itself when gradient information 
  * is required via the <CODE>evalPartialDerivativeB()</CODE> methods that 
  * essentially implement automatic differentiation for FeedForward Neural 
- * Networks. Can only be used as hidden layer node.
+ * Networks. Can be used as hidden layer node or output layer node.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -17,7 +17,7 @@ import utils.Messenger;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class Sigmoid extends BaseNNNode implements NNNodeIntf {
+public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 	
 	private final static Messenger _mger = Messenger.getInstance();
 	
@@ -42,6 +42,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
@@ -61,6 +62,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights, int offset) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
@@ -79,6 +81,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] weights) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
@@ -104,10 +107,12 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] weights, int offset) {
+		if (isDropout()) return 0.0;
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
 		prod += weights[offset+inputSignals.length];  // bias term
+		setLastDerivEvalCache2(sPrime(prod));
 		double result;
 		final double aprod = _a*prod;
 		if (Double.compare(aprod, 45)>0) result = 1.0;
@@ -117,6 +122,36 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 		setLastInputsCache(inputSignals);
 		setLastEvalCache(result);
 		return result;
+	}
+
+	
+	/**
+	 * called when the node is used as output node, simply calls
+	 * <CODE>eval(inputSignals,weights,offset)</CODE>.
+	 * @param inputSignals double[]
+	 * @param weights double[]
+	 * @param offset int
+	 * @param true_label double unused
+	 * @return double
+	 */
+	public double eval(double[] inputSignals, double[] weights, int offset, 
+		                 double true_label) {
+		return eval(inputSignals, weights, offset);
+	}
+
+	
+	/**
+	 * called when the node is used as output node, simply calls
+	 * <CODE>evalB(inputSignals,weights,offset)</CODE>.
+	 * @param inputSignals double[]
+	 * @param weights double[]
+	 * @param offset int
+	 * @param true_label double unused
+	 * @return double
+	 */
+	public double evalB(double[] inputSignals, double[] weights, int offset,
+		                  double true_label) {
+		return evalB(inputSignals, weights, offset);
 	}
 
 	
@@ -144,6 +179,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] inputSignals, double true_lbl,
 																			 HashMap p) {
+		if (isDropout()) return 0.0;
 		// 0. see if the value is already computed before
 		double cache = getLastDerivEvalCache();
 		if (!Double.isNaN(cache)) {
@@ -456,6 +492,7 @@ public class Sigmoid extends BaseNNNode implements NNNodeIntf {
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] inputSignals, double true_lbl) {
+		if (isDropout()) return 0.0;
 		// 0. see if the value is already computed before
 		double cache = getGradVectorCache()[index];
 		if (!Double.isNaN(cache)) {

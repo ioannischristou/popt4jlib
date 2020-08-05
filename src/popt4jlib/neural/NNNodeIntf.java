@@ -207,7 +207,20 @@ public interface NNNodeIntf extends Serializable {
 	 */	
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] input_signals, double true_lbl);
-
 	
+	
+	/**
+	 * after calling <CODE>setDropout(true)</CODE>, all <CODE>evalXXX()</CODE>
+	 * of this node return true until <CODE>setDropout(false)</CODE> is called.
+	 * @param val boolean
+	 */
+	public void setDropout(boolean val);
+	
+	
+	/**
+	 * return the dropout property of this node.
+	 * @return boolean
+	 */
+	public boolean isDropout();
 }
 

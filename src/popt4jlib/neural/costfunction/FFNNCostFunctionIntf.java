@@ -16,6 +16,15 @@ import java.util.HashMap;
  * @version 1.0
  */
 public interface FFNNCostFunctionIntf extends FunctionIntf {
+	
+	/**
+	 * evaluates the derivative of the cost function as a function of error (a 
+	 * single variable).
+	 * @param x double
+	 * @return double
+	 */
+	public double evalDerivative(double x);
+	
 
 	/**
 	 * evaluates the partial derivative of the entire network's cost function (as 
