@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import java.io.Serializable;
+import java.io.IOException;
 
 /**
  * implements the Back-Propagation algorithm for computing the gradient of a 
@@ -19,10 +20,6 @@ import java.io.Serializable;
  * pair. On 3-layer networks (2 hidden layers), it is about 20-40x faster than
  * the <CODE>FastFFNN4TrainBGrad</CODE> algorithm. On 4-layer networks, the
  * difference increases even more, and becomes between 24-160x faster! 
- * Notice that the class doesn't compute the gradient when the output node is
- * a <CODE>MultiClassSSE</CODE> object (used with training sets whose labels 
- * represent multiple categorical classes in {0,...#classes-1}.) In such cases 
- * it just throws <CODE>UnsupportedOperationException</CODE>.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -93,6 +90,7 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 	 * @param p HashMap the parameters that must contain the traindata and train
 	 * labels
 	 * @return VectorIntf the gradient of the network at the given weights 
+	 * @throws IllegalArgumentException if the train data pairs cannot be found
 	 */
 	public VectorIntf eval(VectorIntf x, HashMap p) {
 		double[] wgts;
@@ -103,7 +101,24 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 		double[][] traindata = (double[][]) p.get("ffnn.traindata");
 		double[] trainlabels = (double[]) p.get("ffnn.trainlabels");
 		// if either is missing, read from TrainData
-		// itc: HERE above functionality is missing
+		if (traindata==null) traindata = TrainData.getTrainingVectors();
+		if (trainlabels==null) trainlabels = TrainData.getTrainingLabels();
+		if (traindata==null || trainlabels==null) {
+			String traindatafile = (String) p.get("ffnn.traindatafile");
+			String trainlabelsfile = (String) p.get("ffnn.trainlabelsfile");
+			try {
+				TrainData.readTrainingDataFromFiles(traindatafile, trainlabelsfile);
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+				throw new IllegalArgumentException("FasterFFNN4TrainBGrad.eval(x,p): "+
+					                                 " p has no or wrong "+
+					                                 "ffnn.train[data|labels]file info");
+			}
+			// read again
+			if (traindata==null) traindata = TrainData.getTrainingVectors();
+			if (trainlabels==null) trainlabels = TrainData.getTrainingLabels();
+		}
 		final int num_train_instances = traindata.length;
 		if (_extor==null) {  // do things serially
 			DblArray1Vector g = new DblArray1Vector(_ffnn.getTotalNumWeights());
@@ -185,8 +200,6 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 	 * @param train_inst double[] the training instance
 	 * @param train_lbl double the training label
 	 * @return double[] the gradient of the neural network at w
-	 * @throws UnsupportedOperationException if the network's output node is 
-	 * MultiClassSSE -haven't implemented this functionality yet
 	 */
 	private double[] evalGradient4TermB(double[] w, 
 		                                  double[] train_inst, double train_lbl) {
@@ -194,10 +207,7 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 		final double outv = 
 			evalNetworkOutputOnTrainingData(w, train_inst, train_lbl);
 		OutputNNNodeIntf outn = _ffnn.getOutputNode();
-		if (outn instanceof MultiClassSSE)  // special treatment
-			throw new UnsupportedOperationException("BP on MultiClassSSE output not "+
-				                                      "supported yet.");
-		// ok, normal work
+		final boolean out_ismcsse = outn instanceof MultiClassSSE;
 		double err = ((BaseNNNode)outn).getLastEvalCache()-train_lbl;
 		double D_out = ((BaseNNNode)outn).getLastDerivEvalCache2()*
 			             _ffnn._costFunc.evalDerivative(err);
@@ -209,6 +219,17 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 		for (int l=num_layers-1; l>=0; l--) {
 			NNNodeIntf[] layer_l = _ffnn.getHiddenLayers()[l];
 			D[l] = new double[layer_l.length];
+			// special treatment of last layer in case output layer is MultiClassSSE
+			if (l==num_layers-1 && out_ismcsse) {
+				for (int i=0; i<layer_l.length; i++) {
+					final double exp_i = i==(int)train_lbl ? 1.0 : 0.0;
+					final double err_i=((BaseNNNode)layer_l[i]).getLastEvalCache()-exp_i;
+					D[l][i] = 
+						((BaseNNNode)layer_l[i]).getLastDerivEvalCache2()*(err_i+err_i);
+				}
+				D_prev = D[l];
+				continue;
+			}
 			for (int i=layer_l.length-1; i>=0; i--) {
 				final NNNodeIntf ni = layer_l[i];
 				final double gPini = ((BaseNNNode)ni).getLastDerivEvalCache2();

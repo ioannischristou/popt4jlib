@@ -300,6 +300,34 @@ public class FFNN4TrainB extends FFNN4Train {
 		((BaseNNNode) outn).setLastEvalCache(valt);
 		return valt;
 	}
+	
+	
+	/**
+	 * measures network cost on validation data, using the <CODE>_costFunc</CODE>
+	 * of this network as cost estimator. Clears all caches before and after every
+	 * computation (operation is not really needed.) Can be easily parallelized as 
+	 * well.
+	 * @param weights double[] the weights of the network
+	 * @param valdata double[][] the validation instances
+	 * @param vallabels double[] the validation labels
+	 * @return double
+	 */
+	public double evalNetworkCostOnValidationData(double[] weights, 
+		                                            double[][] valdata, 
+																								double[] vallabels) {
+		resetDerivCaches();
+		resetGradVectorCaches();
+		final int num_instances = valdata.length;
+		double[] errors = new double[num_instances];
+		for (int i=0; i<num_instances; i++) {
+			final double[] vdatai = valdata[i];
+			final double vlabeli = vallabels[i];
+			errors[i]=evalNetworkOutputOnTrainingData(weights, vdatai, vlabeli, null);
+			resetDerivCaches();
+			resetGradVectorCaches();
+		}
+		return _costFunc.eval(errors, null);
+	}
 
 	
 	/**

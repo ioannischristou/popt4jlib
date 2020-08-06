@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import java.io.Serializable;
+import java.io.IOException;
 
 
 /**
@@ -102,7 +103,24 @@ public class FastFFNN4TrainBGrad implements VecFunctionIntf {
 		double[][] traindata = (double[][]) p.get("ffnn.traindata");
 		double[] trainlabels = (double[]) p.get("ffnn.trainlabels");
 		// if either is missing, read from TrainData
-		// itc: HERE above functionality is missing
+		if (traindata==null) traindata = TrainData.getTrainingVectors();
+		if (trainlabels==null) trainlabels = TrainData.getTrainingLabels();
+		if (traindata==null || trainlabels==null) {
+			String traindatafile = (String) p.get("ffnn.traindatafile");
+			String trainlabelsfile = (String) p.get("ffnn.trainlabelsfile");
+			try {
+				TrainData.readTrainingDataFromFiles(traindatafile, trainlabelsfile);
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+				throw new IllegalArgumentException("FasterFFNN4TrainBGrad.eval(x,p): "+
+					                                 " p has no or wrong "+
+					                                 "ffnn.train[data|labels]file info");
+			}
+			// read again
+			if (traindata==null) traindata = TrainData.getTrainingVectors();
+			if (trainlabels==null) trainlabels = TrainData.getTrainingLabels();
+		}
 		final int num_train_instances = traindata.length;
 		if (_extor==null) {  // do things serially
 			DblArray1Vector g = new DblArray1Vector(_ffnn.getTotalNumWeights());
