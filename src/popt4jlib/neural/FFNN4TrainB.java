@@ -328,6 +328,50 @@ public class FFNN4TrainB extends FFNN4Train {
 		}
 		return _costFunc.eval(errors, null);
 	}
+	
+	
+	/**
+	 * measures total network cost on validation data, by computing the true 
+	 * network output (not train error that is output during training) on these
+	 * validation data and labels, using a cost function as cost estimator. This 
+	 * is the main method for measuring validation accuracy of the network after 
+	 * it has been trained.
+	 * Can be easily parallelized as well.
+	 * @param weights double[] the weights of the network
+	 * @param valdata double[][] the validation instances
+	 * @param vallabels double[] the validation labels
+	 * @param cf FunctionIntf the function used to measure the total cost on the 
+	 * errors; if null, the <CODE>_costFunc</CODE> of this object is used.
+	 * @return double
+	 */
+	public double evalNetworkOutputOnValidationData(double[] weights, 
+		                                              double[][] valdata, 
+																	  							double[] vallabels,
+																									FunctionIntf cf) {
+		HashMap params = new HashMap();
+		final int num_input_signals = valdata[0].length;
+		final int num_hlayers = getNumHiddenLayers();
+		final int num_instances = valdata.length;
+		for (int l=0; l<num_hlayers; l++) {
+			double[][] hwsl = getLayerWeightsWithBias(l, weights, num_input_signals);
+			params.put("hiddenws"+l,hwsl);
+		}
+		double[] outws = getOutputWeightsWithBias(weights);
+		params.put("outputws",outws);
+		double[] errors = new double[num_instances];
+		for (int i=0; i<num_instances; i++) {
+			final double[] vdatai = valdata[i];
+			final double vlabeli = vallabels[i];
+			errors[i] = evalNetworkOnInputData(vdatai, params) - vlabeli;
+		}
+		if (cf==null) cf = _costFunc;
+		// pass in to the cf eval method as parameters the validation data even 
+		// though it is currently not used by any of the functions of interest in 
+		// the costfunction sub-package.
+		params.put("ffnn.valdata",valdata);
+		params.put("ffnn.vallabels", vallabels);
+		return cf.eval(errors, params);
+	}
 
 	
 	/**

@@ -1,5 +1,5 @@
 dbglvl,1
-rndgen,5
+rndgen,7
 # the following defines an ANN and weights on the nn's connections
 # the ANN looks like this:
 # INP L0    L1    OUT
@@ -12,11 +12,11 @@ rndgen,5
 # ... N09
 # x36
 class,outputlayer,popt4jlib.neural.Sigmoid,1.0
-arrayofcopies,layer1_arr,50,popt4jlib.neural.Sigmoid,1.0
-#arrayofcopies,layer2_arr,3,popt4jlib.neural.GELU
-#arrayofcopies,layer3_arr,3,popt4jlib.neural.ReLU
-#arrayofcopies,layer4_arr,5,popt4jlib.neural.ReLU
-array,hiddenlayers,[Ljava.lang.Object;,layer1_arr
+arrayofcopies,layer1_arr,40,popt4jlib.neural.Linear
+arrayofcopies,layer2_arr,10,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layer3_arr,10,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layer4_arr,5,popt4jlib.neural.ReLU
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr,layer3_arr,layer4_arr
 # normalized train data:
 matrixN01,ffnn.traindata,testdata/traindata1.dat
 # train labels
@@ -26,13 +26,13 @@ class,costfunc,popt4jlib.neural.costfunction.MSSE
 class,ffnn.mainoptimizer,popt4jlib.neural.PDMiniBatchBackPropagation
 class,opt.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,4
 pdmbbp.num_threads,4
-array,pdmbbp.learning_rates,double,0.1,0.7
+array,pdmbbp.learning_rates,double,0.3
 pdmbbp.normgrad,true
 pdmbbp.c1,500.0
 pdmbbp.c2,500.0
-ffnn.minibatchsize,100
-pdmbbp.num_epochs,20
+ffnn.minibatchsize,500
+pdmbbp.num_epochs,200
 pdmbbp.momentum,0.2
 #sgd.numdimensions,XXX
 # output file below used by [DGA,AVD]FFNNTest class
-ffnn.outputlabelsfile,testdata/result_trainlabels1.dat
+ffnn.outputweightsfile,testdata/result_trainweights1.dat

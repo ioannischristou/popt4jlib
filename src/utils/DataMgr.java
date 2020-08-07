@@ -35,6 +35,9 @@ import java.lang.reflect.*;
  * <li>2020-07-22: added functionality to convert the columns of a dataset to 
  * have zero mean and standard deviation one.
  * <li>2020-07-24: added functionality to write a double array to a text file.
+ * <li>2020-08-07: added functionality to convert the columns of a dataset to 
+ * shift their mean and variance in accordance to some other dataset's mean and
+ * variance.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -127,7 +130,12 @@ public class DataMgr {
 	 * <p> In case key is the keyword "matrix-1_1" then things work as above, but 
 	 * now the cells of the matrix are all in [-1,1].
 	 * <p> In case key is the keyword "matrixN01" then things work as above but 
-	 * now the columns of the matrix have zero mean and standard deviation one.
+	 * now the columns of the matrix have zero mean and unit standard deviation.
+	 * <p> In case key is the keyword "matrixN01o" then the columns of the matrix
+	 * are shifted by the mean and variance found in the matrix described in the 
+	 * file whose name is described last in the same line; this means that in such
+	 * a line, there must be 2 specified filenames, first the required one, then
+	 * the file containing the data for which we require their mean and variance.
 	 * <p> In case key is the keyword "sparsematrix", the the value is the name of
 	 * the property, and the next token is the filename of a text file describing
 	 * the matrix to be read via the method <CODE>readSparseVectorsFromFile</CODE>
@@ -462,6 +470,15 @@ public class DataMgr {
 							readMatrixFromFileAndNormalizeCols(matfile);
 						props.put(key,matrix);
 						continue;
+					}
+					else if ("matrixN01o".equals(key)) {
+						key = strval;
+						String matfile = st.nextToken();
+						String matfile2 = st.nextToken();
+						double[][] matrix = 
+							readMatrixFromFileAndNormalizeColsAs2ndArg(matfile, matfile2);
+						props.put(key,matrix);
+						continue;						
 					}
 					else if ("sparsematrix".equals(key)) {
 						key = strval;
@@ -1318,6 +1335,52 @@ public class DataMgr {
 		Messenger.getInstance().msg("DataMgr.readMatrixFromFileAndNormalizeCols("+
 			                          fname+"): max_el="+max_el+", min_el="+min_el,1);
 		return matrix;
+	}
+	
+	
+	/**
+	 * same as <CODE>readMatrixFromFileAndNormalizeCols(fname)</CODE> but the 
+	 * mean and variance of each column are computed from the matrix contained 
+	 * in the 2nd argument.
+	 * @param fname String
+	 * @param fname2 String
+	 * @return double[][]
+	 * @throws IOException 
+	 */
+	public static double[][] 
+	  readMatrixFromFileAndNormalizeColsAs2ndArg(String fname, String fname2)
+		throws IOException {
+		final Messenger mger = Messenger.getInstance();
+		final double[][] matrix = readMatrixFromFile(fname);
+		final double[][] matrix2 = readMatrixFromFile(fname2);
+		if (matrix[0].length!=matrix2[0].length)  // feasibility test
+			throw new IllegalArgumentException("matrices must have same #columns");
+		final int rows = matrix.length;
+		final int rows2 = matrix2.length;
+		final int cols = matrix[0].length;
+		double min_el = Double.MAX_VALUE;
+		double max_el = Double.NEGATIVE_INFINITY;
+		for (int j=0; j<cols; j++) {
+			double col_sum_x = 0.0;
+			double col_sum_x2 = 0.0;
+			for (int i=0; i<rows2; i++) {
+				final double aij = matrix2[i][j];
+				col_sum_x += aij;
+				col_sum_x2 += aij*aij;
+			}
+			final double col_mean = col_sum_x / rows2;
+			final double col_std = Math.sqrt((rows2*col_sum_x2-col_sum_x*col_sum_x)/
+				                               (rows2*(rows2-1)));
+			// do the column update
+			for (int i=0; i<rows; i++) {
+				matrix[i][j] = (matrix[i][j]-col_mean) / col_std;
+				if (Double.compare(matrix[i][j], max_el) > 0) max_el = matrix[i][j];
+				if (Double.compare(matrix[i][j], min_el) < 0) min_el = matrix[i][j];
+			}
+		}
+		mger.msg("DataMgr.readMatrixFromFileAndNormalizeColsAs2ndArg("+
+			                          fname+"): max_el="+max_el+", min_el="+min_el,1);
+		return matrix;			
 	}
 
 	

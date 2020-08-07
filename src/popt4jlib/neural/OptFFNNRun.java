@@ -7,8 +7,7 @@ import parallel.distributed.PDBatchTaskExecutor;
 import utils.DataMgr;
 import utils.LightweightParams;
 import utils.RndUtil;
-import java.io.FileWriter;
-import java.io.PrintWriter;
+
 
 
 /**
@@ -21,6 +20,8 @@ import java.io.PrintWriter;
  * <li> 2020-07-22: the wrapper function in the <CODE>minimize(f)</CODE> main
  * method will not create a <CODE>popt4jlib.FunctionBase</CODE> to pass to the
  * minimizer, but passes the function f directly.
+ * <li> 2020-08-06: added functionality to measure validation accuracy of the 
+ * resulting trained network, and to write the final weights to output file.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -60,10 +61,18 @@ public class OptFFNNRun {
 	 * &lt;"opt.function", popt4jlib.neural.FFNN4Train[B] func&gt; which denotes 
 	 * the actual function to optimize.
 	 * <ul>
+	 * <li> If two lines of the form:
+	 * matrix[N01],ffnn.valdata,&lt;filename&gt; and  
+	 * dblarray,ffnn.vallabels, &lt;filename&gt; exist in the params file 
+	 * then the corresponding files will be read and used as validation data at 
+	 * the end of the run.
+	 * <li> If in addition, there exists a line of the form
+	 * class,ffnn.validationcostfunction,&lt;fullclassname&gt;[,ctoragruments]
+	 * then the particular cost function (that must implement the 
+	 * <CODE>FunctionIntf</CODE> will be used to measure network validation cost.
 	 * <li> Further, if a key-value pair of the form:
-	 * &lt;"ffnn.outputlabelsfile",&lt;filename&gt;&gt; is in the parameters, that
-	 * file will be used to write the outputs of the neural network for each 
-	 * training instance passed in the params for key "ffnn.traindata".
+	 * &lt;"ffnn.outputweightsfile",&lt;filename&gt;&gt; is in the parameters that
+	 * file will be used to write the weights of the neural net in a text file.
 	 * <li> Also notice that in case the optimizer chosen is capable of 
 	 * using a cluster of machines to distribute the function evaluations (e.g. 
 	 * DGA, DPSO etc.), then an appropriate line specifying the initialization cmd
@@ -280,55 +289,27 @@ public class OptFFNNRun {
                            " total SUCCESSFUL function evaluations="+
 					                 f.getSucEvalCount());
       }
-			
+			// check if there are valdata,vallabels and validationcostfunction
+			double[][] valdata = (double[][]) params.get("ffnn.valdata");
+			if (valdata!=null) {
+				// itc: HERE we aren't normalizing in the same way we might have done
+				// for the training data. This might need fixing.
+				double[] vallabels = (double[]) params.get("ffnn.vallabels");
+				FunctionIntf cf = 
+					(FunctionIntf) params.get("ffnn.validationcostfunction");
+				FFNN4TrainB ftb = (FFNN4TrainB) func;
+				final double verr = 
+					ftb.evalNetworkOutputOnValidationData(arg, valdata, vallabels, cf);
+				System.out.println("total error measured on VALIDATION SET="+verr);
+			}
 			// finally, if there exists a requirement for storing results, do so.
-			String outputlabelsfile = (String) params.get("ffnn.outputlabelsfile");
-			if (outputlabelsfile!=null) {
+			String outputweightsfile = (String) params.get("ffnn.outputweightsfile");
+			if (outputweightsfile!=null) {
 				// first, add the "hiddenws$i$ and "outputws" key-value pairs in params
 				final FFNN4Train ft = (FFNN4Train) func;
-				final boolean include_biases = ft instanceof FFNN4TrainB;
 				final double[] all_weights = arg;
-				final int num_hidden_layers = ft.getNumHiddenLayers();
-				/*
-				if (matrix==null || labels==null) {
-					// see if data can be read from "ffnn.train[data|labels]file" param
-					System.err.println("OptFFNNRun: matrix or labels is null, "+
-						                 "trying to read from file");
-					String traindatafile = (String) params.get("ffnn.traindatafile");
-					if (traindatafile!=null) 
-						matrix = DataMgr.readMatrixFromFile(traindatafile);
-					String trainlabelsfile = (String) params.get("ffnn.trainlabelsfile");
-					if (trainlabelsfile!=null) 
-						labels = DataMgr.readDoubleLabelsFromFile(trainlabelsfile);
-				}
-				*/
-				int num_data_features = matrix[0].length;
-				for (int l=0; l<num_hidden_layers; l++) {
-					double[][] wi = include_biases ?
-						ft.getLayerWeightsWithBias(l, all_weights, num_data_features) :
-						ft.getLayerWeights(l, all_weights, num_data_features);
-					params.put("hiddenws"+l, wi);
-				}
-				double[] outws = include_biases ? 
-					                 ft.getOutputWeightsWithBias(all_weights) :
-					                 ft.getOutputWeights(all_weights);
-				params.put("outputws", outws);
-				PrintWriter pw = new PrintWriter(new FileWriter(outputlabelsfile));
-				int num_errors = 0;
-				for (int row=0; row<matrix.length; row++) {
-					double c_label = ft.evalNetworkOnInputData(matrix[row], params);
-					// let's calculate the number of errors as well, assuming labels are
-					// integer -consecutive- numbers.
-					int comp_lbl = (int)Math.round(c_label);
-					if (comp_lbl != (int) labels[row]) ++num_errors;
-					pw.println(c_label);
-				}
-				final double acc = 100*(1.0-((double)num_errors)/labels.length);
-				System.out.println("accuracy on training set="+acc+"%");
-				pw.flush();
-				pw.close();
+				DataMgr.writeDoubleArrayToFile(all_weights, outputweightsfile);
 			}
-			
       long end_time = System.currentTimeMillis();
       long dur = end_time-start_time;
 			System.out.println("total time (msecs): "+dur);

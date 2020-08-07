@@ -341,8 +341,8 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 			final double[][] train_data_batch = new double[_mbSize][];
 			final double[] train_labels_batch = new double[_mbSize];
 			final double[] wgts_deriv = new double[wgts.length];
-			final FastFFNN4TrainBGrad derivator = 
-				new FastFFNN4TrainBGrad(_ffnn, _allTrainData[0].length, nt);
+			final FasterFFNN4TrainBGrad derivator = 
+				new FasterFFNN4TrainBGrad(_ffnn, _allTrainData[0].length, nt);
 			DblArray1Vector wgts_vec = new DblArray1Vector(wgts.length);
 			// prev_wgts_diff is used for momentum update
 			final double[] prev_wgts_diff = new double[wgts.length];  // init to zero
