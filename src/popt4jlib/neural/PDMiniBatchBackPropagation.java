@@ -388,6 +388,12 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 						catch (ParallelException e) {  // can never get here
 							e.printStackTrace();
 						}
+						catch (IllegalArgumentException e2) {
+							_mger.msg("PDMiniBatchBackPropagation.minimize(): in epoch "+
+								        epoch+" mini_batch ||grad||_2="+g_norm+
+								        "; will continue instead",0);
+							continue;
+						}
 					} 
 					for (int i=0; i<wgts_deriv.length; i++) wgts_deriv[i] = g.getCoord(i);
 					// now try with all the different learning rates to see which gives
@@ -471,6 +477,12 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 						}
 						catch (ParallelException e) {  // can never get here
 							e.printStackTrace();
+						}
+						catch (IllegalArgumentException e2) {  // but it can get here
+							_mger.msg("PDMiniBatchBackPropagation.minimize(): in epoch "+
+								        epoch+" mini_batch ||grad||_2="+g_norm+
+								        "; will continue instead",0);
+							// continue;  // let's allow time duration computation
 						}
 					} 
 					for (int i=0; i<wgts_deriv.length; i++) wgts_deriv[i] = g.getCoord(i);

@@ -12,10 +12,10 @@ rndgen,7
 # ... N09
 # x36
 class,outputlayer,popt4jlib.neural.Sigmoid,1.0
-arrayofcopies,layer1_arr,40,popt4jlib.neural.Linear
-arrayofcopies,layer2_arr,10,popt4jlib.neural.Sigmoid,1.0
-arrayofcopies,layer3_arr,10,popt4jlib.neural.Sigmoid,1.0
-arrayofcopies,layer4_arr,5,popt4jlib.neural.ReLU
+arrayofcopies,layer1_arr,20,popt4jlib.neural.SoftPlus,1.0
+arrayofcopies,layer2_arr,10,popt4jlib.neural.SoftPlus,1.0
+arrayofcopies,layer3_arr,10,popt4jlib.neural.SoftPlus,1.0
+arrayofcopies,layer4_arr,10,popt4jlib.neural.SoftPlus,1.0
 array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr,layer3_arr,layer4_arr
 # normalized train data:
 matrixN01,ffnn.traindata,testdata/traindata1.dat
@@ -30,9 +30,9 @@ array,pdmbbp.learning_rates,double,0.3
 pdmbbp.normgrad,true
 pdmbbp.c1,500.0
 pdmbbp.c2,500.0
-ffnn.minibatchsize,500
-pdmbbp.num_epochs,200
+ffnn.minibatchsize,200
+pdmbbp.num_epochs,3000
 pdmbbp.momentum,0.2
 #sgd.numdimensions,XXX
 # output file below used by [DGA,AVD]FFNNTest class
-ffnn.outputweightsfile,testdata/result_trainweights1.dat
+ffnn.outputweightsfile,testdata/result_alex_trainweights1.dat

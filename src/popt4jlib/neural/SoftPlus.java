@@ -49,6 +49,9 @@ public class SoftPlus extends BaseNNNode implements OutputNNNodeIntf {
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
 		final double aprod = _a*prod;
+		// take care of big or small values of aprod
+		if (Double.compare(aprod,709)>0) return prod;  // aprod / _a
+		if (Double.compare(aprod,-36.841361)<=0) return Math.exp(aprod)/_a;
 		return Math.log(1.0 + Math.exp(aprod))/_a;
 	}
 	
@@ -67,6 +70,9 @@ public class SoftPlus extends BaseNNNode implements OutputNNNodeIntf {
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
 		final double aprod = _a*prod;
+		// take care of big or small values of aprod
+		if (Double.compare(aprod,709)>0) return prod;  // aprod / _a
+		if (Double.compare(aprod,-36.841361)<=0) return Math.exp(aprod)/_a;
 		return Math.log(1.0 + Math.exp(aprod))/_a;
 	}
 
@@ -86,7 +92,10 @@ public class SoftPlus extends BaseNNNode implements OutputNNNodeIntf {
 		prod += weights[inputSignals.length];
 		double result;
 		final double aprod = _a*prod;
-		result = Math.log(1.0 + Math.exp(aprod))/_a;
+		// take care of big or small values of aprod
+		if (Double.compare(aprod,709)>0) result = prod;  // aprod / _a
+		else if (Double.compare(aprod,-36.841361)<=0) result = Math.exp(aprod)/_a;
+		else result = Math.log(1.0 + Math.exp(aprod))/_a;
 		// cache result for speeding up auto-differentiation
 		setLastInputsCache(inputSignals);
 		setLastEvalCache(result);
@@ -111,7 +120,10 @@ public class SoftPlus extends BaseNNNode implements OutputNNNodeIntf {
 		setLastDerivEvalCache2(sPrime(prod));
 		double result;
 		final double aprod = _a*prod;
-		result = Math.log(1.0 + Math.exp(aprod))/_a;
+		// take care of big or small values of aprod
+		if (Double.compare(aprod,709)>0) result = prod;  // aprod / _a
+		else if (Double.compare(aprod,-36.841361)<=0) result = Math.exp(aprod)/_a;
+		else result = Math.log(1.0 + Math.exp(aprod))/_a;
 		// cache result for speeding up auto-differentiation
 		setLastInputsCache(inputSignals);
 		setLastEvalCache(result);
@@ -715,7 +727,10 @@ public class SoftPlus extends BaseNNNode implements OutputNNNodeIntf {
 	 * @return double
 	 */
 	private double sPrime(double x) {
-		return 1.0 / (1.0 + Math.exp(-_a*x));
+		final double aprod = _a*x;
+		if (Double.compare(aprod, 45)>0) return 1.0;
+		else if (Double.compare(aprod, -45)<0) return 0.0;  // if-else from weka
+		return 1.0 / (1.0 + Math.exp(-aprod));
 	}
 
 }

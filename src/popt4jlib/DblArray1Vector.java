@@ -271,7 +271,8 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
    */
   public void div(double h) throws IllegalArgumentException {
     if (Double.isNaN(h) || Math.abs(h)<1.e-120)
-      throw new IllegalArgumentException("division by (almost) zero or NaN");
+      throw new IllegalArgumentException("division by (almost) zero or NaN, h="+
+				                                 h);
     for (int i=0; i<_x.length; i++)
       _x[i] /= h;
   }
