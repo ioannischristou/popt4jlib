@@ -221,11 +221,13 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 			D[l] = new double[layer_l.length];
 			// special treatment of last layer in case output layer is MultiClassSSE
 			if (l==num_layers-1 && out_ismcsse) {
+				final double[] ccs = ((MultiClassSSE)outn)._classCosts;
 				for (int i=0; i<layer_l.length; i++) {
 					final double exp_i = i==(int)train_lbl ? 1.0 : 0.0;
 					final double err_i=((BaseNNNode)layer_l[i]).getLastEvalCache()-exp_i;
 					D[l][i] = 
 						((BaseNNNode)layer_l[i]).getLastDerivEvalCache2()*(err_i+err_i);
+					if (ccs!=null) D[l][i] *= ccs[i];
 				}
 				D_prev = D[l];
 				continue;

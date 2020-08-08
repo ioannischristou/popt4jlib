@@ -5,11 +5,12 @@ import utils.Messenger;
 
 
 /**
- * Sigmoid implements the 1/(1+exp(-ax)) function as activation function of a 
+ * SoftPlus implements the ln(1+exp(ax))/a function as activation function of a 
  * node. The class knows how to differentiate itself when gradient information 
  * is required via the <CODE>evalPartialDerivativeB()</CODE> methods that 
  * essentially implement automatic differentiation for FeedForward Neural 
  * Networks. Can be used as hidden layer node or output layer node.
+ * Notice that its derivative is the sigmoid function!.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -17,26 +18,27 @@ import utils.Messenger;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
+public class SoftPlus extends BaseNNNode implements OutputNNNodeIntf {
 	
 	private final static Messenger _mger = Messenger.getInstance();
 	
 	private Linear _linearUnit = new Linear();  // used to compute node input sum
 	
-	private double _a = 5.0;  // reasonable values for a in [1,10]
+	private double _a = 1.0;  // reasonable values for a in [1,10]
 	
 
 	/**
 	 * sole public constructor.
 	 * @param a double should be &gt; 0.
 	 */
-	public Sigmoid(double a) {
+	public SoftPlus(double a) {
 		_a = a;
 	}
 	
 	
 	/**
-	 * Given arguments two vectors x and y, return 1 / (1 + exp(-a(&lt;x,y&gt;))).
+	 * Given arguments two vectors x and y, return 
+	 * ln(1 + exp(_a(&lt;x,y&gt;)))/_a.
 	 * @param inputSignals double[]
 	 * @param weights double[]
 	 * @return double
@@ -47,9 +49,7 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
 		final double aprod = _a*prod;
-		if (Double.compare(aprod, 45)>0) return 1.0;
-		else if (Double.compare(aprod, -45)<0) return 0.0;  // if-else from weka
-		return 1.0 / (1.0 + Math.exp(-aprod));
+		return Math.log(1.0 + Math.exp(aprod))/_a;
 	}
 	
 	
@@ -67,15 +67,13 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
 		final double aprod = _a*prod;
-		if (Double.compare(aprod, 45)>0) return 1.0;
-		else if (Double.compare(aprod, -45)<0) return 0.0;  // if-else from weka
-		return 1.0 / (1.0 + Math.exp(-aprod));
+		return Math.log(1.0 + Math.exp(aprod))/_a;
 	}
 
 	
 	/**
 	 * Given arguments two vectors x and y, return 
-	 * 1 / (1 + exp(-a(&lt;x,y[0:x.len-1]&gt;+y[x.len]))). 
+	 * ln(1 + exp(_a(&lt;x,y[0:x.len-1]&gt;+y[x.len])))/_a. 
 	 * @param inputSignals double[]
 	 * @param weights double[] includes bias term as last element
 	 * @return double
@@ -88,9 +86,7 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 		prod += weights[inputSignals.length];
 		double result;
 		final double aprod = _a*prod;
-		if (Double.compare(aprod, 45)>0) result = 1.0;
-		else if (Double.compare(aprod, -45)<0) result = 0.0;  // if-else from weka
-		else result = 1.0 / (1.0 + Math.exp(-aprod));
+		result = Math.log(1.0 + Math.exp(aprod))/_a;
 		// cache result for speeding up auto-differentiation
 		setLastInputsCache(inputSignals);
 		setLastEvalCache(result);
@@ -115,9 +111,7 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 		setLastDerivEvalCache2(sPrime(prod));
 		double result;
 		final double aprod = _a*prod;
-		if (Double.compare(aprod, 45)>0) result = 1.0;
-		else if (Double.compare(aprod, -45)<0) result = 0.0;  // if-else from weka
-		else result = 1.0 / (1.0 + Math.exp(-aprod));
+		result = Math.log(1.0 + Math.exp(aprod))/_a;
 		// cache result for speeding up auto-differentiation
 		setLastInputsCache(inputSignals);
 		setLastEvalCache(result);
@@ -157,10 +151,10 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 	
 	/**
 	 * get this node's name.
-	 * @return String "Sigmoid(_a)"
+	 * @return String "SoftPlus(_a)"
 	 */
 	public String getNodeName() {
-		return "Sigmoid("+_a+")";
+		return "SoftPlus("+_a+")";
 	}
 	
 
@@ -195,7 +189,7 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 				String isstr="[ ";
 				for (int i=0; i<inputSignals.length; i++) isstr += inputSignals[i]+" ";
 				isstr += "]";
-				_mger.msg("Sigmoid<"+_startWeightInd+
+				_mger.msg("SoftPlus<"+_startWeightInd+
 				 	        ">.evalPartialDerivativeB(weights="+wstr+
 					        ", index="+index+
 						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 5);
@@ -266,7 +260,7 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 				String isstr="[ ";
 				for (int i=0; i<inputSignals.length; i++) isstr += inputSignals[i]+" ";
 				isstr += "]";
-				_mger.msg("Sigmoid<"+_startWeightInd+
+				_mger.msg("SoftPlus<"+_startWeightInd+
 				 	        ">.evalPartialDerivativeB(weights="+wstr+
 					        ", index="+index+
 						      ", input_signals="+isstr+", lbl="+true_lbl+",p)="+result, 5);
@@ -320,7 +314,7 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 								for (int k=0; k<inputSignals.length; k++) 
 									isstr += inputSignals[k]+" ";
 								isstr += "]";
-								_mger.msg("Sigmoid<"+_startWeightInd+
+								_mger.msg("SoftPlus<"+_startWeightInd+
 					                ">.evalPartialDerivativeB(weights="+wstr+
 					                ", index="+index+
 						              ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
@@ -346,7 +340,7 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 					for (int k=0; k<inputSignals.length; k++) 
 						isstr += inputSignals[k]+" ";
 					isstr += "]";
-					_mger.msg("Sigmoid<"+_startWeightInd+
+					_mger.msg("SoftPlus<"+_startWeightInd+
 					          ">.evalPartialDerivativeB(weights="+wstr+
 					          ", index="+index+
 					          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
@@ -371,7 +365,7 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 				for (int k=0; k<inputSignals.length; k++) 
 					isstr += inputSignals[k]+" ";
 				isstr += "]";
-				_mger.msg("Sigmoid<"+_startWeightInd+
+				_mger.msg("SoftPlus<"+_startWeightInd+
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
 				          ", input_signals="+isstr+", lbl="+true_lbl+",p)=0", 5);
@@ -385,11 +379,6 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 		//    with respect to the weight represented by index, all this multiplied
 		//    by sPrime(node_input)
 		else {
-			/*
-			int layer_of_node = _ffnn.getOutputNode()==this ? 
-				                    _ffnn.getNumHiddenLayers() :
-				                    getHiddenNodeLayer();
-			*/
 			int layer_of_node = getNodeLayer();
 			if (layer_of_node==0) {
 				throw new IllegalStateException("node="+this+" index="+index+
@@ -466,7 +455,7 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 				for (int k=0; k<inputSignals.length; k++) 
 					isstr += inputSignals[k]+" ";
 				isstr += "]";
-				_mger.msg("Sigmoid<"+_startWeightInd+
+				_mger.msg("SoftPlus<"+_startWeightInd+
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
 				          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
@@ -501,7 +490,6 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 		// 1. if index is after input weights, derivative is zero
 		if (index > _biasInd) {
 			final double result = 0.0;
-			//setLastDerivEvalCache(result);
 			setGradVectorCache(index, result);
 			return result;
 		}
@@ -516,17 +504,6 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 			double node_input = Double.NaN;
 			double[] last_inputs = getLastInputsCache();
 			if (last_inputs!=null) {
-				/*
-				final int layerno = getNodeLayer();
-				final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
-				int pos = 0;
-				int prev_layer_no = inputSignals.length;
-				for (int i=0; i<layerno; i++) {
-					pos += hidden_layers[i].length*(prev_layer_no+1);  // +1 for bias
-					prev_layer_no = hidden_layers[i].length;
-				}
-				pos += getPositionInLayer()*(prev_layer_no+1);
-				*/
 				final int pos = getDirectInputWeightStartIndex();
 				node_input = _linearUnit.evalB(last_inputs,weights,pos);	
 			}
@@ -570,7 +547,6 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 			}
 			final double result = sPrime(node_input);
 			setLastDerivEvalCache2(result);
-			//setLastDerivEvalCache(result);
 			setGradVectorCache(index, result);
 			return result;
 		}
@@ -579,17 +555,6 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 		else if (_startWeightInd <= index && index <= _endWeightInd) {
 			double[] last_inputs = getLastInputsCache();
 			if (last_inputs!=null) {
-				/*
-				final int layerno = getNodeLayer();
-				final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
-				int pos = 0;
-				int prev_layer_no = inputSignals.length;
-				for (int i=0; i<layerno; i++) {
-					pos += hidden_layers[i].length*(prev_layer_no+1);  // +1 for bias
-					prev_layer_no = hidden_layers[i].length;
-				}
-				pos += getPositionInLayer()*(prev_layer_no+1);
-				*/
 				final int pos = getDirectInputWeightStartIndex();
 				double deval2 = getLastDerivEvalCache2();
 				if (!Double.isNaN(deval2)) {
@@ -601,7 +566,6 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 				double sp = sPrime(node_input);
 				setLastDerivEvalCache2(sp);
 				double result = sp*last_inputs[index-pos]; 
-				//setLastDerivEvalCache(result);
 				setGradVectorCache(index, result);
 				return result;
 			}
@@ -642,7 +606,6 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 				double result = sp*layer_i_inputs[index-pos];
 				setLastInputsCache(layer_i_inputs);
 				setLastDerivEvalCache2(sp);
-				//setLastDerivEvalCache(result);
 				setGradVectorCache(index, result);
 				return result;
 			}
@@ -653,7 +616,6 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 		//    belongs to with another node of this layer (but not this node), 
 		//    result is zero
 		else if (!isWeightVariableAntecedent(index)) {
-			//setLastDerivEvalCache(0.0);
 			setGradVectorCache(index, 0.0);
 			return 0.0;
 		}
@@ -687,17 +649,6 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 			double node_input = Double.NaN;
 			double[] last_inputs = getLastInputsCache();
 			if (last_inputs!=null) {
-				/*
-				final int layerno = getNodeLayer();
-				final NNNodeIntf[][] hidden_layers = _ffnn.getHiddenLayers();
-				int pos = 0;
-				int prev_layer_no = inputSignals.length;
-				for (int i=0; i<layerno; i++) {
-					pos += hidden_layers[i].length*(prev_layer_no+1);  // +1 for bias
-					prev_layer_no = hidden_layers[i].length;
-				}
-				pos += getPositionInLayer()*(prev_layer_no+1);
-				*/
 				final int pos = getDirectInputWeightStartIndex();
 				node_input = _linearUnit.evalB(last_inputs,weights,pos);	
 			}
@@ -751,7 +702,6 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 			double sp = sPrime(node_input);
 			setLastDerivEvalCache2(sp);
 			result *= sp;
-			//setLastDerivEvalCache(result);
 			setGradVectorCache(index, result);
 			return result;
 		}
@@ -759,15 +709,13 @@ public class Sigmoid extends BaseNNNode implements OutputNNNodeIntf {
 	
 	
 	/**
-	 * the derivative of the sigmoid function as a function of one variable.
+	 * the derivative of the soft-plus function as a function of one variable is 
+	 * the sigmoid function!.
 	 * @param x double
 	 * @return double
 	 */
 	private double sPrime(double x) {
-		if (Double.compare(Math.abs(_a*x), 45) > 0) return 0.0;  // from weka
-		final double eax = Math.exp(_a*x);
-		final double emax = Math.exp(-_a*x);
-		return _a / ((1.0+eax)*(1+emax));
+		return 1.0 / (1.0 + Math.exp(-_a*x));
 	}
 
 }

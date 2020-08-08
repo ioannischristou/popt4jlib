@@ -10,7 +10,10 @@ import java.util.HashMap;
  * it computes is the sum of the square errors of each of its input signals
  * which must equal the number of classes in the training set. These input 
  * signals must be in the range [0,1] (thus the <CODE>Sigmoid</CODE> or 
- * <CODE>TanH01</CODE> classes are best suited for this last hidden layer).
+ * <CODE>TanH01</CODE> classes are best suited for this last hidden layer). Each
+ * class can have an associated classification cost that multiplies the error 
+ * made by the respective input signal, allowing for cost-aware classifier
+ * training that is of particular importance when classes are highly unbalanced.
  * Obviously weights of the last hidden layer towards this output node are not 
  * used. This class should be used together with the 
  * <CODE>popt4jlib.neural.costfunction.L1Norm</CODE> (or alternatively, the
@@ -31,8 +34,10 @@ import java.util.HashMap;
 public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 	
 	private final static Messenger _mger = Messenger.getInstance();
-	
+
 	private Linear _linearUnit = new Linear();  // used to compute node input sum
+
+	protected double[] _classCosts;  // if not null, holds for each class its cost
 
 	
 	/**
@@ -40,6 +45,17 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 	 */
 	public MultiClassSSE() {
 		// no-op
+	}
+	
+	
+	/**
+	 * public constructor sets the cost for each class. The length of the array
+	 * must equal the number of classes, which must equal the number of neurons in
+	 * the final hidden layer (that must provide output in [0,1], eg Sigmoid.)
+	 * @param classCosts double[]
+	 */
+	public MultiClassSSE(double[] classCosts) {
+		_classCosts = classCosts;
 	}
 	
 	
@@ -148,10 +164,12 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 		double sse = 0.0;
 		final int true_class = (int) true_label;
 		for (int i=0; i<inputSignals.length; i++) {
-			double last_layer_out_i = inputSignals[i];
-			double expected_i = i == true_class ? 1.0 : 0.0;
-			double err_i = last_layer_out_i - expected_i;
-			sse += err_i*err_i;
+			final double last_layer_out_i = inputSignals[i];
+			final double expected_i = i == true_class ? 1.0 : 0.0;
+			final double err_i = last_layer_out_i - expected_i;
+			final double cci = _classCosts==null ? 1.0 : _classCosts[i];
+			final double err_i2 = cci*err_i*err_i;
+			sse += err_i2;
 		}
 		final double result = sse+true_label;  // add true_label so that the error 
 		                                       // in cost function becomes just sse
@@ -257,7 +275,7 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 		// 4. else index is for a previous signal weight, and derivative is the 
 		//    sum of the errors si-ei of each input signal to this node minus the
 		//    "correct" value for that signal multiplied by the partial derivative
-		//    of the input signal; all that multiplied by 2
+		//    of the input signal times the class cost; all that multiplied by 2 
 		else {
 			int layer_of_node = _ffnn.getNumHiddenLayers();  // it's the output node
 			double[] last_inputs = getLastInputsCache();
@@ -286,9 +304,10 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 			double result = 0.0;			
 			NNNodeIntf[] prev_layer = _ffnn.getHiddenLayers()[layer_of_node-1];
 			for (int j=0; j<last_inputs.length; j++) {
-				double expected_j = j == (int)true_lbl ? 1.0 : 0.0;
-				double errj = last_inputs[j] - expected_j;
-				result += errj * 
+				final double expected_j = j == (int)true_lbl ? 1.0 : 0.0;
+				final double errj = last_inputs[j] - expected_j;
+				final double ccj = _classCosts==null ? 1.0 : _classCosts[j];
+				result += ccj * errj * 
 				          prev_layer[j].evalPartialDerivativeB(weights, index, 
 									                                     inputSignals, 
 																											 true_lbl,
@@ -307,11 +326,17 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 				          ">.evalPartialDerivativeB(weights="+wstr+
 				          ", index="+index+
 				          ", input_signals="+isstr+", lbl="+true_lbl+",p)="+
-				          result, 0);
+				          result, 5);
 				String listr="[ ";
 				for (int k=0; k<last_inputs.length; k++) listr += last_inputs[k]+" ";
 				listr += "]";
-				_mger.msg("last_inputs="+listr,0);
+				_mger.msg("last_inputs="+listr,5);
+				if (_classCosts!=null) {
+					String listcc="[ ";
+					for (int k=0; k<_classCosts.length; k++) listcc += _classCosts[k]+" ";
+					listcc += "]";
+					_mger.msg("_classCosts="+listcc,5);					
+				}
 			}
 			setLastDerivEvalCache(result);
 			return result;
@@ -396,9 +421,10 @@ public class MultiClassSSE extends BaseNNNode implements OutputNNNodeIntf {
 			double result = 0.0;			
 			NNNodeIntf[] prev_layer = _ffnn.getHiddenLayers()[layer_of_node-1];
 			for (int j=0; j<last_inputs.length; j++) {
-				double expected_j = j == (int)true_lbl ? 1.0 : 0.0;
-				double errj = last_inputs[j] - expected_j;
-				result += errj * 
+				final double expected_j = j == (int)true_lbl ? 1.0 : 0.0;
+				final double errj = last_inputs[j] - expected_j;
+				final double ccj = _classCosts==null ? 1.0 : _classCosts[j];
+				result += errj * ccj *
 				          prev_layer[j].evalPartialDerivativeB(weights, index, 
 									                                     inputSignals, 
 																											 true_lbl);
