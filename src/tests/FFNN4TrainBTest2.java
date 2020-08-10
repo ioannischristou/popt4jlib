@@ -21,6 +21,18 @@ import popt4jlib.VectorIntf;
  */
 public class FFNN4TrainBTest2 {
 	
+	/**
+	 * invoke as 
+	 * <CODE>
+	 * java -cp &lt;classpath&gt; tests.FFNN4TrainBTest 
+	 * &lt;paramsfile&gt; &lt;num_insts_to_try&gt;
+	 * </CODE>.
+	 * The method is the same as in <CODE>FFNN4TrainBTest</CODE> but it also 
+	 * computes the gradient of the network via Richardson extrapolation as well 
+	 * as the (very slow) <CODE>popt4jlib.neural.FFNN4TrainBGrad</CODE> class just
+	 * to ensure that the two methods produce (essentially) identical output.
+	 * @param args 
+	 */
 	public static void main(String[] args) {
 		try {
 			final HashMap params = DataMgr.readPropsFromFile(args[0]);
@@ -48,16 +60,7 @@ public class FFNN4TrainBTest2 {
 			}
 			double cost = ffnn.eval(wgts, params);
 			System.out.println("cost = "+cost);
-			
-			/*
-			// also, compute the [f(w+he_0)-f(w)]/h for h=1.e-7 and e_0=[1 0 ...0]
-			// ie the partial derivative wrt the first weight (the weight connecting
-			// the 1st input to the 1st hidden sigmoid node)
-			wgts[0] += 1.e-7;
-			double cost2 = ffnn.eval(wgts, params);
-			System.out.println("diff quotient for w0 = "+(cost2-cost)/1.e-7);
-			*/
-			
+						
 			// now test the derivative
 			System.err.println("computing the gradient (auto-diff)");
 			FFNN4TrainBGrad ffnn_grad = new FFNN4TrainBGrad(ffnn);

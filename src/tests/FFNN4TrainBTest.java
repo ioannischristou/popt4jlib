@@ -16,6 +16,17 @@ import java.util.HashMap;
  */
 public class FFNN4TrainBTest {
 	
+	/**
+	 * invoke as 
+	 * <CODE>
+	 * java -cp &lt;classpath&gt; tests.FFNN4TrainBTest 
+	 * &lt;paramsfile&gt; &lt;num_insts_to_try&gt;
+	 * </CODE>.
+	 * The network weights are initialized to one, the bias terms to zero, and
+	 * the <CODE>eval(wgts,params)</CODE> of the <CODE>FFNN4TrainB</CODE> class
+	 * will be called and the resulting value is output on stdout.
+	 * @param args 
+	 */
 	public static void main(String[] args) {
 		try {
 			final HashMap params = DataMgr.readPropsFromFile(args[0]);

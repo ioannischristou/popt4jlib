@@ -292,8 +292,6 @@ public class OptFFNNRun {
 			// check if there are valdata,vallabels and validationcostfunction
 			double[][] valdata = (double[][]) params.get("ffnn.valdata");
 			if (valdata!=null) {
-				// itc: HERE we aren't normalizing in the same way we might have done
-				// for the training data. This might need fixing.
 				double[] vallabels = (double[]) params.get("ffnn.vallabels");
 				FunctionIntf cf = 
 					(FunctionIntf) params.get("ffnn.validationcostfunction");
