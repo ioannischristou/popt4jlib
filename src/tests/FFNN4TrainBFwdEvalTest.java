@@ -32,6 +32,9 @@ public class FFNN4TrainBFwdEvalTest {
 	 * <li>&lt;"ffnn.valdata", double[][]&gt; mandatory the validation data to try
 	 * <li>&lt;"ffnn.vallabels", double[]&gt; optional, the validation labels if
 	 * they exist will be used to determine validation error on the validation set
+	 * <li>&lt;"ffnn.outputlabelsfile", filename&gt; optional, if it exists, the 
+	 * output of the neural network for each validation instance will be written 
+	 * in the specified file.
 	 * </ul>
 	 * The method reports as output the average time it took to evaluate a 
 	 * particular validation data pattern, and if validation labels are also 
@@ -47,6 +50,7 @@ public class FFNN4TrainBFwdEvalTest {
 			final int num_input_signals = valdata[0].length;
 			final int n = args.length>1 ? Integer.parseInt(args[1]) : valdata.length;
 			ffnn.finalizeInitialization(num_input_signals);
+			final String outputfilename = (String)params.get("ffnn.outputlabelsfile");
 			double[] wgts = (double[])params.get("weights");
 			CategoricalAccuracy ca = new CategoricalAccuracy();
 			double[] errs = new double[n];
@@ -60,6 +64,7 @@ public class FFNN4TrainBFwdEvalTest {
 			}
 			double[] outws = ffnn.getOutputWeightsWithBias(wgts);
 			params.put("outputws", outws);
+			double[] outlabels = new double[n];
 			double cost=0;
 			for (int i=0; i<n; i++) {
 				long st = System.nanoTime();
@@ -69,12 +74,17 @@ public class FFNN4TrainBFwdEvalTest {
 				if (vallabels!=null) {
 					errs[i] = outi - vallabels[i];
 				}
+				outlabels[i] = outi;
 			}
 			avg_res_time /= n;
 			cost = ca.eval(errs, params);
 			System.out.println("average output (forward eval) response time="+
 				                 avg_res_time+" NanoSecs");
 			System.out.println("Categorical Error (%) = "+cost);
+			if (outputfilename!=null) {
+				DataMgr.writeDoubleArrayToFile(outlabels, outputfilename);
+				System.out.println("network output labels written to "+outputfilename);
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();

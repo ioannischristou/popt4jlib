@@ -2,7 +2,8 @@
 short script to convert a "standard" csv file describing a training
 data set to "matrix" format suitable for reading by popt4jlib DataMgr
 method readMatrixFromFile(filename), optionally together with its 
-associated labels result file --that can then be read by popt4jlib method DataMgr.readDoubleLabelsFromFile(filename).
+associated labels result file --that can then be read by popt4jlib method 
+DataMgr.readDoubleLabelsFromFile(filename).
 '''
 
 import csv
@@ -35,14 +36,17 @@ def convert(input_csv_file, output_matrix_file, header=True, exclude_columns=Non
 		csv_writer.writerow(row0)
 		for row in data_rows:
 			L = []
+			j = 0
 			for i in range(len(row)):
 				# exclude columns?
 				if (i+1) in exclude_columns: 
 					if savelbl_gl:
 						labels_file.write(row[i]+'\n')
 					continue
-				if (float(row[i])==0): continue
-				L.append(str(i+1)+","+row[i])
+				j += 1
+				if (float(row[i])==0): continue  # sparse format allows skipping zeros
+				#L.append(str(i+1)+","+row[i])
+				L.append(str(j)+","+row[i])
 			csv_writer.writerow(L)
 	if savelbl_gl:
 		labels_file.close()

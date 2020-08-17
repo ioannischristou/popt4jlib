@@ -34,6 +34,11 @@ import popt4jlib.GradientDescent.VecUtil;
  * the new point that emerges when several different learning rates are applied
  * to the gradient, and picks the best one (the one that results in the largest
  * descent of the objective function.)
+ * <p>Notes:
+ * <ul>
+ * <li> 2020-08-15: added diagnostics to print validation error after every
+ * epoch when dbg-lvl is above 0, assuming "ffnn.valdata" key exists in params.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -357,13 +362,13 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 				int pos = 0;
 				while (pos<_allTrainData.length-rem) {
 					// prepare batch
-					if (pos % 1000 == 0) {
+					if (pos % 1000 == 0 && _mger.getDebugLvl()>=3) {  // costly diagnostic
 						// evaluate the current soln
 						_params.put("ffnn.traindata", _allTrainData);
 						_params.put("ffnn.trainlabels", _allTrainLabels);					
 						double val = _ffnn.eval(wgts, _params);
 						_mger.msg("PDMBBackProp: running batch from ["+pos+
-							        ","+(pos+_mbSize)+") with current val="+val, 2);
+							        ","+(pos+_mbSize)+") with current val="+val, 3);
 					}
 					for (int j=0; j<_mbSize; j++) {
 						train_data_batch[j] = 
@@ -391,7 +396,7 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 						catch (IllegalArgumentException e2) {
 							_mger.msg("PDMiniBatchBackPropagation.minimize(): in epoch "+
 								        epoch+" mini_batch ||grad||_2="+g_norm+
-								        "; will continue instead",0);
+								        "; will continue instead",2);
 							continue;
 						}
 					} 
@@ -495,8 +500,23 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 				}
 				long dur = System.currentTimeMillis()-st;
 				_mger.msg("PDMBBP.minimize(): epoch "+epoch+" took "+dur+" msecs", 1);
+				
+				// measure validation accuracy on this epoch if data exist
+				double[][] valdata = (double[][]) _params.get("ffnn.valdata");
+				if (valdata!=null && _mger.getDebugLvl()>=1) {
+					double[] vallabels = (double[]) _params.get("ffnn.vallabels");
+					FunctionIntf cf = 
+						(FunctionIntf) _params.get("ffnn.validationcostfunction");
+					final double verr = _ffnn.evalNetworkOutputOnValidationData(wgts, 
+						                                                          valdata, 
+																																			vallabels, 
+																																			cf);
+					_mger.msg("PDMBBP.minimize(): validation error% afer epoch "+epoch+
+						        "="+verr, 1);
+				}
 			}
 			// end main loop
+			
 			if (_inc==null) {
 				_params.put("ffnn.traindata", _allTrainData);
 				_params.put("ffnn.trainlabels", _allTrainLabels);				

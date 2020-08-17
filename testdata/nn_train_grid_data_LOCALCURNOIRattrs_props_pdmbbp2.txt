@@ -1,0 +1,42 @@
+dbglvl,1
+rndgen,5
+class,outputlayer,popt4jlib.neural.MultiClassSSE
+class,l1,popt4jlib.neural.Linear
+class,l2,popt4jlib.neural.Linear
+class,l3,popt4jlib.neural.Linear
+class,l4,popt4jlib.neural.Linear
+class,l5,popt4jlib.neural.Linear
+class,s1,popt4jlib.neural.SoftPlus,1.0
+class,s2,popt4jlib.neural.SoftPlus,1.0
+class,s3,popt4jlib.neural.SoftPlus,1.0
+class,s4,popt4jlib.neural.SoftPlus,1.0
+class,s5,popt4jlib.neural.SoftPlus,1.0
+array,layer1_arr,popt4jlib.neural.NNNodeIntf,l1,l2,l3,l4,l5,s1,s2,s3,s4,s5
+arrayofcopies,layer2_arr,5,popt4jlib.neural.SoftPlus,1.0
+arrayofcopies,layer3_arr,5,popt4jlib.neural.SoftPlus,1.0
+arrayofcopies,layer4_arr,11,popt4jlib.neural.Sigmoid,1.0
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr,layer3_arr,layer4_arr
+#arrayofcopies,layers_arr,15,popt4jlib.neural.SoftPlus,1.0
+#array,hiddenlayers,[Ljava.lang.Object;,layers_arr,layer4_arr
+# normalized train data:
+matrixN01,ffnn.traindata,testdata/grid_data_LOCALCURNOIRattrs_train.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train.dat.lbls
+class,costfunc,popt4jlib.neural.costfunction.MAE
+# optimizer props
+class,ffnn.mainoptimizer,popt4jlib.neural.PDMiniBatchBackPropagation
+class,opt.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,4
+#array,pdmbbp.learning_rates,double,0.3,0.7
+array,pdmbbp.learning_rates,double,0.3
+pdmbbp.c1,500.0
+pdmbbp.c2,500.0
+pdmbbp.normgrad,true
+ffnn.minibatchsize,50
+pdmbbp.num_epochs,10
+pdmbbp.momentum,0.2
+#validation data
+matrixN01o,ffnn.valdata,testdata/grid_data_LOCALCURNOIRattrs_val.dat,testdata/grid_data_LOCALCURNOIRattrs_train.dat
+dblarray,ffnn.vallabels,testdata/grid_data_ALLattrs_val.dat.lbls
+class,ffnn.validationcostfunction,popt4jlib.neural.costfunction.CategoricalAccuracy
+# output file below used by [DGA,AVD]FFNNTest class
+ffnn.outputweightsfile,testdata/result_grid_data_LOCALCURNOIRattrs_weights.dat

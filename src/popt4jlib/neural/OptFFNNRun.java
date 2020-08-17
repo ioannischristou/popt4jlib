@@ -299,12 +299,31 @@ public class OptFFNNRun {
 				final double verr = 
 					ftb.evalNetworkOutputOnValidationData(arg, valdata, vallabels, cf);
 				System.out.println("total error measured on VALIDATION SET="+verr);
+				// if there is a requirement for storing output labels (on validation 
+				// set), do so; this is useful for computing consufion matrix later on
+				String outputlabelsfile = (String) params.get("ffnn.outputlabelsfile");
+				if (outputlabelsfile!=null) {
+					if (!params.containsKey("outputws")) {  // add hiddenws$i$, outputws
+						final int numlayers = ftb.getNumHiddenLayers();
+						for (int j=0; j<numlayers; j++) {
+							double[][] hwsj = 
+								ftb.getLayerWeightsWithBias(j, arg, valdata[0].length);
+							params.put("hiddenws"+j, hwsj);
+						}
+						double[] outws = ftb.getOutputWeightsWithBias(arg);
+						params.put("outputws", outws);
+					}
+					double[] outputlabels = new double[valdata.length];
+					for (int i=0; i<outputlabels.length; i++) {
+						double outi = ftb.evalNetworkOnInputData(arg, params);
+						outputlabels[i] = outi;
+					}
+					DataMgr.writeDoubleArrayToFile(outputlabels, outputlabelsfile);
+				}
 			}
 			// finally, if there exists a requirement for storing results, do so.
 			String outputweightsfile = (String) params.get("ffnn.outputweightsfile");
 			if (outputweightsfile!=null) {
-				// first, add the "hiddenws$i$ and "outputws" key-value pairs in params
-				final FFNN4Train ft = (FFNN4Train) func;
 				final double[] all_weights = arg;
 				DataMgr.writeDoubleArrayToFile(all_weights, outputweightsfile);
 			}

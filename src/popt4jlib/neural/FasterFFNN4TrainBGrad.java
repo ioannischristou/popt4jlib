@@ -71,12 +71,14 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 	public FasterFFNN4TrainBGrad(FFNN4TrainB ffnn, int num_input_signals, 
 		                         int num_threads) {
 		this(ffnn, num_input_signals);
-		try {
-			_extor = PDBatchTaskExecutor.newPDBatchTaskExecutor(num_threads);
-		}
-		catch (Exception e) {  // ignore
-			e.printStackTrace();
-			_extor = null;
+		if (num_threads>1) {
+			try {
+				_extor = PDBatchTaskExecutor.newPDBatchTaskExecutor(num_threads);
+			}
+			catch (Exception e) {  // ignore
+				e.printStackTrace();
+				_extor = null;
+			}
 		}
 	}
 	
