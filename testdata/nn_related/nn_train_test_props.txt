@@ -1,0 +1,24 @@
+dbglvl,3
+# the following defines an ANN and weights on the nn's connections
+# the ANN looks like this:
+# INP L0    L1    OUT
+# x1
+# x2  N00   N10  
+# x3  N01   N11   y  
+# x4        N12
+class,n00,popt4jlib.neural.ReLU
+class,n01,popt4jlib.neural.ReLU
+class,n10,popt4jlib.neural.ReLU
+class,n11,popt4jlib.neural.ReLU
+class,n12,popt4jlib.neural.ReLU
+class,outputlayer,popt4jlib.neural.InputSignalMaxPosSelector
+array,layer1_arr,popt4jlib.neural.NNNodeIntf,n00,n01
+array,layer2_arr,popt4jlib.neural.NNNodeIntf,n10,n11,n12
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr
+# train data
+matrix,ffnn.traindata,testdata/traindata0.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/trainlabels0.dat
+class,costfunc,popt4jlib.neural.costfunction.L2Norm
+# weights to be tested
+array,weights,double, -1,1,0,0,0, 0,0,1,0,0, 1,1,0, 1,1,0, 0,0,0, 1,1,1,0

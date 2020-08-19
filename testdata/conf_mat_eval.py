@@ -26,12 +26,16 @@ f2 = open(f2_str, "r")
 
 matrix = np.zeros((n,n),dtype=int)
 
+sm = 0
 for line1 in f1:
 	line2 = f2.readline()
 	n1 = int(round(float(line1.strip())))
 	n2 = int(round(float(line2.strip())))
 	matrix[n1,n2] += 1
+	sm += 1
+
 for i in range(n):
 	for j in range(n):
 		print("%3d " % matrix[i,j], end='')
 	print("")
+print("total instances counted=",sm)

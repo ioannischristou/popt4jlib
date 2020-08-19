@@ -315,7 +315,7 @@ public class OptFFNNRun {
 					}
 					double[] outputlabels = new double[valdata.length];
 					for (int i=0; i<outputlabels.length; i++) {
-						double outi = ftb.evalNetworkOnInputData(arg, params);
+						double outi = ftb.evalNetworkOnInputData(valdata[i], params);
 						outputlabels[i] = outi;
 					}
 					DataMgr.writeDoubleArrayToFile(outputlabels, outputlabelsfile);

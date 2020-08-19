@@ -1,0 +1,30 @@
+dbglvl,1
+rndgen,7
+class,outputlayer,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layer1_arr,20,popt4jlib.neural.SoftPlus,1.0
+arrayofcopies,layer2_arr,10,popt4jlib.neural.SoftPlus,1.0
+arrayofcopies,layer3_arr,10,popt4jlib.neural.SoftPlus,1.0
+arrayofcopies,layer4_arr,10,popt4jlib.neural.SoftPlus,1.0
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr,layer3_arr,layer4_arr
+# normalized train data:
+matrixN01,ffnn.traindata,testdata/alextraindata.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/alextrainlabels.dat
+#normalized validation data:
+matrixN01o,ffnn.valdata,testdata/alexvaldata.dat,testdata/alextraindata.dat
+dblarray,ffnn.vallabels,testdata/alexvallabels.dat
+class,ffnn.validationcostfunction,popt4jlib.neural.costfunction.CategoricalAccuracy
+class,costfunc,popt4jlib.neural.costfunction.MSSE
+# optimizer props
+class,ffnn.mainoptimizer,popt4jlib.neural.PDMiniBatchBackPropagation
+class,opt.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,4
+pdmbbp.num_threads,4
+array,pdmbbp.learning_rates,double,0.3
+pdmbbp.normgrad,true
+pdmbbp.c1,5000.0
+pdmbbp.c2,5000.0
+ffnn.minibatchsize,200
+pdmbbp.num_epochs,5000
+pdmbbp.momentum,0.2
+# output file below used by [DGA,AVD]FFNNTest class
+ffnn.outputweightsfile,testdata/result_alex_trainweights_5000.dat

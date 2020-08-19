@@ -1,0 +1,40 @@
+dbglvl,1
+rndgen,5
+# the following defines an ANN and weights on the nn's connections
+# the ANN looks like this:
+# INP L0    L1    OUT
+# x1
+# x2  N00   N10   
+# x3  N01   N11   
+# x4  ...   ...   y
+# x5  ...   ...
+# ... ...   N20
+# ... N09
+# x14
+class,outputlayer,popt4jlib.neural.MultiClassSSE
+arrayofcopies,layer1_arr,10,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layer3_arr,11,popt4jlib.neural.Sigmoid,1.0
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer3_arr
+# normalized train data:
+matrixN01,ffnn.traindata,testdata/grid_data_ALLattrs_train.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train.dat.lbls
+class,costfunc,popt4jlib.neural.costfunction.MAE
+# optimizer props
+class,ffnn.mainoptimizer,popt4jlib.neural.PDMiniBatchBackPropagation
+class,opt.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,4
+#array,pdmbbp.learning_rates,double,0.3,0.7
+array,pdmbbp.learning_rates,double,0.3
+pdmbbp.c1,500.0
+pdmbbp.c2,500.0
+pdmbbp.normgrad,true
+ffnn.minibatchsize,500
+pdmbbp.num_epochs,50
+pdmbbp.momentum,0.2
+sgd.numdimensions,283
+#validation data
+matrixN01o,ffnn.valdata,testdata/grid_data_ALLattrs_val.dat,testdata/grid_data_ALLattrs_train.dat
+dblarray,ffnn.vallabels,testdata/grid_data_ALLattrs_val.dat.lbls
+class,ffnn.validationcostfunction,popt4jlib.neural.costfunction.CategoricalAccuracy
+# output file below used by [DGA,AVD]FFNNTest class
+ffnn.outputweightsfile,testdata/result_grid_data_ALLattrs_weights.dat

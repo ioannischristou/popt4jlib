@@ -1,0 +1,34 @@
+dbglvl,2
+# the following defines an ANN and weights on the nn's connections
+# the ANN looks like this:
+# INP L0    L1    OUT
+# x1
+# x2  N00   N10  
+# x3  N01   N11  
+# x4  ...   ...   y
+# x5  N09   N19
+# ...
+# x36
+class,outputlayer,popt4jlib.neural.Sigmoid,5.0
+arrayofcopies,layer1_arr,10,popt4jlib.neural.TanH
+arrayofcopies,layer2_arr,10,popt4jlib.neural.TanH
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr
+# train data:
+matrix,ffnn.traindata,testdata/traindata1.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/trainlabels1.dat
+# AVD props next
+class,costfunc,popt4jlib.neural.costfunction.L2Norm
+# output file below used by tests.AVDFFNNTest class
+ffnn.outputlabelsfile,testdata/result_trainlabels1.dat
+# 4 in last argument means use 4-threads when evaluating the FFNN4Train function
+class,avd.function,popt4jlib.neural.FFNN4Train,hiddenlayers,outputlayer,costfunc,4
+avd.numdimensions,470
+avd.maxargval,3.0
+avd.minargval,-3.0
+avd.numtries,100
+onedopter.maxdetdirstepswithsamefuncval,3
+onedopter.maxnumfuncevals,100
+avd.minstepsize,0.005
+avd.ftol,1.e-6
+avd.niterbnd,3

@@ -1,0 +1,25 @@
+dbglvl,1
+# the following defines an ANN and weights on the nn's connections
+# the ANN looks like this:
+# INP L0    L1    OUT
+# x1
+# x2  N00   N10   
+# x3  N01   N11   
+# x4  ...   ...   y
+# x5  ...   ...
+# ... ...   N20
+# ... N09
+# x14
+class,outputlayer,popt4jlib.neural.MultiClassSSE
+arrayofcopies,layera_arr,10,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layerb_arr,10,popt4jlib.neural.Sigmoid,1.0
+#arrayofcopies,layerc_arr,30,popt4jlib.neural.Sigmoid,1.0
+#arrayofcopies,layerd_arr,50,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layerf_arr,11,popt4jlib.neural.Sigmoid,1.0
+array,hiddenlayers,[Ljava.lang.Object;,layera_arr,layerb_arr,layerf_arr
+# normalized train data:
+matrixN01,ffnn.traindata,testdata/grid_data_ALLattrs_train.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train.dat.lbls
+class,costfunc,popt4jlib.neural.costfunction.L1Norm
+class,ffnn4trainb,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc

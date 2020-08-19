@@ -1,0 +1,35 @@
+dbglvl,2
+class,outputlayer,popt4jlib.neural.Linear
+arrayofcopies,layer1_arr,10,popt4jlib.neural.Linear
+arrayofcopies,layer3_arr,11,popt4jlib.neural.ReLU
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer3_arr
+class,costfunc,popt4jlib.neural.costfunction.CategoricalAccuracy
+class,opt.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,6
+# normalized train data:
+matrix-1_1,ffnn.traindata,testdata/grid_data_ALLattrs_train.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train.dat.lbls
+# optimizer props
+class,ffnn.mainoptimizer,popt4jlib.GA.DGA
+opt.numthreads,4
+rndgen,7,4
+# DGA props next
+ref,dga.function,opt.function
+dga.chromosomelength,283
+dga.maxallelevalue,5.0
+dga.minallelevalue,-5.0
+dga.cutoffage,50
+dga.varage,10.0
+dga.numgens,5000
+dga.numinitpop,10
+dga.poplimit,100
+ref,dga.numthreads,opt.numthreads
+class,dga.xoverop,popt4jlib.GA.DblArray1PtXOverOp
+class,dga.mutationop,popt4jlib.GA.DblVarArray1MAlleleMutationOp
+dga.mutoprate,0.15
+class,dga.randomchromosomemaker,popt4jlib.GA.DblArray1CMaker
+#class,dga.pdbtexecinitedwrkcmd,popt4jlib.neural.FFNN4TrainEvalPDBTExecInitCmd,ffnn.traindatafile,ffnn.trainlabelsfile
+#dga.pdbthost,localhost
+#dga.pdbtport,7891
+# output file below used by [DGA,AVD]FFNNTest class
+ffnn.outputlabelsfile,testdata/result_grid_data_ALLattrs_trainlabels.dat

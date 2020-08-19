@@ -1,0 +1,41 @@
+dbglvl,1
+# the following defines an ANN and weights on the nn's connections
+# the ANN looks like this:
+# INP L0    L1    OUT
+# x1
+# x2  N00   N20   
+# x3  N01   N11   
+# x4  ...   ...   y
+# x5  ...   ...
+# ... ...   N30
+# ... N19
+# x14
+class,outputlayer,popt4jlib.neural.Linear
+arrayofcopies,layer1_arr,10,popt4jlib.neural.Linear
+arrayofcopies,layer3_arr,11,popt4jlib.neural.Linear
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer3_arr
+# normalized train data:
+matrixN01,ffnn.traindata,testdata/grid_data_ALLattrs_train.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train.dat.lbls
+class,costfunc,popt4jlib.neural.costfunction.MSSE
+# optimizer props
+class,ffnn.mainoptimizer,popt4jlib.neural.Adam4FFNN
+class,adam.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,8
+ref,opt.function,adam.function
+opt.numthreads,8
+# line below causes non-deterministic function evaluations, of small batches of
+# input vectors, but runs a lot faster!
+#ffnn.randombatchsize,10000
+rndgen,7,4
+class,adam.gradient,popt4jlib.neural.FFNN4TrainBGrad,opt.function,14
+#adam.a,0.5
+adam.a,0.1
+adam.gtol,0.0
+adam.maxiters,50
+# new number of connection weights = 14*20 + 20*11 + 11 = 280 + 220 + 11 = 511
+# new number of biases = 20 + 11 + 1 = 32
+# number of dimensions = 543
+adam.numdimensions,283
+# output file below used by [DGA,AVD]FFNNTest class
+ffnn.outputlabelsfile,testdata/result_grid_data_ALLattrs_trainlabels.dat
