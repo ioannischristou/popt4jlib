@@ -1,0 +1,29 @@
+dbglvl,1
+rndgen,7
+class,outputlayer,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layer1_arr,20,popt4jlib.neural.Linear
+arrayofcopies,layer2_arr,10,popt4jlib.neural.SoftPlus,1.0
+arrayofcopies,layer3_arr,10,popt4jlib.neural.SoftPlus,1.0
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer2_arr,layer3_arr
+# normalized train data:
+matrixN01,ffnn.traindata,testdata/financial/Brent_h_train.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/financial/Brent_h_train.dat.lbls
+class,costfunc,popt4jlib.neural.costfunction.MAE
+# optimizer props
+class,ffnn.mainoptimizer,popt4jlib.neural.PDMiniBatchBackPropagation
+class,opt.function,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,4
+#array,pdmbbp.learning_rates,double,0.3,0.7
+array,pdmbbp.learning_rates,double,0.05
+pdmbbp.c1,50000.0
+pdmbbp.c2,50000.0
+pdmbbp.normgrad,true
+ffnn.minibatchsize,100
+pdmbbp.num_epochs,50000
+pdmbbp.momentum,0.01
+#validation data
+matrixN01o,ffnn.valdata,testdata/financial/Brent_h_test.dat,testdata/financial/Brent_h_train.dat
+dblarray,ffnn.vallabels,testdata/financial/Brent_h_test.dat.lbls
+class,ffnn.validationcostfunction,popt4jlib.neural.costfunction.CategoricalAccuracy
+# output file below used for producing confusion matrix
+ffnn.outputlabelsfile,testdata/financial/result_Brent_h_test.dat.lbls
