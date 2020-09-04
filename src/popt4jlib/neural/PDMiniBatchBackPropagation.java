@@ -267,6 +267,10 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 	 * present the training instances (and labels) in mini-batch formation in 
 	 * random order or not. Notice it is irrelevant when mini-batch size is the 
 	 * entire training set. Default is true.
+	 * <li>&lt;"pdmbbp.use_var_wgt_var, Boolean&gt; optional indicates whether 
+	 * weight initialization is such that every weight is normally distributed 
+	 * with zero mean and standard deviation 1/sqrt(fan_in) of the node the weight
+	 * leads to (is input to). Default is false.
 	 * <li>&lt;"ffnn.traindata", double[][]&gt; optional, the (entire) training
 	 * instances set for this given problem. If it doesn't exist, it will be 
 	 * fetched from the <CODE>TrainData</CODE> class, if necessary calling first
@@ -336,7 +340,36 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 			else {  // randomly initialize weights
 				wgts = new double[_ffnn.getTotalNumWeights()];
 				Random r = RndUtil.getInstance().getRandom();
-				for (int i=0; i<wgts.length; i++) wgts[i] = r.nextGaussian();
+				Boolean use_varying_wgt_varB = 
+					(Boolean) _params.get("pdmbbp.use_var_wgt_var");
+				final boolean uvwv = 
+					use_varying_wgt_varB == null ? false : 
+					                               use_varying_wgt_varB.booleanValue();
+				// for (int i=0; i<wgts.length; i++) wgts[i] = r.nextGaussian();
+				int fan_in = _allTrainData[0].length + 1;
+				double s = 1.0/Math.sqrt((double)fan_in);
+				int k = 0;
+				// hidden node weights
+				for (int i=0; i<_ffnn.getNumHiddenLayers(); i++) {
+					int num_wgts_i = _ffnn.getHiddenLayers()[i].length*fan_in;
+					for (int j=0; j<num_wgts_i; j++) {
+						wgts[k] = r.nextGaussian();
+						if (uvwv) wgts[k] *= s;
+						++k;
+					}
+					fan_in = _ffnn.getHiddenLayers()[i].length+1;
+					s = 1.0/Math.sqrt((double)fan_in);
+				}
+				// output node weights
+				final int num_wgts_out = fan_in;
+				for (int j=0; j<num_wgts_out; j++) {
+					wgts[k] = r.nextGaussian();
+					if (uvwv) wgts[k] *= s;
+					++k;
+				}
+				if (k!=wgts.length) // sanity test
+					throw new Error("k="+k+" but wgts.len="+wgts.length);
+				
 				// but set biases to zero:
 				int[] biasinds = _ffnn.getIndices4BiasInWgts(_allTrainData[0].length);
 				for (int i=0; i<biasinds.length; i++) wgts[biasinds[i]] = 0.0;

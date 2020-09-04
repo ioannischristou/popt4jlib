@@ -8,7 +8,8 @@ DataMgr.readDoubleLabelsFromFile(filename).
 
 import csv
 
-savelbl_gl = False  # great coding practice: global variables...
+savelbl_gl = False         # great coding practice: global variables...
+convertlbls2cat_gl = False  # likewise
 
 def convert(input_csv_file, output_matrix_file, header=True, exclude_columns=None):
 	data_rows = []
@@ -30,6 +31,8 @@ def convert(input_csv_file, output_matrix_file, header=True, exclude_columns=Non
 	labels_file = None
 	if savelbl_gl:
 		labels_file = open(output_matrix_file+".lbls",mode='w')
+		if convertlbls2cat_gl:
+			labels_list=[]
 	with open(output_matrix_file, mode='w') as outfile:
 		csv_writer = csv.writer(outfile, delimiter=' ')
 		row0 = [len(data_rows), num_cols-len(exclude_columns)]
@@ -41,7 +44,10 @@ def convert(input_csv_file, output_matrix_file, header=True, exclude_columns=Non
 				# exclude columns?
 				if (i+1) in exclude_columns: 
 					if savelbl_gl:
-						labels_file.write(row[i]+'\n')
+						if not convertlbls2cat_gl:
+							labels_file.write(row[i]+'\n')
+						else:
+							labels_list.append(float(row[i]))
 					continue
 				j += 1
 				if (float(row[i])==0): continue  # sparse format allows skipping zeros
@@ -49,8 +55,23 @@ def convert(input_csv_file, output_matrix_file, header=True, exclude_columns=Non
 				L.append(str(j)+","+row[i])
 			csv_writer.writerow(L)
 	if savelbl_gl:
+		if convertlbls2cat_gl:
+			# do the work now, and write labels 0, 1, 2, ... and map file
+			unique_lbls_set = set(labels_list)
+			sorted_unique_labels = sorted(unique_lbls_set)
+			# print("sorted unique labels:", sorted_unique_labels)  ## itc: HERE rm asap
+			labels_map_file = open(output_matrix_file+".lbls.map.txt",mode='w')
+			mp = dict()
+			for i in range(len(sorted_unique_labels)):
+				mp[sorted_unique_labels[i]] = i
+				labels_map_file.write(str(sorted_unique_labels[i])+' , '+str(i)+'\n')
+			labels_map_file.close()
+			# finally, write the labels
+			for lbl in labels_list:
+				labels_file.write(str(mp[lbl])+'\n')
 		labels_file.close()
 
+		
 if __name__=="__main__":
 	inpf = input("Enter csv file name to convert to popt4jlib matrix format:")
 	outf = input("Enter output matrix file name:")
@@ -63,4 +84,7 @@ if __name__=="__main__":
 			save_label = input("Save exclude column as labels file? (y/n)")
 			if save_label is 'y':
 				savelbl_gl = True
+				convert_label = input("Convert labels to categorical (0, 1, 2, ...)? (y/n)")
+				if convert_label is 'y':
+					convertlbls2cat_gl = True
 	convert(inpf, outf, exclude_columns=Li)
