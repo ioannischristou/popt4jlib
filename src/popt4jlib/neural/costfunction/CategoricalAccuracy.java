@@ -35,10 +35,11 @@ public class CategoricalAccuracy implements FFNNCostFunctionIntf {
 	/**
 	 * always throws UnsupportedOperationException.
 	 * @param x double
+	 * @param num_insts int
 	 * @return double
 	 * @throws UnsupportedOperationException
 	 */
-	public double evalDerivative(double x) {
+	public double evalDerivative(double x, int num_insts) {
 		throw new UnsupportedOperationException("CategoricalAccuracy cannot "+
 			                                      "evaluate derivative of FFNN");		
 	}
@@ -113,11 +114,13 @@ public class CategoricalAccuracy implements FFNNCostFunctionIntf {
 	 * instance of the training data)
 	 * @param true_lbl double the true label corresponding to the input_signals
 	 * vector
+	 * @param num_insts int the number of training instances
 	 * @return double 
 	 * @throws UnsupportedOperationException always
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index,
-		                                   double[] input_signals, double true_lbl){
+		                                   double[] input_signals, double true_lbl,
+	                                     int num_insts){
 		throw new UnsupportedOperationException("CategoricalAccuracy cannot "+
 			                                      "evaluate derivative of FFNN");		
 	}

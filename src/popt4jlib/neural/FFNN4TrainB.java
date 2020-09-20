@@ -31,6 +31,8 @@ import java.io.Serializable;
 public class FFNN4TrainB extends FFNN4Train {
 		
 	private final static int _numDerivInputsPerTask = 256;  // compile-time const
+	                                                        // used in parallel
+	                                                        // computation of grad
 
 	private NumberFormat _df = null;
 	
@@ -40,6 +42,16 @@ public class FFNN4TrainB extends FFNN4Train {
 	
 	// defines the order of computing the partial derivatives w.r.t the weights
 	private boolean _computingOrderAsc = false;
+	
+	/**
+	 * bit-vector holds indices of weights that cannot change (must remain fixed).
+	 * Notice that ALL methods handling this bit-vector are unsynchronized and 
+	 * therefore it is only safe to use them from the "main" thread of control
+	 * before passing <CODE>FFNNMultiEvalTaskB</CODE> and/or 
+	 * <CODE>FFNNMultiEvalPartialDerivTaskB</CODE> objects to compute the 
+	 * neural network function value or the derivative of the neural network.
+	 */
+	private BoolVector _fixedWgtInds;
 	
 	
 	/**
@@ -126,6 +138,7 @@ public class FFNN4TrainB extends FFNN4Train {
 		outnode.setPositionInLayer(0);
 		outnode.setWeightRange(pos, pos+hiddenLayers[hiddenLayers.length-1].length);
 		_costFunc.setFFNN(this);
+		_fixedWgtInds = new BoolVector(getTotalNumWeights());
 		_isInited = true;
 	}
 	
@@ -244,6 +257,51 @@ public class FFNN4TrainB extends FFNN4Train {
 			++i;
 			numSignalsi = hlayers[i].length;
 		}
+	}
+	
+	
+	/**
+	 * gets the weight indices that are currently fixed (are not allowed to 
+	 * change.)
+	 * @return BoolVector
+	 */
+	public BoolVector getFixedWgtInds() {
+		return _fixedWgtInds;
+	}
+	
+	
+	/**
+	 * sets the weight indices that are not currently allowed to change. 
+	 * @param fixedInds BoolVector
+	 */
+	public void setFixedWgtInds(BoolVector fixedInds) {
+		_fixedWgtInds = fixedInds;
+	}
+	
+	
+	/**
+	 * add the given indices as not allowed to change. Previous weight indices 
+	 * that were fixed, remain fixed.
+	 * @param fxdWgts BoolVector
+	 */
+	public void addFixedWgtInds(BoolVector fxdWgts) {
+		_fixedWgtInds.or(fxdWgts);
+	}
+	
+	
+	/**
+	 * sets all values of the specified weight indices in the wgt_inds bit vector
+	 * in the wgts array to the value val, and sets the fixed weight indices to 
+	 * the given bit vector.
+	 * @param wgts double[] must be of same size as wgt_inds bit vector
+	 * @param wgt_inds BoolVector must be of same size as wgts double array
+	 * @param val double (usually zero)
+	 */
+	public void fixWgtsAtValue(double[] wgts, BoolVector wgt_inds, double val) {
+		for (int i=wgt_inds.nextSetBit(0); i>=0; i=wgt_inds.nextSetBit(i+1)) {
+			wgts[i] = val;
+		}
+		setFixedWgtInds(wgt_inds);
 	}
 
 	
@@ -615,6 +673,9 @@ public class FFNN4TrainB extends FFNN4Train {
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index, HashMap p,
 		                                   boolean clearParams) {
+		if (_fixedWgtInds.get(index)) {  // weight is fixed, partial derivative is 0
+			return 0.0;
+		}
 		final double[][] traindata = p.containsKey("ffnn.traindata") ?
 			                             (double[][]) p.get("ffnn.traindata") :
 			                             TrainData.getTrainingVectors();
@@ -719,22 +780,26 @@ public class FFNN4TrainB extends FFNN4Train {
 	 * derivative
 	 * @param train_inst double[] the training instance x
 	 * @param train_lbl double the training label y
+	 * @param num_insts int the total number of training instances
 	 * @return double[] the gradient of this network on the point wgts given the 
 	 * training pair (train_inst, train_lbl)
 	 */
 	public double[] evalGradient4TermB(double[] wgts, 
-		                                 double[] train_inst, double train_lbl) {
+		                                 double[] train_inst, double train_lbl,
+																		 int num_insts) {
 		final double[] grad4inst = new double[wgts.length];
 		if (_computingOrderAsc) {
 			for (int i=0; i<wgts.length; i++) {
 				grad4inst[i] = 
-					_costFunc.evalPartialDerivativeB(wgts, i, train_inst, train_lbl);
+					_costFunc.evalPartialDerivativeB(wgts, i, train_inst, train_lbl, 
+						                               num_insts);
 			}
 		}
 		else {
 			for (int i=wgts.length-1; i>=0; i--) {
-				grad4inst[i] = 
-					_costFunc.evalPartialDerivativeB(wgts, i, train_inst, train_lbl);
+				grad4inst[i] =  
+					_costFunc.evalPartialDerivativeB(wgts, i, train_inst, train_lbl,
+						                               num_insts);
 			}			
 		}
 		return grad4inst;

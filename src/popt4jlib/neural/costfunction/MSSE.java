@@ -33,10 +33,11 @@ public class MSSE implements FFNNCostFunctionIntf {
 	/**
 	 * computes the value 2x.
 	 * @param x double
+	 * @param num_insts int
 	 * @return double
 	 */
-	public double evalDerivative(double x) {
-		return x+x;
+	public double evalDerivative(double x, int num_insts) {
+		return (x+x)/(double)num_insts;
 	}
 
 		
@@ -143,10 +144,12 @@ public class MSSE implements FFNNCostFunctionIntf {
 	 * instance of the training data)
 	 * @param true_lbl double the true label corresponding to the input_signals
 	 * vector
+	 * @param num_insts int the number of training instances
 	 * @return double 
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index,
-		                                   double[] input_signals, double true_lbl){
+		                                   double[] input_signals, double true_lbl,
+																			 int num_insts){
 		// evaluate the output node of this network on the (x,y) training pair
 		// compute the output node's derivative, and double the product of the two
 		OutputNNNodeIntf outn = _ffnn.getOutputNode();
@@ -159,7 +162,7 @@ public class MSSE implements FFNNCostFunctionIntf {
 		double err = ffnn_eval - true_lbl;
 		final double g_index = outn.evalPartialDerivativeB(weights, index, 
 			                                                 input_signals, true_lbl);
-		final double res = 2.0*err*g_index;
+		final double res = 2.0*err*g_index/(double)num_insts;
 		if (_mger.getDebugLvl()>=3) {
 			String wstr="[ ";
 			for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";

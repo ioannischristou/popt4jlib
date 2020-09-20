@@ -10,7 +10,6 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/KDDCup992SparseVectorFileFormatConverter.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecNoOpCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionIntf.java</file>
-            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/alex_data/nn_train_alex_data_props_pdmbbp.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/ReentrantFunctionBaseMT.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RegExTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FFNN4TrainB.java</file>
@@ -49,6 +48,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/OneDStepQuantumOptimizer.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoisson.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/poisson/package.html</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/toy_train.dat.lbls</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/MSSE.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/avd_test_props.txt</file>
@@ -128,8 +128,10 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/RecvIndTask.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SA/SAScheduleIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/Linear.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/toy_train.dat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/RandomGraphMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/package.html</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/gauto_test_props.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutorCltTest2.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/TanH01.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LIP/IntArray1Test.java</file>

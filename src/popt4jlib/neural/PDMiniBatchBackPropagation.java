@@ -1,5 +1,6 @@
 package popt4jlib.neural;
 
+import popt4jlib.BoolVector;
 import popt4jlib.VectorIntf;
 import popt4jlib.DblArray1Vector;
 import popt4jlib.LocalOptimizerIntf;
@@ -38,6 +39,11 @@ import popt4jlib.GradientDescent.VecUtil;
  * <ul>
  * <li> 2020-08-15: added diagnostics to print validation error after every
  * epoch when dbg-lvl is above 0, assuming "ffnn.valdata" key exists in params.
+ * <li> 2020-09-17: added feature to drop-out a percentage of random nodes in
+ * the hidden layers during a training epoch; also added feature to fix a 
+ * percentage of weights to constant values throughout a training epoch.
+ * <li> 2020-09-18: when validation accuracy is set for display, it also shows
+ * cost function value on the (entire) training set.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -64,6 +70,11 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 	private double _c2 = 10.0;
 	// indicates whether to normalize the gradient to have L2-norm of 1 or not
 	private boolean _normalizeGrad = false;
+	
+	// fixed weights percentage among all weights during a training epoch
+	double _fixedWgtsPerc = 0.0;
+	// percentage of hidden nodes to be dropped out during a training epoch
+	double _dropoutRate = 0.0;
 	
 	private double[] _inc;
 	private double _incVal = Double.MAX_VALUE;
@@ -178,6 +189,14 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 		}
 		if (_params.containsKey("pdmbbp.normgrad")) {
 			_normalizeGrad = ((Boolean)_params.get("pdmbbp.normgrad")).booleanValue();
+		}
+		if (_params.containsKey("pdmbbp.fixedwgtsperc")) {
+			_fixedWgtsPerc = 
+				((Double)_params.get("pdmbbp.fixedwgtsperc")).doubleValue();
+		}
+		if (_params.containsKey("pdmbbp.dropoutrate")) {
+			_dropoutRate = 
+				((Double)_params.get("pdmbbp.dropoutrate")).doubleValue();
 		}
   }
 	
@@ -375,6 +394,16 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 				for (int i=0; i<biasinds.length; i++) wgts[biasinds[i]] = 0.0;
 			}
 			
+			// set target number of fixed weights
+			final int num_fixed_wgts = (int) (_fixedWgtsPerc*wgts.length);
+			// set target number of drop-out nodes
+			final int num_hidden_layers = _ffnn.getNumHiddenLayers();
+			int num_hidden_nodes=0;
+			for (int i=0; i<num_hidden_layers; i++) {
+				num_hidden_nodes += _ffnn.getHiddenLayers()[i].length;
+			}
+			final int num_dropout_nodes = (int) (_dropoutRate*num_hidden_nodes);
+			
 			// main loop
 			final double[][] train_data_batch = new double[_mbSize][];
 			final double[] train_labels_batch = new double[_mbSize];
@@ -391,6 +420,35 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 				long st = System.currentTimeMillis();
 				if (shuffle) Collections.shuffle(indx, r);  // randomly shuffle the data
 				_mger.msg("PDMBBackProp: running epoch "+epoch, 1);
+				// approximately set the drop-out nodes
+				if (num_dropout_nodes>0) {
+					int cnt_dropouts = 0;
+					for (int j=0; j<num_hidden_layers; j++) {
+						NNNodeIntf[] nodesj = _ffnn.getHiddenLayers()[j];
+						for (int k=0; k<nodesj.length; k++) {
+							nodesj[k].setDropout(false);
+							if (cnt_dropouts < num_dropout_nodes && 
+								  r.nextDouble()<_dropoutRate) {
+								nodesj[k].setDropout(true);
+								++cnt_dropouts;
+							}
+						}
+					}
+				}
+				// approximately set the fixed weights
+				if (num_fixed_wgts>0) {
+					final int total_num_wgts = _ffnn.getTotalNumWeights();
+					int cnt_fixedwgts = 0;
+					BoolVector fxdWgtInds = _ffnn.getFixedWgtInds();
+					for (int j=0; j<total_num_wgts; j++) {
+						fxdWgtInds.set(j, false);
+						if (cnt_fixedwgts<num_fixed_wgts && 
+							  r.nextDouble() < _fixedWgtsPerc) {
+							fxdWgtInds.set(j, true);
+							++cnt_fixedwgts;
+						}
+					}
+				}
 				// prepare train batch
 				int pos = 0;
 				while (pos<_allTrainData.length-rem) {
@@ -533,7 +591,21 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 				}
 				long dur = System.currentTimeMillis()-st;
 				_mger.msg("PDMBBP.minimize(): epoch "+epoch+" took "+dur+" msecs", 1);
-				
+
+				// clear out drop-out nodes or fixed weights
+				if (num_dropout_nodes>0) {
+					for (int j=0; j<num_hidden_layers; j++) {
+						NNNodeIntf[] nodesj = _ffnn.getHiddenLayers()[j];
+						for (int k=0; k<nodesj.length; k++) {
+							nodesj[k].setDropout(false);
+						}
+					}
+				}
+				if (num_fixed_wgts>0) {
+					BoolVector fxdWgtInds = _ffnn.getFixedWgtInds();
+					fxdWgtInds.clear();
+				}
+								
 				// measure validation accuracy on this epoch if data exist
 				double[][] valdata = (double[][]) _params.get("ffnn.valdata");
 				if (valdata!=null && _mger.getDebugLvl()>=1) {
@@ -544,12 +616,18 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 						                                                          valdata, 
 																																			vallabels, 
 																																			cf);
-					_mger.msg("PDMBBP.minimize(): validation error% afer epoch "+epoch+
+						// evaluate the current soln
+						_params.put("ffnn.traindata", _allTrainData);
+						_params.put("ffnn.trainlabels", _allTrainLabels);					
+						final double cost = _ffnn.eval(wgts, _params);
+					_mger.msg("PDMBBP.minimize(): "+
+						        "training (cost function) value="+cost+" "+
+						        "validation error% afer epoch "+epoch+
 						        "="+verr, 1);
 				}
 			}
 			// end main loop
-			
+
 			if (_inc==null) {
 				_params.put("ffnn.traindata", _allTrainData);
 				_params.put("ffnn.trainlabels", _allTrainLabels);				

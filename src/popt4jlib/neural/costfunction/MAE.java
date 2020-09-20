@@ -34,10 +34,12 @@ public class MAE implements FFNNCostFunctionIntf {
 	/**
 	 * computes the value 1 or -1 depending on the sign of the argument.
 	 * @param x double
+	 * @param num_insts int
 	 * @return double
 	 */
-	public double evalDerivative(double x) {
-		return Double.compare(x, 0.0) > 0 ? 1 : -1;
+	public double evalDerivative(double x, int num_insts) {
+		return Double.compare(x, 0.0) > 0 ? 1.0 / (double)num_insts : 
+			                                  -1.0 / (double)num_insts;
 	}
 	
 	
@@ -116,7 +118,7 @@ public class MAE implements FFNNCostFunctionIntf {
 		final double g_index = outn.evalPartialDerivativeB(weights, index, 
 			                                                 input_signals, true_lbl, 
 																											 p);
-		final double res = Double.compare(err, 0.0) >= 0 ? g_index : -g_index;
+		final double res = Double.compare(err, 0.0) > 0 ? g_index : -g_index;
 		if (_mger.getDebugLvl()>=3) {
 			String wstr="[ ";
 			for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";
@@ -145,10 +147,12 @@ public class MAE implements FFNNCostFunctionIntf {
 	 * instance of the training data)
 	 * @param true_lbl double the true label corresponding to the input_signals
 	 * vector
+	 * @param num_insts int the number of training instances
 	 * @return double 
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index,
-		                                   double[] input_signals, double true_lbl){
+		                                   double[] input_signals, double true_lbl,
+																			 int num_insts){
 		// evaluate the output node of this network on the (x,y) training pair
 		// compute the output node's derivative, and double the product of the two
 		OutputNNNodeIntf outn = _ffnn.getOutputNode();
@@ -161,7 +165,9 @@ public class MAE implements FFNNCostFunctionIntf {
 		double err = ffnn_eval - true_lbl;
 		final double g_index = outn.evalPartialDerivativeB(weights, index, 
 			                                                 input_signals, true_lbl);
-		final double res = Double.compare(err, 0.0) >= 0 ? g_index : -g_index;
+		final double res = Double.compare(err, 0.0) > 0 ? 
+			                   g_index/(double)num_insts : 
+			                   -g_index/(double)num_insts;
 		if (_mger.getDebugLvl()>=3) {
 			String wstr="[ ";
 			for (int i=0; i<weights.length; i++) wstr += weights[i]+" ";

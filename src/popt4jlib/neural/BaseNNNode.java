@@ -216,6 +216,16 @@ public class BaseNNNode {
 	
 	
 	/**
+	 * gets the index (in the all weights variable array) of the bias variable 
+	 * connected directly as input to this node.
+	 * @return int 
+	 */
+	public int getBiasIndex() {
+		return _biasInd;
+	}
+	
+	
+	/**
 	 * returns true if and only if the index represented a connection weight that
 	 * connects to a node that is eventually connected to this node.
 	 * @param index int

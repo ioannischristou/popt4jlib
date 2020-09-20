@@ -174,10 +174,10 @@ public class CategoricalXEntropyLossW extends BaseNNNode
 	
 	/**
 	 * get this node's name.
-	 * @return String "CategoricalXEntropyLoss"
+	 * @return String "CategoricalXEntropyLossW"
 	 */
 	public String getNodeName() {
-		return "CategoricalXEntropyLoss";
+		return "CategoricalXEntropyLossW";
 	}
 	
 	

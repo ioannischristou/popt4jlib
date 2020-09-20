@@ -121,11 +121,13 @@ public class L2NormReg extends L2Norm {
 	 * instance of the training data)
 	 * @param true_lbl double the true label corresponding to the input_signals
 	 * vector
+	 * @param num_insts int unused
 	 * @throws UnsupportedOperationException always
 	 * @return double 
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index,
-		                                   double[] input_signals, double true_lbl){
+		                                   double[] input_signals, double true_lbl,
+																			 int num_insts){
 		throw new UnsupportedOperationException("method not supported");
 	}
 

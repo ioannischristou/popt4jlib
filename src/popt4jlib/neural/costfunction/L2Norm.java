@@ -33,9 +33,10 @@ public class L2Norm implements FFNNCostFunctionIntf {
 	/**
 	 * computes the value 2x.
 	 * @param x double
+	 * @param num_insts int unused
 	 * @return double
 	 */
-	public double evalDerivative(double x) {
+	public double evalDerivative(double x, int num_insts) {
 		return x+x;
 	}
 
@@ -140,10 +141,12 @@ public class L2Norm implements FFNNCostFunctionIntf {
 	 * instance of the training data)
 	 * @param true_lbl double the true label corresponding to the input_signals
 	 * vector
+	 * @param num_insts int unused
 	 * @return double 
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index,
-		                                   double[] input_signals, double true_lbl){
+		                                   double[] input_signals, double true_lbl,
+																			 int num_insts){
 		// evaluate the output node of this network on the (x,y) training pair
 		// compute the output node's derivative, and double the product of the two
 		OutputNNNodeIntf outn = _ffnn.getOutputNode();

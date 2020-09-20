@@ -1,16 +1,21 @@
 dbglvl,1
-#class,outputlayer,popt4jlib.neural.Linear
-class,outputlayer,popt4jlib.neural.MultiClassSSE
-arrayofcopies,layer1_arr,10,popt4jlib.neural.Sigmoid,1.0
+rndgen,1
+class,outputlayer,popt4jlib.neural.CategoricalXEntropyLoss
+#class,outputlayer,popt4jlib.neural.Sigmoid,1.0
+arrayofcopies,layer1_arr,2,popt4jlib.neural.Sigmoid,1.0
 arrayofcopies,layer3_arr,11,popt4jlib.neural.Sigmoid,1.0
 array,hiddenlayers,[Ljava.lang.Object;,layer1_arr,layer3_arr
 #class,costfunc,popt4jlib.neural.costfunction.MSSE
 class,costfunc,popt4jlib.neural.costfunction.MAE
-class,ffnnb,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc,8
+class,ffnn4trainb,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc
 # normalized train data:
-matrix-1_1,ffnn.traindata,testdata/grid_data_ALLattrs_train.dat
+matrixN01,ffnn.traindata,testdata/grid_fault/grid_data_ALLattrs_train_small.dat
+#matrix,ffnn.traindata,testdata/nn_related/test_train_data0.dat
+#matrix,ffnn.traindata,testdata/nn_related/toy_train.dat
 # train labels
-dblarray,ffnn.trainlabels,testdata/grid_data_ALLattrs_train.dat.lbls
+dblarray,ffnn.trainlabels,testdata/grid_fault/grid_data_ALLattrs_train_small.dat.lbls
+#dblarray,ffnn.trainlabels,testdata/nn_related/test_train_data0.dat.lbls
+#dblarray,ffnn.trainlabels,testdata/nn_related/toy_train.dat.lbls
 # (14+1)*10+(10+1)*11+(11+1)=150+121+12=283 weights
 # dblarray,weights,testdata/grid_data_ALLattrs_train.dat.wgts
 gradapproximator.nmax,7

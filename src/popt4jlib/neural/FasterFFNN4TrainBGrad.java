@@ -2,6 +2,7 @@ package popt4jlib.neural;
 
 import parallel.TaskObject;
 import parallel.distributed.PDBatchTaskExecutor;
+import popt4jlib.BoolVector;
 import popt4jlib.VecFunctionIntf;
 import popt4jlib.VectorIntf;
 import popt4jlib.DblArray1Vector;
@@ -20,6 +21,14 @@ import java.io.IOException;
  * pair. On 3-layer networks (2 hidden layers), it is about 20-40x faster than
  * the <CODE>FastFFNN4TrainBGrad</CODE> algorithm. On 4-layer networks, the
  * difference increases even more, and becomes between 24-160x faster! 
+ * <p>Notes:
+ * <ul>
+ * <li> 2020-09-18: made it work with <CODE>CategoricalXEntropyLoss</CODE> as
+ * output node as well.
+ * <li> 2020-09-19: fixed a serious bug that was present when the 
+ * <CODE>popt4jlib.neural.costfunction.[MAE|MSSE]</CODE> functions are used as
+ * objective cost functions (division by the total number of training instances)
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -129,7 +138,8 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 				final double[] train_instance = traindata[t];
 				final double train_label = trainlabels[t];
 				final double[] g_t = 
-					evalGradient4TermB(wgts, train_instance, train_label);
+					evalGradient4TermB(wgts, train_instance, train_label, 
+						                 num_train_instances);
 				// add g_t to g
 				for (int i=0; i<wgts.length; i++) {
 					final double gi_s = g.getCoord(i)+g_t[i];
@@ -201,18 +211,23 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 	 * gradient
 	 * @param train_inst double[] the training instance
 	 * @param train_lbl double the training label
+	 * @param num_instances int the total number of training instances we're 
+	 * working with
 	 * @return double[] the gradient of the neural network at w
 	 */
 	private double[] evalGradient4TermB(double[] w, 
-		                                  double[] train_inst, double train_lbl) {
+		                                  double[] train_inst, double train_lbl,
+																			int num_instances) {
 		resetAllCaches();
 		final double outv = 
 			evalNetworkOutputOnTrainingData(w, train_inst, train_lbl);
 		OutputNNNodeIntf outn = _ffnn.getOutputNode();
 		final boolean out_ismcsse = outn instanceof MultiClassSSE;
+		final boolean out_iscxel = outn instanceof CategoricalXEntropyLoss &&
+			                         !(outn instanceof CategoricalXEntropyLossW);
 		double err = ((BaseNNNode)outn).getLastEvalCache()-train_lbl;
 		double D_out = ((BaseNNNode)outn).getLastDerivEvalCache2()*
-			             _ffnn._costFunc.evalDerivative(err);
+			             _ffnn._costFunc.evalDerivative(err, num_instances);
 		// for last hidden layer down to the first
 		final NNNodeIntf[][] hlayers = _ffnn.getHiddenLayers();
 		final int num_layers = hlayers.length;
@@ -227,9 +242,41 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 				for (int i=0; i<layer_l.length; i++) {
 					final double exp_i = i==(int)train_lbl ? 1.0 : 0.0;
 					final double err_i=((BaseNNNode)layer_l[i]).getLastEvalCache()-exp_i;
+					final double factor = 
+						Math.abs(_ffnn._costFunc.evalDerivative(err_i, num_instances));
 					D[l][i] = 
-						((BaseNNNode)layer_l[i]).getLastDerivEvalCache2()*(err_i+err_i);
+						((BaseNNNode)layer_l[i]).getLastDerivEvalCache2()*(err_i+err_i)*
+						factor;
 					if (ccs!=null) D[l][i] *= ccs[i];
+				}
+				D_prev = D[l];
+				continue;
+			}
+			// special treatment of last layer in case output layer is 
+			// CategoricalXEntropyLoss
+			if (l==num_layers-1 && out_iscxel) {
+				final int t = (int)train_lbl;
+				// compute the soft-max values array so that the previous layer is 
+				// normalized to give "probabilities"
+				double[] qs = new double[layer_l.length];
+				double q_sum = 0.0;
+				for (int i=0; i<qs.length; i++) {
+					qs[i] = Math.exp(((BaseNNNode)layer_l[i]).getLastEvalCache());
+					q_sum += qs[i];
+				}
+				for (int i=0; i<qs.length; i++) qs[i] /= q_sum;
+				for (int i=0; i<layer_l.length; i++) {
+					//final double deri = 
+					//	             i==t ?
+					//	               -1.0 / ((BaseNNNode)layer_l[i]).getLastEvalCache() :
+					//	               0.0;
+					final double pi = i==t ? 1.0 : 0.0;
+					final double err_i=((BaseNNNode)layer_l[i]).getLastEvalCache() - pi;					
+					final double deri = qs[i] - pi;
+					final double factor = 
+						Math.abs(_ffnn._costFunc.evalDerivative(err_i, num_instances));
+					D[l][i] = 
+						((BaseNNNode)layer_l[i]).getLastDerivEvalCache2()*deri*factor;
 				}
 				D_prev = D[l];
 				continue;
@@ -254,14 +301,17 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 			D_prev = D[l];
 		}
 		final double[] wgt_derivs = new double[w.length];
+		final BoolVector fixedWgtInds = _ffnn.getFixedWgtInds();
 		// first set wgt derivs for input to 1st hidden layer wgts
 		int wind = 0;
 		for (int i=0; i<hlayers[0].length; i++) {
 			for (int j=0; j<train_inst.length; j++) {
-				wgt_derivs[wind++] = train_inst[j]*D[0][i];
+				if (fixedWgtInds.get(wind)) wgt_derivs[wind++] = 0.0;
+				else wgt_derivs[wind++] = train_inst[j]*D[0][i];
 			}
 			// now is the time for bias term derivative
-			wgt_derivs[wind++] = D[0][i];  // activation for bias is always 1
+			if (fixedWgtInds.get(wind)) wgt_derivs[wind++] = 0.0;
+			else wgt_derivs[wind++] = D[0][i];  // activation for bias is always 1
 		}
 		// now set wgt derivs from each layer to the next
 		for (int l=1; l<hlayers.length; l++) {
@@ -269,20 +319,25 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 			final NNNodeIntf[] prev_layer = hlayers[l-1];
 			for (int i=0; i<layerl.length; i++) {
 				for (int j=0; j<prev_layer.length; j++) {
-					wgt_derivs[wind++] = 
-						((BaseNNNode)prev_layer[j]).getLastEvalCache()*D[l][i];
+					if (fixedWgtInds.get(wind)) wgt_derivs[wind++] = 0.0;
+					else wgt_derivs[wind++] = 
+						     ((BaseNNNode)prev_layer[j]).getLastEvalCache()*D[l][i];
 				}
 				// now is the time for the bias term derivative
-				wgt_derivs[wind++] = D[l][i];  // activation for bias is always 1
+				if (fixedWgtInds.get(wind)) wgt_derivs[wind++] = 0.0;
+				else wgt_derivs[wind++] = D[l][i];  // activation for bias is always 1
 			}
 		}
 		// finally, set wgt derivs for output node
 		NNNodeIntf[] llayer = hlayers[hlayers.length-1];
 		for (int j=0; j<llayer.length; j++) {
-			wgt_derivs[wind++] = ((BaseNNNode)llayer[j]).getLastEvalCache()*D_out;
+			if (fixedWgtInds.get(wind)) wgt_derivs[wind++] = 0.0;
+			else wgt_derivs[wind++] = 
+				     ((BaseNNNode)llayer[j]).getLastEvalCache()*D_out;
 		}
 		// lastly, the derivative of the output node bias
-		wgt_derivs[wind++] = D_out;  // activation for bias is always 1
+		if (fixedWgtInds.get(wind)) wgt_derivs[wind++] = 0.0;
+		else wgt_derivs[wind++] = D_out;  // activation for bias is always 1
 		return wgt_derivs;
 	}
 	
@@ -372,7 +427,8 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 				final double[] train_instance = _allTrainData[t];
 				final double train_label = _allTrainLabels[t];
 				final double[] g_t = 
-					evalGradient4TermB(_wgts, train_instance, train_label);
+					evalGradient4TermB(_wgts, train_instance, train_label, 
+						                 _allTrainLabels.length);
 				// add g_t to running g_sum
 				for (int i=0; i<_wgts.length; i++) {
 					g_sum[i] += g_t[i];

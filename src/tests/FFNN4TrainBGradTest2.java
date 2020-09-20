@@ -5,7 +5,6 @@ import popt4jlib.DblArray1Vector;
 import popt4jlib.VectorIntf;
 import popt4jlib.neural.*;
 import java.util.HashMap;
-import popt4jlib.GradientDescent.VecUtil;
 import utils.DataMgr;
 
 

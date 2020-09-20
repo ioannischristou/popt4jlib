@@ -21,9 +21,11 @@ public interface FFNNCostFunctionIntf extends FunctionIntf {
 	 * evaluates the derivative of the cost function as a function of error (a 
 	 * single variable).
 	 * @param x double
+	 * @param num_train_insts int needed when the cost function asks to divide by
+	 * the total number of training instances
 	 * @return double
 	 */
-	public double evalDerivative(double x);
+	public double evalDerivative(double x, int num_train_insts);
 	
 
 	/**
@@ -49,17 +51,20 @@ public interface FFNNCostFunctionIntf extends FunctionIntf {
 	 * <CODE>
 	 * evalPartialDerivativeB(weights, index, input_signals, true_lbl, p)
 	 * </CODE>
-	 * but uses the grad-vector caches instead of the last deriv cache.
+	 * but uses the grad-vector caches instead of the last deriv cache, and also
+	 * computes the true gradient (divides by number of #instances if needed).
 	 * @param weights double[] all variables (including biases) array
 	 * @param index int the index of the partial derivative to take
 	 * @param input_signals double[] the input signals for the network (an
 	 * instance of the training data)
 	 * @param true_lbl double the true label corresponding to the input_signals
 	 * vector
+	 * @param num_insts int the total number of training instances
 	 * @return double 
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index,
-		                                   double[] input_signals, double true_lbl);
+		                                   double[] input_signals, double true_lbl,
+																			 int num_insts);
 	
 	
 	/**

@@ -1,5 +1,6 @@
 package tests;
 
+import analysis.GradApproximator;
 import popt4jlib.DblArray1Vector;
 import popt4jlib.VectorIntf;
 import popt4jlib.neural.*;
@@ -13,7 +14,8 @@ import java.util.Random;
  * tests the "auto" gradient computation (per training instance) for FeedForward
  * Neural Networks with bias accepting. Differs from FFNN4TrainBGradTest3 in 
  * that the tests are made between the FFNN4TrainBGrad, FastFFNN4TrainBGrad and
- * FasterFFNN4TrainBGrad classes.
+ * FasterFFNN4TrainBGrad classes. It also computes gradient based on Richardson
+ * extrapolation if appropriate flag is set.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -26,7 +28,8 @@ public class FFNN4TrainBGradTest4 {
 	/** builds a very simple FFNN and tests its gradient. Invoke as:
 	 * <CODE>
 	 * java -cp &lt;classpath&gt; tests.FFNN4TrainBGradTest4 &lt;params_file&gt;
-	 * [num_random_tries(1)] [num_threads(1)] [do_wgts_asc(true)]
+	 * [num_random_tries(1)] [num_threads(1)] [do_wgts_asc(true)] 
+	 * [do_richardson(false)].
 	 * </CODE>.
 	 * @param args 
 	 */
@@ -45,6 +48,11 @@ public class FFNN4TrainBGradTest4 {
 		if (args.length>3) {
 			do_wgts_asc = Boolean.parseBoolean(args[3]);
 		}
+		boolean do_richardson = false;
+		if (args.length>4) {
+			do_richardson = Boolean.parseBoolean(args[4]);
+		}
+		
 		try {
 			HashMap params = DataMgr.readPropsFromFile(params_file);
 
@@ -58,6 +66,8 @@ public class FFNN4TrainBGradTest4 {
 			final int num_weights = ffnnb.getTotalNumWeights();
 			double[] weights = new double[num_weights];
 			Random r = RndUtil.getInstance().getRandom();
+			GradApproximator gapprox = do_richardson ? new GradApproximator(ffnnb) :
+				                                         null;
 			
 			for (int k=0; k<num_tries; k++) {
 				// create random weights values
@@ -70,17 +80,19 @@ public class FFNN4TrainBGradTest4 {
 					new FasterFFNN4TrainBGrad(ffnnb, num_features, num_threads);
 				System.err.println("done initializing FasterFFNN4TrainBGrad");
 				VectorIntf x = new DblArray1Vector(weights);
+				System.err.println("weights="+x);
 				long sfauto = System.currentTimeMillis();
 				VectorIntf ga2 = gf_auto.eval(x, params);
 				long dfauto = System.currentTimeMillis()-sfauto;
 				System.err.println("gfast_auto computed in "+dfauto+" msecs");
-
+				System.err.println("gfast_auto="+ga2);
 				VectorIntf ga3=null;
 				try {
 					long sfauto2 = System.currentTimeMillis();
 					ga3 = gf_auto2.eval(x, params);
 					long dfauto2 = System.currentTimeMillis()-sfauto2;
 					System.err.println("gfast_auto2 computed in "+dfauto2+" msecs");
+					System.err.println("gfast_auto2="+ga3);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
@@ -99,7 +111,7 @@ public class FFNN4TrainBGradTest4 {
 				}
 				long dauto = System.currentTimeMillis()-sauto;
 				//System.out.println("gauto="+gauto+" in "+dauto+" msecs");
-
+				System.err.println("gauto="+gauto);
 				VectorIntf diff = VecUtil.subtract(ga2, gauto);
 				double norm_diff_1 = VecUtil.norm(diff, 1);
 				//System.out.println("gapprox="+ga);
@@ -113,6 +125,19 @@ public class FFNN4TrainBGradTest4 {
 				
 				System.err.println("gauto time="+dauto+" msecs,"+
 													 " gfast_auto time="+dfauto+" msecs");
+				
+				if (gapprox!=null) {
+					System.err.println("computing gradient via Richardson extrapolation");
+					VectorIntf gapp = gapprox.eval(x, params);
+					System.err.println("done");					
+					System.err.println("gapprox="+gapp);
+					VectorIntf diff_bp = VecUtil.subtract(ga2, ga3);
+					double nda = VecUtil.norm(diff_bp, 1);
+					System.err.println("MAIN--- ||gfast_auto2 - gfast_auto||_1="+nda);
+					VectorIntf diff_bp2 = VecUtil.subtract(gapp, gauto);
+					double nda2 = VecUtil.norm(diff_bp2, 1);
+					System.err.println("MAIN--- ||gauto - g_approx||_1="+nda2);
+				}
 			}
 		}
 		catch (Exception e) {

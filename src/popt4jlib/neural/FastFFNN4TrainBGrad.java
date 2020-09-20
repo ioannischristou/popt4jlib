@@ -129,7 +129,8 @@ public class FastFFNN4TrainBGrad implements VecFunctionIntf {
 				final double[] train_instance = traindata[t];
 				final double train_label = trainlabels[t];
 				final double[] g_t = 
-					_ffnn.evalGradient4TermB(wgts, train_instance, train_label);
+					_ffnn.evalGradient4TermB(wgts, train_instance, train_label, 
+						                       num_train_instances);
 				// add g_t to g
 				for (int i=0; i<wgts.length; i++) {
 					final double gi_s = g.getCoord(i)+g_t[i];
@@ -241,7 +242,8 @@ public class FastFFNN4TrainBGrad implements VecFunctionIntf {
 				final double[] train_instance = _allTrainData[t];
 				final double train_label = _allTrainLabels[t];
 				final double[] g_t = 
-					_ffnn.evalGradient4TermB(_wgts, train_instance, train_label);
+					_ffnn.evalGradient4TermB(_wgts, train_instance, train_label, 
+						                       _allTrainLabels.length);
 				// add g_t to running g_sum
 				for (int i=0; i<_wgts.length; i++) {
 					g_sum[i] += g_t[i];
