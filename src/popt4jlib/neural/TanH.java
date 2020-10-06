@@ -38,7 +38,13 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights) {
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			// cache result for speeding up auto-differentiation
+			setLastInputsCache(inputSignals);
+			setLastEvalCache(0.0);
+			setLastDerivEvalCache2(0.0);  // since node is stuck at 0, derivative is 0
+			return 0.0;
+		}
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
@@ -55,7 +61,13 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights, int offset) {
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			// cache result for speeding up auto-differentiation
+			setLastInputsCache(inputSignals);
+			setLastEvalCache(0.0);
+			setLastDerivEvalCache2(0.0);  // since node is stuck at 0, derivative is 0
+			return 0.0;
+		}
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
@@ -71,7 +83,13 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] weights) {
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			// cache result for speeding up auto-differentiation
+			setLastInputsCache(inputSignals);
+			setLastEvalCache(0.0);
+			setLastDerivEvalCache2(0.0);  // since node is stuck at 0, derivative is 0
+			return 0.0;
+		}
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
@@ -93,7 +111,13 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] weights, int offset) {
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			// cache result for speeding up auto-differentiation
+			setLastInputsCache(inputSignals);
+			setLastEvalCache(0.0);
+			setLastDerivEvalCache2(0.0);  // since node is stuck at 0, derivative is 0
+			return 0.0;
+		}
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
@@ -131,7 +155,10 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] inputSignals, double true_lbl,
 																			 HashMap p) {
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			setLastDerivEvalCache(0.0);
+			return 0.0;
+		}
 		// 0. see if the value is already computed before
 		double cache = getLastDerivEvalCache();
 		if (!Double.isNaN(cache)) {
@@ -444,7 +471,11 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 	 */
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] inputSignals, double true_lbl) {
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			setLastDerivEvalCache2(0.0);
+			setGradVectorCache(index, 0.0);
+			return 0.0;
+		}
 		// 0. see if the value is already computed before
 		double cache = getGradVectorCache()[index];
 		if (!Double.isNaN(cache)) {

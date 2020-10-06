@@ -1,7 +1,9 @@
 package popt4jlib.neural;
 
-import java.util.HashMap;
 import utils.Messenger;
+import java.util.HashMap;
+import java.util.Locale;
+import java.text.NumberFormat;
 
 
 /**
@@ -36,7 +38,13 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights) {
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			// cache inputs and output for speeding up auto-differentiation
+			setLastInputsCache(inputSignals);
+			setLastEvalCache(0.0);
+			setLastDerivEvalCache2(0.0);  // since node is stuck at 0, derivative is 0
+			return 0.0;
+		}
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
@@ -53,7 +61,13 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 	 * @return double
 	 */
 	public double eval(double[] inputSignals, double[] weights, int offset) {
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			// cache inputs and output for speeding up auto-differentiation
+			setLastInputsCache(inputSignals);
+			setLastEvalCache(0.0);
+			setLastDerivEvalCache2(0.0);  // since node is stuck at 0, derivative is 0
+			return 0.0;
+		}
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
@@ -69,15 +83,28 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 	 * @return double
 	 */
 	public double evalB(double[] inputSignals, double[] weights) {
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			// cache inputs and output for speeding up auto-differentiation
+			setLastInputsCache(inputSignals);
+			setLastEvalCache(0.0);
+			setLastDerivEvalCache2(0.0);  // since node is stuck at 0, derivative is 0
+			return 0.0;
+		}
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[i];
 		prod += weights[weights.length-1];  // bias term
 		// cache inputs and output for speeding up auto-differentiation
 		setLastInputsCache(inputSignals);
-		setLastEvalCache(prod);
-		return prod;
+		try {
+			setLastEvalCache(prod);
+			return prod;
+		}
+		catch (IllegalStateException e) {
+			_mger.msg("Linear.evalB(): inputSignals="+print(inputSignals)+
+				        " weights="+print(weights), 0);
+			throw e;
+		}
 	}
 	
 	
@@ -91,7 +118,13 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 	 */
 	public double evalB(double[] inputSignals, double[] weights, int offset) {
 		setLastDerivEvalCache2(1.0);
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			// cache inputs and output for speeding up auto-differentiation
+			setLastInputsCache(inputSignals);
+			setLastEvalCache(0.0);
+			setLastDerivEvalCache2(0.0);  // since node is stuck at 0, derivative is 0
+			return 0.0;
+		}
 		double prod = 0.0;
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
@@ -168,7 +201,10 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] inputSignals, double true_lbl,
 																			 HashMap p) {
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			setLastDerivEvalCache(0.0);
+			return 0.0;
+		}
 		// 0. see if the value is already computed before
 		double cache = getLastDerivEvalCache();
 		if (!Double.isNaN(cache)) return cache;
@@ -366,7 +402,11 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 	public double evalPartialDerivativeB(double[] weights, int index, 
 		                                   double[] inputSignals, double true_lbl) {
 		setLastDerivEvalCache2(1.0);
-		if (isDropout()) return 0.0;
+		if (isDropout()) {
+			setLastDerivEvalCache2(0.0);  // derivatives are zero as well
+			setGradVectorCache(index, 0.0);
+			return 0.0;
+		}
 		// 0. see if the value is already computed before
 		double cache = getGradVectorCache()[index];
 		if (!Double.isNaN(cache)) return cache;
@@ -472,6 +512,31 @@ public class Linear extends BaseNNNode implements OutputNNNodeIntf  {
 			setGradVectorCache(index, result);			
 			return result;
 		}
+	}
+	
+	
+	/**
+	 * debug routine prints out a double[].
+	 * @param x double[]
+	 * @return String
+	 */
+	static String print(double[] x) {
+		NumberFormat _df = NumberFormat.getInstance(Locale.US);
+		_df.setGroupingUsed(false);
+		_df.setMaximumFractionDigits(4);
+		boolean hasNaN = false;
+		String res = "[ ";
+		for (int i=0; i<x.length; i++) {
+			if (!Double.isFinite(x[i])) hasNaN = true;
+			res += Double.isInfinite(x[i]) ? "Inf " :
+				                               Double.isNaN(x[i]) ?
+				                                 "NaN " : _df.format(x[i])+" ";
+		}
+		res += "]";
+		if (hasNaN) {
+			throw new Error("encountered not-finite number: x="+res);
+		}
+		return res;
 	}
 
 }

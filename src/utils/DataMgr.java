@@ -38,6 +38,10 @@ import java.lang.reflect.*;
  * <li>2020-08-07: added functionality to convert the columns of a dataset to 
  * shift their mean and variance in accordance to some other dataset's mean and
  * variance.
+ * <li>2020-10-02: added functionality to convert the columns of a dataset so 
+ * that every cell is divided according to the max and min values of some other
+ * dataset's min and max values (needed when normalization occurs so that the 
+ * values are shrank to the interval [-1,+1].)
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -136,6 +140,12 @@ public class DataMgr {
 	 * file whose name is described last in the same line; this means that in such
 	 * a line, there must be 2 specified filenames, first the required one, then
 	 * the file containing the data for which we require their mean and variance.
+	 * <p> In case key is the keyword "matrix-1_1o" then the columns of the matrix
+	 * are transformed by first subtracting from each cell the column minimum of 
+	 * the matrix described in the file whose name is described last in the same 
+	 * line (as above), and then dividing the difference by the difference of the
+	 * other matrix column max minus column min. The result does NOT have to be 
+	 * that all cells are in [-1,1] (but should be close.)
 	 * <p> In case key is the keyword "sparsematrix", the the value is the name of
 	 * the property, and the next token is the filename of a text file describing
 	 * the matrix to be read via the method <CODE>readSparseVectorsFromFile</CODE>
@@ -479,6 +489,16 @@ public class DataMgr {
 							readMatrixFromFileAndNormalizeColsAs2ndArg(matfile, matfile2);
 						props.put(key,matrix);
 						continue;						
+					}
+					else if ("matrix-1_1o".equals(key)) {
+						key = strval;
+						String matfile = st.nextToken();
+						String matfile2 = st.nextToken();
+						double[][] matrix = 
+							readMatrixFromFileAndCanonicalizeColsInNegativeOne2OneAs2ndArg(
+								matfile, matfile2);
+						props.put(key,matrix);
+						continue;												
 					}
 					else if ("sparsematrix".equals(key)) {
 						key = strval;
@@ -1380,6 +1400,61 @@ public class DataMgr {
 		}
 		mger.msg("DataMgr.readMatrixFromFileAndNormalizeColsAs2ndArg("+
 			                          fname+"): max_el="+max_el+", min_el="+min_el,1);
+		return matrix;			
+	}
+
+		
+	/**
+	 * same as 
+	 * <CODE>readMatrixFromFileAndCanonicalizeColsInNegativeOne2One(fname)</CODE> 
+	 * but min and max of each column are computed from the matrix contained 
+	 * in the 2nd argument.
+	 * @param fn String
+	 * @param fn2 String
+	 * @return double[][]
+	 * @throws IOException 
+	 */
+	public static double[][] 
+	  readMatrixFromFileAndCanonicalizeColsInNegativeOne2OneAs2ndArg(String fn, 
+			                                                             String fn2)
+		throws IOException {
+		final Messenger mger = Messenger.getInstance();
+		final double[][] matrix = readMatrixFromFile(fn);
+		final double[][] matrix2 = readMatrixFromFile(fn2);
+		if (matrix[0].length!=matrix2[0].length)  // feasibility test
+			throw new IllegalArgumentException("matrices must have same #columns");
+		final int rows = matrix.length;
+		final int cols = matrix[0].length;
+		final int rows2 = matrix2.length;
+		//double[] col_max = new double[cols];
+		//double[] col_min = new double[cols];
+		double max_el = Double.NEGATIVE_INFINITY;
+		double min_el = Double.POSITIVE_INFINITY;
+		for (int j=0; j<cols; j++) {
+			//col_max[j] = Double.NEGATIVE_INFINITY;
+			double col_max = Double.NEGATIVE_INFINITY;
+			//col_min[j] = Double.POSITIVE_INFINITY;
+			double col_min = Double.POSITIVE_INFINITY;
+			for (int i=0; i<rows2; i++) {
+				//if (matrix[i][j]>col_max[j]) col_max[j] = matrix[i][j];
+				if (Double.compare(matrix2[i][j], col_max) > 0) col_max = matrix2[i][j];
+				//if (matrix[i][j]<col_min[j]) col_min[j] = matrix[i][j];
+				if (Double.compare(matrix2[i][j], col_min) < 0) col_min = matrix2[i][j];
+			}
+			// do the column update
+			double base = (col_max+col_min)/2.0;
+			double range = (col_max-col_min)/2.0;
+			for (int i=0; i<rows; i++) {
+				//matrix[i][j] = (matrix[i][j]-col_min[j]) / (col_max[j]-col_min[j]);
+				if (Double.compare(range,0)!=0)
+					matrix[i][j] = (matrix[i][j] - base) / range;
+				else matrix[i][j] = 0.0;
+				if (Double.compare(matrix[i][j], max_el) > 0) max_el = matrix[i][j];
+				if (Double.compare(matrix[i][j], min_el) < 0) min_el = matrix[i][j];
+			}
+		}
+		mger.msg("DataMgr.readMatrixFromFileAndNormalizeColsAs2ndArg("+
+			                          fn+"): max_el="+max_el+", min_el="+min_el,1);
 		return matrix;			
 	}
 

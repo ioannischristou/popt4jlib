@@ -16,25 +16,26 @@ package parallel;
  * @version 1.0
  */
 public class Lock {
-  private int _i=0;
+  private int _i=0;  // _i=0 means lock free, _i=1 means lock taken
   private int _waiting=0;  // used to give priority to waiting threads
 
   /**
    * public no-arg constructor
    */
   public Lock() { }
-
-
+	
+	
   /**
-   * gets the lock, waiting if necessary
+   * get the lock, wait if necessary for another thread to release it.
    */
   public synchronized void getLock() {
     if (_i==0 && _waiting>0) {  // don't steal the lock
       ++_waiting;
       try {
         wait();  // can be awaken by a "spurious wake-up" as well
-                 // in which case, it will then act "greedily" and
-                 // go directly to the while-loop
+                 // in which (rare) case, it will indeed steal the lock
+				         // if it happens to re-acquire the monitor (2nd time)
+				         // before the thread that waits in the while loop below
       }
       catch (InterruptedException e) {
         Thread.currentThread().interrupt();  // recommended behavior
@@ -56,8 +57,8 @@ public class Lock {
 	
 	
 	/**
-	 * get the lock only if it immediately available, with no waiting needed. 
-	 * Method returns immediately.
+	 * get the lock only if it is immediately available, and there are no other
+	 * waiting threads. Method returns immediately.
 	 * @return boolean true if the lock was obtained, false otherwise.
 	 */
 	public synchronized boolean getLockIfAvailable() {

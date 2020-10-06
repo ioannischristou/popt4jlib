@@ -276,6 +276,12 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 	 * that will be used to compute the derivative of the network. Default is 1 
 	 * (online learning). Notice that in general, the larger the mini-batch size
 	 * the faster an epoch completes!.
+	 * <li>&lt;"pdmbbp.fixedwgtsperc", Double&gt; optional, if present indicates
+	 * the (approximate) percentage of weights during an epoch that must remain
+	 * fixed and not change by the weight update rule of the SGD. Default is zero.
+	 * <li>&lt;"pdmbbp.dropoutrate", Double&gt; optional, if present indicates the
+	 * (approximate) percentage of hidden nodes that will be outputting zeros 
+	 * during an epoch. Default is zero.
 	 * <li>&lt;"pdmbbp.normgrad", Boolean&gt; optional whether the gradient 
 	 * computed will also be normalized to have unit L2-norm. Default is false.
 	 * <li>&lt;"pdmbbp.num_threads", Integer&gt; optional, the number of threads
@@ -423,7 +429,11 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 				// approximately set the drop-out nodes
 				if (num_dropout_nodes>0) {
 					int cnt_dropouts = 0;
-					for (int j=0; j<num_hidden_layers; j++) {
+					final boolean dhl = 
+						_ffnn.getOutputNode() instanceof MultiClassSSE ||
+						_ffnn.getOutputNode() instanceof CategoricalXEntropyLoss;
+					final int do_hls = dhl ? num_hidden_layers-1 : num_hidden_layers;
+					for (int j=0; j<do_hls; j++) {
 						NNNodeIntf[] nodesj = _ffnn.getHiddenLayers()[j];
 						for (int k=0; k<nodesj.length; k++) {
 							nodesj[k].setDropout(false);
@@ -580,7 +590,7 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 								        "; will continue instead",0);
 							// continue;  // let's allow time duration computation
 						}
-					} 
+					}
 					for (int i=0; i<wgts_deriv.length; i++) wgts_deriv[i] = g.getCoord(i);
 					// update the weights
 					for (int j=0; j<wgts.length; j++) {
@@ -616,18 +626,23 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 						                                                          valdata, 
 																																			vallabels, 
 																																			cf);
-						// evaluate the current soln
-						_params.put("ffnn.traindata", _allTrainData);
-						_params.put("ffnn.trainlabels", _allTrainLabels);					
-						final double cost = _ffnn.eval(wgts, _params);
+					// evaluate the current soln
+					_params.put("ffnn.traindata", _allTrainData);
+					_params.put("ffnn.trainlabels", _allTrainLabels);					
+					final double cost = _ffnn.eval(wgts, _params);
+					// evaluate the overall gradient at the current solution
+					final VectorIntf gall = 
+						derivator.eval(new DblArray1Vector(wgts), _params);
+					final double gall_norm_2 = VecUtil.norm(gall, 2);
 					_mger.msg("PDMBBP.minimize(): "+
 						        "training (cost function) value="+cost+" "+
+						        "||g_ALLDATA||_2="+gall_norm_2+" "+
 						        "validation error% afer epoch "+epoch+
 						        "="+verr, 1);
 				}
 			}
 			// end main loop
-
+			
 			if (_inc==null) {
 				_params.put("ffnn.traindata", _allTrainData);
 				_params.put("ffnn.trainlabels", _allTrainLabels);				

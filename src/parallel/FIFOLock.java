@@ -39,7 +39,7 @@ public class FIFOLock extends Lock {
       _isFree=false;
       super.releaseLock();
     } else {
-      WObject w = new WObject();  // object on which the current thread will wait
+      WObject w = new WObject();  // object on which current thread will wait
       synchronized (w) {
         _waitingOn.add(w);
         super.releaseLock();
@@ -70,7 +70,7 @@ public class FIFOLock extends Lock {
     super.getLock();
     _isFree = true;
     if (_waitingOn.size()>0) {
-      WObject w = (WObject) _waitingOn.get(0);  // notify the oldest waiting thread
+      WObject w = (WObject) _waitingOn.get(0);  // notify oldest waiting thread
       synchronized (w) {
         w.setDone();
         w.notify();

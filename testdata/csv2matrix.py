@@ -50,7 +50,7 @@ def convert(input_csv_file, output_matrix_file, header=True, exclude_columns=Non
 							labels_list.append(float(row[i]))
 					continue
 				j += 1
-				if (float(row[i])==0): continue  # sparse format allows skipping zeros
+				if (row[i]=='?' or float(row[i])==0): continue  # sparse allows skipping zeros
 				#L.append(str(i+1)+","+row[i])
 				L.append(str(j)+","+row[i])
 			csv_writer.writerow(L)
