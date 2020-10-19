@@ -17,7 +17,9 @@ public class DConditionCounterSrv {
 
 
   /**
-   * invoke as <CODE>java -cp &lt;classpath&gt; parallel.distributed.DConditionCounterSrv [port(7899)] [maxthreads(10000)]</CODE>
+   * invoke as <CODE>java -cp &lt;classpath&gt; 
+	 * parallel.distributed.DConditionCounterSrv 
+	 * [port(7899)] [maxthreads(10000)]</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -37,9 +39,11 @@ public class DConditionCounterSrv {
 				System.exit(-1);
 			}
 		}
-    DMsgPassingCoordinatorSrv coord = new DMsgPassingCoordinatorSrv(_port, _maxthreads);
+    DMsgPassingCoordinatorSrv coord = 
+			new DMsgPassingCoordinatorSrv(_port, _maxthreads);
     try {
-      utils.Messenger.getInstance().msg("DConditionCounterSrv.main(): running DMsgPassingCoordinatorSrv",0);
+      utils.Messenger.getInstance().msg("DConditionCounterSrv.main(): running "+
+				                                "DMsgPassingCoordinatorSrv",0);
       coord.run();
     }
     catch (Exception e) {
@@ -48,7 +52,10 @@ public class DConditionCounterSrv {
   }
 
   private static void usage() {
-    System.err.println("usage: java -cp <classpath> parallel.distributed.DConditionCounterSrv [port(7899, must be > 1024)] [maxthreads(10000, must be >= 10000)]");
+    System.err.println("usage: java -cp <classpath> "+
+			                 "parallel.distributed.DConditionCounterSrv "+
+			                 "[port(7899, must be > 1024)] "+
+			                 "[maxthreads(10000, must be >= 10000)]");
   }
 }
 

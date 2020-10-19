@@ -20,7 +20,10 @@ import java.io.*;
 public class DBarrier {
   private String _host = "localhost";
   private int _port = 7896;
-  private String _coordname = "DBarrierCoord_"+_host+"_"+_port;  // coordname and barrier name are the same
+  private String _coordname = "DBarrierCoord_"+_host+"_"+_port;  // coordname 
+	                                                               // and barrier 
+	                                                               // name are the 
+	                                                               // same
   private DActiveMsgPassingCoordinatorLongLivedConnClt _coordclt=null;
   private Thread _originatingThread = null;
 
@@ -31,9 +34,9 @@ public class DBarrier {
    * <li> host="localhost"
    * <li> port=7896
    * <li> barrier/coord name = "DBarrierCoord_localhost_7896"
-	 * </ul>
+	 * </ul>.
    * The constructor will actually register the current thread with the barrier
-   * object of the server, so that later invocations of the <CODE>barrier()</CODE>
+   * object of the server, so later invocations of the <CODE>barrier()</CODE>
    * method of this object will synchronize the current thread with all other
    * threads in all JVMs having constructed DBarrier objects connected to the
    * default server, default port, and default barrier name.
@@ -42,8 +45,11 @@ public class DBarrier {
    * @throws ClassNotFoundException
    * @throws ParallelException
    */
-  public DBarrier() throws UnknownHostException, IOException, ClassNotFoundException, ParallelException {
-    _coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, _coordname);
+  public DBarrier() throws UnknownHostException, IOException, 
+		                       ClassNotFoundException, ParallelException {
+    _coordclt = 
+			new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, 
+				                                               _coordname);
     _originatingThread = Thread.currentThread();
     DBarrierAddRequest addreq = new DBarrierAddRequest(_coordname);
     _coordclt.sendData(-1, addreq);
@@ -73,7 +79,9 @@ public class DBarrier {
     _port = port;
     _coordname = coordname;
     _originatingThread = Thread.currentThread();
-    _coordclt = new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, _coordname);
+    _coordclt = 
+			new DActiveMsgPassingCoordinatorLongLivedConnClt(_host, _port, 
+				                                               _coordname);
     // 1. send a Barrier Add Thread request: when the method terminates, done.
     DBarrierAddRequest addreq = new DBarrierAddRequest(_coordname);
     _coordclt.sendData(-1, addreq);
@@ -93,13 +101,17 @@ public class DBarrier {
    * @throws ParallelException if this DBarrier object was constructed by a
    * different thread than the one calling this method.
    */
-  public void barrier() throws IOException, ClassNotFoundException, ParallelException {
+  public void barrier() throws IOException, ClassNotFoundException, 
+		                           ParallelException {
     // 0. check if thread is ok
     if (Thread.currentThread()!=_originatingThread) {
-      throw new ParallelException("barrier(): method called from thread different than the one originating the object");
+      throw new ParallelException("barrier(): method called from thread "+
+				                          "different than one originating the object");
     }
     // 1. send a Barrier request: when the method terminates, we're done
-    _coordclt.sendData(-1, new DBarrierRequest(_coordname));  // barrier and coord names are the same
+    _coordclt.sendData(-1, new DBarrierRequest(_coordname));  // barrier and 
+		                                                          // coord names are 
+		                                                          // the same
   }
 
 
@@ -111,13 +123,18 @@ public class DBarrier {
    * @throws ParallelException if calling thread is not the same as creation
    * thread.
    */
-  public void removeCurrentThread() throws IOException, ClassNotFoundException, ParallelException {
+  public void removeCurrentThread() throws IOException, ClassNotFoundException, 
+		                                       ParallelException {
     // 0. check if thread is ok
     if (Thread.currentThread()!=_originatingThread) {
-      throw new ParallelException("removeCurrentThread(): method called from thread different than the one originating the object");
+      throw new ParallelException("removeCurrentThread(): method called from "+
+				                          "thread different than the one originating "+
+				                          "the object");
     }
     // 1. send a DBarrierRmRequest request: when the method terminates, we're ok
-    _coordclt.sendData(-1, new DBarrierRmRequest(_coordname));  // barrier and coord names are the same
+    _coordclt.sendData(-1, new DBarrierRmRequest(_coordname));  // barrier and 
+		                                                            // coord names 
+		                                                            // are the same
     // 2. finally, close the connection.
     _coordclt.closeConnection();
   }

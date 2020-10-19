@@ -65,7 +65,7 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 	 * @param minSatInstRatio double the minimum required coverage ratio of 
 	 * instances satisfied by the returned solution over the total instances
 	 * satisfied by all the rules
-	 * @param numvars2consider int the max number of top solutions added to the 
+	 * @param numsols2consider int the max number of top solutions added to the 
 	 * queue at every step (can be <CODE>Integer.MAX_VALUE</CODE> for no limit in 
 	 * the search)
 	 * @param maxqueuesize int maximum number of candidates to keep at any time
@@ -77,7 +77,7 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 	public BottomUpMERSSolver(int numVars, int numRules, int numInstances,
 		                     HashMap rule2vars, HashMap rule2insts, 
 												 double minSatInstRatio,
-												 int numvars2consider,
+												 int numsols2consider,
 												 int maxqueuesize,
 												 int maxnumrulesallowed) {
 		super(numVars, numRules, numInstances, rule2vars, rule2insts);
@@ -86,7 +86,7 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 			all_sat_insts.or(_r2iA[i]);
 		_maxNumSatInsts = all_sat_insts.cardinality();
 		_minNumSatInsts = (int) (minSatInstRatio*all_sat_insts.cardinality());
-		_K = numvars2consider;
+		_K = numsols2consider;
 		final int init_len = numVars;
 		if (maxqueuesize <= 0)
 			_queue = new UnboundedBufferArrayUnsynchronized(init_len);
@@ -137,19 +137,19 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 		
 		try {
 			Messenger mger = Messenger.getInstance();
-			mger.msg("BottomUpMERSSolver.solve(): enter", 0);
+			//mger.msg("BottomUpMERSSolver.solve(): enter", 1);
 			//if (_queue.size()==0) {
 			_queue.addElement(cur_rules);
 			//}
 			// BFS order
 			BoundedMinHeapUnsynchronized minHeap = 
-				new BoundedMinHeapUnsynchronized(_numVars);
+				new BoundedMinHeapUnsynchronized(_numRules);
 			BoolVector cur_rules_max = new BoolVector(cur_rules);
 			int cnt = 0;
 			while (_queue.size()>0) {
 				if (++cnt % 100000 == 0) {  // itc: HERE rm asap
 					mger.msg("BottomUpMERSSolver.solve(): examined "+cnt+
-									 " BoolVectors so far", 0);
+									 " BoolVectors so far", 1);
 				}
 				cur_rules = (BoolVector) _queue.remove();
 				
@@ -161,8 +161,8 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 				int si_card = sat_insts.cardinality();
 				if (si_card > _bestCoverage) {
 					if (_K>1)
-						mger.msg("BottomUpMESSolver.solve(): best_coverage="+si_card+
-										 " out of target="+_minNumSatInsts+" with vars="+
+						mger.msg("BottomUpMERSSolver.solve(): best_coverage="+si_card+
+										 " out of target="+_minNumSatInsts+" with rules="+
 										 cur_rules.toStringSet(), 0);
 					_bestCoverage = si_card;
 				}
@@ -190,7 +190,7 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 					double cv = getCost(cur_rules, rid);
 					minHeap.addElement(new Pair(new Integer(rid), new Double(cv)));
 				}
-				// remove the top _K vars to consider adding them to the current sol
+				// remove the top _K rules to consider adding them to the current sol
 				for (int i=0; i<_K; i++) {
 					if (minHeap.size()==0) break;
 					Pair toppair = (Pair) minHeap.remove();
@@ -216,8 +216,8 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 						//BoolVector si2 = getSatInsts(sol);
 						//int si2_card = si2.cardinality();
 						//if (si2_card>_bestCoverage) {
-							mger.msg("BottomUpMESSolve.solve() greedy solver "+
-								       "produced a new best solution: "+sol.toStringSet(), 0);
+							mger.msg("BottomUpMERSSolve.solve() greedy solver "+
+								       "produced a new solution: "+sol.toStringSet(), 0);
 							greedy_sols.add(new BoolVector(sol));
 						//}
 					}
@@ -231,6 +231,21 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 		}
 	}
 
+	
+	/**
+	 * get all instances satisfied by one or more of the rules in the specified 
+	 * bit-vector.
+	 * @param rules BoolVector
+	 * @return BoolVector
+	 */
+	public BoolVector getSatInsts(BoolVector rules) {
+		BoolVector insts = new BoolVector(_numInstances);
+		for (int i=rules.nextSetBit(0); i>=0; i=rules.nextSetBit(i+1)) {
+			insts.or(_r2iA[i]);
+		}
+		return insts;
+	}
+	
 	
 	/**
 	 * get the total number of covered instances from all the rules.
@@ -274,13 +289,29 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 	}
 	
 	
-	private static BoolVector getBest(ArrayList sols) {
+	/**
+	 * we define "best" as the rule-set with the maximum coverage of instances, 
+	 * with ties between max coverage solutions resolved in favor of the shortest
+	 * solution. This is in contrast to the <CODE>getBest()</CODE> implementation
+	 * of the <CODE>BottomUpMESSolver</CODE> that works with variable sets instead
+	 * of rule-sets.
+	 * @param sols
+	 * @return 
+	 */
+	private BoolVector getBest(ArrayList sols) {
 		int best_card = Integer.MAX_VALUE;
+		int best_cov = 0;
 		BoolVector res = null;
 		for (int i=0; i<sols.size(); i++) {
-			BoolVector si = (BoolVector) sols.get(i);
-			int si_card = si.cardinality();
-			if (si_card<best_card) {
+			final BoolVector si = (BoolVector) sols.get(i);
+			final int si_card = si.cardinality();
+			final int si_cov = getSatInsts(si).cardinality();
+			if (si_cov>best_cov) {
+				res = si;
+				best_cov = si_cov;
+				best_card = si_card;
+			}
+			else if (si_cov==best_cov && si_card<best_card) {
 				res = si;
 				best_card = si_card;
 			}

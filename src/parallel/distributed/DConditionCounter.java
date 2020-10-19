@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package parallel.distributed;
 
 import parallel.ConditionCounter;
@@ -40,7 +34,8 @@ public class DConditionCounter {
 	
 	public void increment(int num) {
 		_counter.add(num);
-		mger.msg("DConditionCounter.increment("+num+"): count="+_counter.getCount(), 1);
+		mger.msg("DConditionCounter.increment("+num+"): count="+_counter.getCount(), 
+			       1);
 	}
 	
 	
@@ -52,7 +47,8 @@ public class DConditionCounter {
 	
 	public void decrement(int num) {
 		_counter.subtract(num);
-		mger.msg("DConditionCounter.decrement("+num+"): count="+_counter.getCount(), 1);		
+		mger.msg("DConditionCounter.decrement("+num+"): count="+_counter.getCount(), 
+			       1);		
 	}
 	
 	

@@ -59,7 +59,8 @@ public class BCastSrv2DAccumulatorBridge implements ObserverIntf {
 			_oos.flush();
 			_ois = new ObjectInputStream(_s.getInputStream());  // useless
 			DAccumulatorClt.setHostPort(acchost, accport, acchost, notificationsport);
-			DAccumulatorClt.registerListener(new BCastSrv2DAccumulatorBridge(), not_type);
+			DAccumulatorClt.registerListener(new BCastSrv2DAccumulatorBridge(), 
+				                               not_type);
 			// now, sleep for ever
 			while (true) {
 				Thread.sleep(1000);  // if interrupted, the thread will exit, and with
