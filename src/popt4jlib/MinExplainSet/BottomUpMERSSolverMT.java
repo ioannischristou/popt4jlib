@@ -2,9 +2,11 @@ package popt4jlib.MinExplainSet;
 
 import popt4jlib.BoolVector;
 import parallel.BoundedMinHeapUnsynchronized;
-import parallel.BufferIntf;
 import parallel.UnboundedBufferArrayUnsynchronized;
 import parallel.BoundedBufferArrayUnsynchronized;
+import parallel.FasterParallelAsynchBatchTaskExecutor;
+import parallel.ConditionCounter;
+import parallel.ParallelException;
 import utils.Pair;
 import utils.Messenger;
 import java.util.ArrayList;
@@ -17,8 +19,9 @@ import java.io.FileReader;
 
 
 /**
- * Bottom-up algorithm implementation for solving the Minimum Explaining RuleSet
- * (MERS) problem. The MERS problem can be described as follows: we are given a 
+ * Parallel version of the bottom-up algorithm implementation for solving the 
+ * Minimum Explaining RuleSet (MERS) problem. 
+ * The MERS problem can be described as follows: we are given a 
  * set of variables (items) X = {x_0, x_1, ..., x_(M-1)} and a set of instances 
  * D = {I_0, I_1,..., I_(d-1)} each of which contain subsets of the vars x_i. 
  * There is also a set of rules S = {r_0, r_1, ..., r_(k-1)}, each of which is 
@@ -51,17 +54,16 @@ import java.io.FileReader;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class BottomUpMERSSolver extends BaseMESSolver {
-	protected int _minNumSatInsts;
-	protected int _maxNumSatInsts;
-	protected int _K;
-	protected BufferIntf _queue;  // FIFO fast buffer
-	protected int _bestCoverage = 0;
-	protected int _maxNumRulesAllowed = Integer.MAX_VALUE;
+public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
+	private FasterParallelAsynchBatchTaskExecutor _executor=null;
+	private ConditionCounter _condCnt = new ConditionCounter();
+	private BoolVector _bestResult = null;
+	private int _maxqueuesize = -1;
 	
 	
 	/**
-	 * public constructor.
+	 * public constructor will create a new asynch executor to run the program
+	 * in parallel.
 	 * @param numVars int the number of variables in this MES problem
 	 * @param numRules int the number of rules in this MES problem
 	 * @param numInstances int the number of instances in this MES problem
@@ -78,45 +80,64 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 	 * to bound the outer-loop queue)
 	 * @param maxnumrulesallowed int default -1 (no limit) used to cut the search
 	 * short
+	 * @param numthreads int default 1.
+	 * @throws ParallelException if numthreads is &le;0.
 	 */
-	public BottomUpMERSSolver(int numVars, int numRules, int numInstances,
-		                     HashMap rule2vars, HashMap rule2insts, 
-												 double minSatInstRatio,
-												 int numsols2consider,
-												 int maxqueuesize,
-												 int maxnumrulesallowed) {
-		super(numVars, numRules, numInstances, rule2vars, rule2insts);
-		BoolVector all_sat_insts = new BoolVector(_r2iA[0]);
-		for (int i=1; i<_r2iA.length; i++)
-			all_sat_insts.or(_r2iA[i]);
-		_maxNumSatInsts = all_sat_insts.cardinality();
-		_minNumSatInsts = (int) (minSatInstRatio*all_sat_insts.cardinality());
-		_K = numsols2consider;
-		final int init_len = numVars;
-		if (maxqueuesize <= 0)
-			_queue = new UnboundedBufferArrayUnsynchronized(init_len);
-		else 
-			_queue = new BoundedBufferArrayUnsynchronized(maxqueuesize);
-		if (maxnumrulesallowed>0) _maxNumRulesAllowed = maxnumrulesallowed;
+	public BottomUpMERSSolverMT(int numVars, int numRules, int numInstances,
+		                          HashMap rule2vars, HashMap rule2insts, 
+												      double minSatInstRatio,
+												      int numsols2consider,
+												      int maxqueuesize,
+												      int maxnumrulesallowed,
+												      int numthreads) throws ParallelException {
+		super(numVars, numRules, numInstances, rule2vars, rule2insts, 
+			    minSatInstRatio, numsols2consider, maxqueuesize, maxnumrulesallowed);
+		_executor = FasterParallelAsynchBatchTaskExecutor.
+			            newFasterParallelAsynchBatchTaskExecutor(numthreads, true);
+		_maxqueuesize = maxqueuesize;
 	}
 	
 	
 	/**
 	 * protected copy constructor is not part of the public API. Leaves the _K
 	 * and _queue data members at their default values (0 and null respectively.)
+	 * Does not create new executors.
 	 * @param svr BottomUpMESSolver the object to copy from
 	 */
-	protected BottomUpMERSSolver(BottomUpMERSSolver svr) {
-		super(svr._numVars, svr._numRules, svr._numInstances, 
-			    svr._v2rA, svr._r2vA, svr._r2iA, svr._i2rA); 
-		_minNumSatInsts = svr._minNumSatInsts;
-		_maxNumSatInsts = svr._maxNumSatInsts;
-		_maxNumRulesAllowed = svr._maxNumRulesAllowed;
+	protected BottomUpMERSSolverMT(BottomUpMERSSolverMT svr) {
+		super(svr); 
 	}
 	
+	
+	/**
+	 * the main method of the class, simply calls the <CODE>solve2()</CODE> to do
+	 * the work. This method is simply a wrapper that starts the condition counter
+	 * that has to go down to zero so that it can notify the main thread running
+	 * this method that it can finish (the method awaits until all created tasks
+	 * are done.)
+	 * @param cur_rules BoolVector cur_rules the initial set of rules to contain
+	 * in the result-set, usually should be null
+	 * @return BoolVector the minimum rule-set sought; may be null if the process
+	 * fails (due to low _K)
+	 */
+	public BoolVector solve(BoolVector cur_rules) {
+		_condCnt.increment();
+		ArrayList ts = new ArrayList();
+		ts.add(new BUMSMTTask(cur_rules));
+		try {
+			_executor.executeBatch(ts);
+			_condCnt.await();
+			return _bestResult;
+		}
+		catch (ParallelException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 
 	/**
-	 * the main class method. It can actually guarantee to find an optimal (least
+	 * the main "work" method. It can actually guarantee to find an optimal (least
 	 * cardinality) rule-set that covers the required percentage of instances that
 	 * can be covered by the rules, from the starting solution (that is normally
 	 * empty), when the maxqueuesize variable in the object constructor is set to
@@ -128,9 +149,9 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 	 * percentage of instances that are coverable by the rules; may return null
 	 * if no solution is found due to a low <CODE>_K</CODE> value set
 	 */
-	public BoolVector solve(BoolVector cur_rules) {
+	private BoolVector solve2(BoolVector cur_rules) {
 		ArrayList greedy_sols = new ArrayList();  // needed in case of Beam-Search
-		BottomUpMERSSolver saux = new BottomUpMERSSolver(this);
+		BottomUpMERSSolverMT saux = new BottomUpMERSSolverMT(this);
 		saux._queue = new BoundedBufferArrayUnsynchronized(1);
 		saux._K = 1;
 		
@@ -142,92 +163,84 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 		
 		try {
 			Messenger mger = Messenger.getInstance();
-			//mger.msg("BottomUpMERSSolver.solve(): enter", 1);
-			//if (_queue.size()==0) {
-			_queue.addElement(cur_rules);
-			//}
+			//mger.msg("BottomUpMERSSolverMT.solve2(): enter", 1);
 			// BFS order
 			BoundedMinHeapUnsynchronized minHeap = 
 				new BoundedMinHeapUnsynchronized(_numRules);
 			BoolVector cur_rules_max = new BoolVector(cur_rules);
-			int cnt = 0;
-			while (_queue.size()>0) {
-				if (++cnt % 100000 == 0) {  // itc: HERE rm asap
-					mger.msg("BottomUpMERSSolver.solve(): examined "+cnt+
-									 " BoolVectors so far", 1);
-				}
-				cur_rules = (BoolVector) _queue.remove();
+
+			// 0. check for threshold
+			if (cur_rules.cardinality()>_maxNumRulesAllowed) return null;
 				
-				// 0. check for threshold
-				if (cur_rules.cardinality()>_maxNumRulesAllowed) continue;
-				
-				// 1. are we done yet?
-				BoolVector sat_insts = getSatInsts(cur_rules);
-				int si_card = sat_insts.cardinality();
-				if (si_card > _bestCoverage) {
-					if (_K>1)
-						mger.msg("BottomUpMERSSolver.solve(): best_coverage="+si_card+
-										 " out of target="+_minNumSatInsts+" with rules="+
-										 cur_rules.toStringSet(), 0);
-					_bestCoverage = si_card;
+			// 1. are we done yet?
+			BoolVector sat_insts = getSatInsts(cur_rules);
+			int si_card = sat_insts.cardinality();
+			if (si_card > getBestCoverage()) {
+				if (_K>1)
+					mger.msg("BottomUpMERSSolverMT.solve2(): best_coverage="+si_card+
+									 " out of target="+_minNumSatInsts+" with rules="+
+									 cur_rules.toStringSet(), 0);
+				updateBestCoverage(si_card);
+			}
+			if (si_card>=_minNumSatInsts) {
+				greedy_sols.add(new BoolVector(cur_rules));
+				if (_queue instanceof UnboundedBufferArrayUnsynchronized) {  // done
+					return getBest(greedy_sols);
 				}
-				if (si_card>=_minNumSatInsts) {
-					greedy_sols.add(new BoolVector(cur_rules));
-					if (_queue instanceof UnboundedBufferArrayUnsynchronized) {  // done
-						return getBest(greedy_sols);
-					}
+			}
+			// 1.1 maybe we can't be done ever?
+			// BoolVector cur_vars_max = new BoolVector(cur_vars);
+			cur_rules_max.copy(cur_rules);
+			for (int rid = cur_rules.lastSetBit()+1; rid < _numRules; rid++) 
+				cur_rules_max.set(rid);
+			BoolVector si = getSatInsts(cur_rules_max);
+			if (si.cardinality()<_minNumSatInsts) {
+				return null;
+			}  // fails 
+			// 2. consider the best vars to add at this point.
+			//    All vars to consider have ids above the highest-id in cur_vars
+			minHeap.reset();
+			for (int rid = cur_rules.lastSetBit()+1; rid < _numRules; rid++) {
+				// check if rid makes sense to add given cur_rules
+				if (isRedundant(rid, sat_insts)) continue;
+				double cv = getCost(cur_rules, rid);
+				minHeap.addElement(new Pair(new Integer(rid), new Double(cv)));
+			}
+			// remove the top _K rules to consider adding them to the current sol
+			for (int i=0; i<_K; i++) {
+				if (minHeap.size()==0) break;
+				Pair toppair = (Pair) minHeap.remove();
+				int rid = ((Integer)toppair.getFirst()).intValue();
+				BoolVector crid = new BoolVector(cur_rules);
+				crid.set(rid);
+				if (_executor.getNumTasksInQueue()<_maxqueuesize) {
+					ArrayList ts = new ArrayList();
+					ts.add(new BUMSMTTask(crid));
+					_condCnt.increment();
+					_executor.executeBatch(ts);  // execute asynchronously
 				}
-				// 1.1 maybe we can't be done ever?
-				// BoolVector cur_vars_max = new BoolVector(cur_vars);
-				cur_rules_max.copy(cur_rules);
-				for (int rid = cur_rules.lastSetBit()+1; rid < _numRules; rid++) 
-					cur_rules_max.set(rid);
-				BoolVector si = getSatInsts(cur_rules_max);
-				if (si.cardinality()<_minNumSatInsts) {
-					continue;
-				}  // fails 
-				// 2. consider the best vars to add at this point.
-				//    All vars to consider have ids above the highest-id in cur_vars
-				minHeap.reset();
-				for (int rid = cur_rules.lastSetBit()+1; rid < _numRules; rid++) {
-					// check if rid makes sense to add given cur_rules
-					if (isRedundant(rid, sat_insts)) continue;
-					double cv = getCost(cur_rules, rid);
-					minHeap.addElement(new Pair(new Integer(rid), new Double(cv)));
+				else {  // queue is full, solve greedily, add to sols
+					//mger.msg("BottomUpMERSSolverMT.solve2():adding "+cvid.toStringSet()+
+					//	       " to full queue: will expand greedily", 0);
+					saux._bestCoverage = 0;
+					saux._queue.reset();
+					BoolVector sol = saux.solve2(crid);
+					if (sol==null) {
+						//mger.msg("BottomUpMERSSolverMT.solve2() greedy solver failed to "+
+						//	       "produce a valid solution", 0);
+						continue;
+					}  // failed
+					// tests below are wasteful and unnecessary as they will be 
+					// done again when calling getBest(), so they are commented out
+					//BoolVector si2 = getSatInsts(sol);
+					//int si2_card = si2.cardinality();
+					//if (si2_card>_bestCoverage) {
+						mger.msg("BottomUpMERSSolverMT.solve2() greedy solver "+
+							       "produced a new solution: "+sol.toStringSet(), 0);
+						greedy_sols.add(new BoolVector(sol));
+					//}
 				}
-				// remove the top _K rules to consider adding them to the current sol
-				for (int i=0; i<_K; i++) {
-					if (minHeap.size()==0) break;
-					Pair toppair = (Pair) minHeap.remove();
-					int rid = ((Integer)toppair.getFirst()).intValue();
-					BoolVector crid = new BoolVector(cur_rules);
-					crid.set(rid);
-					try {
-						_queue.addElement(crid);
-					}
-					catch (Exception e) {  // queue is full, solve greedily, add to sols
-						//mger.msg("BottomUpMERSSolver.solve(): adding "+cvid.toStringSet()+
-						//	       " to full queue: will expand greedily", 0);
-						saux._bestCoverage = 0;
-						saux._queue.reset();
-						BoolVector sol = saux.solve(crid);
-						if (sol==null) {
-							//mger.msg("BottomUpMERSSolver.solve() greedy solver failed to "+
-							//	       "produce a valid solution", 0);
-							continue;
-						}  // failed
-						// tests below are wasteful and unnecessary as they will be 
-						// done again when calling getBest(), so they are commented out
-						//BoolVector si2 = getSatInsts(sol);
-						//int si2_card = si2.cardinality();
-						//if (si2_card>_bestCoverage) {
-							mger.msg("BottomUpMERSSolver.solve() greedy solver "+
-								       "produced a new solution: "+sol.toStringSet(), 0);
-							greedy_sols.add(new BoolVector(sol));
-						//}
-					}
-				}  // for i in 0..._K 
-			}  // while queue not empty
+			}  // for i in 0..._K 
 			return getBest(greedy_sols);  // null if _K is chosen too small...
 		}
 		catch (Exception e) {
@@ -235,31 +248,26 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 			return null;
 		}
 	}
-
-	
-	/**
-	 * get all instances satisfied by one or more of the rules in the specified 
-	 * bit-vector.
-	 * @param rules BoolVector
-	 * @return BoolVector
-	 */
-	public BoolVector getSatInsts(BoolVector rules) {
-		BoolVector insts = new BoolVector(_numInstances);
-		for (int i=rules.nextSetBit(0); i>=0; i=rules.nextSetBit(i+1)) {
-			insts.or(_r2iA[i]);
-		}
-		return insts;
-	}
 	
 	
 	/**
-	 * get the total number of covered instances from all the rules.
+	 * provides synchronized access to the <CODE>_bestCoverage</CODE> field.
 	 * @return int
 	 */
-	public int getMaxNumSatInsts() {
-		return _maxNumSatInsts;
+	private synchronized int getBestCoverage() {
+		return _bestCoverage;
 	}
-
+	
+	
+	/**
+	 * synchronized update (if it must) of the <CODE>_bestCoverage</CODE> field.
+	 * @param cov int
+	 */
+	private synchronized void updateBestCoverage(int cov) {
+		if (_bestCoverage<cov)
+			_bestCoverage = cov;
+	}
+	
 	
 	/**
 	 * compute the number I of instances the solution rules+{rid} covers, and 
@@ -275,22 +283,6 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 		double res = (rules.cardinality()+1) / (double)(satInsts.cardinality()+1.0);
 		rules.unset(rid);
 		return res;
-	}
-	
-	
-	/**
-	 * return true iff the rule rid is redundant in the sense that its 
-	 * presence in the current solution does not allow for any currently non-
-	 * satisfied instance to be among the "future satisfied ones" by the augmented
-	 * solution. In other words, a rule is redundant for a solution if all the 
-	 * instances it covers are already covered in the current solution.
-	 * @param rid int
-	 * @param cur_rules_sat_insts BoolVector
-	 * @return boolean
-	 */
-	protected boolean isRedundant(int rid, BoolVector cur_rules_sat_insts) {
-		BoolVector rid_insts = _r2iA[rid];
-		return cur_rules_sat_insts.containsAll(rid_insts);
 	}
 	
 	
@@ -321,7 +313,42 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 				best_card = si_card;
 			}
 		}
+		if (res!=null) {
+			synchronized (this) {  // see if _bestResult must be updated as well
+				if (_bestResult==null) {
+					_bestResult = res;
+				}
+				else {
+					final int br_cov = getSatInsts(_bestResult).cardinality();
+					if (br_cov < best_cov) {
+						_bestResult = res;
+					}
+					else if (br_cov==best_cov && 
+									 _bestResult.cardinality() > best_card) 
+						_bestResult = res;
+				}
+			}
+		}
 		return res;
+	}
+	
+	
+	/**
+	 * auxiliary inner-class not part of the public API.
+	 */
+	final class BUMSMTTask implements Runnable {
+		private BoolVector _cur_rules;
+		
+		
+		public BUMSMTTask(BoolVector cur_rules) {
+			_cur_rules = cur_rules;
+		}
+		
+		
+		public void run() {
+			solve2(_cur_rules);
+			_condCnt.decrement();
+		}
 	}
 	
 	
@@ -334,10 +361,13 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 	 * ...
 	 * rinst &lt;ruleid&gt; &lt;inst1&gt; ... &lt;instm&gt;
 	 * ...
+	 * Note: the program will use all the available cores in the computer it's
+	 * running on.
 	 * @param args 
 	 */
 	public static void main(String[] args) {
 		String filename = args[0];
+		final int numthreads = Runtime.getRuntime().availableProcessors();
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(filename));
 			boolean first_line = true;
@@ -376,11 +406,12 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 			final int numsols2propagateateachnode = 10;
 			final int maxqueuesize = 10000;
 			final int maxnumrulesallowed = 15;
-			BottomUpMERSSolver slvr = 
-				new BottomUpMERSSolver(numvars, numrules, numinsts,
-			                         r2vars, r2insts,
-					                     minSatRatio, numsols2propagateateachnode, 
-					                     maxqueuesize, maxnumrulesallowed);
+			BottomUpMERSSolverMT slvr = 
+				new BottomUpMERSSolverMT(numvars, numrules, numinsts,
+			                           r2vars, r2insts,
+					                       minSatRatio, numsols2propagateateachnode, 
+					                       maxqueuesize, maxnumrulesallowed, 
+					                       numthreads);
 			BoolVector init_rules = new BoolVector(numrules);
 			BoolVector expl_rules = slvr.solve(init_rules);
 			long dur = System.currentTimeMillis()-start;
@@ -396,6 +427,5 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 			System.exit(-1);
 		}
 	}
-
 	
 }
