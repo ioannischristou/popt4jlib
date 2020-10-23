@@ -2,7 +2,6 @@ package popt4jlib.MinExplainSet;
 
 import popt4jlib.BoolVector;
 import parallel.BoundedMinHeapUnsynchronized;
-import parallel.UnboundedBufferArrayUnsynchronized;
 import parallel.BoundedBufferArrayUnsynchronized;
 import parallel.FasterParallelAsynchBatchTaskExecutor;
 import parallel.ConditionCounter;
@@ -56,8 +55,9 @@ import java.io.FileReader;
  */
 public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 	private FasterParallelAsynchBatchTaskExecutor _executor=null;
-	private ConditionCounter _condCnt = new ConditionCounter();
-	private BoolVector _bestResult = null;
+	private final ConditionCounter _condCnt = new ConditionCounter();
+	private static BoolVector _bestResult = null;
+	private static int _bestCoverageMT = 0;
 	private int _maxqueuesize = -1;
 	
 	
@@ -74,7 +74,7 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 	 * satisfied by all the rules
 	 * @param numsols2consider int the max number of top solutions added to the 
 	 * queue at every step (can be <CODE>Integer.MAX_VALUE</CODE> for no limit in 
-	 * the search)
+	 * the search). This is the <CODE>_K</CODE> field, and must be &ge; 1.
 	 * @param maxqueuesize int maximum number of candidates to keep at any time
 	 * (making it a BeamForming-Search) or -1 (the default, indicating no attempt
 	 * to bound the outer-loop queue)
@@ -93,8 +93,9 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 		super(numVars, numRules, numInstances, rule2vars, rule2insts, 
 			    minSatInstRatio, numsols2consider, maxqueuesize, maxnumrulesallowed);
 		_executor = FasterParallelAsynchBatchTaskExecutor.
-			            newFasterParallelAsynchBatchTaskExecutor(numthreads, true);
-		_maxqueuesize = maxqueuesize;
+			            newFasterParallelAsynchBatchTaskExecutor(numthreads, false);  
+    // never run task on current thread
+		_maxqueuesize = maxqueuesize >= 0 ? maxqueuesize : Integer.MAX_VALUE;
 	}
 	
 	
@@ -151,19 +152,23 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 	 */
 	private BoolVector solve2(BoolVector cur_rules) {
 		ArrayList greedy_sols = new ArrayList();  // needed in case of Beam-Search
-		BottomUpMERSSolverMT saux = new BottomUpMERSSolverMT(this);
-		saux._queue = new BoundedBufferArrayUnsynchronized(1);
-		saux._K = 1;
-		
-		_queue.reset();
+		BottomUpMERSSolverMT saux = _K > 1 ? new BottomUpMERSSolverMT(this) : this;
+		if (saux!=this) {
+			saux._queue = new BoundedBufferArrayUnsynchronized(1);
+			saux._K = 1;
+		}
 		
 		// short-cut
 		if (cur_rules!=null && cur_rules.cardinality()>_maxNumRulesAllowed) 
 			return null;
 		
+		// second short-cut if we're done
+		if (getBestCoverageMT() >= _minNumSatInsts) {
+			return null;
+		}
+		
 		try {
 			Messenger mger = Messenger.getInstance();
-			//mger.msg("BottomUpMERSSolverMT.solve2(): enter", 1);
 			// BFS order
 			BoundedMinHeapUnsynchronized minHeap = 
 				new BoundedMinHeapUnsynchronized(_numRules);
@@ -175,18 +180,18 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 			// 1. are we done yet?
 			BoolVector sat_insts = getSatInsts(cur_rules);
 			int si_card = sat_insts.cardinality();
-			if (si_card > getBestCoverage()) {
-				if (_K>1)
-					mger.msg("BottomUpMERSSolverMT.solve2(): best_coverage="+si_card+
-									 " out of target="+_minNumSatInsts+" with rules="+
-									 cur_rules.toStringSet(), 0);
-				updateBestCoverage(si_card);
+			// notice that because if-stmt below is not within a class-synchronized
+			// block, it is possible that the best_coverage printout messages may 
+			// appear to NOT be monotonically increasing.
+			if (si_card > getBestCoverageMT()) {
+				mger.msg("BottomUpMERSSolverMT.solve2(): best_coverage="+si_card+
+								 " out of target="+_minNumSatInsts+" with rules="+
+								 cur_rules.toStringSet(), 0);
+				updateBestCoverageMT(si_card);
 			}
 			if (si_card>=_minNumSatInsts) {
 				greedy_sols.add(new BoolVector(cur_rules));
-				if (_queue instanceof UnboundedBufferArrayUnsynchronized) {  // done
-					return getBest(greedy_sols);
-				}
+				return getBest(greedy_sols);
 			}
 			// 1.1 maybe we can't be done ever?
 			// BoolVector cur_vars_max = new BoolVector(cur_vars);
@@ -213,34 +218,24 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 				int rid = ((Integer)toppair.getFirst()).intValue();
 				BoolVector crid = new BoolVector(cur_rules);
 				crid.set(rid);
-				if (_executor.getNumTasksInQueue()<_maxqueuesize) {
+				if (_executor!=null && _executor.getNumTasksInQueue()<_maxqueuesize) {
 					ArrayList ts = new ArrayList();
 					ts.add(new BUMSMTTask(crid));
 					_condCnt.increment();
 					_executor.executeBatch(ts);  // execute asynchronously
 				}
 				else {  // queue is full, solve greedily, add to sols
-					//mger.msg("BottomUpMERSSolverMT.solve2():adding "+cvid.toStringSet()+
-					//	       " to full queue: will expand greedily", 0);
-					saux._bestCoverage = 0;
-					saux._queue.reset();
 					BoolVector sol = saux.solve2(crid);
 					if (sol==null) {
 						//mger.msg("BottomUpMERSSolverMT.solve2() greedy solver failed to "+
 						//	       "produce a valid solution", 0);
 						continue;
 					}  // failed
-					// tests below are wasteful and unnecessary as they will be 
-					// done again when calling getBest(), so they are commented out
-					//BoolVector si2 = getSatInsts(sol);
-					//int si2_card = si2.cardinality();
-					//if (si2_card>_bestCoverage) {
-						mger.msg("BottomUpMERSSolverMT.solve2() greedy solver "+
-							       "produced a new solution: "+sol.toStringSet(), 0);
-						greedy_sols.add(new BoolVector(sol));
-					//}
+					//	mger.msg("BottomUpMERSSolverMT.solve2() greedy solver "+
+					//		       "produced a new solution: "+sol.toStringSet(), 0);
+					greedy_sols.add(new BoolVector(sol));
 				}
-			}  // for i in 0..._K 
+			}  // for i in 0..._K
 			return getBest(greedy_sols);  // null if _K is chosen too small...
 		}
 		catch (Exception e) {
@@ -251,21 +246,21 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 	
 	
 	/**
-	 * provides synchronized access to the <CODE>_bestCoverage</CODE> field.
+	 * provides synchronized access to the <CODE>_bestCoverageMT</CODE> field.
 	 * @return int
 	 */
-	private synchronized int getBestCoverage() {
-		return _bestCoverage;
+	private static synchronized int getBestCoverageMT() {
+		return _bestCoverageMT;
 	}
 	
 	
 	/**
-	 * synchronized update (if it must) of the <CODE>_bestCoverage</CODE> field.
+	 * synchronized update (if it must) of the <CODE>_bestCoverageMT</CODE> field.
 	 * @param cov int
 	 */
-	private synchronized void updateBestCoverage(int cov) {
-		if (_bestCoverage<cov)
-			_bestCoverage = cov;
+	private static synchronized void updateBestCoverageMT(int cov) {
+		if (_bestCoverageMT<cov)
+			_bestCoverageMT = cov;
 	}
 	
 	
@@ -314,7 +309,8 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 			}
 		}
 		if (res!=null) {
-			synchronized (this) {  // see if _bestResult must be updated as well
+			synchronized (BottomUpMERSSolver.class) {  // see if _bestResult must be 
+				                                         // updated as well
 				if (_bestResult==null) {
 					_bestResult = res;
 				}
