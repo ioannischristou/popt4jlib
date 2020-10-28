@@ -2,9 +2,9 @@ package popt4jlib.MinExplainSet;
 
 import popt4jlib.BoolVector;
 import parallel.BoundedMinHeapUnsynchronized;
-import parallel.BoundedBufferArrayUnsynchronized;
 import parallel.FasterParallelAsynchBatchTaskExecutor;
 import parallel.ConditionCounter;
+import parallel.TimerThread;
 import parallel.ParallelException;
 import utils.Pair;
 import utils.Messenger;
@@ -19,7 +19,22 @@ import java.io.FileReader;
 
 /**
  * Parallel version of the bottom-up algorithm implementation for solving the 
- * Minimum Explaining RuleSet (MERS) problem. 
+ * Minimum Explaining RuleSet (MERS) problem. The algorithm is a heuristic 
+ * Breadth-First-Search - Beam-Search combination that is controlled by two 
+ * parameters: (1) the maximum number of candidate rules to consider adding to a 
+ * current solution at any point, and (2) the minimum depth size for Beam-Search
+ * to kick in: the latter essentially forces the search from any solution of a 
+ * specified size to continue with maximum number of candidate rules to consider
+ * from that point on set to 1 (only the best candidate is added to the current
+ * solution) and continuing this (beam-) search on the current thread of 
+ * execution only. By setting both these parameters to infinity, the algorithm
+ * becomes a pure (parallel) Breadth-First-Search for the first solution that 
+ * satisfies the minimum covering instances requirement, guaranteeing that if 
+ * a feasible solution exists it will be found (but because of the parallel 
+ * search, it does not guarantee that the solution is the least cardinality
+ * solution.) For problems with tens of thousands of rules, good values for the
+ * heuristic parameters are setting <CODE>_K</CODE> around 10, and the 
+ * min-depth-for-beam-search between 3 and 5.
  * The MERS problem can be described as follows: we are given a 
  * set of variables (items) X = {x_0, x_1, ..., x_(M-1)} and a set of instances 
  * D = {I_0, I_1,..., I_(d-1)} each of which contain subsets of the vars x_i. 
@@ -53,12 +68,14 @@ import java.io.FileReader;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
+public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 	private FasterParallelAsynchBatchTaskExecutor _executor=null;
-	private final ConditionCounter _condCnt = new ConditionCounter();
+	private ConditionCounter _condCnt = null;
 	private static BoolVector _bestResult = null;
 	private static int _bestCoverageMT = 0;
-	private int _maxqueuesize = -1;
+	private int _minDepth4BeamSearch = -1;
+	
+	private static boolean _isRunning = false;
 	
 	
 	/**
@@ -74,38 +91,42 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 	 * satisfied by all the rules
 	 * @param numsols2consider int the max number of top solutions added to the 
 	 * queue at every step (can be <CODE>Integer.MAX_VALUE</CODE> for no limit in 
-	 * the search). This is the <CODE>_K</CODE> field, and must be &ge; 1.
-	 * @param maxqueuesize int maximum number of candidates to keep at any time
-	 * (making it a BeamForming-Search) or -1 (the default, indicating no attempt
-	 * to bound the outer-loop queue)
+	 * the search). This is the <CODE>_K</CODE> field, and must be &ge; 1
+	 * @param mindepth4beamsearch int the minimum number of rules in a solution 
+	 * for a BeamForming-Search to begin or -1 (the default, indicating no attempt
+	 * for beam-search)
 	 * @param maxnumrulesallowed int default -1 (no limit) used to cut the search
 	 * short
 	 * @param numthreads int default 1.
 	 * @throws ParallelException if numthreads is &le;0.
 	 */
-	public BottomUpMERSSolverMT(int numVars, int numRules, int numInstances,
+	public BottomUpMERSSolver2MT(int numVars, int numRules, int numInstances,
 		                          HashMap rule2vars, HashMap rule2insts, 
 												      double minSatInstRatio,
 												      int numsols2consider,
-												      int maxqueuesize,
+												      int mindepth4beamsearch,
 												      int maxnumrulesallowed,
 												      int numthreads) throws ParallelException {
 		super(numVars, numRules, numInstances, rule2vars, rule2insts, 
-			    minSatInstRatio, numsols2consider, maxqueuesize, maxnumrulesallowed);
+			    minSatInstRatio, numsols2consider, 
+					mindepth4beamsearch, 
+					maxnumrulesallowed);
 		_executor = FasterParallelAsynchBatchTaskExecutor.
-			            newFasterParallelAsynchBatchTaskExecutor(numthreads, false);  
+			            newFasterParallelAsynchBatchTaskExecutor(numthreads, false);
     // never run task on current thread
-		_maxqueuesize = maxqueuesize >= 0 ? maxqueuesize : Integer.MAX_VALUE;
+		_condCnt = new ConditionCounter();
+		_minDepth4BeamSearch = mindepth4beamsearch >= 0 ? 
+			                       mindepth4beamsearch : Integer.MAX_VALUE;
 	}
 	
 	
 	/**
 	 * protected copy constructor is not part of the public API. Leaves the _K
-	 * and _queue data members at their default values (0 and null respectively.)
+	 * data member at its default value 0.
 	 * Does not create new executors.
-	 * @param svr BottomUpMESSolver the object to copy from
+	 * @param svr BottomUpMESSolver2MT the object to copy from
 	 */
-	protected BottomUpMERSSolverMT(BottomUpMERSSolverMT svr) {
+	protected BottomUpMERSSolver2MT(BottomUpMERSSolver2MT svr) {
 		super(svr); 
 	}
 	
@@ -122,17 +143,36 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 	 * fails (due to low _K)
 	 */
 	public BoolVector solve(BoolVector cur_rules) {
+		synchronized(BottomUpMERSSolver2MT.class) {
+			if (_isRunning) {
+				throw new IllegalStateException("BottomUpMERSSolver2MT.solve():"+
+					                              " currently running on this JVM");
+			}
+			//else 
+			_isRunning = true;
+			_bestResult = null;
+			_bestCoverageMT = 0;
+		}
+		PrintProgressTask ppt = new PrintProgressTask(60000);  // print every minute
+		TimerThread tt = new TimerThread(1000, true, ppt);
+		tt.start();  // start thread to display progress on the command prompt
 		_condCnt.increment();
 		ArrayList ts = new ArrayList();
 		ts.add(new BUMSMTTask(cur_rules));
 		try {
 			_executor.executeBatch(ts);
 			_condCnt.await();
-			return _bestResult;
+			return getBestResult();
 		}
 		catch (ParallelException e) {
 			e.printStackTrace();
 			return null;
+		}
+		finally {
+			ppt.quit();  // make sure the timer thread stops after solve() is done
+			synchronized(BottomUpMERSSolver2MT.class) {
+				_isRunning = false;
+			}
 		}
 	}
 
@@ -141,9 +181,10 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 	 * the main "work" method. It can actually guarantee to find an optimal (least
 	 * cardinality) rule-set that covers the required percentage of instances that
 	 * can be covered by the rules, from the starting solution (that is normally
-	 * empty), when the maxqueuesize variable in the object constructor is set to
-	 * -1; otherwise, the queue size constraints can cause the search to miss out
-	 * the truly optimal solution.
+	 * empty), when the mindepth4beamsearch variable in the object constructor is 
+	 * set to -1 and there is no limit in the value <CODE>_K</CODE> (the number of
+	 * candidates to be included in the current solution at any step); otherwise, 
+	 * it is only a heuristic.
 	 * @param cur_rules BoolVector normally empty, but can be any set that we 
 	 * require to be present in the final solution
 	 * @return BoolVector a minimal cardinality vector covering the requested
@@ -152,9 +193,9 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 	 */
 	private BoolVector solve2(BoolVector cur_rules) {
 		ArrayList greedy_sols = new ArrayList();  // needed in case of Beam-Search
-		BottomUpMERSSolverMT saux = _K > 1 ? new BottomUpMERSSolverMT(this) : this;
+		BottomUpMERSSolver2MT saux = _K > 1 ? 
+			new BottomUpMERSSolver2MT(this) : this;
 		if (saux!=this) {
-			saux._queue = new BoundedBufferArrayUnsynchronized(1);
 			saux._K = 1;
 		}
 		
@@ -183,8 +224,9 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 			// notice that because if-stmt below is not within a class-synchronized
 			// block, it is possible that the best_coverage printout messages may 
 			// appear to NOT be monotonically increasing.
-			if (si_card > getBestCoverageMT()) {
-				mger.msg("BottomUpMERSSolverMT.solve2(): best_coverage="+si_card+
+			int best_cov = getBestCoverageMT();
+			if (si_card > best_cov) {
+				mger.msg("BottomUpMERSSolver2MT.solve2(): best_coverage="+si_card+
 								 " out of target="+_minNumSatInsts+" with rules="+
 								 cur_rules.toStringSet(), 0);
 				updateBestCoverageMT(si_card);
@@ -195,11 +237,11 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 			}
 			// 1.1 maybe we can't be done ever?
 			// BoolVector cur_vars_max = new BoolVector(cur_vars);
-			cur_rules_max.copy(cur_rules);
 			for (int rid = cur_rules.lastSetBit()+1; rid < _numRules; rid++) 
 				cur_rules_max.set(rid);
 			BoolVector si = getSatInsts(cur_rules_max);
-			if (si.cardinality()<_minNumSatInsts) {
+			int si_card_max = si.cardinality();
+			if (si_card_max<_minNumSatInsts) {
 				return null;
 			}  // fails 
 			// 2. consider the best vars to add at this point.
@@ -211,31 +253,40 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 				double cv = getCost(cur_rules, rid);
 				minHeap.addElement(new Pair(new Integer(rid), new Double(cv)));
 			}
-			// remove the top _K rules to consider adding them to the current sol
+			// remove the top _K rules to consider adding them to the current soln.
+			final boolean do_parallel = 
+				_executor!=null && cur_rules.cardinality()<_minDepth4BeamSearch;
+			ArrayList ts_par = new ArrayList(_K);  // init. size _K
+			ArrayList ts_ser = new ArrayList(_K);  // init. size _K
 			for (int i=0; i<_K; i++) {
 				if (minHeap.size()==0) break;
 				Pair toppair = (Pair) minHeap.remove();
 				int rid = ((Integer)toppair.getFirst()).intValue();
 				BoolVector crid = new BoolVector(cur_rules);
 				crid.set(rid);
-				if (_executor!=null && _executor.getNumTasksInQueue()<_maxqueuesize) {
-					ArrayList ts = new ArrayList();
-					ts.add(new BUMSMTTask(crid));
-					_condCnt.increment();
-					_executor.executeBatch(ts);  // execute asynchronously
+				if (do_parallel) {
+					ts_par.add(new BUMSMTTask(crid));
 				}
-				else {  // queue is full, solve greedily, add to sols
+				else ts_ser.add(crid);
+			}
+			if (do_parallel) {
+				_condCnt.add(ts_par.size());
+				_executor.executeBatch(ts_par);
+			}
+			else {
+				for (int i=0; i<ts_ser.size(); i++) {
+					BoolVector crid = (BoolVector) ts_ser.get(i);
 					BoolVector sol = saux.solve2(crid);
 					if (sol==null) {
-						//mger.msg("BottomUpMERSSolverMT.solve2() greedy solver failed to "+
-						//	       "produce a valid solution", 0);
+						//mger.msg("BottomUpMERSSolver2MT.solve2() greedy solver failed "+
+						//	       "to produce a valid solution", 0);
 						continue;
 					}  // failed
-					//	mger.msg("BottomUpMERSSolverMT.solve2() greedy solver "+
+					//	mger.msg("BottomUpMERSSolver2MT.solve2() greedy solver "+
 					//		       "produced a new solution: "+sol.toStringSet(), 0);
 					greedy_sols.add(new BoolVector(sol));
 				}
-			}  // for i in 0..._K
+			}  // for i in [0..._K-1]
 			return getBest(greedy_sols);  // null if _K is chosen too small...
 		}
 		catch (Exception e) {
@@ -246,10 +297,19 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 	
 	
 	/**
+	 * get the current number of tasks in queue.
+	 * @return int
+	 */
+	public int getNumTasksInQueue() {
+		return _executor.getNumTasksInQueue();
+	}
+	
+	
+	/**
 	 * provides synchronized access to the <CODE>_bestCoverageMT</CODE> field.
 	 * @return int
 	 */
-	private static synchronized int getBestCoverageMT() {
+	public static synchronized int getBestCoverageMT() {
 		return _bestCoverageMT;
 	}
 	
@@ -257,10 +317,12 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 	/**
 	 * synchronized update (if it must) of the <CODE>_bestCoverageMT</CODE> field.
 	 * @param cov int
+	 * @return new best coverage (may be same as old)
 	 */
-	private static synchronized void updateBestCoverageMT(int cov) {
+	private static synchronized int updateBestCoverageMT(int cov) {
 		if (_bestCoverageMT<cov)
 			_bestCoverageMT = cov;
+		return _bestCoverageMT;
 	}
 	
 	
@@ -309,8 +371,8 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 			}
 		}
 		if (res!=null) {
-			synchronized (BottomUpMERSSolver.class) {  // see if _bestResult must be 
-				                                         // updated as well
+			synchronized (BottomUpMERSSolver2MT.class) {  // see if _bestResult must 
+				                                            // be updated as well
 				if (_bestResult==null) {
 					_bestResult = res;
 				}
@@ -330,6 +392,15 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 	
 	
 	/**
+	 * get the best result of the whole run.
+	 * @return BoolVector
+	 */
+	private synchronized static BoolVector getBestResult() {
+		return _bestResult;
+	}
+	
+	
+	/**
 	 * auxiliary inner-class not part of the public API.
 	 */
 	final class BUMSMTTask implements Runnable {
@@ -342,8 +413,61 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 		
 		
 		public void run() {
+			/*
+			if (_executor==null) {  // sanity test
+				System.err.println("saux running fom BUMSMTTask");
+				System.exit(-1);
+			}
+			*/
 			solve2(_cur_rules);
 			_condCnt.decrement();
+		}
+	}
+	
+	
+	/**
+	 * auxiliary inner class, NOT part of the public API. Used for printing
+	 * progress information periodically.
+	 */
+	final class PrintProgressTask implements Runnable {
+		private long _intvl;
+		private volatile boolean _cont = true;
+		private Messenger _mger = Messenger.getInstance();
+		
+		/**
+		 * sole constructor.
+		 * @param intvl long msecs to pass between two successive print-outs
+		 */
+		public PrintProgressTask(long intvl) {
+			_intvl = intvl;
+		}
+		
+		
+		/**
+		 * periodically print progress.
+		 */
+		public void run() {
+			long start = System.currentTimeMillis();
+			while (_cont) {
+				try {
+					Thread.sleep(_intvl);
+					long elapsed = (System.currentTimeMillis()-start) / 1000;
+					_mger.msg("BottomUpMERSSolver2MT.PrintProgressTask: "+
+						        "#tasks_in_queue="+getNumTasksInQueue()+
+						        " elapsed time="+elapsed+" seconds", 0);
+				}
+				catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+		}
+		
+		
+		/**
+		 * force <CODE>run()</CODE> method above to return.
+		 */
+		public void quit() {
+			_cont = false;
 		}
 	}
 	
@@ -400,13 +524,13 @@ public class BottomUpMERSSolverMT extends BottomUpMERSSolver {
 			long start = System.currentTimeMillis();
 			final double minSatRatio = 0.7;
 			final int numsols2propagateateachnode = 10;
-			final int maxqueuesize = 10000;
+			final int mindepth4beamsearch = 5;
 			final int maxnumrulesallowed = 15;
-			BottomUpMERSSolverMT slvr = 
-				new BottomUpMERSSolverMT(numvars, numrules, numinsts,
+			BottomUpMERSSolver2MT slvr = 
+				new BottomUpMERSSolver2MT(numvars, numrules, numinsts,
 			                           r2vars, r2insts,
 					                       minSatRatio, numsols2propagateateachnode, 
-					                       maxqueuesize, maxnumrulesallowed, 
+					                       mindepth4beamsearch, maxnumrulesallowed, 
 					                       numthreads);
 			BoolVector init_rules = new BoolVector(numrules);
 			BoolVector expl_rules = slvr.solve(init_rules);
