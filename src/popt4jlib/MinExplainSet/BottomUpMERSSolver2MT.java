@@ -35,6 +35,14 @@ import java.io.FileReader;
  * solution.) For problems with tens of thousands of rules, good values for the
  * heuristic parameters are setting <CODE>_K</CODE> around 10, and the 
  * min-depth-for-beam-search between 3 and 5.
+ * Notice that in order to speed-up the solution process, as soon as a feasible
+ * solution has been found, the algorithm ends; this implies that when more than
+ * one thread is used, when the problem has a solution with the given parameter
+ * settings for the search, one solution is guaranteed to be found, but which 
+ * one is uncertain (it will be the first found by any thread participating in 
+ * the search.) When there is no solution, the "best" value will always be 
+ * reported in the console printout (and will always be the same), but will not
+ * be returned to the caller.
  * The MERS problem can be described as follows: we are given a 
  * set of variables (items) X = {x_0, x_1, ..., x_(M-1)} and a set of instances 
  * D = {I_0, I_1,..., I_(d-1)} each of which contain subsets of the vars x_i. 
@@ -77,7 +85,7 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 	
 	private static boolean _isRunning = false;
 	
-	
+		
 	/**
 	 * public constructor will create a new asynch executor to run the program
 	 * in parallel.
@@ -138,9 +146,9 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 	 * this method that it can finish (the method awaits until all created tasks
 	 * are done.)
 	 * @param cur_rules BoolVector cur_rules the initial set of rules to contain
-	 * in the result-set, usually should be null
+	 * in the result-set, usually should be empty
 	 * @return BoolVector the minimum rule-set sought; may be null if the process
-	 * fails (due to low _K)
+	 * fails (due to low _K and/or low _minDepth4BeamSearch parameter values)
 	 */
 	public BoolVector solve(BoolVector cur_rules) {
 		synchronized(BottomUpMERSSolver2MT.class) {
@@ -187,66 +195,53 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 	 * it is only a heuristic.
 	 * @param cur_rules BoolVector normally empty, but can be any set that we 
 	 * require to be present in the final solution
-	 * @return BoolVector a minimal cardinality vector covering the requested
-	 * percentage of instances that are coverable by the rules; may return null
-	 * if no solution is found due to a low <CODE>_K</CODE> value set
 	 */
-	private BoolVector solve2(BoolVector cur_rules) {
-		ArrayList greedy_sols = new ArrayList();  // needed in case of Beam-Search
-		BottomUpMERSSolver2MT saux = _K > 1 ? 
-			new BottomUpMERSSolver2MT(this) : this;
-		if (saux!=this) {
-			saux._K = 1;
-		}
-		
+	private void solve2(BoolVector cur_rules) {
 		// short-cut
 		if (cur_rules!=null && cur_rules.cardinality()>_maxNumRulesAllowed) 
-			return null;
-		
-		// second short-cut if we're done
-		if (getBestCoverageMT() >= _minNumSatInsts) {
-			return null;
-		}
+			return;
 		
 		try {
 			Messenger mger = Messenger.getInstance();
-			// BFS order
-			BoundedMinHeapUnsynchronized minHeap = 
-				new BoundedMinHeapUnsynchronized(_numRules);
-			BoolVector cur_rules_max = new BoolVector(cur_rules);
-
-			// 0. check for threshold
-			if (cur_rules.cardinality()>_maxNumRulesAllowed) return null;
 				
 			// 1. are we done yet?
 			BoolVector sat_insts = getSatInsts(cur_rules);
-			int si_card = sat_insts.cardinality();
-			// notice that because if-stmt below is not within a class-synchronized
-			// block, it is possible that the best_coverage printout messages may 
-			// appear to NOT be monotonically increasing.
-			int best_cov = getBestCoverageMT();
-			if (si_card > best_cov) {
-				mger.msg("BottomUpMERSSolver2MT.solve2(): best_coverage="+si_card+
-								 " out of target="+_minNumSatInsts+" with rules="+
-								 cur_rules.toStringSet(), 0);
-				updateBestCoverageMT(si_card);
+			final int si_card = sat_insts.cardinality();
+			synchronized (BottomUpMERSSolver2MT.class) {
+				// second short-cut if we're done
+				if (_bestCoverageMT >= _minNumSatInsts) {
+					return;
+				}  
+				if (si_card > _bestCoverageMT) {
+					mger.msg("BottomUpMERSSolver2MT.solve2(): best_coverage="+si_card+
+									 " out of target="+_minNumSatInsts+" with rules="+
+									 cur_rules.toStringSet(), 0);
+					_bestCoverageMT = si_card;
+				}
 			}
 			if (si_card>=_minNumSatInsts) {
-				greedy_sols.add(new BoolVector(cur_rules));
-				return getBest(greedy_sols);
+				updateBestResult(cur_rules);
+				return;
 			}
+			
 			// 1.1 maybe we can't be done ever?
 			// BoolVector cur_vars_max = new BoolVector(cur_vars);
+			BoolVector cur_rules_max = new BoolVector(cur_rules);
 			for (int rid = cur_rules.lastSetBit()+1; rid < _numRules; rid++) 
 				cur_rules_max.set(rid);
 			BoolVector si = getSatInsts(cur_rules_max);
 			int si_card_max = si.cardinality();
 			if (si_card_max<_minNumSatInsts) {
-				return null;
+				return;
 			}  // fails 
 			// 2. consider the best vars to add at this point.
 			//    All vars to consider have ids above the highest-id in cur_vars
-			minHeap.reset();
+			// BFS order of solution cardinality.
+			// the min-heap data structure orders candidates in terms of cost, and 
+			// ties are broken by order of rule-id (first argument in the pair that
+			// enters the heap.)
+			BoundedMinHeapUnsynchronized minHeap = 
+				new BoundedMinHeapUnsynchronized(_numRules);
 			for (int rid = cur_rules.lastSetBit()+1; rid < _numRules; rid++) {
 				// check if rid makes sense to add given cur_rules
 				if (isRedundant(rid, sat_insts)) continue;
@@ -268,30 +263,25 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 					ts_par.add(new BUMSMTTask(crid));
 				}
 				else ts_ser.add(crid);
-			}
+			}  // for i in [0..._K-1]
 			if (do_parallel) {
 				_condCnt.add(ts_par.size());
 				_executor.executeBatch(ts_par);
 			}
 			else {
+				BottomUpMERSSolver2MT saux = _K > 1 ? 
+					new BottomUpMERSSolver2MT(this) : this;
+				if (saux!=this) saux._K = 1;
 				for (int i=0; i<ts_ser.size(); i++) {
 					BoolVector crid = (BoolVector) ts_ser.get(i);
-					BoolVector sol = saux.solve2(crid);
-					if (sol==null) {
-						//mger.msg("BottomUpMERSSolver2MT.solve2() greedy solver failed "+
-						//	       "to produce a valid solution", 0);
-						continue;
-					}  // failed
-					//	mger.msg("BottomUpMERSSolver2MT.solve2() greedy solver "+
-					//		       "produced a new solution: "+sol.toStringSet(), 0);
-					greedy_sols.add(new BoolVector(sol));
+					saux.solve2(crid);
 				}
-			}  // for i in [0..._K-1]
-			return getBest(greedy_sols);  // null if _K is chosen too small...
+			}  // else if do_parallel
+			return;
 		}
 		catch (Exception e) {
 			e.printStackTrace();
-			return null;
+			return;
 		}
 	}
 	
@@ -306,23 +296,11 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 	
 	
 	/**
-	 * provides synchronized access to the <CODE>_bestCoverageMT</CODE> field.
-	 * @return int
+	 * close this object's executor if not null.
+	 * @throws ParallelException if the method has been called before
 	 */
-	public static synchronized int getBestCoverageMT() {
-		return _bestCoverageMT;
-	}
-	
-	
-	/**
-	 * synchronized update (if it must) of the <CODE>_bestCoverageMT</CODE> field.
-	 * @param cov int
-	 * @return new best coverage (may be same as old)
-	 */
-	private static synchronized int updateBestCoverageMT(int cov) {
-		if (_bestCoverageMT<cov)
-			_bestCoverageMT = cov;
-		return _bestCoverageMT;
+	public void shutDownExecutor() throws ParallelException {
+		if (_executor!=null) _executor.shutDown();
 	}
 	
 	
@@ -341,55 +319,7 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 		rules.unset(rid);
 		return res;
 	}
-	
-	
-	/**
-	 * we define "best" as the rule-set with the maximum coverage of instances, 
-	 * with ties between max coverage solutions resolved in favor of the shortest
-	 * solution. This is in contrast to the <CODE>getBest()</CODE> implementation
-	 * of the <CODE>BottomUpMESSolver</CODE> that works with variable sets instead
-	 * of rule-sets.
-	 * @param sols
-	 * @return 
-	 */
-	private BoolVector getBest(ArrayList sols) {
-		int best_card = Integer.MAX_VALUE;
-		int best_cov = 0;
-		BoolVector res = null;
-		for (int i=0; i<sols.size(); i++) {
-			final BoolVector si = (BoolVector) sols.get(i);
-			final int si_card = si.cardinality();
-			final int si_cov = getSatInsts(si).cardinality();
-			if (si_cov>best_cov) {
-				res = si;
-				best_cov = si_cov;
-				best_card = si_card;
-			}
-			else if (si_cov==best_cov && si_card<best_card) {
-				res = si;
-				best_card = si_card;
-			}
-		}
-		if (res!=null) {
-			synchronized (BottomUpMERSSolver2MT.class) {  // see if _bestResult must 
-				                                            // be updated as well
-				if (_bestResult==null) {
-					_bestResult = res;
-				}
-				else {
-					final int br_cov = getSatInsts(_bestResult).cardinality();
-					if (br_cov < best_cov) {
-						_bestResult = res;
-					}
-					else if (br_cov==best_cov && 
-									 _bestResult.cardinality() > best_card) 
-						_bestResult = res;
-				}
-			}
-		}
-		return res;
-	}
-	
+		
 	
 	/**
 	 * get the best result of the whole run.
@@ -397,6 +327,27 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 	 */
 	private synchronized static BoolVector getBestResult() {
 		return _bestResult;
+	}
+	
+	
+	private void updateBestResult(BoolVector cur_rules) {
+		final BoolVector si = getSatInsts(cur_rules);
+		final int si_card = si.cardinality();
+		synchronized (BottomUpMERSSolver2MT.class) {
+			if (_bestResult==null) {
+				_bestResult = cur_rules;
+			}
+			else {
+				final int b_card = getSatInsts(_bestResult).cardinality();
+				if (b_card < si_card) {
+					_bestResult = cur_rules;
+				}
+				else if (b_card==si_card && 
+					       cur_rules.cardinality() < _bestResult.cardinality()) {
+					_bestResult = cur_rules;
+				}
+			}
+		}
 	}
 	
 	
@@ -413,12 +364,6 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 		
 		
 		public void run() {
-			/*
-			if (_executor==null) {  // sanity test
-				System.err.println("saux running fom BUMSMTTask");
-				System.exit(-1);
-			}
-			*/
 			solve2(_cur_rules);
 			_condCnt.decrement();
 		}

@@ -107,6 +107,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/FFNNCostFunctionIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/L2NormReg.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FFNN4TrainBGrad.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/PairIntDouble.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/Norm2Function.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RastriginFunctionGrad.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/MCS.java</file>
