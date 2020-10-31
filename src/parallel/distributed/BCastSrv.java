@@ -9,9 +9,19 @@ import java.util.*;
 
 /**
  * A broadcast object server, that broadcasts to all clients connected to it,
- * any double value received by any of the connected clients. Useful with the 
- * <CODE>DAccumulator[Srv|Clt]</CODE> set of classes, and any case where it is 
- * needed to broadcast objects to all connected parties.
+ * any object received by any of the connected clients. Usually, the object to 
+ * be broadcast is a double value (useful with the 
+ * <CODE>DAccumulator[Srv|Clt]</CODE> set of classes) but doesn't have to be. It
+ * is also very useful in any case where it is needed to broadcast objects to 
+ * all connected parties. One nice Use-Case is when there is a need to send a 
+ * notification (in the form of a string) to all interested parties when an
+ * Oracle RDBMS table is modified (let's say by an SQL INSERT): a very small
+ * Java class can be written that simply connects to a <CODE>BCastSrv</CODE>
+ * and sends the required message (see the class <CODE>OrclEvtNotifier</CODE> in 
+ * the <CODE>tests</CODE> package.) The broadcast server then broadcasts the 
+ * message to all connected parties, and the required functionality is achieved.
+ * Notice that the object is not echoed back to the sender but only to the rest 
+ * of the (currently) connected parties. 
  * <p> Notice the use of the <CODE>java.nio</CODE> package for this server's 
  * functionalities. The class is inspired after Greg Travis's Server class
  * example on nio. See the article on JavaWorld:
@@ -19,7 +29,7 @@ import java.util.*;
  * </p>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2016</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -71,7 +81,8 @@ public final class BCastSrv {
         int num = selector.select();
         // If we don't have any activity, loop around and wait again
         if (num == 0) {
-          continue;  // not spinning on busy-waiting behavior: select() blocks if no activity
+          continue;  // not spinning on busy-waiting behavior: select() blocks 
+					           // if no activity
         }
         // Get the keys corresponding to the activity that has been detected, 
 				// and process them one at a time
@@ -81,12 +92,14 @@ public final class BCastSrv {
           // Get a key representing one of bits of I/O activity
           SelectionKey key = (SelectionKey)it.next();
           // What kind of activity is it?
-          if ((key.readyOps() & SelectionKey.OP_ACCEPT) == SelectionKey.OP_ACCEPT) {
+          if ((key.readyOps() & 
+						  SelectionKey.OP_ACCEPT) == SelectionKey.OP_ACCEPT) {
 						// System.out.println( "acc" );
             // It's an incoming connection. Register this socket with Selector
             // so we can listen for input on it
             Socket s = ss.accept();
             // System.out.println( "Got connection from "+s );
+						mger.msg("Got connection from "+s, 1);
             // make it non-blocking, so we can use a selector on it.
             SocketChannel sc = s.getChannel();
             sc.configureBlocking(false);
@@ -94,7 +107,8 @@ public final class BCastSrv {
             sc.register(selector, SelectionKey.OP_READ );
 						// add it to the map of connections
 						_socketChannels.add(sc);
-          } else if ((key.readyOps() & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
+          } else if ((key.readyOps() & 
+						         SelectionKey.OP_READ) == SelectionKey.OP_READ) {
             SocketChannel sc = null;
             try {
               // It's incoming data on a connection, so process it
@@ -134,13 +148,15 @@ public final class BCastSrv {
 
 	
 	private boolean broadcastData(SocketChannel sc) throws IOException {
+		utils.Messenger mger = utils.Messenger.getInstance();
 		try {
 			// send double value through all other socket connections
 			_buffer.clear();
 			sc.read(_buffer);
 			_buffer.flip();
 			if (_buffer.limit()==0) return false;  // socket failed?
-			utils.Messenger.getInstance().msg("BCastSrv: broadcasting to "+(_socketChannels.size()-1)+" connections...", 2);
+			mger.msg("BCastSrv: broadcasting to "+(_socketChannels.size()-1)+
+				       " connections...", 2);
 			Iterator it = _socketChannels.iterator();
 			while (it.hasNext()) {
 				SocketChannel sit = (SocketChannel) it.next();
@@ -150,20 +166,22 @@ public final class BCastSrv {
 					sit.write(buffer); 
 				}
 				catch (IOException e) {
-					utils.Messenger.getInstance().msg("BCastSrv: error broadcasting data to client, closing connection", 0);
+					mger.msg("BCastSrv: error broadcasting data to client, "+
+						       "closing connection", 0);
 					it.remove();
 					try {
 						sit.close();
 					}
 					catch (IOException e2) {
-						utils.Messenger.getInstance().msg("BCastSrv: caught IOException trying to close faulty channel", 0);
+						mger.msg("BCastSrv: caught IOException trying to close faulty "+
+							       "channel", 0);
 					}
 				}
 			}
 			return true;
 		}
 		catch (Exception e2) {
-			utils.Messenger.getInstance().msg("caught exception '"+e2+"'", 0);  // ignore
+			mger.msg("caught exception '"+e2+"'", 0);  // ignore
 			return false;
 		}
 	}
@@ -171,7 +189,9 @@ public final class BCastSrv {
 
 	/**
 	 * invoke as:
-	 * <CODE>java -cp &lt;classpath&gt; parallel.distributed.BCastSrv [port(9901)] [bufferlen(64)]</CODE>.
+	 * <CODE>java -cp &lt;classpath&gt; parallel.distributed.BCastSrv 
+	 *       [port(9901)] [bufferlen(64)]
+	 * </CODE>.
 	 * @param args
 	 * @throws Exception 
 	 */
