@@ -128,6 +128,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/MSSE.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FCGTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/grid_fault/nn_train_grid_data2_ALLattrs_props_pdmbbp2_val.txt</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DebugNR.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/AVDTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/RnQTCnbinOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/MsgPassingCoordinator.java</file>
@@ -160,6 +161,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/IntArray2SparseMatrix.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DConditionCounterAwaitRequest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/grid_fault/grid_data_ALLattrs_train_small.dat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/analysis/GradApproximator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonFixedTOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/MultiClassSSE.java</file>

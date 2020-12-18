@@ -69,6 +69,12 @@ import java.io.FileReader;
  * cut-offs in the new solution generation to limit the search.) Without any 
  * limits in the search process, the solution generated is guaranteed optimal;
  * else it is necessarily a heuristic.
+ * <p>Notes:
+ * <ul>
+ * <li>20201204: when expanding an initially empty solution, the size for the
+ * parameter <CODE>_K</CODE> (number of top candidate rules to consider using to
+ * expand the current solution) is increased 100-x.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -251,9 +257,10 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 			// remove the top _K rules to consider adding them to the current soln.
 			final boolean do_parallel = 
 				_executor!=null && cur_rules.cardinality()<_minDepth4BeamSearch;
-			ArrayList ts_par = new ArrayList(_K);  // init. size _K
-			ArrayList ts_ser = new ArrayList(_K);  // init. size _K
-			for (int i=0; i<_K; i++) {
+			final int K = cur_rules.cardinality()==0 ? _K*100 : _K;
+			ArrayList ts_par = new ArrayList(K);  // init. size _K
+			ArrayList ts_ser = new ArrayList(K);  // init. size _K
+			for (int i=0; i<K; i++) {
 				if (minHeap.size()==0) break;
 				Pair toppair = (Pair) minHeap.remove();
 				int rid = ((Integer)toppair.getFirst()).intValue();
@@ -263,7 +270,7 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 					ts_par.add(new BUMSMTTask(crid));
 				}
 				else ts_ser.add(crid);
-			}  // for i in [0..._K-1]
+			}  // for i in [0...K-1]
 			if (do_parallel) {
 				_condCnt.add(ts_par.size());
 				_executor.executeBatch(ts_par);
@@ -306,8 +313,9 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 	
 	/**
 	 * compute the number I of instances the solution rules+{rid} covers, and 
-	 * return the number (|rules|+1)/(I+1). It is expected that rid is not set in
-	 * rules.
+	 * return a number proportional to (|rules|+1)/(I+1), and also proportional to
+	 * the log10 of the rid (so that early rule-ids are preferred to later ones.)
+	 * It is expected that rid is not set in rules.
 	 * @param rules BoolVector 
 	 * @param rid int
 	 * @return double
@@ -316,6 +324,8 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 		rules.set(rid);
 		BoolVector satInsts = getSatInsts(rules);
 		double res = (rules.cardinality()+1) / (double)(satInsts.cardinality()+1.0);
+		double rid_pos_cost = 1.0+Math.log10(rid+1);
+		res *= rid_pos_cost;  // higher rids have higher cost
 		rules.unset(rid);
 		return res;
 	}
