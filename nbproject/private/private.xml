@@ -82,6 +82,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/VectorIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/ASDTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/L1Norm.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnorm.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/TimerThread.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/KDDCup992NumericCSVFileFormatConverter.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/Pair.java</file>
@@ -173,6 +174,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDAsynchBatchTaskExecutorSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MinExplainSet/MPSWriter.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/det/sSTCdetFixedTOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RosenbrockFunctionGrad.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/asd_test_props.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/PS/NewVelocityMakerIntf.java</file>

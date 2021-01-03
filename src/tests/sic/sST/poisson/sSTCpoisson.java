@@ -23,7 +23,7 @@ import cern.jet.random.Poisson;
  * 50's by Arrow et al.)
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2019</p>
+ * <p>Copyright: Copyright (c) 2011-2020</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -68,7 +68,7 @@ public class sSTCpoisson implements FunctionIntf {
 	 * evaluate the long-run expected cost of a single echelon inventory control
 	 * system facing Poisson demands with linear holding and backorder costs and 
 	 * fixed review and order costs controlled by (s,S,T) periodic review policy.
-	 * @param x double[] representing s, S and T
+	 * @param x double[] representing s, S and T or <CODE>DblArray1Vector</CODE>
 	 * @param param HashMap if not null, it may contain value for the Kr parameter
 	 * @return double
 	 * @throws IllegalStateException unchecked if the computations go awry, see
