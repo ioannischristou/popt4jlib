@@ -311,8 +311,8 @@ public class RnQTCnorm implements FunctionIntf {
 	 * implements the function &Xi;(r,tau|l,D) defined in formula (5-61) in page
 	 * 259 of G Hadley and TM Whitin: Analysis of Inventory Systems, 
 	 * Prentice-Hall, 1963.
-	 * @param r double
-	 * @param tau double
+	 * @param r double reorder point
+	 * @param tau double lead time
 	 * @param l double mean demand in one period
 	 * @param D double demand variance in one period
 	 * @return double

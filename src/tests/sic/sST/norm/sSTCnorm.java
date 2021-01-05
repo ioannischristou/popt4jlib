@@ -26,23 +26,23 @@ import java.util.HashMap;
  * single-echelon installation.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2020</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
 public class sSTCnorm implements FunctionIntf {
-	final private double _Kr;
-	final private double _Ko;
+	final double _Kr;
+	final double _Ko;
 	final double _L;
 	final double _mi;
 	final double _sigma;
-	final private double _h;
-	final private double _p;   // Hadley-Whitin p-hat -ie penalty that multiplies
-	                           // the time an order is in the books
-	final private double _p2;  // Hadley-Whitin p -ie penalty incurred if an
-	                           // order cannot be satisfied directly from the 
-	                           // stock on-hand (cost of lost-sale)
+	final double _h;
+	final double _p;   // Hadley-Whitin p-hat -ie penalty that multiplies
+	                   // the time an order is in the books
+	final double _p2;  // Hadley-Whitin p -ie penalty incurred if an
+	                   // order cannot be satisfied directly from the 
+	                   // stock on-hand (cost of lost-sale)
 	private final static Normal _norm = new Normal(0,1,null);  // _norm always 
 	                                                           // available, even
 	                                                           // after being
@@ -54,17 +54,20 @@ public class sSTCnorm implements FunctionIntf {
 	/**
 	 * compile-time constants.
 	 */
-	private final static double _eps = 1.e-9;	
-	private final static double _P0tol = 1.e-8;
-	private final static double _ONE_TOL = 1.0 + _P0tol;
+	private final static double _eps = 1.e-8;	
+	private final static double _P0tol = 1.e-4;
+	private final static double _ONE_TOL = 1.0 - _P0tol;
+	private final static double _ONE_TOL_RELAXED = 0.99;  // last chance...
 	private final static double _ZERO_TOL = -_P0tol;
 	private final static double _POS_ZERO_TOL = 1.e-18;
-	private final static double _SUM_TOL = 1.e-6;
-	private final static double _SUM_CONV_TOL = 1.e-30;
+	private final static double _SUM_TOL = 1.e-5;
+	private final static double _SUM_CONV_TOL = 1.e-24;
 	private final static int _MAX_NUM_CONVS = 1000;
 	private final static double _INTEGRAL_APPROX_EPS = 1.e-6;
-	private final static int _NUM_INTVLS = 100;
-	private final static int _NUM_LAST_INT_ADDS = 50;
+	private final static int _NUM_INTVLS = 10;
+	private final static int _MAX_NUM_INTS = 1000;
+	private final static int _NUM_LAST_INT_ADDS = 20;
+	private final static int _MIN_NUM_INT_ADDS = 50;
 	private final static int _MAX_SIMPSON_REC_LVL = 1000;
 	private final static int _INTEGRATION_NUM_PIECES = 10;
 	
@@ -149,15 +152,19 @@ public class sSTCnorm implements FunctionIntf {
 		try {
 			final double nom = sum1(r,R,T,t,l,_sigma,m,IC,phat,p2,_eps) + 
 				           H(R,T,t,l,_sigma,m,IC,phat,p2);
+			//_mger.msg("sSTCnorm.evalBoth(): sum1() returns "+nom, 3);
 			final double cmpl = complnormcdf(R-r, l*T, _sigma*Math.sqrt(T));
+			//_mger.msg("sSTCnorm.evalBoth(): complnormcdf() returns "+cmpl, 3);
 			final double sum2v = sum2(r,R,T,l,_sigma,_eps, cmpl);
+			//_mger.msg("sSTCnorm.evalBoth(): sum2() returns "+sum2v, 3);
 			final double denom = sum2v + cmpl;
 			final double y = K1 + (A+nom)/(T*denom);
 			final double lb = K1 + nom/(T*denom);
 			final double Po = 1.0/denom;
-			_mger.msg("sSTCnorm.evalBoth(): y="+y+", lb="+lb+"\n"+
-				        "                   : Po="+Po+", nom="+nom+"\n"+
-				        "                   : sum2="+sum2v+", denom="+denom, 0);
+			//_mger.msg("sSTCnorm.evalBoth(s="+s+",S="+S+"): y="+y+", lb="+lb+"\n"+
+			//	        "                                  : Po="+Po+",nom="+nom+"\n"+
+			//	        "                                  : sum2="+sum2v+
+			//	        ", denom="+denom, 3);
 			return new utils.Pair(new Double(y), new Double(lb));
 		}
 		catch (Exception e) {
@@ -184,13 +191,13 @@ public class sSTCnorm implements FunctionIntf {
 	private static double H(double rpj, double T, double t, 
 		                      double l, double sigma, double m, 
 													double IC, double phat, double p2) {
-		//_mger.msg("sSTCnorm.H() called", 0);
+		//_mger.msg("sSTCnorm.H() called", 3);
 		double z = 0.0;
 		if (p2>0.0) {
 			z = p2*eP(rpj,T,l,sigma,t);
 		}
 		double res = IC*T*(rpj - m - l*T/2) + (IC+phat)*bP(rpj,T,l,sigma,t) + z;
-		//_mger.msg("sSTCnorm.H() returns "+res, 0);
+		//_mger.msg("sSTCnorm.H() returns "+res, 3);
 		return res;
 	}
 	
@@ -205,15 +212,15 @@ public class sSTCnorm implements FunctionIntf {
 	 * @param t double
 	 * @return double
 	 */
-	private static double bP(double rpj, double T, 
+	static double bP(double rpj, double T, 
 		                       double l, double sigma, double t) {
-		//_mger.msg("sSTCnorm.bP() called", 0);
+		//_mger.msg("sSTCnorm.bP() called", 3);
 		double x = rpj, mi=l, L=t;
 		double t1 = (sigma*sigma)*(W1(x,L+T,mi,sigma) - W1(x,L,mi,sigma));
 		double t2 = mi*(V1(x,L+T,mi,sigma)-V1(x,L,mi,sigma)) - 
 			          x*(V0(x,L+T,mi,sigma)-V0(x,L,mi,sigma));
 		double res = t1 + t2;
-		//_mger.msg("sSTCnorm.bP() returns "+res, 0);
+		//_mger.msg("sSTCnorm.bP() returns "+res, 3);
 		return res;
 	}
 	
@@ -230,9 +237,9 @@ public class sSTCnorm implements FunctionIntf {
 	 * @param t double
 	 * @return double
 	 */
-	private static double eP(double rpj, double T, 
+	static double eP(double rpj, double T, 
 		                       double l, double sigma, double t) {
-		//_mger.msg("sSTCnorm.eP() called", 0);
+		//_mger.msg("sSTCnorm.eP() called", 3);
 		FH fh = new FH();
 		double stepsize = 100.0;
 		double a = rpj;
@@ -252,7 +259,7 @@ public class sSTCnorm implements FunctionIntf {
 			a = b;
 			b += stepsize;
 		}
-		//_mger.msg("sSTCnorm.eP() returns "+y, 0);
+		//_mger.msg("sSTCnorm.eP() returns "+y, 3);
 		return y;
 	}
 	
@@ -279,7 +286,7 @@ public class sSTCnorm implements FunctionIntf {
 											       double IC, double phat, double p2,
 											       double ceps) throws Exception {
 		final FunctionIntf fin2 = new FInner2();
-		//_mger.msg("sSTCnorm.sum1() called", 2);
+		//_mger.msg("sSTCnorm.sum1() called", 3);
 		double y = 0;
 		int n=1;
 		double last = 0; 
@@ -323,11 +330,17 @@ public class sSTCnorm implements FunctionIntf {
 			}
 			y += sum;
 			last += sum;
-			if (++count==_NUM_LAST_INT_ADDS) {
-				if (Math.abs(last/y) < ceps || 
-					  (Math.abs(last)<_SUM_CONV_TOL && Math.abs(y) < _SUM_CONV_TOL)) {
-					//_mger.msg("sSTCnorm.sum1() returns "+y, 2);
-					return y;
+			if (++count==_NUM_LAST_INT_ADDS) { 
+			  if (n >= _MIN_NUM_INT_ADDS) {  // ensure we add at least this many terms
+					//_mger.msg("sSTCnorm.sum1(): last="+last+", y="+y, 3);
+					if (Math.abs(last/y) < ceps || 
+							(Math.abs(last)<_SUM_CONV_TOL && Math.abs(y) < _SUM_CONV_TOL)) {
+						//_mger.msg("sSTCnorm.sum1() returns "+y, 3);
+						return y;
+					} else {
+						count = 0;
+						last = 0;
+					}
 				} else {
 					count = 0;
 					last = 0;
@@ -365,7 +378,7 @@ public class sSTCnorm implements FunctionIntf {
 		                         double ceps,
 														 double cmpl) throws Exception {
 		final FunctionIntf fin3 = new FInner3();
-		//_mger.msg("sSTCnorm.sum2() called", 2);
+		//_mger.msg("sSTCnorm.sum2() called", 3);
 		VectorIntf x0 = new DblArray1Vector(7);
 		// r(1),R(2),T(3),l(4),sigma(5),n(6)
 		x0.setCoord(0, R-r);
@@ -374,14 +387,20 @@ public class sSTCnorm implements FunctionIntf {
 		x0.setCoord(3, T);
 		x0.setCoord(4, l);
 		x0.setCoord(5, sigma);
-		int numintvls = _NUM_INTVLS/2;
+		int numintvls = _NUM_INTVLS/10;
+		double y0 = Double.NaN;  // last effort
 		while (true) {  // keep computing entire sum until y+cmpl>=1
 			double y = 0.0;
 			double last = 0; 
 			int count = 0;
 			int n=2;
 			x0.setCoord(6, n);
-			numintvls *= 2;
+			numintvls *= 10;
+			if (numintvls > _MAX_NUM_INTS) {
+				if (y0+cmpl >= _ONE_TOL_RELAXED) return y0;
+				throw new IllegalStateException("sSTCnorm.sum2(): numintvls="+numintvls+
+					                              " which is too much...");
+			} 
 			while (true) {
 				double sum = integrate(fin3, 0, R-r, x0);
 				// itc20181006: the integral may run into instabilities resulting in 0
@@ -392,7 +411,7 @@ public class sSTCnorm implements FunctionIntf {
 				// over each one, and add up the results.
 				if (!Double.isFinite(sum) || Math.abs(sum)<_SUM_TOL) {
 					//_mger.msg("sSTCnorm.sum2(): breaking [0,"+(R-r)+"] into "+
-					//					numintvls+" intervals", 3);
+					//					numintvls+" intervals", 4);
 					double sz = (R-r)/numintvls;
 					double ll=0, ul=sz;
 					sum = 0;
@@ -405,23 +424,31 @@ public class sSTCnorm implements FunctionIntf {
 						ll = ul;
 						ul += sz;
 					}
-					//_mger.msg("sSTCnorm.sum2(): integration res on [0,R-r] is "+sum,3);
+					//_mger.msg("sSTCnorm.sum2(): integration res on [0,R-r] is "+sum,4);
 				}
 				y += sum;
 				last += sum;
 				if (++count==_NUM_LAST_INT_ADDS) {
-					if (Math.abs(last/y) < ceps || 
-							(Math.abs(last)<_SUM_CONV_TOL && Math.abs(y) < _SUM_CONV_TOL)) {
-						if (y+cmpl >= 1.0) {  // OK
-							//_mger.msg("sSTCnorm.sum2() returns "+y+" w/ n="+n, 2);
-							return y;
+					if (n >= _MIN_NUM_INT_ADDS) {  // ensure adding at least so many terms
+						//_mger.msg("sSTCnorm.sum2(): last="+last+", y="+y, 4);
+						if (Math.abs(last/y) < ceps || 
+								(Math.abs(last)<_SUM_CONV_TOL && Math.abs(y) < _SUM_CONV_TOL)) {
+							if (y+cmpl >= _ONE_TOL) {  // OK
+								//_mger.msg("sSTCnorm.sum2() returns "+y+" w/ n="+n, 3);
+								return y;
+							}
+							else {  // NOT OK
+								//_mger.msg("sSTCnorm.sum2(): y+cmpl="+(y+cmpl)+" (y="+y+")@n="+
+								//					n+" starting over",4);
+								y0 = y;
+								break;
+							}
+						} else {
+							count = 0;
+							last = 0;
 						}
-						else {  // NOT OK
-							//_mger.msg("sSTCnorm.sum2(): y+cmpl="+(y+cmpl)+" at n="+n+
-							//	        " starting over",2);
-							break;
-						}
-					} else {
+					}
+					else {
 						count = 0;
 						last = 0;
 					}
@@ -643,7 +670,7 @@ public class sSTCnorm implements FunctionIntf {
 	 * @param args String[]
 	 */
 	public static void main(String[] args) {
-		_mger.setDebugLevel(0);
+		//_mger.setDebugLevel(0);
 		double s = Double.parseDouble(args[0]);
 		System.out.println("s="+s);
 		double S = Double.parseDouble(args[1]);
