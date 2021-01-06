@@ -23,6 +23,8 @@ import utils.PairObjTwoDouble;
  * <ul>
  * <li>2020-04-25: added method seParams() (public) because it was moved up from
  * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * <li>2021-01-06: fixed update of S in step 2 of the <CODE>minimize()</CODE>
+ * method.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -105,10 +107,10 @@ public class sSTCnormFixedTOpt implements OptimizerIntf {
 		double[] x_best = new double[2];  // {s,S}
 		double lbopt = Double.NaN;
 		// step 1:
-		mger.msg("sSTCnormFixedTOpt.minimize(): starting STEP 1", 3);
-		mger.msg("sSTCnormFixedTOpt.minimize(): calling findGminarg()", 3);
+		mger.msg("sSTCnormFixedTOpt.minimize(): starting STEP 1", 2);
+		mger.msg("sSTCnormFixedTOpt.minimize(): calling findGminarg()", 2);
 		double ystar = findGminarg(_T, L, mi, sigma, h, p, p2);
-		mger.msg("sSTCnormFixedTOpt.minimize(): findGminarg() returns "+ystar, 3);
+		mger.msg("sSTCnormFixedTOpt.minimize(): findGminarg() returns "+ystar, 2);
 		double s = ystar;
 		double S_0 = ystar;
 		java.util.HashMap param = new java.util.HashMap();
@@ -122,29 +124,25 @@ public class sSTCnormFixedTOpt implements OptimizerIntf {
 			double Gs = G(s,_T,L,mi,sigma,h,p,p2);
 			if (c0 <= Gs) break;
 		}
-		mger.msg("sSTCnormFixedTOpt.minimize(): ended STEP 1 w/ c0="+c0, 3);		
+		mger.msg("sSTCnormFixedTOpt.minimize(): ended STEP 1 w/ c0="+c0, 2);		
 		double s0 = s;
 		double Su0 = S_0;
 		double S = Su0+_epss;
 		double GS = G(S,_T,L,mi,sigma,h,p,p2);
 		// step 2:
-		mger.msg("sSTCnormFixedTOpt.minimize(): starting STEP 2", 3);
+		mger.msg("sSTCnormFixedTOpt.minimize(): starting STEP 2", 2);
 		double[] sST = new double[]{s,S,_T};
-		boolean do_f_eval = true;
 		double css=Double.NaN;
 		while (GS <= c0) {
-			if (do_f_eval) css = f.eval(sST, param);
-			do_f_eval = false;  // prevent re-evaluation of f until s or S change 
+			css = f.eval(sST, param);
 			if (css < c0) {
 				Su0 = S;
 				sST[1] = Su0;  // set S
-				do_f_eval = true;
 				double csS0 = f.eval(sST, param);
 				double Gsp1 = G(s+_epss,_T,L,mi,sigma,h,p,p2);
 				while (csS0 <= Gsp1) {
 					s += _epss;
 					sST[0] = s;  // set s
-					do_f_eval = true;
 					csS0 = f.eval(sST, param);
 					Gsp1 = G(s+_epss,_T,L,mi,sigma,h,p,p2);
 				}
@@ -152,10 +150,11 @@ public class sSTCnormFixedTOpt implements OptimizerIntf {
 			}
 			S += _epss;
 			GS = G(S,_T,L,mi,sigma,h,p,p2);
+			sST[1] = S;
 			mger.msg("sSTCnormFixedTOpt.minimize(): in STEP 2, S="+S+" GS="+GS+
 				       " c0="+c0+" css="+css, 3);			
 		}
-		mger.msg("sSTCnormFixedTOpt.minimize(): ended STEP 2 w/ GS="+GS, 3);
+		mger.msg("sSTCnormFixedTOpt.minimize(): ended STEP 2 w/ GS="+GS, 2);
 		x_best[0] = s;
 		x_best[1] = Su0;
 		double[] xaux = new double[]{s,Su0,_T};
@@ -239,12 +238,11 @@ public class sSTCnormFixedTOpt implements OptimizerIntf {
 	 * <CODE>
 	 * java -cp &lt;classpath&gt; tests.sic.sST.norm.sSTCnormFixedTOpt
 	 * &lt;T&gt; &lt;Kr&gt; &lt;Ko&gt; &lt;L&gt; &lt;&mu;&gt; &lt;&sigma;&gt;
-	 * &lt;h&gt; &lt;p&gt; [p2(0)] [epss(1.0) [qnot(0)]
+	 * &lt;h&gt; &lt;p&gt; [p2(0)] [epss(1.0) [qnot(0)] [dbglvl(0)]
 	 * </CODE>.
 	 * @param args 
 	 */
 	public static void main(String[] args) {
-		Messenger.getInstance().setDebugLevel(0);
 		double T = Double.parseDouble(args[0]);
 		double Kr = Double.parseDouble(args[1]);
 		double Ko = Double.parseDouble(args[2]);
@@ -256,6 +254,8 @@ public class sSTCnormFixedTOpt implements OptimizerIntf {
 		double p2 = args.length>8 ? Double.parseDouble(args[8]) : 0.0;
 		double epss = args.length>9 ? Double.parseDouble(args[9]) : 1.0;
 		double qnot = args.length>10 ? Double.parseDouble(args[10]) : 0.0;
+		int dbglvl = args.length>11 ? Integer.parseInt(args[11]) : 0;
+		Messenger.getInstance().setDebugLevel(dbglvl);
 		final long st = System.currentTimeMillis();
 		final sSTCnorm f = new sSTCnorm(Kr,Ko,L,mi,sigma,h,p,p2);
 		final sSTCnormFixedTOpt opt2D = new sSTCnormFixedTOpt(T, epss, qnot);

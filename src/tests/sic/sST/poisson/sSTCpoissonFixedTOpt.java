@@ -23,6 +23,8 @@ import utils.PairObjTwoDouble;
  * <ul>
  * <li>2020-04-25: added method seParams() (public) because it was moved up from
  * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * <li>2021-01-06: fixed update of S parameter in step 2 of the 
+ * <CODE>minimize()</CODE> method.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -121,6 +123,8 @@ public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 				c0 = csS0;
 			}
 			++S;
+			sST[1] = S;  // itc20210106: this line didn't exist before, but is 
+			             // needed in order for the next iteration in the while loop
 			GS = G(S,_T,L,lambda,h,p,p2);
 		}
 		x_best[0] = s;

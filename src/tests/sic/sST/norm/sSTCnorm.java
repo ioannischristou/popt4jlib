@@ -397,7 +397,11 @@ public class sSTCnorm implements FunctionIntf {
 			x0.setCoord(6, n);
 			numintvls *= 10;
 			if (numintvls > _MAX_NUM_INTS) {
-				if (y0+cmpl >= _ONE_TOL_RELAXED) return y0;
+				if (y0+cmpl >= _ONE_TOL_RELAXED) {
+					_mger.msg("sSTCnorm.sum2(): for x0="+x0+" returns "+(1-cmpl)+
+						        " w/ y0+cmpl="+(y0+cmpl), 0);
+					return 1.0-cmpl;  // itc20210106: was y0
+				}
 				throw new IllegalStateException("sSTCnorm.sum2(): numintvls="+numintvls+
 					                              " which is too much...");
 			} 
