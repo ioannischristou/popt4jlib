@@ -72,7 +72,10 @@ public class FFNN4TrainBGradTest4 {
 			for (int k=0; k<num_tries; k++) {
 				// create random weights values
 				for (int j=0; j<num_weights; j++) weights[j] = 10*r.nextGaussian();
-				
+				// don't use them if there already exists the weights array in params
+				if (params.containsKey("weights") && num_tries==1) {
+					weights = (double[]) params.get("weights");
+				}
 				FastFFNN4TrainBGrad gf_auto = 
 					new FastFFNN4TrainBGrad(ffnnb, num_features, num_threads);
 				System.err.println("done initializing FastFFNN4TrainBGrad");

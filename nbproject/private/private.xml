@@ -9,6 +9,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/KDDCup992SparseVectorFileFormatConverter.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecNoOpCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionIntf.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/nn_train_test_props4b.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RegExTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/AVDFFNNTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/norm/RnQTCnorm.java</file>
@@ -20,6 +21,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/VecUtil.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FFNN4TrainBTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansCC.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/hiddenws0.dat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/FasterParallelAsynchBatchTaskExecutor.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutorClt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/OneDStepQuantumOptimizer.java</file>
@@ -94,12 +96,14 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecInitedSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/ThreadAccessTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/UnboundedSimpleFasterMsgPassingCoordinator.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FFNN4TrainTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/ArmijoSteepestDescent.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/DBarrier.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/ReentrantFunctionBaseMT.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FFNN4TrainB.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutorCltTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/Node.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/hiddenws0_4_toy_test.dat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/stochastic/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1SparseVector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/CategoricalAccuracy.java</file>
@@ -140,6 +144,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/atomic.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnormOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansPP.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/test_train_data0.dat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/LightweightParams.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDAsynchBatchTaskExecutorWrk.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/RegisteredParcel.java</file>
@@ -172,6 +177,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/nn_train_tennessee_props_pdmbbp.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/NNNodeIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/ComparableTaskObject.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/nn_train_test_props5.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDAsynchBatchTaskExecutorSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MinExplainSet/MPSWriter.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/det/sSTCdetFixedTOpt.java</file>

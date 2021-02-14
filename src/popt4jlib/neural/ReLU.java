@@ -132,7 +132,7 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 		return result;
 	}
 	
-	
+			
 	/**
 	 * get this node's name.
 	 * @return String "ReLU"
