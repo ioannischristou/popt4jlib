@@ -49,19 +49,22 @@ import org.jfree.data.xy.XYSeriesCollection;
  * cost.
  * <p>Notes:
  * <ul>
- * <li>20191115: program produces a visualization of the curve C*(T) for all T
+ * <li>2019-11-15: program produces a visualization of the curve C*(T) for all T
  * it tries. Also, the same RnQTCnbinOpt object can no longer simultaneously
  * run many different optimization tasks (the method <CODE>minimize()</CODE>
  * will wait until there are no threads running the same method of the same
  * object before it starts running itself.) This is because we now need to keep
  * track of the series of the T-values tried, and their corresponding costs so
  * we can visualize them in the main program execution.
- * <li>2020-04-25: added method seParams() (public) because it was moved up from
- * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * <li>2020-04-25: added method setParams() (public) because it was moved up
+ * from the LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * <li>2021-04-10: modified <CODE>setParams()</CODE> method to allow for setting
+ * the pdclient object; needed when running parallel heuristic (s,S,T) 
+ * optimizers.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2019</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -82,7 +85,7 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 	private final double _Tnot;
 	
 	/**
-	 * by default, 8 tasks to be submitted each time to be processed in parallel
+	 * by default, 24 tasks to be submitted each time to be processed in parallel
 	 */
 	private final int _batchSz;
 
@@ -99,7 +102,7 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 	 * sole public constructor.
 	 * @param server String; default localhost
 	 * @param port int; default 7891
-	 * @param batchSz int &gt;0; default 8
+	 * @param batchSz int &gt;0; default 24
 	 * @param epsT double &gt;0; default 0.01
 	 * @param Tnot double &gt;0; default 0.01
 	 */
@@ -109,7 +112,7 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 		else _pdsrv = server;
 		if (port>1024) _pdport = port;
 		else _pdport = 7891;
-		_batchSz = (batchSz>0) ? batchSz : 8;
+		_batchSz = (batchSz>0) ? batchSz : 24;
 		_epsT = epsT>0 ? epsT : 0.01;
 		_Tnot = Tnot>0 ? Tnot : 0.01;
 		_tis = new ArrayList();
@@ -120,18 +123,34 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 	
 	
 	/**
-	 * no-op.
-	 * @param p HashMap unused 
+	 * set the <CODE>_pdclt</CODE> client if one exists in the parameters passed 
+	 * in. Notice that the method is synchronized and will wait while any other 
+	 * thread is running the <CODE>minimize()</CODE> method. In general, this 
+	 * method should only be called PRIOR to calling the <CODE>minimize()</CODE>
+	 * main method.
+	 * @param p HashMap may contain a key-value pair of the form 
+	 * &lt;"rnqtcnbinopt.pdclt", PDBTExecInitedClt clt&gt;
 	 */
-	public void setParams(HashMap p) {
-		// no-op.
+	public synchronized void setParams(HashMap p) {
+		while (_numRunning > 0) {
+			try {
+				wait();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+		if (p!=null && p.containsKey("rnqtcnbinopt.pdclt")) {
+			_pdclt = (PDBTExecInitedClt) p.get("rnqtcnbinopt.pdclt");
+		}
 	}
 	
 	
 	/**
 	 * main class method.
-	 * @param f
-	 * @return 
+	 * @param f FunctionIntf must be of type RnQTCnbin
+	 * @return PairObjDouble Pair&lt;double[] bestx, double bestcost&gt; where the
+	 * bestx array contains the values (r*,Q*,T*)
 	 * @throws OptimizerException 
 	 */
 	public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
@@ -241,7 +260,7 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 	/**
 	 * get the time-series from the latest run.
 	 * @return ArrayList[] first element is T-axis values, second is optimal 
-	 * costs, third is lower bound on costs
+	 * costs, third is lower bound on costs, fourth is heuristic costs
 	 */
 	public synchronized ArrayList[] getLatestTimeSeries() {
 		while (_numRunning>0) {
@@ -280,7 +299,7 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 		}
 		catch (Exception e) {
 			e.printStackTrace();  // ignore further
-			throw new Error("RnQTCnormOpt.terminateConnection() "+
+			throw new Error("RnQTCnbinOpt.terminateServerConnection() "+
 				              "failed?");
 		}
 	}
@@ -301,7 +320,7 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 	 * [pdbtserverhostport(7891)]
 	 * [epst(0.01)]
 	 * [tnot(0.01)]
-	 * [batchsize(8)]
+	 * [batchsize(24)]
 	 * </CODE>.
 	 * @param args String[] 
 	 */
@@ -322,7 +341,7 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 		if (args.length>9) epst = Double.parseDouble(args[9]);
 		double tnot = 0.01;
 		if (args.length>10) tnot = Double.parseDouble(args[10]);
-		int bsize = 8;
+		int bsize = 24;
 		if (args.length>11) bsize = Integer.parseInt(args[11]);
 		
 		// 2. create function

@@ -57,8 +57,11 @@ import org.jfree.data.xy.XYSeriesCollection;
  * object before it starts running itself.) This is because we now need to keep
  * track of the series of the T-values tried, and their corresponding costs so
  * we can visualize them in the main program execution.
- * <li>2020-04-25: added method seParams() (public) because it was moved up from
- * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * <li>2020-04-25: added method setParams() (public) because it was moved up 
+ * from the LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * <li>2021-04-10: modified <CODE>setParams()</CODE> method to allow for setting
+ * the pdclient object; needed when running parallel heuristic (s,S,T) 
+ * optimizers.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -101,7 +104,7 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 	 * sole public constructor.
 	 * @param server String; default localhost
 	 * @param port int; default 7891
-	 * @param batchSz int &gt;0; default 8
+	 * @param batchSz int &gt;0; default 24
 	 * @param epsT double &gt;0; default 0.01
 	 * @param epsQ double &gt;0; default 0.1
 	 * @param epsR double &gt;0; default 0.0001
@@ -112,7 +115,7 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 		else _pdsrv = server;
 		if (port>1024) _pdport = port;
 		else _pdport = 7891;
-		_batchSz = (batchSz>0) ? batchSz : 8;
+		_batchSz = (batchSz>0) ? batchSz : 24;
 		_epsT = epsT>0 ? epsT : 0.01;
 		_epsQ = epsQ>0 ? epsQ : 0.1;
 		_epsR = epsR>0 ? epsR : 1.e-4;
@@ -124,18 +127,34 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 
 	
 	/**
-	 * no-op.
-	 * @param p HashMap unused 
+	 * set the <CODE>_pdclt</CODE> client if one exists in the parameters passed 
+	 * in. Notice that the method is synchronized and will wait while any other 
+	 * thread is running the <CODE>minimize()</CODE> method. In general, this 
+	 * method should only be called PRIOR to calling the <CODE>minimize()</CODE>
+	 * main method.
+	 * @param p HashMap may contain a key-value pair of the form 
+	 * &lt;"rnqtcnormopt.pdclt", PDBTExecInitedClt clt&gt;
 	 */
-	public void setParams(HashMap p) {
-		// no-op.
+	public synchronized void setParams(HashMap p) {
+		while (_numRunning > 0) {
+			try {
+				wait();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+		if (p!=null && p.containsKey("rnqtcnormopt.pdclt")) {
+			_pdclt = (PDBTExecInitedClt) p.get("rnqtcnormopt.pdclt");
+		}
 	}
 
 	
 	/**
 	 * main class method.
-	 * @param f
-	 * @return 
+	 * @param f FunctionIntf must be of type RnQTCnorm
+	 * @return PairObjDouble Pair&lt;double[] bestx, double bestcost&gt; where the
+	 * bestx array contains the values (r*,Q*,T*)
 	 * @throws OptimizerException 
 	 */
 	public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {

@@ -19,6 +19,12 @@ import cern.jet.random.Poisson;
  * and T (the review interval).
  * The code below uses the formulae 5-20, 5-22...5-24, 5-27...5-5-29 and 5-33 
  * in the Hadley-Whittin (1963) textbook "Analysis of Inventory Systems".
+ * <p>Notes:
+ * <ul>
+ * <li>2021-04-07: fixed a bug in the computation of the holding and back-orders
+ * costs (missing parentheses in the computation of terms contributing to the
+ * inventory costs)
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2019</p>
@@ -28,10 +34,11 @@ import cern.jet.random.Poisson;
  */
 public class RnQTCpoisson implements FunctionIntf {
 	private double _Kr;
-	private double _Ko;
+	double _Ko;
 	double _L;
 	double _lambda;
 	double _h, _p, _p2;
+	
 	
 	/**
 	 * Function sole public constructor.
@@ -102,7 +109,8 @@ public class RnQTCpoisson implements FunctionIntf {
 		pois.setMean(_lambda*T);
 		double Po = _lambda*T*pois.cdf(Q-1)/Q + complpoisscdf(pois,Q+1,_lambda*T);
 		
-		double y = (_Kr+Ko*Po)/T + _h*(Q+1)/2.0 + s - _lambda*_L - _lambda*T/2.0;
+		// itc-20210407: sum of 4 terms multiplying _h below wasn't in parenthesis
+		double y = (_Kr+Ko*Po)/T + _h*((Q+1)/2.0 + s - _lambda*_L - _lambda*T/2.0);
 		y += (_h+_p)*bP(s,Q,T,_L,_lambda,pois) + _p2*eP(s,Q,T,_L,_lambda,pois);
 		return new Pair(new Double(y), new Double(y-Ko*Po/T));
 	}

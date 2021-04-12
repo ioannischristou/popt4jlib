@@ -1,4 +1,4 @@
-package tests.sic.sST.poisson;
+package tests.sic.sST.nbin;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -37,23 +37,16 @@ import org.jfree.data.xy.XYSeriesCollection;
  * class implements an optimizer over ALL three variables of the (s,S,T)
  * policy, namely the reorder point s, the order-up-to point S and the review 
  * period T.
- * The system being optimized faces Poisson distributed stochastic demands 
- * as described in the class <CODE>sSTCpoisson</CODE>. The solution found is 
+ * The system being optimized faces compound Poisson distributed stochastic 
+ * demands modeled using the Negative Binomial distribution 
+ * as described in the class <CODE>sSTCnbin</CODE>. The solution found is 
  * guaranteed to be the global optimum (subject to the step-size constraint for
  * the review period variable). The optimizer is a parallel/distributed
  * method, submitting tasks to optimize over the first two variables, for fixed 
  * review period T, where the review period T is increased from the Tmin(=0) 
- * value it can take on, up to a point where
- * the lower-bound on the cost function (namely the cost function with Ko=0)
- * strictly exceeds the best known cost.
- * <p>Notes:
- * <ul>
- * <li>2021-04-08: added visualization capabilities to the class, so that when
- * it runs, a graph of the optimal costs for different review period lengths is
- * plotted via JFreeChart, same as in the (r,nQ,T) optimization classes.
- * <li>2020-04-25: added method setParams() (public) because it was moved up 
- * from the LocalOptimizerIntf to the root OptimizerIntf interface class.
- * </ul>
+ * value it can take on, up to a point where the lower-bound on the cost 
+ * function (namely the cost function with Ko=0) strictly exceeds the best known 
+ * cost.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2021</p>
@@ -61,7 +54,7 @@ import org.jfree.data.xy.XYSeriesCollection;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public final class sSTCpoissonOpt implements OptimizerIntf {
+public final class sSTCnbinOpt implements OptimizerIntf {
 	/**
 	 * default address for PDBTExecSingleCltWrkInitSrv
 	 */
@@ -91,15 +84,15 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 	 * sole public constructor.
 	 * @param server String; default localhost
 	 * @param port int; default 7891
-	 * @param batchSz int &gt;0; default 24
+	 * @param batchSz int &gt;0; default 8
 	 * @param epsT double &gt;0; default 0.01
 	 */
-	public sSTCpoissonOpt(String server, int port, int batchSz, double epsT) {
+	public sSTCnbinOpt(String server, int port, int batchSz, double epsT) {
 		if (server==null || server.length()==0) _pdsrv = "localhost";
 		else _pdsrv = server;
 		if (port>1024) _pdport = port;
 		else _pdport = 7891;
-		_batchSz = (batchSz>0) ? batchSz : 24;
+		_batchSz = (batchSz>0) ? batchSz : 8;
 		_epsT = epsT>0 ? epsT : 0.01;
 		
 		_tis = new ArrayList();
@@ -119,28 +112,28 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 		
 	/**
 	 * main class method.
-	 * @param f FunctionIntf must be of type sSTCpoisson
+	 * @param f FunctionIntf must be of type sSTCnbin
 	 * @return PairObjDouble Pair&lt;double[] bestx, double bestcost&gt; where the
 	 * bestx array contains the values (s*,S*,T*)
 	 * @throws OptimizerException 
 	 */
 	public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
-		if (!(f instanceof sSTCpoisson))
-			throw new OptimizerException("sSTCpoissonOpt.minimize(f): f must be "+
-				                           "of type tests.sic.sST.sSTCpoisson");
+		if (!(f instanceof sSTCnbin))
+			throw new OptimizerException("sSTCnbinOpt.minimize(f): f must be "+
+				                           "of type tests.sic.sST.sSTCnbin");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
 			if (_pdclt==null) {
-				mger.msg("sSTCpoissonOpt.minimize(f): connecting on "+_pdsrv+
+				mger.msg("sSTCnbinOpt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);
 				_pdclt = new PDBTExecInitedClt(_pdsrv, _pdport);
 				try {
 					_pdclt.submitInitCmd(new PDBTExecInitNoOpCmd());
-					mger.msg("sSTCpoissonOpt.minimize(f): successfully sent init cmd", 2);
+					mger.msg("sSTCnbinOpt.minimize(f): successfully sent init cmd", 2);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
-					throw new OptimizerException("sSTCpoissonOpt.mainimize(f): clt "+
+					throw new OptimizerException("sSTCnbinOpt.mainimize(f): clt "+
 						                           "failed to submit empty init-cmd to "+
 						                           "network");
 				}
@@ -150,7 +143,7 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 			_lbtis.clear();
 			++_numRunning;
 		}
-		sSTCpoisson sSTC = (sSTCpoisson) f;
+		sSTCnbin sSTC = (sSTCnbin) f;
 		
 		double Tmin = 0;
 		double c_cur_best = Double.POSITIVE_INFINITY;
@@ -169,37 +162,37 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 			double Tstart = T;
 			for (int i=0; i<_batchSz; i++) {
 				T += _epsT;
-				batch[i] = new sSTCpoissonFixedTOptTask(sSTC,T,c_cur_best);
+				batch[i] = new sSTCnbinFixedTOptTask(sSTC,T,c_cur_best);
 			}
 			try {
-				mger.msg("sSTCpoissonOpt.minimize(): submit a batch of "+_batchSz+
+				mger.msg("sSTCnbinOpt.minimize(): submit a batch of "+_batchSz+
 					       " tasks to network for period length from "+Tstart+" up to "+T, 
 					       2);
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
-					sSTCpoissonFixedTOpterResult ri = 
-						(sSTCpoissonFixedTOpterResult) res[i];
+					sSTCnbinFixedTOpterResult ri = 
+						(sSTCnbinFixedTOpterResult) res[i];
 					_tis.add(new Double(ri._T));  // add to tis time-series
 					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
 					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
 					if (Double.compare(ri._LB, c_cur_best)>0) {  // done!
-						mger.msg("sSTCpoissonOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
+						mger.msg("sSTCnbinOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
 							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 2);
 						done = true;
 					}
-					if (Double.compare(ri._C, c_cur_best)<0) {
+					if (ri._C < c_cur_best) {
 						s_star = ri._s;
 						S_star = ri._S;
 						t_star = ri._T;
 						c_cur_best = ri._C;
-						mger.msg("sSTCpoissonOpt.minimize(f): found new better soln at T="+
+						mger.msg("sSTCnbinOpt.minimize(f): found new better soln at T="+
 							       t_star+", c="+c_cur_best+" LB@T="+ri._LB, 1);
 					}
 				}
 			}
 			catch (Exception e) {
 				e.printStackTrace();
-				throw new OptimizerException("sSTCpoissonOpt.minimize(): failed to "+
+				throw new OptimizerException("sSTCnbinOpt.minimize(): failed to "+
 					                           "submit tasks/process/get back results");
 			}
 		}
@@ -255,7 +248,7 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 		}
 		catch (Exception e) {
 			e.printStackTrace();  // ignore further
-			throw new Error("sSTCpoissonOpt.terminateServerConnection() "+
+			throw new Error("sSTCnbinOpt.terminateServerConnection() "+
 				              "failed?");
 		}
 	}
@@ -264,14 +257,14 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 	/**
 	 * invoke as 
 	 * <CODE>
-	 * java -cp &lt;classpath&gt; tests.sic.sST.poisson.sSTCpoissonOpt 
+	 * java -cp &lt;classpath&gt; tests.sic.sST.nbin.sSTCnbinOpt 
 	 * &lt;Kr&gt; 
 	 * &lt;Ko&gt;
 	 * &lt;L&gt;
 	 * &lt;&lambda;&gt;
+	 * &lt;p<sub>l</sub>&gt;
 	 * &lt;h&gt;
 	 * &lt;p&gt;
-	 * [p2(0)]
 	 * [pdbtserverhostname(localhost)]
 	 * [pdbtserverhostport(7891)]
 	 * [epst(0.01)]
@@ -285,10 +278,9 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 		double Ko = Double.parseDouble(args[1]);
 		double L = Double.parseDouble(args[2]);
 		double lambda = Double.parseDouble(args[3]);
-		double h = Double.parseDouble(args[4]);
-		double p = Double.parseDouble(args[5]);
-		double p2 = 0;
-		if (args.length>6) p2 = Double.parseDouble(args[6]);
+		double p_l = Double.parseDouble(args[4]);
+		double h = Double.parseDouble(args[5]);
+		double p = Double.parseDouble(args[6]);
 		String host = "localhost";
 		if (args.length>7) host = args[7];
 		int port = 7891;
@@ -299,11 +291,11 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 		if (args.length>10) bsize = Integer.parseInt(args[10]);
 		
 		// 2. create function
-		sSTCpoisson f = new sSTCpoisson(Kr,Ko,L,lambda,h,p,p2);
+		sSTCnbin f = new sSTCnbin(Kr,Ko,L,lambda,p_l,h,p);
 
 		long start = System.currentTimeMillis();
 		// 3. optimize function
-		sSTCpoissonOpt ropter = new sSTCpoissonOpt(host, port, bsize, epst);
+		sSTCnbinOpt ropter = new sSTCnbinOpt(host, port, bsize, epst);
 		try {
 			PairObjDouble result = ropter.minimize(f);
 			long dur = System.currentTimeMillis()-start;
@@ -361,7 +353,7 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 			NumberFormat df = NumberFormat.getInstance(Locale.US);
 			df.setGroupingUsed(false);
 			df.setMaximumFractionDigits(2);
-			plot_frame.setTitle("(s,S,T) Policy with Poisson Demand Plot");
+			plot_frame.setTitle("(s,S,T) Policy with NBin Demand Plot");
 			plot_frame.add(_GraphPanel);
 			plot_frame.setLocationRelativeTo(null);
 			plot_frame.pack();
@@ -378,36 +370,36 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 
 /**
  * auxiliary class encapsulating the notion of optimizing an 
- * <CODE>sSTCpoisson</CODE> function, with a fixed review period T. NOT part of 
+ * <CODE>sSTCnbin</CODE> function, with a fixed review period T. NOT part of 
  * the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2019</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-final class sSTCpoissonFixedTOptTask implements TaskObject {
-	private sSTCpoisson _f;
+final class sSTCnbinFixedTOptTask implements TaskObject {
+	private sSTCnbin _f;
 	private double _T;
 	private double _curBest;
 	
-	public sSTCpoissonFixedTOptTask(sSTCpoisson f, double T, double curBest) {
+	public sSTCnbinFixedTOptTask(sSTCnbin f, double T, double curBest) {
 		_f = f;
 		_T = T;
 		_curBest = curBest;
 	}
 	
 	public Serializable run() {
-		sSTCpoissonFixedTOpt opter = 
-			new sSTCpoissonFixedTOpt(_T);
-		sSTCpoissonFixedTOpterResult res = null;
+		sSTCnbinFixedTOpt opter = 
+			new sSTCnbinFixedTOpt(_T);
+		sSTCnbinFixedTOpterResult res = null;
 		try {
 			PairObjTwoDouble p = opter.minimize(_f);
 			double[] x = (double[]) p.getArg();
-			res = new sSTCpoissonFixedTOpterResult(_T, x[0], x[1], 
-				                                     p.getDouble(), 
-				                                     p.getSecondDouble());
+			res = new sSTCnbinFixedTOpterResult(_T, x[0], x[1], 
+				                                  p.getDouble(), 
+				                                  p.getSecondDouble());
 			return res;
 		}
 		catch (Exception e) {
@@ -442,19 +434,19 @@ final class sSTCpoissonFixedTOptTask implements TaskObject {
  * double values.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2019</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-final class sSTCpoissonFixedTOpterResult implements Serializable {
+final class sSTCnbinFixedTOpterResult implements Serializable {
 	public final double _T;
 	public final double _s;
 	public final double _S;
 	public final double _C;
 	public final double _LB;
 	
-	public sSTCpoissonFixedTOpterResult(double T, double s, double S, 
+	public sSTCnbinFixedTOpterResult(double T, double s, double S, 
 		                                  double c, double lb) {
 		_T = T;
 		_s = s;

@@ -20,7 +20,7 @@ import utils.Pair;
  * there is a constant lead-time for each order being placed equal to L&ge;0.
  * The control parameters then, are r (the reorder point), Q (the batch size),
  * and T (the review interval).
- * The code below uses the formulae 5-20, 5-22...5-24, 5-27...5-5-29 and 5-33 
+ * The code below uses the formulae 5-20, the equation right above 5-25 and 5-33 
  * in the Hadley-Whittin (1963) textbook "Analysis of Inventory Systems".
  * Numerical integration is performed for backorders costs estimation, as there 
  * are no closed form formulae easily available. The analysis package of the
@@ -224,6 +224,24 @@ public class RnQTCnbin implements FunctionIntf {
 	public static double nbincdfcompl(int k, double lambda, double pl) {
 		return 1.0 - nbincdf(k-1, lambda, pl);
 	}
+
+	
+	/**
+	 * computes the n-fold convolution of the Negative Binomial distribution with
+	 * parameters lambda, pl, at point k.
+	 * @param k int must be &ge; 0
+	 * @param lambda double must be &gt; 0
+	 * @param pl double must be &gt; 0
+	 * @param n int must be &ge; 0, n=1 is the pmf itself, n=0 is special case
+	 * returns 1 for k=0, zero otherwise
+	 * @return double
+	 */
+	public static double nbinnfoldconv(int k, double lambda, double pl, int n) {
+		if (n==0) {
+			return k==0 ? 1 : 0;
+		}
+		return nbinpdf(k, n*lambda, pl);
+	}
 	
 	
 	/**
@@ -266,7 +284,35 @@ public class RnQTCnbin implements FunctionIntf {
 	}
 	
 	
-	static double iP(double T, double L, FunctionIntf iiP) {
+	/**
+	 * computes the average long-run expected unit years of shortage incurred from
+	 * t+L to t+L+T of a single-echelon system facing demands that follow the 
+	 * Negative Binomial (ie compound Poisson) distribution with arrival rate 
+	 * lambda and process parameter of the Logarithmic distribution p, with an 
+	 * (s,S,T) periodic-review policy, taking into account fixed costs (review and 
+	 * ordering costs).
+	 * @param rpj int the IP immediately after a review
+	 * @param T double review period length
+	 * @param lambda double arrival rate
+	 * @param p_l double second parameter of Nbin distribution
+	 * @param L double lead-time
+	 * @return double
+	 */	
+	public static double b(int rpj, double T, 
+		                     double lambda, double p_l, 
+												 double L) {
+		return iP(T, L, new IIP(lambda, p_l, rpj));
+	}
+	
+	
+	/**
+	 * numerically integrates the function iiP from L to L+T.
+	 * @param T double
+	 * @param L double
+	 * @param iiP FunctionIntf
+	 * @return double
+	 */
+	public static double iP(double T, double L, FunctionIntf iiP) {
 		double len = T / _NUM_INTVLS;
 		double z = 0;
 		double left = L;

@@ -22,8 +22,8 @@ import utils.PairObjDouble;
  * </ul>
  * <p>Notes:
  * <ul>
- * <li>2020-04-25: added method seParams() (public) because it was moved up from
- * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * <li>2020-04-25: added method setParams() (public) because it was moved up
+ * from LocalOptimizerIntf to the root OptimizerIntf interface class.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>

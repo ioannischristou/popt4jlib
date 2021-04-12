@@ -9,7 +9,11 @@ import utils.Messenger;
  * Activation Unit. The class knows how to differentiate itself when gradient 
  * information is required via the <CODE>evalPartialDerivativeB()</CODE> method 
  * that essentially implements automatic differentiation for FeedForward Neural 
- * Networks. Can be used only as hidden layer node.
+ * Networks. Can be used as hidden layer node as well as output node.
+ * <p>Notes:
+ * <ul>
+ * <li> 20210411: added the ability for ReLU to act as output layer node as well
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2020</p>
@@ -17,7 +21,7 @@ import utils.Messenger;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class ReLU extends BaseNNNode implements NNNodeIntf {
+public class ReLU extends BaseNNNode implements OutputNNNodeIntf {
 	
 	private final static Messenger _mger = Messenger.getInstance();
 	
@@ -73,6 +77,21 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 		for (int i=0; i<inputSignals.length; i++)
 			prod += inputSignals[i]*weights[offset+i];
 		return Math.max(prod, 0.0);
+	}
+	
+	
+	/**
+	 * called when the node is used as output node, simply calls
+	 * <CODE>eval(inputSignals,weights,offset)</CODE>.
+	 * @param inputSignals double[]
+	 * @param weights double[]
+	 * @param offset int
+	 * @param true_label double unused
+	 * @return double
+	 */
+	public double eval(double[] inputSignals, double[] weights, int offset, 
+		                 double true_label) {
+		return eval(inputSignals, weights, offset);
 	}
 
 	
@@ -132,7 +151,22 @@ public class ReLU extends BaseNNNode implements NNNodeIntf {
 		return result;
 	}
 	
-			
+	
+	/**
+	 * called when the node is used as output node, simply calls
+	 * <CODE>evalB(inputSignals,weights,offset)</CODE>.
+	 * @param inputSignals double[]
+	 * @param weights double[]
+	 * @param offset int
+	 * @param true_label double unused
+	 * @return double
+	 */
+	public double evalB(double[] inputSignals, double[] weights, int offset,
+		                  double true_label) {
+		return evalB(inputSignals, weights, offset);
+	}
+
+				
 	/**
 	 * get this node's name.
 	 * @return String "ReLU"

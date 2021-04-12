@@ -261,7 +261,7 @@ public final class sSTCnormOpt implements OptimizerIntf {
 		}
 		catch (Exception e) {
 			e.printStackTrace();  // ignore further
-			throw new Error("sSTCnormOpt.terminateConnection() "+
+			throw new Error("sSTCnormOpt.terminateServerConnection() "+
 				              "failed?");
 		}
 	}

@@ -10,7 +10,7 @@ import java.util.HashMap;
  * the label that corresponds to the output of the network (in categorical 
  * classification), the output is simply rounded to the nearest integer (for 
  * example an output of 4.32 becomes rounded to 4.0; if the true label is 4, the
- * error is 0.32, else it's always (in absolute value) greater than 1/2.
+ * error is 0.32, else it's always (in absolute value) greater than 1/2.)
  * Since we are always solving a minimization problem, we actually return 
  * 100 - accuracy.
  * <p>Title: popt4jlib</p>
