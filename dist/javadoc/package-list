@@ -30,6 +30,7 @@ tests.sic.rnqt.nbin
 tests.sic.rnqt.norm
 tests.sic.rnqt.poisson
 tests.sic.sST.det
+tests.sic.sST.nbin
 tests.sic.sST.norm
 tests.sic.sST.poisson
 utils
