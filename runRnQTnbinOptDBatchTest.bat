@@ -1,5 +1,5 @@
 echo off
-REM runRnQTnbinOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <p_l> <h> <p> <serverport>(7891) <numworkerthreads>(8) [epst(0.01)] [tnot(0.01)] [bsize(8)]
+REM runRnQTnbinOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <p_l> <h> <p> <serverport>(7891) <numworkerthreads>(8) [epst(0.01)] [tnot(0.01)] [bsize(24)] [dbglvl(0)]
 REM T530 WLAN IP (home):
 REM Compaq cq 58 IP (home): 
 REM T530 IP (work): 10.100.209.143
@@ -17,7 +17,7 @@ call start PDBTExecInitedWrk.bat %9 localhost 7890 1
 echo Verify all workers are started before you press any key...
 pause
 echo on
-REM java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.rnqt.nbin.RnQTCnbinOpt <Kr> <Ko> <L> <lambda> <p_l> <h> <p> [pdsrvhost(localhost)] [pdsrvport(7891)][epst(0.01)] [tnot(0.01)] [bsize(8)]
+REM java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.rnqt.nbin.RnQTCnbinOpt <Kr> <Ko> <L> <lambda> <p_l> <h> <p> [pdsrvhost(localhost)] [pdsrvport(7891)][epst(0.01)] [tnot(0.01)] [bsize(24)] [dbglvl(0)]
 @echo off
 for /f "tokens=1-9*" %%a in ("%*") do (
     set p1=%%a
@@ -32,5 +32,5 @@ for /f "tokens=1-9*" %%a in ("%*") do (
     set prest=%%j
 )
 @echo on
-REM java -Xmx2000m -cp .\dist\popt4jlib.jar tests.sic.rnqt.nbin.RnQTCnbinOpt %1 %2 %3 %4 %5 %6 %7 localhost %8 %10 %11
-java -Xmx2000m -cp .\dist\popt4jlib.jar tests.sic.rnqt.nbin.RnQTCnbinOpt %p1% %p2% %p3% %p4% %p5% %p6% %p7% localhost %p8% %prest%
+REM java -Xmx2000m -cp .\dist\popt4jlib.jar tests.sic.rnqt.nbin.RnQTCnbinOpt %1 %2 %3 %4 %5 %6 %7 localhost %8 %10 %11 %12 %13
+java -Xmx4000m -cp .\dist\popt4jlib.jar tests.sic.rnqt.nbin.RnQTCnbinOpt %p1% %p2% %p3% %p4% %p5% %p6% %p7% localhost %p8% %prest%

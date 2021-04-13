@@ -1,5 +1,5 @@
 echo off
-REM runsSTnbinOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <p_l> <h> <p> <serverport>(7891) <numworkerthreads>(8) [epst(0.01)] [bsize(24)]
+REM runsSTnbinOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <p_l> <h> <p> <serverport>(7891) <numworkerthreads>(8) [epst(0.01)] [bsize(24)] [dbglvl(0)]
 REM T530 WLAN IP (home):
 REM Compaq cq 58 IP (home): 
 REM T530 IP (work): 10.100.209.143
@@ -17,7 +17,7 @@ call start PDBTExecInitedWrk.bat %9 localhost 7890 1
 echo Verify all workers are started before you press any key...
 pause
 echo on
-REM java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.sST.nbin.sSTCnbinOpt <Kr> <Ko> <L> <lambda> <p_l> <h> <p> [pdsrvhost(localhost)] [pdsrvport(7891)] [epst(0.01)] [bsize(24)]
+REM java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.sST.nbin.sSTCnbinOpt <Kr> <Ko> <L> <lambda> <p_l> <h> <p> [pdsrvhost(localhost)] [pdsrvport(7891)] [epst(0.01)] [bsize(24)] [dbglvl(0)]
 @echo off
 for /f "tokens=1-9*" %%a in ("%*") do (
     set p1=%%a

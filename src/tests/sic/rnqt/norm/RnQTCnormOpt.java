@@ -87,7 +87,7 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 	private final double _epsR;
 	
 	/**
-	 * by default, 8 tasks to be submitted each time to be processed in parallel
+	 * by default, 24 tasks to be submitted each time to be processed in parallel
 	 */
 	private final int _batchSz;
 
@@ -326,11 +326,13 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 	 * [minq(0)]
 	 * [epst(0.01)]
 	 * [epss(1.e-4)]
-	 * [batchsize(8)]
+	 * [batchsize(24)]
+	 * [dbglvl(0)]
 	 * </CODE>.
 	 * @param args String[] 
 	 */
 	public static void main(String[] args) {
+		final Messenger mger = Messenger.getInstance();
 		// 1. parse inputs
 		double Kr = Double.parseDouble(args[0]);
 		double Ko = Double.parseDouble(args[1]);
@@ -351,8 +353,11 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 		if (args.length>11) epst = Double.parseDouble(args[11]);
 		double epss = 1.e-4;
 		if (args.length>12) epss = Double.parseDouble(args[12]);
-		int bsize = 8;
+		int bsize = 24;
 		if (args.length>13) bsize = Integer.parseInt(args[13]);
+		int dbglvl = 0;
+		if (args.length>14) dbglvl = Integer.parseInt(args[14]);
+		mger.setDebugLevel(dbglvl);
 		
 		// 2. create function
 		RnQTCnorm f = new RnQTCnorm(Kr,Ko,L,mi,sigma,h,p);

@@ -76,7 +76,7 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 	private final double _epsT;
 
 	/**
-	 * by default, 8 tasks to be submitted each time to be processed in parallel
+	 * by default, 24 tasks to be submitted each time to be processed in parallel
 	 */
 	private final int _batchSz;
 	
@@ -173,8 +173,9 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 			}
 			try {
 				mger.msg("sSTCpoissonOpt.minimize(): submit a batch of "+_batchSz+
-					       " tasks to network for period length from "+Tstart+" up to "+T, 
-					       2);
+					       " tasks to network for period length from "+(Tstart+_epsT)+
+					       " up to "+T, 
+					       1);
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
 					sSTCpoissonFixedTOpterResult ri = 
@@ -184,7 +185,7 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
 					if (Double.compare(ri._LB, c_cur_best)>0) {  // done!
 						mger.msg("sSTCpoissonOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
-							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 2);
+							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
 						done = true;
 					}
 					if (Double.compare(ri._C, c_cur_best)<0) {
@@ -276,10 +277,13 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 	 * [pdbtserverhostport(7891)]
 	 * [epst(0.01)]
 	 * [batchsize(24)]
+	 * [dbglvl(0)]
 	 * </CODE>.
 	 * @param args String[] 
 	 */
 	public static void main(String[] args) {
+		final Messenger mger = Messenger.getInstance();
+		
 		// 1. parse inputs
 		double Kr = Double.parseDouble(args[0]);
 		double Ko = Double.parseDouble(args[1]);
@@ -297,6 +301,9 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 		if (args.length>9) epst = Double.parseDouble(args[9]);
 		int bsize = 24;
 		if (args.length>10) bsize = Integer.parseInt(args[10]);
+		int dbglvl = 0;
+		if (args.length>11) dbglvl = Integer.parseInt(args[11]);
+		mger.setDebugLevel(dbglvl);
 		
 		// 2. create function
 		sSTCpoisson f = new sSTCpoisson(Kr,Ko,L,lambda,h,p,p2);

@@ -34,6 +34,9 @@ import org.jfree.data.xy.XYSeriesCollection;
  * r*,Q*, and T* -which is usually done much faster- and then computing the 
  * optimal (s(t),S(t)) parameters for t close to T* and picking the best set of
  * parameters.
+ * In fact, we also compute the (R,nQ,T) optimal policy for a system with review
+ * cost equal to Kr and zero ordering cost and for the resulting review period 
+ * T' we compute similarly the optimal s(T') and S(T').
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2021</p>
@@ -42,6 +45,13 @@ import org.jfree.data.xy.XYSeriesCollection;
  * @version 1.0
  */
 public final class sSTCnbinHeurOpt implements OptimizerIntf {
+	
+	/**
+	 * compile-time constant that is used to speed up the search for the optimal
+	 * (R,nQ,T) policy parameters.
+	 */
+	private final static double _EPST_MULT = 3.0;
+	
 	/**
 	 * default address for PDBTExecSingleCltWrkInitSrv
 	 */
@@ -146,13 +156,15 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 		double S_star = Double.NaN;
 		double t_star = Double.NaN;
 		
-		mger.msg("sSTCnbinHeurOpt.minimize(): running "+
+		mger.msg("sSTCnbinHeurOpt.minimize(f): running "+
 			       "(r,nQ,T) policy optimization", 1);
-		// first, compute the optimal T* for the (r,nQ,T) policy
+		
+		// 1. compute the optimal T* for the (r,nQ,T) policy
 		final double t_rnqt = getOptimalRnQTReview(sSTC);
-		mger.msg("sSTCnbinHeurOpt.minimize(): "+
+		mger.msg("sSTCnbinHeurOpt.minimize(f): "+
 			       "(r,nQ,T) policy optimization returns T*="+t_rnqt, 1);
 		
+		// 2. do a search around T* for the best (s,S,T) parameters
 		double T = Tmin >= t_rnqt-_deltaT ? Tmin : t_rnqt-_deltaT;
 		
 		final double Tmax = t_rnqt + _deltaT;
@@ -170,9 +182,10 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 				batch[i] = new sSTCnbinFixedTOptTask(sSTC,T,c_cur_best);
 			}
 			try {
-				mger.msg("sSTCnbinHeurOpt.minimize(): submit a batch of "+batchSz+
-					       " tasks to network for period length from "+Tstart+" up to "+T, 
-					       2);
+				mger.msg("sSTCnbinHeurOpt.minimize(f): submit a batch of "+batchSz+
+					       " tasks to network for period length from "+(Tstart+_epsT)+
+					       " up to "+T, 
+					       1);
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
 					sSTCnbinFixedTOpterResult ri = 
@@ -180,10 +193,10 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 					_tis.add(new Double(ri._T));  // add to tis time-series
 					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
 					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
-					if (ri._LB > c_cur_best) {  // done!
+					if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
 						mger.msg("sSTCnbinHeurOpt.minimize(f): for T="+ri._T+
 							       " LB@T="+ri._LB+
-							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 2);
+							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
 						done = true;
 					}
 					if (ri._C < c_cur_best) {
@@ -201,7 +214,77 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 				throw new OptimizerException("sSTCnbinHeurOpt.minimize(): failed to"+
 					                           " submit tasks/process/get back results");
 			}
+		}  // while
+		
+		// 3. find the optimal T for a system with review cost Kr and 0 order cost!
+		sSTCnbin sSTC2 = new sSTCnbin(sSTC._Kr, 0, sSTC._L, 
+			                            sSTC._lambda, sSTC._p_l, sSTC._h, sSTC._p);
+		final double t_rnqt2 = getOptimalRnQTReview(sSTC2);
+		mger.msg("sSTCnbinHeurOpt.minimize(Kr,0): "+
+			       "(r,nQ,T) policy optimization returns T*="+t_rnqt2, 1);
+		
+		// 4. do a search around T' for the best (s,S,T) parameters, making sure
+		//    we don't cover T's that have been covered already
+		T = Tmin >= t_rnqt2-_deltaT ? Tmin : t_rnqt2-_deltaT;
+		if (T<=Tmax && T>=Math.max(Tmin,t_rnqt-_deltaT)) {
+			// new left-end of search area is within the already searched area
+			T = Tmax;
 		}
+		double Tmax2 = t_rnqt2 + _deltaT;
+		if (Tmax2 <= Tmax && Tmax2>=Math.max(Tmin,t_rnqt-_deltaT)) {
+			// Tmax2 falls within already searched area
+			Tmax2 = Math.max(Tmin, t_rnqt-_deltaT);
+		}
+		mger.msg("sSTCnbinHeurOpt.minimize(f): last search area is "+
+			       "["+T+","+Tmax2+"]", 1);
+
+		done = false;
+		
+		while (T<Tmax2 && !done) {
+			// 1. prepare batch
+			final int bsz = (int) Math.ceil((Tmax2-T)/_epsT);
+			final int batchSz = bsz < _batchSz ? bsz : _batchSz;
+			TaskObject[] batch = new TaskObject[batchSz];
+			double Tstart = T;
+			for (int i=0; i<batchSz; i++) {
+				T += _epsT;
+				batch[i] = new sSTCnbinFixedTOptTask(sSTC,T,c_cur_best);
+			}
+			try {
+				mger.msg("sSTCnbinHeurOpt.minimize(f): submit a batch of "+batchSz+
+					       " tasks to network for period length from "+(Tstart+_epsT)+
+					       " up to "+T, 
+					       1);
+				Object[] res = _pdclt.submitWorkFromSameHost(batch);
+				for (int i=0; i<res.length; i++) {
+					sSTCnbinFixedTOpterResult ri = 
+						(sSTCnbinFixedTOpterResult) res[i];
+					_tis.add(new Double(ri._T));  // add to tis time-series
+					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+					if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
+						mger.msg("sSTCnbinHeurOpt.minimize(f): for T="+ri._T+
+							       " LB@T="+ri._LB+
+							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
+						done = true;
+					}
+					if (ri._C < c_cur_best) {
+						s_star = ri._s;
+						S_star = ri._S;
+						t_star = ri._T;
+						c_cur_best = ri._C;
+						mger.msg("sSTCnbinHeurOpt.minimize(f): found new better soln at"+
+							       " T="+t_star+", c="+c_cur_best+" LB@T="+ri._LB, 1);
+					}
+				}
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				throw new OptimizerException("sSTCnbinHeurOpt.minimize(): failed to"+
+					                           " submit tasks/process/get back results");
+			}
+		}  // while
+				
 		synchronized(this) {
 			if (--_numRunning==0) {
 				notify();  // let another thread know that it can proceed with 
@@ -263,6 +346,9 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 	/**
 	 * find the optimal (r,nQ,T) policy for a system operating with the parameters
 	 * contained in the given function, and return the optimal review period T*.
+	 * Notice that in order to speed up the (R,nQ,T) optimization process, we 
+	 * multiply the _epsT used in the (s,S,T) outer T-search by the factor 
+	 * <CODE>_EPST_MULT</CODE>.
 	 * @param f sSTCnbin
 	 * @return double optimal review period for the (r,nQ,T) policy
 	 * @throws OptimizerException
@@ -273,8 +359,9 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 		                                     f._h, f._p);
 		final double tnot = 0.0;  // this will cause the default tnot value 
 		                          // to be used (currently at 0.01)
+		final double epsT_rnqt = _EPST_MULT*_epsT;  // use 
 		RnQTCnbinOpt opter = new RnQTCnbinOpt(_pdsrv, _pdport, _batchSz, 
-			                                    _epsT, tnot);
+			                                    epsT_rnqt, tnot);
 		// first set the _pdclt
 		HashMap p = new HashMap();
 		p.put("rnqtcnbinopt.pdclt", _pdclt);

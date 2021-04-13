@@ -69,7 +69,7 @@ public final class sSTCnbinOpt implements OptimizerIntf {
 	private final double _epsT;
 
 	/**
-	 * by default, 8 tasks to be submitted each time to be processed in parallel
+	 * by default, 24 tasks to be submitted each time to be processed in parallel
 	 */
 	private final int _batchSz;
 	
@@ -84,7 +84,7 @@ public final class sSTCnbinOpt implements OptimizerIntf {
 	 * sole public constructor.
 	 * @param server String; default localhost
 	 * @param port int; default 7891
-	 * @param batchSz int &gt;0; default 8
+	 * @param batchSz int &gt;0; default 24
 	 * @param epsT double &gt;0; default 0.01
 	 */
 	public sSTCnbinOpt(String server, int port, int batchSz, double epsT) {
@@ -92,7 +92,7 @@ public final class sSTCnbinOpt implements OptimizerIntf {
 		else _pdsrv = server;
 		if (port>1024) _pdport = port;
 		else _pdport = 7891;
-		_batchSz = (batchSz>0) ? batchSz : 8;
+		_batchSz = (batchSz>0) ? batchSz : 24;
 		_epsT = epsT>0 ? epsT : 0.01;
 		
 		_tis = new ArrayList();
@@ -121,7 +121,7 @@ public final class sSTCnbinOpt implements OptimizerIntf {
 		if (!(f instanceof sSTCnbin))
 			throw new OptimizerException("sSTCnbinOpt.minimize(f): f must be "+
 				                           "of type tests.sic.sST.sSTCnbin");
-		Messenger mger = Messenger.getInstance();
+		final Messenger mger = Messenger.getInstance();
 		synchronized (this) {
 			if (_pdclt==null) {
 				mger.msg("sSTCnbinOpt.minimize(f): connecting on "+_pdsrv+
@@ -166,8 +166,9 @@ public final class sSTCnbinOpt implements OptimizerIntf {
 			}
 			try {
 				mger.msg("sSTCnbinOpt.minimize(): submit a batch of "+_batchSz+
-					       " tasks to network for period length from "+Tstart+" up to "+T, 
-					       2);
+					       " tasks to network for period length from "+(Tstart+_epsT)+
+					       " up to "+T, 
+					       1);
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
 					sSTCnbinFixedTOpterResult ri = 
@@ -177,7 +178,7 @@ public final class sSTCnbinOpt implements OptimizerIntf {
 					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
 					if (Double.compare(ri._LB, c_cur_best)>0) {  // done!
 						mger.msg("sSTCnbinOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
-							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 2);
+							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
 						done = true;
 					}
 					if (ri._C < c_cur_best) {
@@ -269,10 +270,12 @@ public final class sSTCnbinOpt implements OptimizerIntf {
 	 * [pdbtserverhostport(7891)]
 	 * [epst(0.01)]
 	 * [batchsize(24)]
+	 * [dbglvl(0)]
 	 * </CODE>.
 	 * @param args String[] 
 	 */
 	public static void main(String[] args) {
+		final Messenger mger = Messenger.getInstance();
 		// 1. parse inputs
 		double Kr = Double.parseDouble(args[0]);
 		double Ko = Double.parseDouble(args[1]);
@@ -289,6 +292,9 @@ public final class sSTCnbinOpt implements OptimizerIntf {
 		if (args.length>9) epst = Double.parseDouble(args[9]);
 		int bsize = 24;
 		if (args.length>10) bsize = Integer.parseInt(args[10]);
+		int dbglvl = 0;
+		if (args.length>11) dbglvl = Integer.parseInt(args[11]);
+		mger.setDebugLevel(dbglvl);
 		
 		// 2. create function
 		sSTCnbin f = new sSTCnbin(Kr,Ko,L,lambda,p_l,h,p);

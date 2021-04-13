@@ -178,8 +178,9 @@ public final class sSTCnormHeurOpt implements OptimizerIntf {
 			}
 			try {
 				mger.msg("sSTCnormHeurOpt.minimize(): submit a batch of "+batchSz+
-					       " tasks to network for period length from "+Tstart+" up to "+T, 
-					       2);
+					       " tasks to network for period length from "+(Tstart+_epsT)+
+					       " up to "+T, 
+					       1);
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
 					sSTCnormFixedTOpterResult ri = 
@@ -187,10 +188,10 @@ public final class sSTCnormHeurOpt implements OptimizerIntf {
 					_tis.add(new Double(ri._T));  // add to tis time-series
 					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
 					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
-					if (ri._LB > c_cur_best) {  // done!
+					if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
 						mger.msg("sSTCnormHeurOpt.minimize(f): for T="+ri._T+
 							       " LB@T="+ri._LB+
-							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 2);
+							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
 						done = true;
 					}
 					if (ri._C < c_cur_best) {

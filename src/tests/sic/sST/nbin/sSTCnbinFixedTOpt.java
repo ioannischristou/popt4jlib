@@ -5,6 +5,7 @@ import popt4jlib.OptimizerIntf;
 import popt4jlib.FunctionIntf;
 import popt4jlib.OptimizerException;
 import popt4jlib.GradientDescent.OneDStepQuantumOptimizer;
+import utils.Messenger;
 import utils.Pair;
 import utils.PairObjDouble;
 import utils.PairObjTwoDouble;
@@ -61,6 +62,7 @@ public class sSTCnbinFixedTOpt implements OptimizerIntf {
 		if (!(func instanceof sSTCnbin))
 			throw new OptimizerException("sSTCnbinFixedTOpt.minimize(function): "+
 				                           "function passed in must be sSTCpoisson");
+		Messenger mger = Messenger.getInstance();
 		sSTCnbin f = (sSTCnbin) func;
 		final double L = f._L;
 		final double lambda = f._lambda;
@@ -145,6 +147,9 @@ public class sSTCnbinFixedTOpt implements OptimizerIntf {
 		lbopt = ((Double)pr.getSecond()).doubleValue();
 		
 		PairObjTwoDouble pod = new PairObjTwoDouble(x_best, copt, lbopt);
+		mger.msg("sSTCnbinFixedTOpt.minimize(f): for T="+_T+
+			       ": s*="+x_best[0]+" S*="+x_best[1]+" C*(T)="+copt+
+			       " LB(T)="+lbopt, 1);
 		return pod;
 	}
 
@@ -158,7 +163,7 @@ public class sSTCnbinFixedTOpt implements OptimizerIntf {
 		if (c < c2) {
 			while (true) {
 				c2 = G(--y, T, L, lambda, p_l, h, p);
-				if (Double.compare(c2,c)>=0) return y+1;
+				if (c2 >= c) return y+1;
 				else c = c2;
 			}
 		}

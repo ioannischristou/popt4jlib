@@ -156,7 +156,8 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 	public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
 		if (!(f instanceof RnQTCnbin))
 			throw new OptimizerException("RnQTCnbinOpt.minimize(f): f must be "+
-				                           "function of type tests.sic.RnQTCnbin");
+				                           "function of type "+
+				                           "tests.sic.rnqt.nbin.RnQTCnbin");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
 			while (_numRunning > 0) {
@@ -210,8 +211,9 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 			}
 			try {
 				mger.msg("RnQTCnbinOpt.minimize(): submit a batch of "+_batchSz+
-					       " tasks to network for period length from "+Tstart+" up to "+T, 
-					       2);
+					       " tasks to network for period length from "+(Tstart+_epsT)+
+					       " up to "+T, 
+					       1);
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
 					RnQTCnbinFixedTOpterResult ri = (RnQTCnbinFixedTOpterResult) res[i];
@@ -225,12 +227,12 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 					//	rnqtc.getKo()*Math.min(1.0, 
 					//		                     rnqtc.getMeanDemand()*ri._T / ri._Q)/ri._T;
 					_heurtis.add(new Double(heur));
-					if (Double.compare(ri._LB, c_cur_best)>0) {  // done!
+					if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
 						mger.msg("RnQTCnbinOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
-							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 2);
+							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
 						done = true;
 					}
-					if (Double.compare(ri._C, c_cur_best)<0) {
+					if (ri._C < c_cur_best) {
 						r_star = ri._R;
 						q_star = ri._Q;
 						t_star = ri._T;
@@ -321,10 +323,12 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 	 * [epst(0.01)]
 	 * [tnot(0.01)]
 	 * [batchsize(24)]
+	 * [dbglvl(0)]
 	 * </CODE>.
 	 * @param args String[] 
 	 */
 	public static void main(String[] args) {
+		final Messenger mger = Messenger.getInstance();
 		// 1. parse inputs
 		double Kr = Double.parseDouble(args[0]);
 		double Ko = Double.parseDouble(args[1]);
@@ -343,6 +347,9 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 		if (args.length>10) tnot = Double.parseDouble(args[10]);
 		int bsize = 24;
 		if (args.length>11) bsize = Integer.parseInt(args[11]);
+		int dbglvl = 0;
+		if (args.length>12) dbglvl = Integer.parseInt(args[12]);
+		mger.setDebugLevel(dbglvl);
 		
 		// 2. create function
 		RnQTCnbin f = new RnQTCnbin(Kr,Ko,L,lambda,p_l,h,p);

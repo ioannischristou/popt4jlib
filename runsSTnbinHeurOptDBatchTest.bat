@@ -32,4 +32,4 @@ echo Verify all workers are started before you press any key...
 pause
 echo on
 REM java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.sST.nbin.sSTCnbinHeurOpt <Kr> <Ko> <L> <lambda> <p_l> <h> <p> [pdsrvhost(localhost)] [pdsrvport(7891)] [epst(0.01)] [deltat(0.1)] [bsize(24)] [dbglvl(0)]
-java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.sST.poisson.sSTCpoissonHeurOpt %Kr% %Ko% %L% %lambda% %pl% %h% %p% localhost %srvport% %prest%
+java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.sST.nbin.sSTCnbinHeurOpt %Kr% %Ko% %L% %lambda% %pl% %h% %p% localhost %srvport% %prest%

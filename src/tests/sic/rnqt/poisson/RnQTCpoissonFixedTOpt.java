@@ -87,7 +87,6 @@ public class RnQTCpoissonFixedTOpt implements OptimizerIntf {
 		x0[0]=s0; x0[1]=1; x0[2]=_T;
 		double[] x_best = new double[2];  // {s,Q}
 		double lb_q = 0;
-		double ordct = Double.NaN;
 		double lbopt = Double.NaN;
 		double capproxopt = Double.POSITIVE_INFINITY;
 		while (lb_q<=Math.min(_curBest,copt)) {
@@ -110,7 +109,6 @@ public class RnQTCpoissonFixedTOpt implements OptimizerIntf {
 			lb_q = ((Double)pv.getSecond()).doubleValue();
 			if (Double.compare(y_q, copt)<0) {
 				copt = y_q;
-				ordct = y_q - lb_q;
 				// lbopt = lb_q;  // the best lower-bound is not necessarily here
 				x_best[0] = ((Double)p.getFirst()).doubleValue();
 				x_best[1] = x0[1];

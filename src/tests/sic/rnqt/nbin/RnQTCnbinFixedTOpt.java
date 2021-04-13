@@ -5,10 +5,9 @@ import popt4jlib.FunctionIntf;
 import popt4jlib.OptimizerException;
 import popt4jlib.DblArray1Vector;
 import popt4jlib.GradientDescent.OneDStepQuantumOptimizer;
-//import utils.PairObjDouble;
 import utils.Pair;
 import utils.PairObjThreeDouble;
-//import utils.PairObjTwoDouble;
+import utils.Messenger;
 import java.util.HashMap;
 
 
@@ -59,7 +58,7 @@ public class RnQTCnbinFixedTOpt implements OptimizerIntf {
 
 	/**
 	 * obtains the global minimum over all integer R and all integer Q &gt; 0 of 
-	 * the function <CODE>RnQTCnbin(R,Q,T)</CODE> for the given T&ge;0. Works by 
+	 * the function <CODE>RnQTCnbin(R,Q,T)</CODE> for the given T&gt;0. Works by 
 	 * incrementing the Q variable at steps of size 1, and for
 	 * each value of Q, solves the discrete convex programming problem in R, using 
 	 * <CODE>OneDStepQuantumOptimizer</CODE>. The algorithm continues incrementing
@@ -68,7 +67,7 @@ public class RnQTCnbinFixedTOpt implements OptimizerIntf {
 	 * optimal R(Q) for such Q.
 	 * @param func RnQTCnbin instance
 	 * @return PairObjThreeDouble  // Pair&lt;double[] x, double cb, double lb,
-	 * double oc&gt; where x[0] is s_opt and x[1] is q_opt for given _T.
+	 * double approxcost&gt; where x[0] is s_opt and x[1] is q_opt for given _T.
 	 * @throws OptimizerException 
 	 */
 	public PairObjThreeDouble minimize(FunctionIntf func) 
@@ -76,6 +75,7 @@ public class RnQTCnbinFixedTOpt implements OptimizerIntf {
 		if (!(func instanceof RnQTCnbin))
 			throw new OptimizerException("RnQTCnbinFixedTOpt.minimize(function): "+
 				                           "function passed in must be RnQTCnbin");
+		Messenger mger = Messenger.getInstance();
 		RnQTCnbin f = (RnQTCnbin) func;
 		OneDStepQuantumOptimizer onedopter = new OneDStepQuantumOptimizer();
 		double Q = 1;
@@ -92,12 +92,13 @@ public class RnQTCnbinFixedTOpt implements OptimizerIntf {
 		x0[0]=s0; x0[1]=1; x0[2]=_T;
 		double[] x_best = new double[2];  // {s,Q}
 		double lb_q = 0;
-		double ordct = Double.NaN;
 		double lbopt = Double.NaN;
 		double capproxopt = Double.POSITIVE_INFINITY;
+		// iterate over Q
 		while (lb_q<=Math.min(_curBest,copt)) {
 			Pair p = null;
 			try {
+				// optimize over r
 				p = onedopter.argmin(f, new DblArray1Vector(x0), null, 0, 
 				                     1, lb, ub, niterbnd, multfactor, tol,
 														 maxiterswithsamefunctionval, maxnumfuncevals);
@@ -108,20 +109,21 @@ public class RnQTCnbinFixedTOpt implements OptimizerIntf {
 			double y_q = ((Double) p.getSecond()).doubleValue();
 			x0[0] = ((Double)p.getFirst()).doubleValue();
 			Pair pv = f.evalBoth(x0,null);  // needless 2nd evaluation just to get lb
-			if (Double.compare(((Double)pv.getFirst()).doubleValue(), y_q)!=0) {
+			if (((Double)pv.getFirst()).doubleValue() != y_q) {
 				// insanity
 				throw new IllegalStateException("y_q="+y_q+" but pv="+pv+"?");
 			}
 			lb_q = ((Double)pv.getSecond()).doubleValue();
-			if (Double.compare(y_q, copt)<0) {
+			if (y_q < copt) {
 				copt = y_q;
-				ordct = y_q - lb_q;
 				// lbopt = lb_q;  // the best lower-bound is not necessarily here
 				x_best[0] = ((Double)p.getFirst()).doubleValue();
 				x_best[1] = x0[1];
-				if (Double.compare(copt, _curBest)<0) _curBest = copt;
+				if (copt < _curBest) _curBest = copt;
 			}
-			if (Double.compare(lb_q, lbopt)<0) {  // update lbopt
+			if (Double.compare(lb_q, lbopt) < 0) {  // update lbopt
+				// notice that using the Double.compare() method above is mandatory
+				// as lbopt is initially NaN.
 				lbopt = lb_q;
 			}
 			// compute capprox and compare with capproxopt: notice that we're only
@@ -135,6 +137,10 @@ public class RnQTCnbinFixedTOpt implements OptimizerIntf {
 		// itc20191118: notice the last param below used to be the order cost ordct
 		PairObjThreeDouble pod = new PairObjThreeDouble(x_best, copt, lbopt, 
 			                                              capproxopt);
+		mger.msg("RnQTCnbinFixedTOpt.minimize(f): for T="+_T+
+			       ": R*="+x_best[0]+" Q*="+x_best[1]+
+			       " C*(T)="+copt+" LB(T)="+lbopt+" ApproxCost(T)="+capproxopt, 
+			       1);
 		return pod;
 	}
 	
@@ -167,7 +173,7 @@ public class RnQTCnbinFixedTOpt implements OptimizerIntf {
 			double lbbest = bp.getSecondDouble();
 			double ordct = bp.getThirdDouble();
 			System.out.println("R*="+xbest[0]+" Q*="+xbest[1]+" C*("+T+")="+ybest+
-				                 " LB*("+T+")="+lbbest+" FixedOrderCost("+T+")="+ordct);
+				                 " LB*("+T+")="+lbbest+" ApproxCost("+T+")="+ordct);
 		}
 		catch (Exception e) {
 			e.printStackTrace();

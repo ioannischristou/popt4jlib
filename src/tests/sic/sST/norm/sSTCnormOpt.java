@@ -180,17 +180,18 @@ public final class sSTCnormOpt implements OptimizerIntf {
 			}
 			try {
 				mger.msg("sSTCnormOpt.minimize(): submit a batch of "+_batchSz+
-					       " tasks to network for period length from "+Tstart+" up to "+T, 
-					       2);
+					       " tasks to network for period length from "+(Tstart+_epsT)+
+					       " up to "+T, 
+					       1);
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
 					sSTCnormFixedTOpterResult ri = (sSTCnormFixedTOpterResult) res[i];
 					_tis.add(new Double(ri._T));  // add to tis time-series
 					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
 					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
-					if (ri._LB > c_cur_best) {  // done!
+					if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
 						mger.msg("sSTCnormOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
-							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 2);
+							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
 						done = true;
 					}
 					if (ri._C < c_cur_best) {
@@ -284,11 +285,14 @@ public final class sSTCnormOpt implements OptimizerIntf {
 	 * [qnot(0)]
 	 * [epst(0.01)]
 	 * [epss(0.1)]
-	 * [batchsize(8)]
+	 * [batchsize(24)]
+	 * [dbglvl(0)]
 	 * </CODE>.
 	 * @param args String[] 
 	 */
 	public static void main(String[] args) {
+		final Messenger mger = Messenger.getInstance();
+		
 		// 1. parse inputs
 		double Kr = Double.parseDouble(args[0]);
 		double Ko = Double.parseDouble(args[1]);
@@ -309,8 +313,11 @@ public final class sSTCnormOpt implements OptimizerIntf {
 		if (args.length>11) epst = Double.parseDouble(args[11]);
 		double epss = 0.1;
 		if (args.length>12) epss = Double.parseDouble(args[12]);
-		int bsize = 8;
+		int bsize = 24;
 		if (args.length>13) bsize = Integer.parseInt(args[13]);
+		int dbglvl = 0;
+		if (args.length>14) dbglvl = Integer.parseInt(args[14]);
+		mger.setDebugLevel(dbglvl);
 		
 		// 2. create function
 		sSTCnorm f = new sSTCnorm(Kr,Ko,L,mi,sigma,h,p,p2);

@@ -214,7 +214,7 @@ public class sSTCnormFixedTOpt implements OptimizerIntf {
 			while (true) {
 				y += _epss;
 				c2 = G(y, T, L, mi, sigma, h, p, p2);
-				if (Double.compare(c2,c)>=0) return y-_epss;
+				if (c2 >= c) return y-_epss;
 				else c = c2;
 			}
 		}

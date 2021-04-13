@@ -173,14 +173,14 @@ public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 		if (Double.compare(c,c2)<0) {
 			while (true) {
 				c2 = G(--y, T, L, lambda, h, p, p2);
-				if (Double.compare(c2,c)>=0) return y+1;
+				if (c2 >= c) return y+1;
 				else c = c2;
 			}
 		}
 		else {
 			while (true) {
 				c2 = G(++y, T, L, lambda, h, p, p2);
-				if (Double.compare(c2,c)>=0) return y-1;
+				if (c2 >= c) return y-1;
 				else c = c2;
 			}
 		}
@@ -195,7 +195,7 @@ public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 			pois = new Poisson2(1);
 			_tlpois.set(pois);
 		}
-		if (Double.compare(p2, 0.0)>0) {
+		if (p2 > 0.0) {
 			z += p2*sSTCpoisson.eP(s, T, lambda, L, pois);
 		}
 		double y = h*T*(s-L*lambda-lambda*T/2.0) + 
