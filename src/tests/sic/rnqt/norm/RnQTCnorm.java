@@ -14,9 +14,15 @@ import cern.jet.random.Normal;
  * there is a constant lead-time for each order being placed equal to L&ge;0.
  * The control parameters then, are r (the reorder point), Q (the batch size),
  * and T (the review interval).
+ * <p>Notes:
+ * <ul>
+ * <li> 20210421: changed access level of <CODE>_h, _p</CODE> data members from
+ * private to package so that the heuristic optimization algorithms have access
+ * to them.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2018</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -27,8 +33,8 @@ public class RnQTCnorm implements FunctionIntf {
 	final double _L;
 	final double _mi;
 	final double _sigma;
-	final private double _h;
-	final private double _p;
+	final double _h;
+	final double _p;
 	private final static Normal _norm = new Normal(0,1,null);  // _norm always 
 	                                                           // available, even
 	                                                           // after being
