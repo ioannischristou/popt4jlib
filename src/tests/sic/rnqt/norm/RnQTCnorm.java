@@ -41,15 +41,15 @@ public class RnQTCnorm implements FunctionIntf {
 	                                                           // transmitted over
 	                                                           // wire (sockets).
 	
-	private final static double _Qtol = 1.e-7;
+	protected final static double _Qtol = 1.e-7;
 	
 	/**
 	 * compile-time constants used in determining whether the computations for
 	 * Po show some serious error in the formulae of Hadley-Whitin (1963).
 	 */
 	private final static double _P0tol = 1.e-8;
-	private final static double _ONE_TOL = 1.0 + _P0tol;
-	private final static double _ZERO_TOL = -_P0tol;
+	protected final static double _ONE_TOL = 1.0 + _P0tol;
+	protected final static double _ZERO_TOL = -_P0tol;
 	
 	
 	/**
