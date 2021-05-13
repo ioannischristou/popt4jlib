@@ -24,7 +24,8 @@ public class RandomChromosomeSelector implements ChromosomeSelectorIntf {
 	 * @param params HashMap must contain an entry &lt;"thread.id",Integer val&gt; 
 	 * @return DPSOIndividual
 	 */
-	public DPSOIndividual getBestIndividual(List individuals, int i, int gen, HashMap params) {
+	public DPSOIndividual getBestIndividual(List individuals, int i, int gen, 
+		                                      HashMap params) {
 		final int indsz = individuals.size();
 		final int id = ((Integer) params.get("thread.id")).intValue();
 		final RndUtil rndgen = RndUtil.getInstance(id);

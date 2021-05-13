@@ -177,21 +177,32 @@ public class RnQTCnbin implements FunctionIntf {
 			for (int i=1; i<=k; i++) {
 				res *= (k+lambda-i)/i;
 			}
+			double logres = Double.NaN;
 			if (Double.isNaN(res)) {  // use log-exp trick
 				res = Math.log(gc(k+lambda)) - Math.log(gc(lambda));
 				for (int i=2; i<=k; i++) res -= Math.log(i);
+				logres = res;
 				res = Math.exp(res);
+			}
+			double res2 = res;
+			res *= Math.pow(pl, lambda) * Math.pow(1-pl, k);
+			if (Double.isNaN(res)) {  // use log-exp trick again
+				if (!Double.isFinite(logres)) {
+					logres = Math.log(res2);
+				} 
+				logres += lambda*Math.log(pl);
+				logres += k*Math.log(1-pl);
+				res = Math.exp(logres);
 			}
 			if (Double.isNaN(res)) {
 				throw new IllegalArgumentException("nbinpdf("+k+";"+
 																						lambda+","+pl+") is NaN");
 			}
-			res *= Math.pow(pl, lambda) * Math.pow(1-pl, k);
 			return res;
 		}
 		catch (Exception e) {
 			System.err.println("RnQTCnbin.nbinpdf("+k+";"+lambda+","+pl+
-				                 "): Exception caught");
+				                 "): Exception "+e.toString()+" thrown");
 			throw e;
 		}
 	}
@@ -227,6 +238,20 @@ public class RnQTCnbin implements FunctionIntf {
 
 	
 	/**
+	 * compute the function log(nbincdfcompl(k, lambda, pl)). Notice this method
+	 * uses <CODE>Math.log1p(x)</CODE> available since JDK 1.5.
+	 * @param k int
+	 * @param lambda double
+	 * @param pl double
+	 * @return double
+	 */
+	public static double nbincdfcompllog(int k, double lambda, double pl) {
+		double cdf = -nbincdf(k-1, lambda, pl);
+		return Math.log1p(cdf);  
+	}
+	
+	
+	/**
 	 * computes the n-fold convolution of the Negative Binomial distribution with
 	 * parameters lambda, pl, at point k.
 	 * @param k int must be &ge; 0
@@ -241,6 +266,19 @@ public class RnQTCnbin implements FunctionIntf {
 			return k==0 ? 1 : 0;
 		}
 		return nbinpdf(k, n*lambda, pl);
+	}
+	
+	
+	public static double nbinnfoldconvlog(int k, double lambda, double pl, 
+		                                    int n) {
+		if (n==0 && k!=0) throw new IllegalArgumentException("n==0, k!=0");
+		if (n==0) return 0;
+		double logres = 0.0;
+		for (int i=1; i<=k; i++) logres += Math.log(k+lambda*n-i);
+		for (int i=2; i<=k; i++) logres -= Math.log(i);
+		logres += (lambda*n)*Math.log(pl);
+		logres += k*Math.log(1-pl);
+		return logres;		
 	}
 	
 	

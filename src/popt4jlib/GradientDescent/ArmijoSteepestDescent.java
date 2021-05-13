@@ -8,9 +8,14 @@ import popt4jlib.*;
 
 /**
  * Steepest Descent using Armijo rule for step-size determination.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured that all exceptions thrown during function evaluation
+ * are properly handled.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -208,7 +213,14 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
       Messenger.getInstance().msg("update incumbent w/ new best value="+val,0);
       if (Debug.debug(Constants.ASD)!=0) {
         // sanity check
-        double incval = _f.eval(arg, _params);
+				double incval = Double.MAX_VALUE;
+				try {
+					incval = _f.eval(arg, _params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("ASD.setIncumbent(): _f.eval() threw "+
+						                           e.toString());
+				}
         if (Math.abs(incval - _incValue) > 1.e-25) {
           Messenger.getInstance().msg("ASD.setIncumbent(): arg-val originally="+
                                       _incValue + " fval=" + incval + " ???", 
@@ -340,10 +352,26 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
       boolean found=false;
 
       // main iteration loop
-      VectorIntf g = grad.eval(x, p);
+      VectorIntf g;
+			try {
+				g = grad.eval(x, p);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("ASD.ASDThread.min(): g.eval() threw "+
+					                           e.toString());
+			}			
       double normg = VecUtil.norm(g,2);
 			Messenger.getInstance().msg("ASDThread.min(): normg="+normg,2);
-      fx = f.eval(x, p);  // was _master._f
+      try {
+				fx = f.eval(x, p);  // was _master._f
+			}
+			catch (Exception e) {
+				throw new OptimizerException("ASD.ASDThread.min(): f.eval() threw "+
+					                           e.toString());
+			}
+			if (Double.compare(normg,0.0)==0) {  // done already!
+				return new PairObjDouble(x, fx);
+			}
 			double f_best = fx;  // maintain best fval found so far
       VectorIntf s = g.newCopyMultBy(-1.0/normg);  // normalize s
       double[] xa = new double[n];
@@ -373,7 +401,13 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
               e.printStackTrace();
             }
           }
-          fval = f.eval(x,p);  // was _master._f
+					try {
+						fval = f.eval(x,p);  // was _master._f
+					}
+					catch (Exception e) {
+						throw new OptimizerException("ASD.ASDThread.min(): f.eval() threw "+
+							                           e.toString());
+					}								
 					if (Double.compare(fval, f_best)<0) {
 						f_best = fval;
 						mger.msg("ASDThread.min(): found better fval="+f_best,2);
@@ -406,8 +440,14 @@ public class ArmijoSteepestDescent implements LocalOptimizerIntf {
           }
         }
         fx = fval;
-        g = grad.eval(x,p);
-        normg = VecUtil.norm2(g);
+				try {
+					g = grad.eval(x,p);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("ASD.ASDThread.min(): g.eval() threw "+
+						                           e.toString());
+				}			
+				normg = VecUtil.norm2(g);
         for (int i=0; i<n; i++) {
           try {
             s.setCoord(i, -g.getCoord(i) / normg); // what if normg==0 ?

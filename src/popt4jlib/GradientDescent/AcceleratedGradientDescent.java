@@ -12,9 +12,14 @@ import popt4jlib.*;
  * with guarantee when the objective function is an L-smooth function.
  * See: Z. Lin et al: "Accelerated Optimization for Machine Learning: First 
  * Order Algorithms", Springer, 2020.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured all exceptions thrown during function evaluations are
+ * handled properly.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2020</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -308,20 +313,39 @@ public class AcceleratedGradientDescent implements LocalOptimizerIntf {
       if (miI!=null && miI.intValue()>0)
         maxiters = miI.intValue();
       boolean found=false;
-
-      fx = f.eval(x, p);
+			try {
+	      fx = f.eval(x, p);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("AGD.AGDThread.min(): f.eval() threw "+
+					                           e.toString());
+			}
       DblArray1Vector y = new DblArray1Vector(n);
 
 			// use these variables to update L at each iteration
 			VectorIntf y_prev = y.newInstance();
-			VectorIntf g_prev = grad.eval(y_prev, p);
+			VectorIntf g_prev;
+			try {
+				g_prev = grad.eval(y_prev, p);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("AGD.AGDThread.min(): g.eval() threw "+
+					                           e.toString());
+			}
 			
 			// main iteration loop
 			
       for (int iter=0; iter<maxiters; iter++) {
 	      mger.msg("AGDThread.min(): #iters="+iter+" fx="+fx,2);
 				if (Double.compare(gtol,0.0)>0) {
-					VectorIntf g = grad.eval(x, p);
+					VectorIntf g;
+					try {
+						g = grad.eval(x, p);
+					}
+					catch (Exception e) {
+						throw new OptimizerException("AGD.AGDThread.min(): g.eval() threw "+
+							                           e.toString());
+					}
 					double normg = VecUtil.norm(g,2);
 					mger.msg("AGDThread.min(): normg="+normg,2);
 					final double norminfg = VecUtil.normInfinity(g);
@@ -365,7 +389,7 @@ public class AcceleratedGradientDescent implements LocalOptimizerIntf {
 					for (int i=0; i<n; i++) x.setCoord(i, y.getCoord(i));
 					fx = f.eval(x, p);
 				}
-				catch (Exception e) {  // cannot get here
+				catch (Exception e) {  // ignore non-quietly
 					e.printStackTrace();
 				}
 			}

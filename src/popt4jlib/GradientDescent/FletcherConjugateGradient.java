@@ -15,9 +15,14 @@ import java.util.*;
  * Fletcher R.(1987) Practical Methods of Optimization 2nd ed. Wiley, Chichester
  * The class allows multiple optimization runs from different starting points to
  * be excecuted in parallel (in multiple threads).
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured all exceptions thrown during function evaluation are
+ * properly handled.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -259,7 +264,13 @@ public class FletcherConjugateGradient implements LocalOptimizerIntf,
     if (val<_incValue) {
       if (Debug.debug(Constants.FCG)!=0) {
         // sanity check
-        double incval = _f.eval(arg, _params);
+        double incval;
+				try { 
+					incval = _f.eval(arg, _params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("FCG.setIncumbent(): f.eval() threw "+e);
+				}
         if (Math.abs(incval - _incValue) > 1.e-25) {
 					Messenger mger = Messenger.getInstance();
           mger.msg("FCG.setIncumbent(): arg-val originally=" +
@@ -478,8 +489,14 @@ class FCGThread extends Thread {
     for (int iter=0; iter<maxiters; iter++) {
       mger.msg("FCGThread.min(): Thread-id="+_id+" In iteration "+iter+
 				       ", prevh="+h+", fx="+fx,1);
-      VectorIntf g = gnew==null ? grad.eval(x, p) : gnew;
-      fx = f.eval(x, p);
+      VectorIntf g;
+			try {
+				g = gnew==null ? grad.eval(x, p) : gnew;
+				fx = f.eval(x, p);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("FCGthread.min(): f or g eval() threw "+e);
+			}
 			_master.setIncumbent(x.newCopy(), fx);  // call incumbent update
       final double norminfg = VecUtil.normInfinity(g);
       final double normg = VecUtil.norm(g,2);
@@ -540,7 +557,12 @@ class FCGThread extends Thread {
         }
       }
       // update b according to Fletcher-Reeves formula
-      gnew = grad.eval(x, p);
+			try {
+				gnew = grad.eval(x, p);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("FCGThread.min(): g.eval() threw "+e);
+			}			
       b = VecUtil.innerProduct(gnew,gnew)/(normg*normg);
     }
     // end main loop
@@ -613,7 +635,14 @@ class FCGThread extends Thread {
           e.printStackTrace();
         }
       }
-      double fa = f.eval(xa, p);
+      double fa;
+			try { 
+				fa = f.eval(xa, p);
+			}
+			catch (Exception e) {
+				mger.msg("FCGThread.findStepSize(): f.eval() threw "+e.toString(), 0);
+				return -1;
+			}
       if (Double.compare(fa, fbar) <= 0) {
 				if (xa instanceof PoolableObjectIntf) {
 					((PoolableObjectIntf) xa).release();
@@ -630,7 +659,14 @@ class FCGThread extends Thread {
         break;
       }
       // evaluate f'(alpha)
-      VectorIntf ga = grad.eval(xa,p);
+      VectorIntf ga;
+			try { 
+				ga = grad.eval(xa,p);
+			}
+			catch (Exception e) {
+				mger.msg("FCGThread.findStepSize(): g.eval() threw "+e.toString(), 0);
+				return -1;
+			}
       double fpa = VecUtil.innerProduct(s,ga);
       if (Double.compare(Math.abs(fpa), -sigma*sTg) <= 0) {
 				if (xa instanceof PoolableObjectIntf) {
@@ -689,7 +725,14 @@ class FCGThread extends Thread {
           e.printStackTrace();
         }
       }
-      double falpha = f.eval(xa, p);
+      double falpha;
+			try { 
+				falpha = f.eval(xa, p);
+			}
+			catch (Exception e) {
+				mger.msg("FCGThread.findStepSize(): f.eval() threw "+e.toString(), 0);
+				return -1;				
+			}
       // compute f(x+a*s)
       VectorIntf xaj = x.newCopy();
       for (int i = 0; i < n; i++) {
@@ -700,7 +743,14 @@ class FCGThread extends Thread {
           e.printStackTrace();
         }
       }
-      double faj = f.eval(xaj, p);
+      double faj;
+			try {
+				faj = f.eval(xaj, p);
+			}
+			catch (Exception e) {
+				mger.msg("FCGThread.findStepSize(): f.eval() threw "+e.toString(), 0);
+				return -1;				
+			}
       if (Double.compare(falpha, fx + rho * alpha * sTg) > 0 || 
 				  Double.compare(falpha, faj) >= 0) {
         b = alpha;
@@ -708,7 +758,14 @@ class FCGThread extends Thread {
       }
       else {
         // evaluate f'(alpha)
-        VectorIntf ga = grad.eval(xa,p);
+        VectorIntf ga;
+				try { 
+					ga = grad.eval(xa,p);
+				}
+				catch (Exception e) {
+					mger.msg("FCGThread.findStepSize(): g.eval() threw "+e.toString(), 0);
+					return -1;				
+				}
         double fpa = VecUtil.innerProduct(s,ga);
         if (Double.compare(Math.abs(fpa), -sigma*sTg) <= 0) {
 					if (xa instanceof PoolableObjectIntf) {

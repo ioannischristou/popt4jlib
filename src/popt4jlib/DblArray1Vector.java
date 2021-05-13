@@ -9,15 +9,19 @@ package popt4jlib;
  * Pattern (for this reason it implements the PoolableObjectIntf).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
 public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
   // private final static long serialVersionUID=-1953111744690308391L;
-	private final static boolean _USE_POOLS=true;  // compile-time flag indicates use of pools or not
-  private final static boolean _DO_RESET_ON_RELEASE=false;  // compile-time flag for resetting vector elems on reset
+	private final static boolean _USE_POOLS=true;  // compile-time flag indicates 
+	                                               // use of pools or not
+  private final static boolean _DO_RESET_ON_RELEASE=false;  // compile-time flag 
+                                                            // for resetting 
+	                                                          // vector elems on 
+	                                                          // reset
 	private double _x[]=null;
 	// pool-related data
 	private transient DblArray1VectorPool _pool=null;  // not to be "transferred"
@@ -68,7 +72,8 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
    * @param multFactor double
    * @throws IllegalArgumentException
    */
-  public DblArray1Vector(double[] x, double multFactor) throws IllegalArgumentException {
+  public DblArray1Vector(double[] x, double multFactor) 
+		throws IllegalArgumentException {
     if (x==null) throw new IllegalArgumentException("null arg passed");
     final int n = x.length;
     _x = new double[n];
@@ -89,7 +94,9 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
    * @param poolpos int
    */
   DblArray1Vector(int n, DblArray1VectorPool pool, int poolpos) {
-    if (_USE_POOLS==false) throw new IllegalArgumentException("_USE_POOLS==false: this ctor should not be used");
+    if (_USE_POOLS==false) 
+			throw new IllegalArgumentException("_USE_POOLS==false: this ctor "+
+				                                 "should not be used");
 		_pool=pool;
     _poolPos=poolpos;
     _isUsed=false;
@@ -103,7 +110,8 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
 
 
   /**
-   * return a new VectorIntf object containing a copy of the data of this object.
+   * return a new VectorIntf object containing a copy of the data of this 
+	 * object.
 	 * This implementation will try to fetch a vector from the thread-local object
 	 * pool if _USE_POOLS is true.
    * @return VectorIntf
@@ -218,20 +226,22 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
    * @return double
    */
   public double getCoord(int i) throws IndexOutOfBoundsException {
-    if (i<0 || i>=_x.length) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
+    if (i<0 || i>=_x.length) 
+			throw new IndexOutOfBoundsException("index "+i+" out of bounds");
     return _x[i];
   }
 
 
   /**
    * set the i-th coordinate of this VectorIntf (i must be in the set
-   * {0,1,2,...<CODE>getNumCoords()</CODE>-1}
+   * {0,1,2,...<CODE>getNumCoords()</CODE>-1}.
    * @param i int
    * @param val double
    * @throws IndexOutOfBoundsException if i is not in the set mentioned above
    */
   public void setCoord(int i, double val) throws IndexOutOfBoundsException {
-    if (i<0 || i>=_x.length) throw new IndexOutOfBoundsException("index "+i+" out of bounds");
+    if (i<0 || i>=_x.length) 
+			throw new IndexOutOfBoundsException("index "+i+" out of bounds");
     _x[i] = val;
   }
 
@@ -243,7 +253,8 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
    * @throws IllegalArgumentException if other is null or does not have the
    * same dimensions as this vector or if m is NaN
    */
-  public void addMul(double m, VectorIntf other) throws IllegalArgumentException {
+  public void addMul(double m, VectorIntf other) 
+		throws IllegalArgumentException {
     if (other==null || other.getNumCoords()!=_x.length || Double.isNaN(m))
       throw new IllegalArgumentException("cannot call addMul(m,v) with v "+
                                          "having different dimensions than "+

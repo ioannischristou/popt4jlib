@@ -46,9 +46,14 @@ import popt4jlib.*;
  * problem is only allowed as long as there is no need to send another 
  * initialization command to the network of workers, as workers cannot be 
  * initialized twice.</p>
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured all exceptions that function evaluation may throw are
+ * properly handled.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2016</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 2.0
@@ -479,7 +484,14 @@ public class DPSO extends GLockingObservableObserverBase
                                                get("dpso.c2amaker");
           if (c2amaker != null) // oops, no it wasn't
             arg = c2amaker.getArg(ind.getChromosome(), _params);
-          double incval = _f.eval(arg, _params);
+					double incval;
+					try {
+						incval = _f.eval(arg, _params);
+					}
+					catch (Exception e) {
+						throw new OptimizerException("DPSO.setIncumbent(): _f.eval() "+
+							                           "threw "+e.toString());
+					}
           if (Math.abs(incval - ind.getValue()) > 1.e-25) {
             Messenger.getInstance().msg("DPSO.setIncumbent(): ind-val=" +
                                         ind.getValue() + " fval=" + incval +
@@ -1199,7 +1211,13 @@ class DPSOIndividual {
     Object arg = null;
     if (c2amaker == null) arg = _x;
     else arg = c2amaker.getArg(_x, params);
-    _val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+		try {
+			_val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+		}
+		catch (Exception e) {
+			throw new OptimizerException("DPSOIndividual.setValues(): _f.eval() "+
+				                           "threw "+e.toString());
+		}
     // update _pb & _pbval
     if (_val < _pbval) {
       _pb = chromosome;
@@ -1225,7 +1243,13 @@ class DPSOIndividual {
       Object arg = null;
       if (c2amaker == null) arg = _x;
       else arg = c2amaker.getArg(_x, params);
-      _val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+      try {
+				_val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+			}
+			catch (Exception e) {
+				throw new OptimizerException("DPSOIndividual.computeValue(): _f.eval "+
+					                           "threw "+e.toString());
+			}
     }
   }
 }

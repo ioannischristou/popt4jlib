@@ -9,11 +9,16 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecNoOpCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/nn_train_test_props4b.txt</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/BH/DGABH.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RegExTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FFNN4TrainB.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SA/ExpDecSchedule.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SA/DblArray1MoveMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnormHeurOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/DGATest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/norm/RnQTCnorm.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1Vector1PtXOverOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/hiddenws0_4_toy_test.dat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/CategoricalAccuracy.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DataMgr.java</file>
@@ -22,8 +27,11 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FFNN4TrainBGradTest4.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/poisson/RnQTCpoissonFixedTOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FFNN4TrainBTest3.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/EA/DEA.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/CategoricalXEntropyLossW.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/FFNNCostFunctionIntf.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/PolakRibiereConjugateGradient.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonFastHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FFNN4TrainBGrad.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/UnboundedBufferArrayUnsynchronized.java</file>
@@ -33,27 +41,38 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansCC.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/MCS.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/hiddenws0.dat</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/PS/DPSO.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/fcg_test_props.txt</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/VecFunctionIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecInitedWrk.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FFNN4Train.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/DLS.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/stochastic/Adam.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/norm/RnQTCnormFixedTOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/DDE.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SparseVectorIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/OneDStepQuantumOptimizer.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoisson.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinBoxed.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/toy_train.dat.lbls</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/MSSE.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionExceptionsWrapper.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/AlternatingVariablesDescent.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/avd_test_props.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FCGTest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/ssPlusDTCnbinBoxed.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DGA.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionBase.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/analysis/MultiFoldPMFConvolution.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/DebugNR.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/RnQTCnbinOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1CMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/PDMiniBatchBackPropagation.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnormSimpleHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/ReLU.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/MAE.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionEvaluationTask.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionInPython.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/nn_grad_toy_test.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/ThresErrorCounterReg.java</file>
@@ -65,27 +84,42 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansSqrEvaluator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/test_train_data0.dat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/LightweightParams.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/ArmijoSteepestDescentST.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/RegisteredParcel.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/SumOfVarianceEvaluator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/det/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/GELU.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/poisson/RnQTCpoissonHeurPOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SA/DblArray1CMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/Norm2FunctionGrad.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinFixedTOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/PairIntInt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/RnQTCnbin.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/SparseVectorFile2KDDCup99FileFormatConverter.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/RandomDescents.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/RnQTCnbinFixedTOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/Poisson2.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/PairSer.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SA/DSA.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnormFastHeurOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinMetaHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/norm/RnQTCnormOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/Barrier.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/RnQTCnbinBoxed.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/MonteCarloTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FFNN4TrainBGradTest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1HybridMutationOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/ThresErrorCounter.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1VectorCMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/Sigmoid.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/IntArray2SparseMatrix.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinSimpleHeurOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonBoxed.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/poisson/RnQTCpoissonBoxed.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/norm/RnQTCnormHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonFixedTOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SA/LinScaleSchedule.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/ArmijoBFGS.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FasterFFNN4TrainBGrad.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1Vector.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/DGAFFNNRun.java</file>
@@ -93,6 +127,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/poisson/RnQTCpoissonOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/ComparableTaskObject.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/norm/RnQTCnormBoxed.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/nn_train_test_props5.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/BaseNNNode.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/UnboundedMsgPassingCoordinator.java</file>
@@ -102,6 +137,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/PairObjTwoDouble.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecInitNoOpCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/RecvIndTask.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SA/SAScheduleIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/Linear.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/toy_train.dat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/RandomGraphMaker.java</file>
@@ -109,20 +145,30 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MonteCarlo/DblArray1ArgMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/RndUtil.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/FletcherConjugateGradient.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblVarArray1AlleleMutationOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FFNN.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/PairObjDouble.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/DDE2.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/PS/DblArray1CMaker.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnormBoxed.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/AVDTest2.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/agd_test_props.txt</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/DLSM.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/FletcherConjugateGradientST.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/RnQTCnbinHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionArgStore.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbin.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/RRObject.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FFNN4TrainBGradTest2.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonSimpleHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/VectorIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/ASDTest.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1Vector1AlleleMutationOp.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1PtXOverOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansNormSqrEvaluator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/costfunction/L1Norm.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/Debug.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/PS/FA/DFA.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnorm.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/DMCoordinator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DblArray1Vector2DblArray1AdapterFunction.java</file>
@@ -133,13 +179,17 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecInitedClt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/AcceleratedGradientDescent.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/NumberPartitioning/NPTask.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecInitedSrv.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/nbin/RnQTCnbinHeurPOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RosenbrockFunctionCEC20XXShifted.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/SGD4FFNN.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/optffnnrundbatch.bat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/ThreadAccessTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FFNN4TrainBFwdEvalTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinHeurOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinFastHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/poisson/RnQTCpoisson.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/PolakRibiereConjugateGradientST.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnormFixedTOpt.java</file>
         </group>
     </open-files>

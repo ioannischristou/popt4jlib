@@ -22,6 +22,9 @@ import popt4jlib.GradientDescent.VecUtil;
  * with other domains.
  * <p>Notes:
  * <ul>
+ * <li>2021-05-08: wrapped the function being minimized to ensure only 
+ * <CODE>IllegalArgumentException</CODE> exceptions are thrown during function
+ * evaluations.
  * <li>2020-04-25: method seParams() became public because it was moved up from
  * LocalOptimizerIntf to the root OptimizerIntf interface class.
  * </ul>
@@ -251,7 +254,8 @@ public class DDE implements OptimizerIntf {
       synchronized (this) {
         if (_f != null)throw new OptimizerException("DDE.minimize(): "+
           "another thread is concurrently executing the method on this object");
-        _f = f;
+        _f = new FunctionExceptionsWrapper(f);  // ensure _f can throw only
+				                                        // IllegalArgumentException
         reset();
       }
       int numthreads = 1;
@@ -388,7 +392,14 @@ public class DDE implements OptimizerIntf {
 			_incIndex = index;
       if (Debug.debug(Constants.DDE)!=0) {
         // sanity check
-        double incval = _f.eval(arg, _params);
+				double incval = Double.MAX_VALUE;
+				try {
+					incval = _f.eval(arg, _params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("DDE.setIncumbent(): _f.eval() threw "+
+						                           e.toString());
+				}
         if (Math.abs(incval - _incValue) > 1.e-25) {
           Messenger.getInstance().msg("DDE.setIncumbent(): arg-val originally="+
                                       _incValue + " fval=" + incval + " ???",0);
@@ -513,7 +524,8 @@ class DDEThread extends Thread {
 		_numthreads = 1;
 		try {
 			HashMap p = _master.getParams();
-			_numthreads = ((Integer) p.get("dde.numthreads")).intValue();
+			if (p.containsKey("dde.numthreads"))
+				_numthreads = ((Integer) p.get("dde.numthreads")).intValue();
 			Boolean ndok = (Boolean) p.get("dde.nondeterminismok");
 			if (ndok!=null && ndok.booleanValue()==true) _nonDeterminismOK = true;
 			Boolean debeststr = (Boolean) p.get("dde.de/best/1/binstrategy");
@@ -765,7 +777,7 @@ class DDEThread extends Thread {
 			try {
 				ftry = f.eval(xtry, _fp);  // used to be p
 			}
-			catch (IllegalArgumentException e) {
+			catch (Exception e) {
 				e.printStackTrace();  // ignore non-quietly
 			}
 			final double cur_val_i = _master.getSolVal(i);  // _master._solVals[i]
@@ -900,7 +912,9 @@ class DDEThread extends Thread {
 				_master.setIncumbent(bestmigrant.newInstance(), bestval, bestpos);
 			}
 		}
-		catch (Exception e) {  // in case of network failure, migration fails too.
+		catch (Exception e) {  // in case of network failure, or all individuals 
+			                     // throwing exceptions during evaluation, migration 
+			                     // fails too.
 			e.printStackTrace();
 		}
 	}

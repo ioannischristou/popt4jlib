@@ -61,7 +61,8 @@ public class RecvIndTask implements TaskObject {
    * @param t TaskObject
    * @throws IllegalArgumentException if the arg. passed is not a RecvIndTask.
    */
-  public synchronized void copyFrom(TaskObject t) throws IllegalArgumentException {
+  public synchronized void copyFrom(TaskObject t) 
+		throws IllegalArgumentException {
     if (t instanceof RecvIndTask == false)
       throw new IllegalArgumentException("copyFrom(t) method not supported");
     RecvIndTask t2 = (RecvIndTask) t;

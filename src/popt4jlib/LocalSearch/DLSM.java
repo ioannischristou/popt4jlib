@@ -278,7 +278,7 @@ public class DLSM implements LocalOptimizerIntf {
 					if (_a2cmaker!=null) _inc = _a2cmaker.getChromosome(x0, p);
 					else _inc = x0;
 				}
-				catch (IllegalArgumentException e) {
+				catch (Exception e) {  // catch any kind of exception 
 					e.printStackTrace();
 				}				
 				buffer.addElement(new Pair(x0, new Double(_incValue)));

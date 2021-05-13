@@ -44,6 +44,11 @@ import popt4jlib.*;
  * i-th individual. For more information, see the details of method 
  * <CODE>DFAThreadAux.nextGeneration()</CODE>.
  * </p>
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured all exceptions that function evaluation may throw are
+ * handled properly.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2016</p>
@@ -432,7 +437,14 @@ final public class DFA extends GLockingObservableObserverBase implements Optimiz
                                                get("dfa.c2amaker");
           if (c2amaker != null) // oops, no it wasn't
             arg = c2amaker.getArg(ind.getChromosome(), _params);
-          double incval = _f.eval(arg, _params);
+          double incval;
+					try { 
+						incval = _f.eval(arg, _params);
+					}
+					catch (Exception e) {
+						throw new OptimizerException("DFA.setIncumbent(): _f.eval() threw "+
+							                           e.toString());
+					}
           if (Math.abs(incval - ind.getValue()) > 1.e-25) {
             Messenger.getInstance().msg("DFA.setIncumbent(): ind-val=" +
                                         ind.getValue() + " fval=" + incval +
@@ -1085,7 +1097,13 @@ class DFAIndividual {
     Object arg = null;
     if (c2amaker == null) arg = _x;
     else arg = c2amaker.getArg(_x, params);
-    _val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+		try {
+			_val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+		}
+		catch (Exception e) {
+			throw new OptimizerException("DFAIndividual.setValues(): _f.eval() "+
+				                           "threw "+e.toString());
+		}
     // update _pb & _pbval
     if (_val < _pbval) {
       _pb = chromosome;
@@ -1110,7 +1128,13 @@ class DFAIndividual {
       Object arg = null;
       if (c2amaker == null) arg = _x;
       else arg = c2amaker.getArg(_x, params);
-      _val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+			try {
+				_val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+			}
+			catch (Exception e) {
+				throw new OptimizerException("DFAIndividual.computeValue(): _f.eval() "+
+					                           "threw "+e.toString());
+			}
     }
   }
 }

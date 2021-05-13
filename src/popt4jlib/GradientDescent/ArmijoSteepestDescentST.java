@@ -11,14 +11,20 @@ import popt4jlib.*;
  * Single-Threaded version of the ArmijoSteepestDescent class that implements a
  * single try, single threaded local optimization from a single initial point
  * to a local stationary point of the function to be optimized.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured all exceptions thrown during function evaluation are
+ * properly handled.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class ArmijoSteepestDescentST extends GLockingObserverBase implements LocalOptimizerIntf {
+public class ArmijoSteepestDescentST extends GLockingObserverBase 
+                                     implements LocalOptimizerIntf {
   HashMap _params;
   FunctionIntf _f;
 
@@ -74,7 +80,8 @@ public class ArmijoSteepestDescentST extends GLockingObserverBase implements Loc
    * <CODE>minimize(f)</CODE> method of this object.
    */
   public synchronized void setParams(HashMap p) throws OptimizerException {
-    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    if (_f!=null) 
+			throw new OptimizerException("cannot modify parameters while running");
     _params = null;
     _params = new HashMap(p);  // own the params
   }
@@ -84,28 +91,28 @@ public class ArmijoSteepestDescentST extends GLockingObserverBase implements Loc
    * the main method of the class. Before it is called, a number of parameters
    * must have been set (via the parameters passed in the constructor, or via
    * a later call to setParams(p). These are:
-   * &lt;"asd.x0", VectorIntf x&gt; optional, the initial starting point. If this
-   * pair does not exist, or if x is null, then it becomes mandatory that
-   * a pair &lt;"[gradientdescent.]x0", VectorIntf x&gt; pair with a non-null x is
-   * in the parameters that have been set.
+   * &lt;"asd.x0", VectorIntf x&gt; optional, the initial starting point. If 
+	 * this pair does not exist, or if x is null, then it becomes mandatory that
+   * a pair &lt;"[gradientdescent.]x0", VectorIntf x&gt; pair with a non-null x 
+	 * is in the parameters that have been set.
    * &lt;"asd.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
    * function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * &lt;"asd.gtol", Double v&gt; optional, the minimum abs. value for each of the
-   * gradient's coordinates, below which if all coordinates of the gradient
+   * &lt;"asd.gtol", Double v&gt; optional, the minimum abs. value for each of 
+	 * the gradient's coordinates, below which if all coordinates of the gradient
    * happen to be, the search stops assuming it has reached a stationary point.
    * Default is 1.e-6.
-   * &lt;"asd.maxiters", Integer miters&gt; optional, the maximum number of major
-   * iterations of the SD search before the algorithm stops. Default is
+   * &lt;"asd.maxiters", Integer miters&gt; optional, the maximum number of 
+	 * major iterations of the SD search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
    * &lt;"asd.rho", Double v&gt; optional, the value for the parameter ñ in the
    * Armijo rule implementation. Default is 0.1.
    * &lt;"asd.beta", Double v&gt; optional, the value for the parameter â in the
    * Armijo rule implementation. Default is 0.8.
-   * &lt;"asd.gamma", Double v&gt; optional, the value for the parameter ã in the
-   * Armijo rule implementation. Default is 1.
-   * &lt;"asd.looptol", Double v&gt; optional, the minimum step-size allowed. Default
-   * is 1.e-21.
+   * &lt;"asd.gamma", Double v&gt; optional, the value for the parameter ã in 
+	 * the Armijo rule implementation. Default is 1.
+   * &lt;"asd.looptol", Double v&gt; optional, the minimum step-size allowed. 
+	 * Default is 1.e-21.
    *
    * @param f FunctionIntf the function to minimize
    * @throws OptimizerException if another thread is currently executing the
@@ -119,7 +126,8 @@ public class ArmijoSteepestDescentST extends GLockingObserverBase implements Loc
       synchronized (this) {
         if (_f != null)
           throw new OptimizerException("ASDST.minimize(): another thread is " +
-                                       "concurrently executing the method on the same object");
+                                       "concurrently executing the method on "+
+						                           "the same object");
         _f = f;
       }
       PairObjDouble pr = min(f, getParams());  // used to be _params
@@ -141,14 +149,17 @@ public class ArmijoSteepestDescentST extends GLockingObserverBase implements Loc
    * @param subject SubjectIntf
    * @throws OptimizerException
    */
-  protected void notifyChangeProtected(SubjectIntf subject) throws OptimizerException {
+  protected void notifyChangeProtected(SubjectIntf subject) 
+		throws OptimizerException {
     Object arg = subject.getIncumbent();
     FunctionIntf f = subject.getFunction();
     VectorIntf x=null;
     if (arg instanceof double[]) {
       x = new DblArray1Vector((double[]) arg);
     } else if (arg instanceof VectorIntf) x = (DblArray1Vector) arg;
-    else throw new OptimizerException("ASDST.notifyChange(): don't know how to convert argument into VectorIntf object");
+    else throw new OptimizerException("ASDST.notifyChange(): don't know "+
+			                                "how to convert argument into "+
+			                                "VectorIntf object");
     HashMap params = subject.getParams();
     params.put("gradientdescent.x0",x);  // add the initial point
     setParams(params);  // set the params of this object
@@ -170,19 +181,32 @@ public class ArmijoSteepestDescentST extends GLockingObserverBase implements Loc
    * (near-)stationary point
    * @return PairObjDouble the argmin and min value found
    */
-  private PairObjDouble min(FunctionIntf f, HashMap p) throws OptimizerException {
+  private PairObjDouble min(FunctionIntf f, HashMap p) 
+		throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("asd.gradient");
-    if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
+    if (grad==null) 
+			grad = new GradApproximator(f);  // default: numeric gradient computation
     final VectorIntf x0 = 
 			_params.containsKey("asd.x0")==false ?
          _params.containsKey("gradientdescent.x0") ? 
 			    (VectorIntf) _params.get("gradientdescent.x0") : 
-			      _params.containsKey("x0") ? (VectorIntf) _params.get("x0") : null // attempt to retrieve generic point
+			      _params.containsKey("x0") ? (VectorIntf) _params.get("x0") : null 
+            // attempt to retrieve generic point
 			: (VectorIntf) _params.get("asd.x0");
-    if (x0==null) throw new OptimizerException("no asd.x0"+" initial point in _params passed");
-    VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
+    if (x0==null) 
+			throw new OptimizerException("no asd.x0 "+
+				                           "initial point in _params passed");
+    VectorIntf x = x0.newInstance();  // x0.newCopy();  
+                                      // don't modify the initial soln
     final int n = x.getNumCoords();
-    final double f0 = f.eval(x0, p);
+		
+    final double f0;
+		try {
+			f0 = f.eval(x0, p);
+		}
+		catch (Exception e) {
+			throw new OptimizerException("ASDST.min(): f.eval() threw "+e.toString());
+		}
     double gtol = 1e-6;
     Double gtolD = (Double) p.get("asd.gtol");
     if (gtolD!=null && gtolD.doubleValue()>0) gtol = gtolD.doubleValue();
@@ -210,12 +234,19 @@ public class ArmijoSteepestDescentST extends GLockingObserverBase implements Loc
     boolean found=false;
     for (int iter=0; iter<maxiters; iter++) {
       h=0;
-      VectorIntf g = grad.eval(x, p);
-      fx = f.eval(x, p);  // was _f
+      VectorIntf g;
+			try {
+				g = grad.eval(x, p);
+				fx = f.eval(x, p);  // was _f
+			}
+			catch (Exception e) {
+				throw new OptimizerException("ASDST.min(): f or g evaluation threw "+e);
+			}
       final double norminfg = VecUtil.normInfinity(g);
       final double normg = VecUtil.norm(g,2);
       if (norminfg <= gtol) {
-        Messenger.getInstance().msg("found sol w/ norminfg="+norminfg+" in "+iter+" iterations.",0);
+        Messenger.getInstance().msg("found sol w/ norminfg="+norminfg+" in "+
+					                          iter+" iterations.",0);
         found = true;
         break;
       }
@@ -235,7 +266,13 @@ public class ArmijoSteepestDescentST extends GLockingObserverBase implements Loc
             e.printStackTrace();
           }
         }
-        double fval = f.eval(x,p);  // was _f
+        double fval;
+				try { 
+					fval = f.eval(x,p);  // was _f
+				}  
+				catch (Exception e) {
+					throw new OptimizerException("ASDST.min(): f.eval() threw "+e);
+				}
         if (fval <= fx + rprev) {
           h = Math.pow(beta,m)*gamma;
           fx = fval;
@@ -244,7 +281,9 @@ public class ArmijoSteepestDescentST extends GLockingObserverBase implements Loc
         rprev = beta*rprev;
         m++;
       }
-      if (h<=0) throw new OptimizerException("ASDST could not find a valid h for x="+x+" after "+m+" iterations...");
+      if (h<=0) 
+				throw new OptimizerException("ASDST could not find a valid h for x="+x+
+					                           " after "+m+" iterations...");
       // set new x
       for (int i=0; i<n; i++) {
         try {

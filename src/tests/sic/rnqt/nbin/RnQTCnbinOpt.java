@@ -437,7 +437,9 @@ public class RnQTCnbinOpt implements OptimizerIntf {
 /**
  * auxiliary class encapsulating the notion of optimizing an 
  * <CODE>RnQTCnbin</CODE> function, with a fixed review period T. NOT part of 
- * the public API.
+ * the public API. Notice that this class and the one below cannot be nested
+ * inside the main top class because the main class contains the reference 
+ * <CODE>_pdclt</CODE> that cannot (and must not) be serialized.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2019</p>
@@ -511,7 +513,7 @@ final class RnQTCnbinFixedTOptTask implements TaskObject {
 
 
 /**
- * auxiliary class that is essentially just an immutable struct, holding 5 
+ * auxiliary class that is essentially just an immutable struct, holding 6 
  * double values. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>

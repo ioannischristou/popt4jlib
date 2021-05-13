@@ -12,6 +12,8 @@ import java.util.*;
  * function evaluations.)
  * <p>Notes:
  * <ul>
+ * <li>2021-05-08: ensured all exceptions that function evaluation may throw are
+ * handled properly.
  * <li>2020-04-25: method seParams() became public because it was moved up from
  * LocalOptimizerIntf to the root OptimizerIntf interface class.
  * </ul>
@@ -165,7 +167,14 @@ public class MCS implements OptimizerIntf {
     if (val<_min) {
       if (Debug.debug(Constants.DMC)!=0) {
         // sanity check
-        double incval = _f.eval(arg, _params);
+        double incval;
+				try { 
+					incval = _f.eval(arg, _params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("MCS.setIncumbent(): _f.eval() threw "+
+						                           e.toString());
+				}
         if (Math.abs(incval - val) > 1.e-25) {
           Messenger.getInstance().msg("MCS.setIncumbent(): ind-val=" + val +
                                       " fval=" + incval + " ???", 0);

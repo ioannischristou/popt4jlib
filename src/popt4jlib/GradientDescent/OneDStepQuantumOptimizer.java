@@ -15,16 +15,18 @@ import java.util.HashMap;
  * different objects.
  * <p>Notes:
  * <ul>
- * <li>2018-12-29: class is useful enough to be made public.
+ * <li>2021-05-08: ensured all exceptions thrown within function evaluation are
+ * properly handled.
  * <li>2020-04-18: restored debug messages, added maxcount check for iterating
  * over an interval where the function remains essentially constant.
+ * <li>2018-12-29: class is useful enough to be made public.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2020</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 final public class OneDStepQuantumOptimizer {
   private int _dir=0;
@@ -128,7 +130,13 @@ final public class OneDStepQuantumOptimizer {
 						                         stepquantum);
           double xvarindex = x0.getCoord(varindex) + k*stepquantum;
 					x.setCoord(varindex, xvarindex);
-					_val = f.eval(x, fparams);
+					try {
+						_val = f.eval(x, fparams);
+					}
+					catch (Exception e) {
+						throw new OptimizerException("OneDStepQuantumOptimizer.argmin(): "+
+							                           "f.eval() threw "+e.toString());
+					}
 					--_remaining_funcevals;
 					if (x instanceof PoolableObjectIntf) {
 						((PoolableObjectIntf) x).release();
@@ -147,7 +155,16 @@ final public class OneDStepQuantumOptimizer {
 						                        stepquantum);
 					double xvarindex = x0.getCoord(varindex) - k*stepquantum;
 					x.setCoord(varindex, xvarindex);
-					_val = f.eval(x, fparams);
+					try {
+						_val = f.eval(x, fparams);
+					}
+					catch (Exception e) {
+	          if (x instanceof PoolableObjectIntf) {  // release pool resources
+							((PoolableObjectIntf) x).release();
+						}
+						throw new OptimizerException("OneDStepQuantumOptimizer.argmin(): "+
+							                           "f.eval() threw "+e.toString());
+					}					
 					--_remaining_funcevals;
           if (x instanceof PoolableObjectIntf) {
 						((PoolableObjectIntf) x).release();
@@ -166,7 +183,16 @@ final public class OneDStepQuantumOptimizer {
 			_dir = -2;  // indicate no change
     if (Double.isNaN(_val)) {  // must evaluate at sqt
 			x.setCoord(varindex, sqt);
-			_val = f.eval(x, fparams);
+			try {
+				_val = f.eval(x, fparams);
+			}
+			catch (Exception e) {
+        if (x instanceof PoolableObjectIntf) {  // release pool resources
+				  ((PoolableObjectIntf) x).release();
+				}
+				throw new OptimizerException("OneDStepQuantumOptimizer.argmin(): "+
+					                           "f.eval() threw "+e.toString());
+			}					
 		}
 		if (x instanceof PoolableObjectIntf) {
 			((PoolableObjectIntf) x).release();
@@ -188,23 +214,37 @@ final public class OneDStepQuantumOptimizer {
    * @param ftol double
 	 * @param maxiterswithsamefunctionval int
    * @throws ParallelException
-   * @throws IllegalArgumentException
+   * @throws OptimizerException
    * @return double
    */
   private double detdir(FunctionIntf f, HashMap params, VectorIntf x,
                         int j, double eps, double lb, double ub, double ftol,
 												int maxiterswithsamefunctionval) 
-		throws ParallelException, IllegalArgumentException {
+		throws ParallelException, OptimizerException {
 		utils.Messenger mger = utils.Messenger.getInstance();
     try {
       final double s = x.getCoord(j);
-      final double c = f.eval(x, params);
+      final double c;
+			try { 
+				c= f.eval(x, params);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("OneDStepQuantumOptimizer.detdir(): "+
+					                           "f.eval() threw "+e.toString());
+			}					
 			--_remaining_funcevals;
       mger.msg("detdir: starting with x["+j+"]="+s+
 				       " c="+c+" lb="+lb+" ub="+ub,3);
       x.setCoord(j, s + eps);
       if (ftol < 0) ftol = 0.0;
-      double cup = f.eval(x, params);
+      double cup; 
+			try {
+				cup = f.eval(x, params);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("OneDStepQuantumOptimizer.detdir(): "+
+					                           "f.eval() threw "+e.toString());
+			}					
 			--_remaining_funcevals;
       if (Double.compare(c, cup + ftol) > 0) {
         _dir = 1;
@@ -214,7 +254,14 @@ final public class OneDStepQuantumOptimizer {
       else if (Math.abs(c - cup) <= ftol) { // Double.compare(c,cup)==0
         double s2 = s;
         x.setCoord(j, s2);
-        double cnew = f.eval(x, params);
+        double cnew; 
+				try {
+					cnew = f.eval(x, params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("OneDStepQuantumOptimizer.detdir(): "+
+						                           "f.eval() threw "+e.toString());
+				}					
 				--_remaining_funcevals;
         for (int cnt=0; 
 					   Math.abs(cnew - c) <= ftol && s2 < ub &&
@@ -223,7 +270,13 @@ final public class OneDStepQuantumOptimizer {
           // used to be while Double.compare(cnew,c)==0
           s2 += eps;
           x.setCoord(j, s2);
-          cnew = f.eval(x, params);
+					try {
+						cnew = f.eval(x, params);
+					}
+					catch (Exception e) {
+						throw new OptimizerException("OneDStepQuantumOptimizer.detdir(): "+
+							                           "f.eval() threw "+e.toString());
+					}					
 					--_remaining_funcevals;
           mger.msg("ODSQO.detdir(): f(x" + j + "=" +
 						       s2 + ")=" + cnew+" eps3="+eps, 4);
@@ -252,7 +305,13 @@ final public class OneDStepQuantumOptimizer {
             // used to be while Double.compare(cnew,c)==0
             s2 -= eps;
             x.setCoord(j, s2);
-            cnew = f.eval(x, params);
+            try {
+							cnew = f.eval(x, params);
+						}
+						catch (Exception e) {
+							throw new OptimizerException("OneDStepQuantumOptimizer.detdir():"+
+									                         " f.eval() threw "+e.toString());
+						}					
 						--_remaining_funcevals;
             mger.msg("ODSQO.detdir(): f(x"+j+"="+s2+")="+cnew,4);
           }
@@ -274,7 +333,14 @@ final public class OneDStepQuantumOptimizer {
       }
       // should try the down direction
       x.setCoord(j, s - eps);
-      double cdown = f.eval(x, params);
+      double cdown;
+			try { 
+				cdown = f.eval(x, params);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("OneDStepQuantumOptimizer.detdir(): "+
+					                           "f.eval() threw "+e.toString());
+			}					
 			--_remaining_funcevals;
       if (Double.compare(c, cdown + ftol) > 0) {
         _dir = -1;
@@ -284,7 +350,14 @@ final public class OneDStepQuantumOptimizer {
       else if (Math.abs(c - cdown) <= ftol) {  // Double.compare(c,cdown)==0
         double s2 = s;
         x.setCoord(j, s2);
-        double cnew = f.eval(x, params);
+        double cnew;
+				try { 
+					cnew = f.eval(x, params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("OneDStepQuantumOptimizer.detdir(): "+
+						                           "f.eval() threw "+e.toString());
+				}					
 				--_remaining_funcevals;
         for (int cnt=0;
 					   Math.abs(cnew - c) <= ftol && s2 > lb &&
@@ -292,7 +365,13 @@ final public class OneDStepQuantumOptimizer {
 						 cnt++) {  // used to be while Double.compare(cnew,c)==0
           s2 -= eps;
           x.setCoord(j, s2);
-          cnew = f.eval(x, params);
+					try {
+						cnew = f.eval(x, params);
+					}
+					catch (Exception e) {
+						throw new OptimizerException("OneDStepQuantumOptimizer.detdir(): "+
+							                           "f.eval() threw "+e.toString());
+					}					
 					--_remaining_funcevals;
           mger.msg("ODSQO.detdir(): f(x" + j + "=" +
                     s2 + ")=" + cnew+" eps="+eps, 4);
@@ -320,7 +399,13 @@ final public class OneDStepQuantumOptimizer {
 							 cnt++) {  // used to be while Double.compare(cnew,c)==0
             s2 += eps;
             x.setCoord(j, s2);
-            cnew = f.eval(x, params);
+            try {
+							cnew = f.eval(x, params);
+						}
+						catch (Exception e) {
+							throw new OptimizerException("OneDStepQuantumOptimizer.detdir():"+
+									                         " f.eval() threw "+e.toString());
+						}					
 						--_remaining_funcevals;
             mger.msg("ODSQO.detdir(): f(x" + j + "=" +
                      s2 + ")=" + cnew+" eps2="+eps, 4);

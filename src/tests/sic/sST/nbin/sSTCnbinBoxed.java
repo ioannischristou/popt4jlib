@@ -1,10 +1,12 @@
 package tests.sic.sST.nbin;
 
+import popt4jlib.FiniteLRUFunctionCache;
+import popt4jlib.FunctionIntf;
 import java.util.HashMap;
 
 
 /**
- * the class extends the <CODE>sSTCnbin</CODE> class with the functionality 
+ * the class uses the <CODE>sSTCnbin</CODE> class with the functionality 
  * that it projects any argument for evaluation into the feasible region of the
  * class. Essentially it projects the arguments into their box-constrained 
  * feasible region, so that the constraints s,S integer, S &ge; s and 
@@ -18,9 +20,10 @@ import java.util.HashMap;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class sSTCnbinBoxed extends sSTCnbin {
+public class sSTCnbinBoxed implements FunctionIntf {
 	
 	private final double _Tmin = 0.01;  // default
+	private FiniteLRUFunctionCache _fcache;
 	
 	
 	/**
@@ -39,7 +42,8 @@ public class sSTCnbinBoxed extends sSTCnbin {
 		                   double L, 
 						 					 double lambda, double p_l, 
 											 double h, double p) {
-		super(Kr, Ko, L, lambda, p_l, h, p);
+		sSTCnbin f = new sSTCnbin(Kr, Ko, L, lambda, p_l, h, p);
+		_fcache = new FiniteLRUFunctionCache(f, null, 10000);
 	}
 	
 	
@@ -53,13 +57,24 @@ public class sSTCnbinBoxed extends sSTCnbin {
 	 */
 	public double eval(Object arg, HashMap params) {
 		double[] x = (double[]) arg;
+		// must create new array to set values for (s,S,T) evaluation
+		// otherwise most meta-heuristic operators manipulating the solutions
+		// might corrupt data
+		double[] xeval = new double[x.length];
 		// s
-		x[0] = Math.round(x[0]);
+		xeval[0] = Math.round(x[0]);
 		// S
-		x[1] = Math.round(x[1]);
-		if (x[1] <= x[0]) x[1] = x[0]+1;
+		xeval[1] = Math.round(x[1]);
+		if (xeval[1] < xeval[0]) {  // swap values
+			double tmp = xeval[0];
+			xeval[0] = xeval[1];
+			xeval[1] = tmp;
+		} else if (Double.compare(xeval[1], xeval[0])==0) {
+			xeval[1]++;
+		}
 		// T
-		if (x[2] <= 0) x[2] = _Tmin;
-		return super.eval(x, params);
+		if (x[2] <= _Tmin) xeval[2] = _Tmin;
+		else xeval[2] = x[2];
+		return _fcache.eval(xeval, params);
 	}
 }

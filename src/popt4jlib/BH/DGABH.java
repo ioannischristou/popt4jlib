@@ -70,9 +70,16 @@ import utils.RndUtil;
  * optimization problem is only allowed as long as there is no need to send 
  * another initialization command to the network of workers, as workers cannot 
  * be initialized twice.</p>
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-10: ensured function evaluations continue even after an exception
+ * is thrown.
+ * <li>2021-05-08: wrapped function evaluations around try-catch clause to 
+ * ensure only <CODE>OptimizerException</CODE> exceptions are emitted.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2017</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -483,7 +490,14 @@ public class DGABH extends GLockingObservableObserverBase
 						(Chromosome2ArgMakerIntf) _params.getObject("dgabh.c2amaker");
           if (c2amaker != null) // oops, no it wasn't
             arg = c2amaker.getArg(ind.getChromosome(), _params.getParamsMap());
-          double incval = _f.eval(arg, _params.getParamsMap());
+					double incval = Double.MAX_VALUE;
+					try {
+						incval = _f.eval(arg, _params.getParamsMap());
+					}
+					catch (Exception e) {
+						throw new OptimizerException("DGABH.setIncumbent(): _f.eval() "+
+							                           "threw "+e.toString());
+					}
           if (Math.abs(incval - ind.getValue()) > 1.e-25) {
             mger.msg("DGABH.setIncumbent(): ind-val=" +
                      ind.getValue() + " fval=" + incval +" ???", 0);
@@ -878,9 +892,17 @@ class DGABHThreadAux {
 		if (run_locally) {
 			for (int i=0; i<initpopnum; i++) {
 				Object chromosome = amaker.createRandomChromosome(_p);
-				DGABHIndividual indi = new DGABHIndividual(chromosome, _master, 
-					                                         p2, _fp);
-				_individuals.add(indi);
+				try {
+					DGABHIndividual indi = new DGABHIndividual(chromosome, _master, 
+						                                         p2, _fp);
+					_individuals.add(indi);
+				}
+				catch (OptimizerException e) {  // report failure to create individual
+					Messenger.getInstance().msg("DGABHThreadAux.initPopulation(): "+
+						                          " creating the "+i+"-th ind. failed, "+
+						                          " will ignore and continue", 0);
+					// continue;
+				}
 			}
 		}
     // finally update island's incumbent
@@ -1180,7 +1202,13 @@ class DGABHIndividual {
     Object arg = null;
     if (c2amaker == null) arg = _x;
     else arg = c2amaker.getArg(_x, params.getParamsMap());
-    _val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+		try {
+			_val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+		}
+		catch (Exception e) {
+			throw new OptimizerException("DGABHIndividual.setValues(c,p,fp): "+
+				                           "_f.eval() threw "+e.toString());
+		}		
   }
   void setValues(Object chromosome, double val) throws OptimizerException {
     _x = chromosome;
@@ -1194,7 +1222,13 @@ class DGABHIndividual {
       Object arg = null;
       if (c2amaker == null) arg = _x;
       else arg = c2amaker.getArg(_x, params.getParamsMap());
-      _val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+			try {
+				_val = _f.eval(arg, funcParams);  // was _master._f which is also safe
+			}
+			catch (Exception e) {
+				throw new OptimizerException("DGABHIndividual.computeValue(): "+
+					                           "_f.eval() threw "+e.toString());
+			}			
     }
   }
 }

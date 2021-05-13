@@ -3,17 +3,22 @@ package popt4jlib.GradientDescent;
 import popt4jlib.LocalOptimizerIntf;
 import java.util.*;
 import utils.*;
-import parallel.*;
 import analysis.*;
 import popt4jlib.*;
+
 
 /**
  * Single-Threaded version of the FletcherConjugateGradient class that
  * implements a single try, single threaded local optimization from a single
  * initial point to a local stationary point of the function to be optimized.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured all exceptions thrown during function evaluation are
+ * properly handled.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2020</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -463,8 +468,14 @@ public class FletcherConjugateGradientST extends GLockingObserverBase
     for (int iter=0; iter<maxiters; iter++) {
       mger.msg("FCGST.min(): In iteration "+iter+
 				       ", prevh="+h+", fx="+fx,1);
-      VectorIntf g = gnew==null ? grad.eval(x, p) : gnew;
-      fx = f.eval(x, p);
+      VectorIntf g;
+			try {
+				g = gnew==null ? grad.eval(x, p) : gnew;
+				fx = f.eval(x, p);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("FCGST.min(): f or g evaluation threw "+e);
+			}
       final double norminfg = VecUtil.normInfinity(g);
       final double normg = VecUtil.norm(g,2);
       if (Double.compare(norminfg, gtol) <= 0) {
@@ -523,7 +534,12 @@ public class FletcherConjugateGradientST extends GLockingObserverBase
         }
       }
       // update b according to Fletcher-Reeves formula
-      gnew = grad.eval(x, p);
+			try {
+				gnew = grad.eval(x, p);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("FCGST.min(): f or g evaluation threw "+e);
+			}			
       b = VecUtil.innerProduct(gnew,gnew)/(normg*normg);
     }
     // end main loop

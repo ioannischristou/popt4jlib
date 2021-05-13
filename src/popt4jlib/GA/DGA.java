@@ -61,9 +61,15 @@ import java.util.*;
  * object that is executed by the workers's main thread itself and not their 
  * worker threads is enough; this feature isn't implemented yet for the DGA 
  * class).</p>
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: added code around the evaluation of the function f to handle
+ * the case where the <CODE>eval()</CODE> method throws exception other than 
+ * <CODE>IllegalArgumentException</CODE>.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2020</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 2.0
@@ -523,7 +529,15 @@ public class DGA extends GLockingObservableObserverBase
           // the same used for function evals.
           if (_c2amaker != null) // oops, no it wasn't
             arg = _c2amaker.getArg(ind.getChromosome(), _params);
-          double incval = _f.eval(arg, _params);
+					double incval = Double.MAX_VALUE;
+					try {
+						incval = _f.eval(arg, _params);
+					}
+					catch (Exception e) {
+						throw new OptimizerException("DGA.setIncumbent(): while evaluating"+
+							                           " _f, _f.eval() threw "+
+							                           e.toString());
+					}
           if (Math.abs(incval - ind.getValue()) > 1.e-25) {
             Messenger.getInstance().msg("DGA.setIncumbent(): ind-val=" +
                                         ind.getValue() + " fval=" + incval +
@@ -1726,7 +1740,13 @@ class DGAIndividual {
       Object arg = null;
       if (_c2amaker == null) arg = _chromosome;
       else arg = _c2amaker.getArg(_chromosome, params);
-      _val = _f.eval(arg, params);
+			try {
+				_val = _f.eval(arg, params);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("DGAIndividual.computeValue(): threw "+
+					                           e.toString());
+			}
     }
   }
 }

@@ -33,7 +33,7 @@ import cern.jet.random.Poisson;
  * @version 1.0
  */
 public class RnQTCpoisson implements FunctionIntf {
-	private double _Kr;
+	double _Kr;
 	double _Ko;
 	double _L;
 	double _lambda;

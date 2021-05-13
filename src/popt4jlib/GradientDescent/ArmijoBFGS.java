@@ -12,9 +12,14 @@ import popt4jlib.*;
 /**
  * Quasi-Newton optimization using BFGS for inverse Hessian updates and Armijo
  * rule for step-size determination.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured all exceptions thrown during function evaluation are
+ * handled properly.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -76,7 +81,8 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
    * <CODE>minimize(f)</CODE> method of this object
    */
   public synchronized void setParams(HashMap p) throws OptimizerException {
-    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    if (_f!=null) 
+			throw new OptimizerException("cannot modify parameters while running");
     _params = null;
     _params = new HashMap(p);  // own the params
   }
@@ -92,30 +98,30 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
    * <p>Prior to this call, some parameters for the optimization process may be
    * set-up. These are:
 	 * <ul>
-   * <li>&lt;"abfgs.numtries", ntries&gt; optional, the number of initial starting 
-	 * points to use (must either exist then ntries &lt;"x$i$",VectorIntf v&gt; 
-	 * pairs in the parameters or a pair &lt;"[gradientdescent.]x0",VectorIntf v&gt; 
-	 * pair in params). Default is 1.
-   * <li>&lt;"abfgs.numthreads", Integer nt&gt; optional, the number of threads to 
-	 * use. Default is 1.
-   * <li>&lt;"abfgs.gradient", VecFunctionIntf g&gt; optional, the gradient of f, 
+   * <li>&lt;"abfgs.numtries", ntries&gt; optional, the number of initial 
+	 * starting points to use (must either exist then ntries 
+	 * &lt;"x$i$",VectorIntf v&gt; pairs in the parameters or a pair 
+	 * &lt;"[gradientdescent.]x0",VectorIntf v&gt; pair in params). Default is 1.
+   * <li>&lt;"abfgs.numthreads", Integer nt&gt; optional, the number of threads 
+	 * to use. Default is 1.
+   * <li>&lt;"abfgs.gradient", VecFunctionIntf g&gt; optional, the gradient of f 
 	 * the function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * <li>&lt;"abfgs.gtol", Double v&gt; optional, the minimum abs. value for each 
-	 * of the gradient's coordinates, below which if all coordinates of the 
+   * <li>&lt;"abfgs.gtol", Double v&gt; optional, the minimum absolute value for 
+	 * each of the gradient's coordinates, below which if all coordinates of the 
 	 * gradient happen to be, the search stops assuming it has reached a 
 	 * stationary point. Default is 1.e-6.
-   * <li>&lt;"abfgs.maxiters", Integer miters&gt; optional, the maximum number of 
-	 * major iterations of the Newton-type search before the algorithm stops. 
+   * <li>&lt;"abfgs.maxiters", Integer miters&gt; optional, the maximum number 
+	 * of major iterations of the Newton-type search before the algorithm stops. 
 	 * Default is Integer.MAX_VALUE.
-   * <li> &lt;"abfgs.rho", Double v&gt; optional, the value for the parameter &rho; 
-	 * in the Armijo rule implementation. Default is 0.1.
+   * <li> &lt;"abfgs.rho", Double v&gt; optional, the value for the parameter 
+	 * &rho; in the Armijo rule implementation. Default is 0.1.
    * <li>&lt;"abfgs.beta", Double v&gt; optional, the value for the parameter 
 	 * &beta; in the Armijo rule implementation. Default is 0.2.
    * <li>&lt;"abfgs.gamma", Double v&gt; optional, the value for the parameter 
 	 * &gamma; in the Armijo rule implementation. Default is 1.
-   * <li>&lt;"abfgs.maxarmijoiters", Integer v&gt; optional, the maximum number of 
-	 * Armijo rule iterations allowed. Default is Integer.MAX_VALUE.
+   * <li>&lt;"abfgs.maxarmijoiters", Integer v&gt; optional, the maximum number 
+	 * of Armijo rule iterations allowed. Default is Integer.MAX_VALUE.
    *</ul>
    * @param f FunctionIntf
    * @throws OptimizerException if another thread is concurrently running the
@@ -130,7 +136,7 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
       synchronized (this) {
         if (_f != null)
           throw new OptimizerException("ArmijoBFGS.minimize(): " +
-                                       "another thread is concurrently executing"+
+                                       "another thread is concurrently running"+
                                        " the method on the same object");
         _f = f;
         _inc = null;
@@ -197,17 +203,23 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
    * @throws OptimizerException if the process fails
    * @return PairObjDouble the pair of the arg. min and the min. value found
    */
-  private PairObjDouble min(FunctionIntf f, int solindex) throws OptimizerException {
+  private PairObjDouble min(FunctionIntf f, int solindex) 
+		throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) _params.get("abfgs.gradient");
-    if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
+    if (grad==null) 
+			grad = new GradApproximator(f);  // default: numeric gradient computation
     final VectorIntf x0 = 
 			_params.containsKey("abfgs.x"+solindex)==false ?
          _params.containsKey("gradientdescent.x0") ? 
 			    (VectorIntf) _params.get("gradientdescent.x0") : 
-			      _params.containsKey("x0") ? (VectorIntf) _params.get("x0") : null // attempt to retrieve generic point
+			      _params.containsKey("x0") ? (VectorIntf) _params.get("x0") : null 
+            // attempt to retrieve generic point
 			: (VectorIntf) _params.get("abfgs.x"+solindex);
-    if (x0==null) throw new OptimizerException("no abfgs.x"+solindex+" initial point in _params passed");
-    VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
+    if (x0==null) 
+			throw new OptimizerException("no abfgs.x"+solindex+
+				                           " initial point in _params passed");
+    VectorIntf x = x0.newInstance();  // x0.newCopy();  
+                                      // don't modify the initial soln
     final int n = x.getNumCoords();
     double gtol = 1e-6;
     try {
@@ -234,11 +246,19 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
     // G is the Identity matrix
     // BFGS loop
     for (int iter=0; iter<maxiters; iter++) {
-      VectorIntf g = grad.eval(x, _params);
-      fx = f.eval(x, _params);  // used to be _f.eval(x, _params);
+      VectorIntf g;
+			try { 
+				g = grad.eval(x, _params);
+				fx = f.eval(x, _params);  // used to be _f.eval(x, _params);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("ABFGS.min(): f or g evaluation threw "+
+					                           e.toString());
+			}
       double norminfg = VecUtil.normInfinity(g);
       if (norminfg <= gtol) {
-        Messenger.getInstance().msg("found sol w/ normg="+norminfg+" in "+iter+" iterations.",0);
+        Messenger.getInstance().msg("found sol w/ normg="+norminfg+" in "+iter+
+					                          " iterations.",0);
         found = true;
         break;
       }
@@ -262,7 +282,14 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
         e.printStackTrace();
       }
       // compute gamma
-      VectorIntf gx = grad.eval(x, _params);
+      VectorIntf gx;
+			try { 
+				gx = grad.eval(x, _params);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("ABFGS.min(): g.eval() threw "+
+					                           e.toString());
+			}
       DoubleMatrix1D gm = new DenseDoubleMatrix1D(gx.getDblArray1());
       for (int i=0; i<n; i++) gm.setQuick(i,gm.getQuick(i)-g.getCoord(i));
       // compute gamma'delta
@@ -307,14 +334,23 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
    * the insanity of the arg not being evaluated to the value val is detected,
    * caused by the function f being minimized not being reentrant.
    */
-  synchronized void setIncumbent(VectorIntf arg, double val) throws OptimizerException {
+  synchronized void setIncumbent(VectorIntf arg, double val) 
+		throws OptimizerException {
     if (val<_incValue) {
       if (Debug.debug(popt4jlib.Constants.ABFGS)!=0) {
         // sanity check
-        double incval = _f.eval(arg, _params);
+        double incval = Double.MAX_VALUE;
+				try {
+					incval = _f.eval(arg, _params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("ABFGS.setIncumbent(): _f.eval() threw "+
+						                           e.toString());
+				}
         if (Math.abs(incval - _incValue) > 1.e-25) {
-          Messenger.getInstance().msg("ABFGS.setIncumbent(): arg-val originally=" +
-                                      _incValue + " fval=" + incval + " ???", 0);
+          Messenger.getInstance().msg("ABFGS.setIncumbent(): arg-val "+
+						                          "originally=" + _incValue + 
+						                          " fval=" + incval + " ???", 0);
           throw new OptimizerException(
               "ABFGS.setIncumbent(): insanity detected; " +
               "most likely evaluation function is " +
@@ -341,9 +377,11 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
    * required number of Armijo iterations.
    * @return double
    */
-  private double min1D(FunctionIntf f, VectorIntf x, VectorIntf s) throws OptimizerException {
+  private double min1D(FunctionIntf f, VectorIntf x, VectorIntf s) 
+		throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) _params.get("abfgs.gradient");
-    if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
+    if (grad==null) 
+			grad = new GradApproximator(f);  // default: numeric gradient computation
     final int n = x.getNumCoords();
     double h=0;
     double rho = 0.1;
@@ -364,8 +402,15 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
     if (miI!=null && miI.intValue()>0)
       maxiters = miI.intValue();
     boolean found=false;
-    VectorIntf g = grad.eval(x, _params);
-    fx = f.eval(x, _params);  // used to be _f
+    VectorIntf g;
+		try {
+			g = grad.eval(x, _params);
+	    fx = f.eval(x, _params);  // used to be _f
+		}
+    catch (Exception e) {
+			throw new OptimizerException("ArmijoBFGS.min1D(): f or g eval threw "+
+				                           e.toString());
+		}
     double[] xa = new double[n];
     for (int i=0; i<n; i++) xa[i] = x.getCoord(i);
     // Armijo Rule implementation
@@ -381,7 +426,14 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
           e.printStackTrace();
         }
       }
-      double fval = f.eval(x,_params);  // used to be _f
+      double fval = Double.MAX_VALUE;
+			try {
+				fval = f.eval(x,_params);  // used to be _f
+			}
+	    catch (Exception e) {
+				throw new OptimizerException("ArmijoBFGS.min1D(): f.eval() threw "+
+					                           e.toString());
+			}  
       if (fval <= fx + rprev) {
         h = Math.pow(beta,m)*gamma;
         found=true;
@@ -404,9 +456,12 @@ public class ArmijoBFGS implements LocalOptimizerIntf {
    * @throws IllegalArgumentException
    * @return double
    */
-  private double innerProd(VectorIntf x, VectorIntf y) throws IllegalArgumentException {
-    if (x==null || y==null) throw new IllegalArgumentException("null args passed");
-    if (x.getNumCoords()!=y.getNumCoords()) throw new IllegalArgumentException("args have different dimensions");
+  private double innerProd(VectorIntf x, VectorIntf y) 
+		throws IllegalArgumentException {
+    if (x==null || y==null) 
+			throw new IllegalArgumentException("null args passed");
+    if (x.getNumCoords()!=y.getNumCoords()) 
+			throw new IllegalArgumentException("args have different dimensions");
     double res = 0.0;
     final int n = x.getNumCoords();
     for (int i=0; i<n; i++) res += x.getCoord(i)*y.getCoord(i);

@@ -445,7 +445,11 @@ public final class RnQTCnormOpt implements OptimizerIntf {
 /**
  * auxiliary class encapsulating the notion of optimizing an 
  * <CODE>RnQTCnorm</CODE> function, with a fixed review period T. NOT part of 
- * the public API.
+ * the public API. Notice that this class together with the similarly named but
+ * ending with "Result" class are not nested inside the main class 
+ * <CODE>RnQTCnbinHeurPOpt</CODE> because the outer class contains the 
+ * <CODE>_pdclt</CODE> object reference which cannot (and must not) be 
+ * serializable.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2018</p>

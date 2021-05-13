@@ -10,14 +10,20 @@ import popt4jlib.*;
  * Single-Threaded version of the PolakRibiereConjugateGradient class that
  * implements a single try, single threaded local optimization from a single
  * initial point to a local stationary point of the function to be optimized.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured all exceptions thrown within function evaluation are
+ * properly handled.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public class PolakRibiereConjugateGradientST extends GLockingObserverBase implements LocalOptimizerIntf {
+public class PolakRibiereConjugateGradientST extends GLockingObserverBase 
+                                             implements LocalOptimizerIntf {
   HashMap _params;
   FunctionIntf _f;
 
@@ -74,7 +80,8 @@ public class PolakRibiereConjugateGradientST extends GLockingObserverBase implem
    * <CODE>minimize(f)</CODE> method of this object.
    */
   public synchronized void setParams(HashMap p) throws OptimizerException {
-    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    if (_f!=null) 
+			throw new OptimizerException("cannot modify parameters while running");
     _params = null;
     _params = new HashMap(p);  // own the params
   }
@@ -87,11 +94,11 @@ public class PolakRibiereConjugateGradientST extends GLockingObserverBase implem
    * <ul>
 	 * <li>&lt;"prcg.x0", VectorIntf x&gt; optional, the initial starting point.
    * If this pair does not exist or if x is null, then it becomes mandatory that
-   * a pair &lt;"[gradientdescent.]x0", VectorIntf x&gt; pair with a non-null x is
-   * in the parameters that have been set.
+   * a pair &lt;"[gradientdescent.]x0", VectorIntf x&gt; pair with a non-null x 
+   * is in the parameters that have been set.
    * <li>&lt;"prcg.gradient", VecFunctionIntf g&gt; optional, the gradient of f,
    * the function to be minimized. If this param-value pair does not exist, the
-   * gradient will be computed using Richardson finite differences extrapolation.
+   * gradient is computed using Richardson finite differences extrapolation.
    * <li>&lt;"prcg.gtol", Double v&gt; optional, the minimum abs. value for each 
 	 * of the gradient's coordinates, below which if all coordinates of the 
 	 * gradient happen to be, the search stops assuming it has reached a 
@@ -146,14 +153,16 @@ public class PolakRibiereConjugateGradientST extends GLockingObserverBase implem
    * @param subject SubjectIntf
    * @throws OptimizerException
    */
-  protected void notifyChangeProtected(SubjectIntf subject) throws OptimizerException {
+  protected void notifyChangeProtected(SubjectIntf subject) 
+		throws OptimizerException {
     Object arg = subject.getIncumbent();
     FunctionIntf f = subject.getFunction();
     VectorIntf x=null;
     if (arg instanceof double[]) {
       x = new DblArray1Vector((double[]) arg);
     } else if (arg instanceof VectorIntf) x = (DblArray1Vector) arg;
-    else throw new OptimizerException("OPRCGST.notifyChange(): don't know how to convert argument into VectorIntf object");
+    else throw new OptimizerException("OPRCGST.notifyChange(): don't know how "+
+			                                "to convert argument into VectorIntf");
     HashMap params = subject.getParams();
     params.put("gradientdescent.x0",x);  // add the initial point
     params.put("prcg.maxiters", new Integer(1000));
@@ -176,18 +185,23 @@ public class PolakRibiereConjugateGradientST extends GLockingObserverBase implem
    * (near-)stationary point
    * @return PairObjDouble the arg.min and the min. value found.
    */
-  private PairObjDouble min(FunctionIntf f, HashMap p) throws OptimizerException {
+  private PairObjDouble min(FunctionIntf f, HashMap p) 
+		throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("prcg.gradient");
-    if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
+    if (grad==null) 
+			grad = new GradApproximator(f);  // default: numeric gradient computation
     final VectorIntf x0 = 
 			p.containsKey("prcg.x0")==false ?
          p.containsKey("gradientdescent.x0") ? 
 			    (VectorIntf) p.get("gradientdescent.x0") : 
-			      p.containsKey("x0") ? (VectorIntf) p.get("x0") : null // attempt to retrieve generic point
+			      p.containsKey("x0") ? (VectorIntf) p.get("x0") : null 
+            // attempt to retrieve generic point
 			: (VectorIntf) p.get("prcg.x0");
-    if (x0==null) throw new OptimizerException("no prcg.x0"+
-                                               " initial point in _params passed");
-    VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
+    if (x0==null) 
+			throw new OptimizerException("no prcg.x0"+
+                                   " initial point in _params passed");
+    VectorIntf x = x0.newInstance();  // x0.newCopy();  
+                                      // don't modify the initial soln
     final int n = x.getNumCoords();
     double gtol = 1e-8;
     try {
@@ -239,23 +253,32 @@ public class PolakRibiereConjugateGradientST extends GLockingObserverBase implem
     double[] xa = new double[n];
     for (int iter=0; iter<maxiters; iter++) {
       h=0;
-      VectorIntf g = grad.eval(x, p);
-      fx = f.eval(x, p);  // was _f
+      VectorIntf g;
+			try { 
+				g= grad.eval(x, p);
+	      fx = f.eval(x, p);  // was _f
+			}
+			catch (Exception e) {
+				throw new OptimizerException("PRCGST.min(): f or g threw "+e);
+			}
       final double norminfg = VecUtil.normInfinity(g);
       final double normg = VecUtil.norm2(g);
       if (norminfg <= gtol) {
-        Messenger.getInstance().msg("found sol w/ norminfg="+norminfg+" in "+iter+" iterations.",0);
+        Messenger.getInstance().msg("found sol w/ norminfg="+norminfg+
+					                          " in "+iter+" iterations.",0);
         found = true;
         break;
       }
       for (int i=0; i<n; i++) {
         xa[i] = x.getCoord(i);
-        if (iter % n == 0) s.setCoord(i, -g.getCoord(i));  // reset search direction
+        if (iter % n == 0) 
+					s.setCoord(i, -g.getCoord(i));  // reset search direction
         else
           s.setCoord(i,s.getCoord(i)*b-g.getCoord(i));  // s update
       }
       double norms = VecUtil.norm2(s);
-      for (int i=0; i<n; i++) s.setCoord(i, s.getCoord(i)/norms);  // normalize s
+      for (int i=0; i<n; i++) 
+				s.setCoord(i, s.getCoord(i)/norms);  // normalize s
       // Armijo Rule implementation
       // determine step-size h
       double sTg = VecUtil.innerProduct(s,g);
@@ -274,7 +297,13 @@ public class PolakRibiereConjugateGradientST extends GLockingObserverBase implem
             e.printStackTrace();
           }
         }
-        double fval = f.eval(x,p);  // was _f
+        double fval;
+				try { 
+					fval = f.eval(x,p);  // was _f
+				}  
+				catch (Exception e) {
+					throw new OptimizerException("PRCGST.min(): f.eval() threw "+e);
+				}
         if (fval <= fx + rprev) {
           h = Math.pow(beta,m)*gamma;
           break;
@@ -295,7 +324,13 @@ public class PolakRibiereConjugateGradientST extends GLockingObserverBase implem
         }
       }
       // update b
-      VectorIntf gnew = grad.eval(x, p);
+      VectorIntf gnew;
+			try { 
+				gnew = grad.eval(x, p);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("PRCGST.min(): g.eval() threw "+e);
+			}
       VectorIntf gdiff = gnew.newCopy();
       for (int i=0; i<n; i++) {
         try {

@@ -38,7 +38,7 @@ public class Adam implements LocalOptimizerIntf {
 
 
   /**
-   * public no-arg constructor
+   * public no-arg no-op constructor.
    */
   public Adam() {
   }
@@ -286,6 +286,18 @@ public class Adam implements LocalOptimizerIntf {
     }
 
 
+		/**
+		 * the main method for the AdamThread class, may throw various unchecked
+		 * exceptions, but the only place where it is called, is surrounded by a 
+		 * try-catch clause where the catch clause catches any exception, so there
+		 * is no need for individual try-catch blocks when <CODE>f.eval()</CODE> is
+		 * called.
+		 * @param f FunctionIntf
+		 * @param solindex int solution index
+		 * @param p HashMap parameters map
+		 * @return PairObjDouble
+		 * @throws OptimizerException 
+		 */
     private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) 
 			throws OptimizerException {
 			Messenger mger = Messenger.getInstance();

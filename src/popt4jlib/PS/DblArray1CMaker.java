@@ -7,12 +7,17 @@ import java.util.*;
 /**
  * creates random double[] objects of fixed length, according to parameters
  * passed in a <CODE>HashMap</CODE> object.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-13: fixed mispelling of key "dpso.[min|max]argval$i$" when 
+ * looking for specific components' minimum and/or maximum allowed values.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 1.1
  */
 public class DblArray1CMaker implements RandomChromosomeMakerIntf {
   /**
@@ -53,7 +58,10 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
    */
   public Object createRandomChromosome(HashMap p) throws OptimizerException {
     try {
+			Messenger mger = Messenger.getInstance();
       LightweightParams params = new LightweightParams(p);
+      final int id = params.getInteger("thread.id").intValue();
+			final Random rnd = RndUtil.getInstance(id).getRandom();
       final int nmax = params.getInteger("dpso.chromosomelength").intValue();
       double maxallelevalg=Double.MAX_VALUE;
       Double maxag = params.getDouble("dpso.maxallelevalue");
@@ -61,20 +69,29 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
       double minallelevalg=Double.NEGATIVE_INFINITY;
       Double minag = params.getDouble("dpso.minallelevalue");
       if (minag!=null) minallelevalg = minag.doubleValue();
-      final int id = params.getInteger("thread.id").intValue();
       double[] arr = new double[nmax];
       for (int i=0; i<nmax; i++) {
         double minalleleval = minallelevalg;
-        Double minai = params.getDouble("dpso.minalleleval"+i);
+        Double minai = params.getDouble("dpso.minallelevalue"+i);
         if (minai!=null && minai.doubleValue() > minallelevalg)
           minalleleval = minai.doubleValue();
         double maxalleleval = maxallelevalg;
-        Double maxai = params.getDouble("dpso.maxalleleval"+i);
+        Double maxai = params.getDouble("dpso.maxallelevalue"+i);
         if (maxai!=null && maxai.doubleValue() < maxallelevalg)
           maxalleleval = maxai.doubleValue();
         arr[i] = minalleleval +
-            RndUtil.getInstance(id).getRandom().nextDouble()*(maxalleleval-minalleleval);
+            rnd.nextDouble()*(maxalleleval-minalleleval);
       }
+			// diagnostics
+			if (mger.getDebugLvl()>=2) {
+				String arrstr = "DblArray1CMaker.createRandomChromosome(): res=[";
+				for (int i=0; i<arr.length; i++) {
+					arrstr += arr[i];
+					if (i<arr.length-1) arrstr += ",";
+				}
+				arrstr += "]";
+				mger.msg(arrstr, 2);
+			}
       return arr;
     }
     catch (Exception e) {

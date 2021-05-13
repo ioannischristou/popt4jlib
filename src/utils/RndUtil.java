@@ -4,9 +4,17 @@ import java.util.*;
 
 /**
  * class controlling random number generation.
+ * <p>
+ * Notes:
+ * <ul>
+ * <li>2021-05-12: added a call to <CODE>nextDouble()</CODE> within the 
+ * <CODE>setSeed()</CODE> method so as to avoid issues with similar numbers 
+ * being produced by different threads the first time the former method is 
+ * called.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: Parallel optimization library for Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: AIT</p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -113,7 +121,9 @@ public class RndUtil {
         RndUtil ru = (RndUtil) _extras.get(id);
 				final long ruseed = getInstance().getSeed()+id.intValue()+1;  // used to be _instance.getSeed()+id.intValue()+1
         ru._seed = ruseed;
-				ru._random = new Random(ruseed);  
+				ru._random = new Random(ruseed); 
+				ru._random.nextDouble();  // call one time to make sure sufficiently 
+				                          // different values start the sequence after
       }
     }
   }
@@ -155,6 +165,7 @@ public class RndUtil {
 		long ruseed = id+getInstance().getSeed()+1;  // used to be id+_instance.getSeed()+1
     ru._seed = ruseed;
 		ru._random = new Random(ruseed);  
+		ru._random.nextDouble();  // kick-start the rng after seed-setting
     _extras.put(new Integer(id), ru);
     if (_curMaxId<id) _curMaxId = id;
     return ru;

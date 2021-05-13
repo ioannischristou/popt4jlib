@@ -11,9 +11,14 @@ import parallel.*;
  * class implementing a "questionable" method of attempting multiple descent
  * directions (in parallel) from the same iterate point, and greedily choosing
  * the best one using the Armijo rule for step-size determination.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured all exceptions thrown within function evaluation are
+ * properly handled.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -70,7 +75,8 @@ public class RandomDescents implements LocalOptimizerIntf {
    * <CODE>minimize(f)</CODE> method of this object.
    */
   public synchronized void setParams(HashMap p) throws OptimizerException {
-    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    if (_f!=null) 
+			throw new OptimizerException("cannot modify parameters while running");
     _params = null;
     _params = new HashMap(p);  // own the params
   }
@@ -92,28 +98,28 @@ public class RandomDescents implements LocalOptimizerIntf {
    * a later call to setParams(p). These are:
 	 * <ul>
 	 * <li>&lt;"rd.x0", VectorIntf x&gt; mandatory, the initial starting point x0.
-   * <li>&lt;"rd.numthreads", Integer nt&gt; optional, the number of threads to use in
-   * the optimization process. Default is 1.
-   * <li>&lt;"rd.numtries", Integer ntries&gt; optional, the number of tries (starting
-   * from different initial points). Default is 100.
-   * <li>&lt;"rd.gradient", VecFunctionIntf g&gt; optional, the gradient of f, the
-   * function to be minimized. If this param-value pair does not exist, the
+   * <li>&lt;"rd.numthreads", Integer nt&gt; optional, the number of threads to 
+	 * use in the optimization process. Default is 1.
+   * <li>&lt;"rd.numtries", Integer ntries&gt; optional, the number of tries 
+	 * (starting from different initial points). Default is 100.
+   * <li>&lt;"rd.gradient", VecFunctionIntf g&gt; optional, the gradient of f,
+   * the function to be minimized. If this param-value pair does not exist, the
    * gradient will be computed using Richardson finite differences extrapolation
-   * <li>&lt;"rd.gtol", Double v&gt; optional, the minimum abs. value for each of the
-   * gradient's coordinates, below which if all coordinates of the gradient
-   * happen to be, the search stops assuming it has reached a stationary point.
-   * Default is 1.e-6.
-   * <li>&lt;"rd.maxiters", Integer miters&gt; optional, the maximum number of major
-   * iterations of the SD search before the algorithm stops. Default is
+   * <li>&lt;"rd.gtol", Double v&gt; optional, the minimum absolute value for 
+	 * each of the gradient's coordinates, below which if all coordinates of the 
+	 * gradient happen to be, the search stops assuming it has reached a 
+	 * stationary point. Default is 1.e-6.
+   * <li>&lt;"rd.maxiters", Integer miters&gt; optional, the maximum number of 
+	 * major iterations of the SD search before the algorithm stops. Default is
    * Integer.MAX_VALUE.
-   * <li>&lt;"rd.rho", Double v&gt; optional, the value for the parameter &rho; in the
-   * Armijo rule implementation. Default is 0.1.
-   * <li>&lt;"rd.beta", Double v&gt; optional, the value for the parameter &beta; in the
-   * Armijo rule implementation. Default is 0.8.
-   * <li>&lt;"rd.gamma", Double v&gt; optional, the value for the parameter &gamma; in the
-   * Armijo rule implementation. Default is 1.
-   * <li>&lt;"rd.looptol", Double v&gt; optional, the minimum step-size allowed. Default
-   * is 1.e-21.
+   * <li>&lt;"rd.rho", Double v&gt; optional, the value for the parameter &rho; 
+	 * in the Armijo rule implementation. Default is 0.1.
+   * <li>&lt;"rd.beta", Double v&gt; optional, the value for the parameter 
+	 * &beta; in the Armijo rule implementation. Default is 0.8.
+   * <li>&lt;"rd.gamma", Double v&gt; optional, the value for the parameter 
+	 * &gamma; in the Armijo rule implementation. Default is 1.
+   * <li>&lt;"rd.looptol", Double v&gt; optional, the minimum step-size allowed. 
+	 * Default is 1.e-21.
    * </ul>
    * @param f FunctionIntf the function to minimize
    * @throws OptimizerException if another thread is currently executing the
@@ -122,12 +128,13 @@ public class RandomDescents implements LocalOptimizerIntf {
    * the min. value found
    */
   public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
-		if (f==null) throw new OptimizerException("RandomDescents.minimize(f): null f");
+		if (f==null) 
+			throw new OptimizerException("RandomDescents.minimize(f): null f");
     try {
       synchronized (this) {
         if (_f != null)throw new OptimizerException(
             "RandomDescents.minimize(): " +
-            "another thread is concurrently executing the method on the same object");
+            "another thread is concurrently running the method on this object");
         _f = f;
         _inc = null;
         _incValue = Double.MAX_VALUE;
@@ -141,7 +148,7 @@ public class RandomDescents implements LocalOptimizerIntf {
       catch (ClassCastException e) { e.printStackTrace(); }
 
       try {
-        Barrier.setNumThreads("rd." + getId(), numthreads); // initialize barrier
+        Barrier.setNumThreads("rd." + getId(), numthreads); // init. barrier
       }
       catch (ParallelException e) {
         e.printStackTrace();
@@ -185,7 +192,8 @@ public class RandomDescents implements LocalOptimizerIntf {
       }
       catch (Exception e) {  // cannot get here
        e.printStackTrace();
-       throw new OptimizerException("RandomDescents.minimize(f): couldn't reset barrier "+
+       throw new OptimizerException("RandomDescents.minimize(f): couldn't "+
+				                            "reset barrier "+
                                     "at end of optimization");
       }
       synchronized (this) {  // communicate changes to other threads
@@ -201,16 +209,24 @@ public class RandomDescents implements LocalOptimizerIntf {
    * @param val double proposed value
    * @throws OptimizerException in case of insanity (may only happen if the
    * function to be minimized is not reentrant and the debug bit
-   * <CODE>Constants.RD</CODE> is set in the <CODE>Debug</CODE> class)
+   * <CODE>Constants.RD</CODE> is set in the <CODE>Debug</CODE> class) or if the
+	 * function evaluation throws.
    */
-  synchronized void setIncumbent(VectorIntf arg, double val) throws OptimizerException {
+  synchronized void setIncumbent(VectorIntf arg, double val) 
+		throws OptimizerException {
     if (val<_incValue) {
       if (Debug.debug(Constants.RD)!=0) {
         // sanity check
-        double incval = _f.eval(arg, _params);
+        double incval;
+				try { 
+					incval = _f.eval(arg, _params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("RD.setIncumbent(): _f.eval() threw "+e);
+				}
         if (Math.abs(incval - _incValue) > 1.e-25) {
           Messenger.getInstance().msg("RD.setIncumbent(): arg-val originally=" +
-                                      _incValue + " fval=" + incval + " ???", 0);
+                                      _incValue + " fval=" + incval + " ???",0);
           throw new OptimizerException(
               "RD.setIncumbent(): insanity detected; " +
               "most likely evaluation function is " +
@@ -228,7 +244,7 @@ public class RandomDescents implements LocalOptimizerIntf {
 
 
   /**
-   * return the current argmin
+   * return the current argmin.
    * @return VectorIntf
    */
   synchronized VectorIntf getIncumbent() {
@@ -306,20 +322,24 @@ public class RandomDescents implements LocalOptimizerIntf {
     }
 
 
-    private PairObjDouble descent(FunctionIntf f, VectorIntf x0, HashMap p) throws OptimizerException {
+    private PairObjDouble descent(FunctionIntf f, VectorIntf x0, HashMap p) 
+			throws OptimizerException {
       VecFunctionIntf grad = (VecFunctionIntf) p.get("rd.gradient");
-      if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
+      if (grad==null) 
+				grad = new GradApproximator(f);  // default: numeric grad computation 
       if (x0==null) {
         x0 = (VectorIntf) p.get("rd.x0");  // get x0 from the initial params
         if (x0==null)
           throw new OptimizerException("null x0 initial point passed");
       }
-      VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
+      VectorIntf x = x0.newInstance();  // x0.newCopy();  
+                                        // don't modify the initial soln
       final int n = x.getNumCoords();
       double gtol = 1e-8;
       try {
         Double gtolD = (Double) p.get("rd.gtol");
-        if (gtolD != null && gtolD.doubleValue() > 0) gtol = gtolD.doubleValue();
+        if (gtolD != null && gtolD.doubleValue() > 0) 
+					gtol = gtolD.doubleValue();
       }
       catch (ClassCastException e) { e.printStackTrace(); }
       double h=0;
@@ -349,8 +369,15 @@ public class RandomDescents implements LocalOptimizerIntf {
         if (ltD != null && ltD.doubleValue() > 0) looptol = ltD.doubleValue();
       }
       catch (ClassCastException e) { e.printStackTrace(); }
-      VectorIntf g = grad.eval(x, p);
-      fx = f.eval(x, p);  // was _master._f
+      VectorIntf g;
+			try {
+				g = grad.eval(x, p);
+				fx = f.eval(x, p);  // was _master._f
+			}
+			catch (Exception e) {
+				throw new OptimizerException("RD.RDThread.descent(): f or g evaluation"+
+					                           " threw "+e.toString());
+			}
       double f0 = fx;
       final double norminfg = VecUtil.normInfinity(g);
       //final double normg = VecUtil.norm2(g);
@@ -365,7 +392,8 @@ public class RandomDescents implements LocalOptimizerIntf {
       for (int i=0; i<n; i++) {
         double gi = g.getCoord(i);
         if (Math.abs(gi)>(1.e-6)/n) {  // itc: HERE change into param asap
-          double r = RndUtil.getInstance(_uid).getRandom().nextDouble();  // used to be _id
+          double r = RndUtil.getInstance(_uid).getRandom().nextDouble();  
+          // used to be _id
           if (r<0.55) {  // itc: HERE change into param asap
             try {
               s.setCoord(i, -gi);
@@ -425,7 +453,14 @@ public class RandomDescents implements LocalOptimizerIntf {
             e.printStackTrace();
           }
         }
-        double fval = f.eval(x,p);  // was _master._f
+        double fval;
+				try { 
+					fval = f.eval(x,p);  // was _master._f
+				}  
+				catch (Exception e) {
+					throw new OptimizerException("RD.RDThread.descent(): f.eval() "+
+						                           " threw "+e.toString());
+				}
         if (fval <= fx + rprev) {
           h = Math.pow(beta,m)*gamma;
           break;
@@ -445,7 +480,13 @@ public class RandomDescents implements LocalOptimizerIntf {
 			if (s instanceof PoolableObjectIntf) {
 				((PoolableObjectIntf) s).release();
 			}
-      fx = f.eval(x,p);  // was _master._f
+			try {
+				fx = f.eval(x,p);  // was _master._f
+			}
+			catch (Exception e) {
+				throw new OptimizerException("RD.RDThread.descent(): f.eval()"+
+					                           " threw "+e.toString());
+			}
       if (fx < f0) return new PairObjDouble(x, fx);
       else return null;
     }

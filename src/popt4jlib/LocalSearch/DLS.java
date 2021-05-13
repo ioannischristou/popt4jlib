@@ -268,7 +268,7 @@ public class DLS implements LocalOptimizerIntf {
           if (_a2cmaker!=null) _inc = _a2cmaker.getChromosome(x0, p);
           else _inc = x0;
         }
-        catch (IllegalArgumentException e) {
+        catch (Exception e) {  // catch any exception
           e.printStackTrace();
         }
         if (_a2cmaker!=null) x = _a2cmaker.getChromosome(x0, p);

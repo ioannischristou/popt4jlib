@@ -2,6 +2,7 @@ package tests.sic.sST.nbin;
 
 import popt4jlib.FunctionIntf;
 import popt4jlib.DblArray1Vector;
+import utils.Messenger;
 import tests.sic.rnqt.nbin.RnQTCnbin;
 
 
@@ -35,9 +36,13 @@ public class sSTCnbin implements FunctionIntf {
 	double _h;
 	double _p;
 	
-	private final static double _eps = 1.e-9;
+	private final static double _eps = 2.e-8;  // itc-20210512: used to be 1.e-9
 	private final static int _numTerms = 5;
+	private final static int _maxAllowedSumTerms = 10000000;
 
+	private final static Messenger _mger = Messenger.getInstance();
+	private final static int _DISP_MOD_NUM = 5000;
+	private final static int _START_DISP_MOD_NUM = 10000;
 	
 	/**
 	 * Function sole public constructor.
@@ -95,6 +100,8 @@ public class sSTCnbin implements FunctionIntf {
 		double[] xp;
 		if (x instanceof double[]) xp = (double[])x;
 		else xp = ((DblArray1Vector) x).getDblArray1();
+		_mger.msg("sSTCnbin.evalBoth(s="+xp[0]+",S="+xp[1]+",T="+xp[2]+"): start",
+			        3);
 		double s = xp[0];
 		double S = xp[1];
 		double T = xp[2];
@@ -117,6 +124,8 @@ public class sSTCnbin implements FunctionIntf {
 		
 		double y = K1 + (A+nom)/(T*denom);
 		double lb = K1 + nom/(T*denom);
+		_mger.msg("sSTCnbin.evalBoth(s="+xp[0]+",S="+xp[1]+",T="+xp[2]+"): end",
+			        3);
 		return new utils.Pair(new Double(y), new Double(lb));
 	}
 	
@@ -128,7 +137,7 @@ public class sSTCnbin implements FunctionIntf {
 		int n = 0;
 		double last = 0;
 		int count = 0;
-		while (true) {
+		while (n < _maxAllowedSumTerms) {
 			double sum = 0;
 			int Rmr = R-r;
 			for (int j=1; j<=Rmr; j++) {
@@ -152,8 +161,13 @@ public class sSTCnbin implements FunctionIntf {
 			}
 			y += sum;
 			last += sum;
-			if (++count==_numTerms-1) {
+			++n;
+			if (++count==_numTerms) {
 				double ratio = Math.abs(last/y);
+				if (n>_START_DISP_MOD_NUM && n%_DISP_MOD_NUM == 0) {  // debug
+					_mger.msg("sSTCnbin.sum1(r="+r+",R="+R+",T="+T+"...,eps="+eps+
+						        "): n="+n+" cur_val="+y+" ratio="+ratio, 3);
+				}
 				if (ratio < eps) break;
 				else {
 					//System.err.println("sum1: n="+n+" last="+last+" y="+y+" ratio="+ratio);
@@ -161,7 +175,11 @@ public class sSTCnbin implements FunctionIntf {
 					last = 0;
 				}
 			}
-			++n;
+		}
+		if (n==_maxAllowedSumTerms) {
+			String exc = "sSTCnbin.sum1(r="+r+",R="+R+",T="+T+",rest_args): "+ 
+				           "evaluation exceeded "+_maxAllowedSumTerms+" limit";
+			throw new IllegalStateException(exc);
 		}
 		return y;
 	}
@@ -172,30 +190,40 @@ public class sSTCnbin implements FunctionIntf {
 		int n = 1;
 		double last = 0;
 		int count = 0;
-		while (true) {
+		while (n<_maxAllowedSumTerms) {
 			double sum = 0;
+			double prev_aux = Double.NaN;
+			double prev_aux2 = Double.NaN;
 			for (int j=1; j<=R-r; j++) {
-				//pois.setMean((n-1)*l*T);
-				//double aux = n*pois.pdf(R-r-j);
-				double aux = n*RnQTCnbin.nbinnfoldconv(R-r-j, l*T, _p_l, n-1);
+				double aux = RnQTCnbin.nbinnfoldconv(R-r-j, l*T, _p_l, n-1);
+				double aux2 = 0.0;
 				if (Double.isNaN(aux)) {
-					String exc = "n="+n+" * "+(n-1)+
-						           "nbin-conv("+(R-r-j)+";"+l*T+","+_p_l+") is NaN";
-					throw new IllegalStateException(exc);
+					String exc = (n-1)+"-nbin-conv("+(R-r-j)+";"+l*T+","+_p_l+") is NaN";
+					exc += " (j="+j+" prev_aux="+prev_aux+")";
+					_mger.msg(exc, 0);
+					//throw new IllegalStateException(exc);
 				}
-				// double aux2 = complpoisscdf(pois,j,l*T);
-				double aux2 = RnQTCnbin.nbincdfcompl(j, l*T, _p_l);
+				else aux2 = n*RnQTCnbin.nbincdfcompl(j, l*T, _p_l);
 				if (Double.isNaN(aux2)) {
 					String exc = "for n="+n+" j="+j+" r="+r+" R="+R+" aux2 is NaN";
-					throw new IllegalStateException(exc);					
+					_mger.msg(exc, 0);
+					//throw new IllegalStateException(exc);					
 				}
 				double all = aux*aux2;
 				if (Double.isNaN(all)) {
-					String exc = "for n="+n+" j="+j+" r="+r+" R="+R+
-						           " aux="+aux+"*aux2="+aux2+
-						           " is NaN";
-					throw new IllegalStateException(exc);					
+					// try one last time the log-exp trick
+					all = n_nbinnfoldconv_nbincdfcompl(R-r-j, l*T, _p_l, n, j);
+					if (!Double.isFinite(all)) {
+						String exc = "for n="+n+" j="+j+" r="+r+" R="+R+
+							           " aux="+aux+"*aux2="+aux2+
+								         " is NaN; all="+all;
+						exc += "prev_aux="+prev_aux+" prev_aux2="+prev_aux2;
+						// can't help but throw here
+						throw new IllegalStateException(exc);					
+					}
 				}
+				prev_aux = aux;
+				prev_aux2 = aux2;				
 				sum += all;
 				if (Double.isNaN(sum)) {
 					String exc = "for n="+n+" sum is NaN";
@@ -204,8 +232,13 @@ public class sSTCnbin implements FunctionIntf {
 			}
 			y += sum;
 			last += sum;
-			if (++count==_numTerms-1) {
+			++n;
+			if (++count==_numTerms) {
 				double ratio = Math.abs(last/y);
+				if (n>_START_DISP_MOD_NUM && n%_DISP_MOD_NUM == 0) {  // debug
+					_mger.msg("sSTCnbin.sum2(r="+r+",R="+R+",T="+T+",l="+l+",eps="+eps+
+						        "): n="+n+" cur_val="+y+" ratio="+ratio, 3);
+				}
 				if (ratio < eps) break;
 				else {
 					//System.err.println("sum2: n="+n+" last="+last+" y="+y+" ratio="+ratio);
@@ -213,7 +246,11 @@ public class sSTCnbin implements FunctionIntf {
 					last = 0;
 				}
 			}
-			++n;
+		}
+		if (n==_maxAllowedSumTerms) {
+			String exc = "sSTCnbin.sum2(r="+r+",R="+R+",T="+T+",rest_args): "+ 
+				           "evaluation exceeded "+_maxAllowedSumTerms+" limit";
+			throw new IllegalStateException(exc);
 		}
 		return y;
 	}
@@ -279,6 +316,28 @@ public class sSTCnbin implements FunctionIntf {
 		                      double lambda, double pl, 
 		                      double L) {
 		return RnQTCnbin.b(rpj, T, lambda, pl, L);
+	}
+	
+	
+	/**
+	 * last-attempt log-exp trick to compute the terms in the sum1 method.
+	 * @param Rrj int the value R-r-j
+	 * @param lT double the value l*T
+	 * @param pl double the value p<sub>l</sub>
+	 * @param n int the number of folds 
+	 * @param j int the index
+	 * @return double
+	 */
+	private static double n_nbinnfoldconv_nbincdfcompl(int Rrj, double lT, 
+		                                                 double pl, int n, int j) {
+		double logaux = RnQTCnbin.nbinnfoldconvlog(Rrj, lT, pl, n-1);
+		double logaux2 = Math.log(n) + RnQTCnbin.nbincdfcompllog(j, lT, pl);
+		double res = Math.exp(logaux + logaux2);
+		if (!Double.isFinite(res)) {
+			Messenger.getInstance().msg("sSTCnbin.n_nbinnfoldconv_nbincdfcompl(): "+
+				                          "logaux = "+logaux+" logaux2="+logaux2, 0);
+		}
+		return res;
 	}
 	
 }

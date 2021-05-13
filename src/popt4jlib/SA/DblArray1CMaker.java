@@ -56,6 +56,7 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
       final double maxalleleval=((Double) params.get("dsa.maxallelevalue")).doubleValue();
       final double minalleleval=((Double) params.get("dsa.minallelevalue")).doubleValue();
       final int id = ((Integer) params.get("thread.id")).intValue();
+			final Random rid = RndUtil.getInstance(id).getRandom();
       double[] arr = new double[nmax];
       for (int i=0; i<nmax; i++) {
         // restore within bounds, if any
@@ -67,10 +68,9 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
         Double maviD = (Double) params.get("dsa.minallelevalue"+i);
         if (maviD!=null && maviD.doubleValue()>minalleleval)
           minargvali = maviD.doubleValue();
-
-        arr[i] = minargvali +
-            RndUtil.getInstance(id).getRandom().nextDouble()*(maxargvali-minargvali);
-      }
+				double rnd = rid.nextDouble();								
+				arr[i] = minargvali + rnd*(maxargvali-minargvali);
+      }			
       return arr;
     }
     catch (Exception e) {

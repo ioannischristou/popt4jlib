@@ -20,12 +20,18 @@ import java.util.*;
  * This strategy is described in a paper on "Parallel Simulated Annealing".
  * <p>Notes:
  * <ul>
+ * <li>2021-05-10: ignore exceptions thrown during DSAIndividual function 
+ * evaluations, so that threads may keep running; same for function evaluations 
+ * during the iterations taking place within a particular temperature 
+ * (<CODE>runSA(gen)</CODE> method.)
+ * <li>2021-05-08: ensured all exceptions that function evaluation may throw are
+ * handled properly.
  * <li>2020-04-25: method seParams() became public because it was moved up from
  * LocalOptimizerIntf to the root OptimizerIntf interface class.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -36,7 +42,7 @@ public class DSA implements OptimizerIntf {
   private HashMap _params=null;
   double _incValue=Double.MAX_VALUE;
   Object _inc=null;  // incumbent chromosome
-  DSAIndividual _schedInc=null;  // incumbent chromosome for a given schedule temp.
+  DSAIndividual _schedInc=null;  // incumbent chromosome for given schedule temp
   double _schedVal=Double.MAX_VALUE;
   int _schedCnt=0;
   FunctionIntf _f=null;
@@ -88,7 +94,8 @@ public class DSA implements OptimizerIntf {
    * is running the <CODE>minimize(f)</CODE> method on this object.
    */
   public synchronized void setParams(HashMap p) throws OptimizerException {
-    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    if (_f!=null) 
+			throw new OptimizerException("cannot modify parameters while running");
     _params = null;
     _params = new HashMap(p);  // own the params
   }
@@ -128,27 +135,27 @@ public class DSA implements OptimizerIntf {
    * have been passed in the DSA object, either in construction time, or via a
    * call to setParams(p). These are:
    * <ul>
-   * <li> &lt;"dsa.randomchromosomemaker", RandomChromosomeMakerIntf r&gt; mandatory, the
-   * object responsible for implementing the interface that allows creating
-   * random initial chromosome objects.
-   * <li> &lt;"dsa.movemaker", NewChromosomeMakerIntf movemaker&gt; mandatory, the object
-   * responsible for implementing the interface that allows creating new
-   * chromosome Objects from an existing one (makes a move).
-   * <li> &lt;"dsa.c2amaker", Chromosome2ArgMakerIntf c2amaker&gt; optional, an object
-   * implementing the Chromosome2ArgMakerIntf that transforms chromosome Objects
-   * used in the SA process -and manipulated by the Object implementing
+   * <li> &lt;"dsa.randomchromosomemaker", RandomChromosomeMakerIntf r&gt; 
+	 * mandatory, the object responsible for implementing the interface that 
+	 * allows creating random initial chromosome objects.
+   * <li> &lt;"dsa.movemaker", NewChromosomeMakerIntf movemaker&gt; mandatory, 
+	 * the object responsible for implementing the interface that allows creating 
+	 * new chromosome Objects from an existing one (makes a move).
+   * <li> &lt;"dsa.c2amaker", Chromosome2ArgMakerIntf c2amaker&gt; optional, an 
+	 * object implementing the Chromosome2ArgMakerIntf that transforms chromosome 
+	 * Objects used in the SA process -and manipulated by the Object implementing
    * the NewChromosomeMakerIntf interface- into argument Objects that can be
    * passed into the FunctionIntf object that the process minimizes. Default is
    * null, which results in the chromosome objects being passed "as-is" to the
    * FunctionIntf object being minimized.
-   * <li> &lt;"dsa.numthreads, Integer nt&gt; optional, the number of threads to be run by
-   * the process, default is 1.
-   * <li> &lt;"dsa.numouteriters, Integer nglobaliters&gt; optional, the total number of
-   * "generations" i.e. outer iterations to run, default is 100.
-   * <li> &lt;"dsa.numtriesperiter, Integer triespiter&gt; optional, the number of
-   * iterations each thread will run before communicating its incumbent solution
-   * to all others, and get the best overall incumbent -among running threads-
-   * to continue with, default is 100.
+   * <li> &lt;"dsa.numthreads, Integer nt&gt; optional, the number of threads to 
+	 * be run by the process, default is 1.
+   * <li> &lt;"dsa.numouteriters, Integer nglobaliters&gt; optional, the total 
+	 * number of "generations" i.e. outer iterations to run, default is 100.
+   * <li> &lt;"dsa.numtriesperiter, Integer triespiter&gt; optional, the number 
+	 * of iterations each thread will run before communicating its incumbent 
+	 * solution to all others, and get the best overall incumbent -among running 
+	 * threads- to continue with, default is 100.
    * <li> &lt;"dsa.schedule", SAScheduleIntf sched&gt; optional, an object 
 	 * implementing the SAScheduleIntf that determines the temperature at each 
 	 * "generation" i.e. outer iteration. Default is LinScaleSchedule, that can be 
@@ -156,7 +163,7 @@ public class DSA implements OptimizerIntf {
 	 * <ul>
    * <li> &lt;"dsa.T0", Double t0&gt; optional, initial temperature, default is 
 	 * 1000.0.
-   * <li> &lt;"dsa.K", Double k&gt; optional, the "Boltzman constant", default 
+   * <li> &lt;"dsa.K", Double k&gt; optional, the "Boltzmann constant", default 
 	 * is 20.0.
 	 * </ul>
    * </ul>
@@ -183,15 +190,16 @@ public class DSA implements OptimizerIntf {
         _f = f;
         Integer ntI = (Integer) _params.get("dsa.numthreads");
         if (ntI != null) nt = ntI.intValue();
-        if (nt < 1)throw new OptimizerException(
-      "DSA.minimize(): invalid number of threads specified");
+        if (nt < 1)
+					throw new OptimizerException("DSA.minimize(): invalid number of "+
+						                           "threads specified");
         RndUtil.addExtraInstances(nt);  // not needed
         _threads = new DSAThread[nt];
         _schedCnt = nt;
       }
 
       try {
-        parallel.Barrier.setNumThreads("dsa." + _id, nt); // init the Barrier obj.
+        parallel.Barrier.setNumThreads("dsa." + _id, nt); // init Barrier obj.
       }
       catch (parallel.ParallelException e) {
         e.printStackTrace();
@@ -245,7 +253,13 @@ public class DSA implements OptimizerIntf {
             get("dsa.c2amaker");
         if (c2amaker != null) // oops, no it wasn't
           arg = c2amaker.getArg(ind.getChromosome(), _params);
-        double incval = _f.eval(arg, _params);
+        double incval;
+				try { 
+					incval = _f.eval(arg, _params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("DSA.setIncumbent: _f.eval() threw "+e);
+				}
         if (Math.abs(incval - ind.getValue()) > 1.e-25) {
           Messenger.getInstance().msg("DSA.setIncumbent(): ind-val=" +
                                       ind.getValue() + " fval=" + incval +
@@ -368,6 +382,7 @@ class DSAThreadAux {
   private FunctionIntf _f=null;
 
   public DSAThreadAux(DSA master, int id) throws OptimizerException {
+		final Messenger mger = Messenger.getInstance();
     _master = master;
     _id = id;
     _uid = (int) DataMgr.getUniqueId();
@@ -387,10 +402,11 @@ class DSAThreadAux {
         if (pack!=null) {
           String packname = pack.getName();
           if (packname.startsWith("popt4jlib") ||
-              packname.startsWith("parallel"))continue; // don't include such objects
+              packname.startsWith("parallel"))
+						continue; // don't include such objects
         }
         else {
-          Messenger.getInstance().msg("no package info for object with key "+key,2);
+          mger.msg("no package info for object with key "+key, 2);
         }
         _fp.put(key,val);
       }
@@ -424,10 +440,12 @@ class DSAThreadAux {
     for (int gen = 0; gen < numiters; gen++) {
       //System.err.println("Island-Thread id=" + _id + " running iter=" + gen);
       if (gen>0) recvBestInd();
-      parallel.Barrier.getInstance("dsa."+_master.getId()).barrier();  // synchronize with other threads
+      parallel.Barrier.getInstance("dsa."+_master.getId()).barrier();  
+      // synchronize with other threads
       /*
         if (_individual==null) {
-          parallel.Barrier.getInstance().barrier();  // synchronize with other threads
+          parallel.Barrier.getInstance().barrier();  
+			    // synchronize with other threads
           continue;
         }
        */
@@ -438,7 +456,8 @@ class DSAThreadAux {
         e.printStackTrace();
       }
       sendBestInd();
-      parallel.Barrier.getInstance("dsa."+_master.getId()).barrier();  // synchronize with other threads
+      parallel.Barrier.getInstance("dsa."+_master.getId()).barrier();  
+      // synchronize with other threads
     }
     // end: declare finish
     setFinish();
@@ -474,14 +493,26 @@ class DSAThreadAux {
 
   private void runSA(int gen) throws OptimizerException {
     double temp = _sched.getTemp(gen, _p);
-    Messenger.getInstance().msg("thread: "+_id+" gen="+gen+" temperature="+temp,1);
-    NewChromosomeMakerIntf mover = (NewChromosomeMakerIntf) _p.get("dsa.movemaker");
+		final Messenger mger = Messenger.getInstance();
+    mger.msg("thread: "+_id+" gen="+gen+" temperature="+temp, 1);
+    NewChromosomeMakerIntf mover = 
+			(NewChromosomeMakerIntf) _p.get("dsa.movemaker");
     int accepted=0;
     int rejected=0;
     for (int i=0; i<_ntriesperiter; i++) {
-      Object newsol = mover.createNewChromosome(_individual.getChromosome(), _p);
-      Object newarg = _c2arg.getArg(newsol, _p);  // second arg used to be: _master.getParams()
-      double newval = _f.eval(newarg, _fp);  // used to be _p, _master._f
+      Object newsol = mover.createNewChromosome(_individual.getChromosome(), 
+				                                        _p);
+      Object newarg = _c2arg.getArg(newsol, _p);  // second arg used to be: 
+			                                            // _master.getParams()
+			double newval;
+      try {
+				newval = _f.eval(newarg, _fp);  // used to be _p, _master._f
+			}  
+			catch (Exception e) {
+				mger.msg("DSAThreadAux.runSA(): _f.eval() threw "+e.toString()+
+					       ", ignoring and continuing",0);
+				continue;
+			}
       double df = newval - _individual.getValue();
       if (df < 0) {
         // accept immediately
@@ -490,10 +521,12 @@ class DSAThreadAux {
         _master.setIncumbent(_individual);
       }
       else {  // see if we may accept move with certain probability
-        double r = RndUtil.getInstance(_uid).getRandom().nextDouble();  // used to be _id
+        double r = RndUtil.getInstance(_uid).getRandom().nextDouble();  
+        // used to be _id
         if (r<=Math.exp(-df/temp)) {
           // still accept
-          _individual = new DSAIndividual(newsol, _master, _fp);  // used to be _p
+          _individual = new DSAIndividual(newsol, _master, _fp);  
+          // used to be _p
           accepted++;
         }
         else {
@@ -505,15 +538,19 @@ class DSAThreadAux {
   }
 
 
-  private void getInitSolution() throws OptimizerException, InterruptedException {
-    RandomChromosomeMakerIntf amaker = (RandomChromosomeMakerIntf) _p.get("dsa.randomchromosomemaker");
+  private void getInitSolution() throws OptimizerException, 
+		                                    InterruptedException {
+    RandomChromosomeMakerIntf amaker = 
+			(RandomChromosomeMakerIntf) _p.get("dsa.randomchromosomemaker");
     // what to do if no such maker is provided? must have a default one
-    if (amaker==null) throw new OptimizerException("no RandomChromosomeMakerIntf "+
-                                                   "provided in the params HashMap");
+    if (amaker==null) 
+			throw new OptimizerException("no RandomChromosomeMakerIntf "+
+                                   "provided in the params HashMap");
     Object chromosome = amaker.createRandomChromosome(_p);
     _individual = new DSAIndividual(chromosome, _master, _fp);  // used to be _p
-    System.out.println("Individual="+_individual);
-    _master.setIncumbent(_individual);  // update master's best soln found if needed
+    //System.out.println("Individual="+_individual);
+    _master.setIncumbent(_individual);  // update master's best soln found if 
+		                                    // needed
   }
 
 
@@ -544,11 +581,19 @@ class DSAIndividual {
   private DSA _master;  // ref. back to master DGA object
   private FunctionIntf _f;  // ref. back to master's _f function
 
-  public DSAIndividual(Object chromosome, DSA master, HashMap p) throws OptimizerException {
+  public DSAIndividual(Object chromosome, DSA master, HashMap p) {
     _chromosome = chromosome;
     _master = master;
     _f = _master.getFunction();
-    computeValue(p);  // may throw OptimizerException
+		try {
+			computeValue(p);  // may throw OptimizerException
+		}
+		catch (OptimizerException e) {
+			final Messenger mger = Messenger.getInstance();
+			mger.msg("DSAIndividual: chromosome "+chromosome.toString()+
+				       " computeValue() threw "+e.toString()+
+				       "; _val will remain Double.MAX_VALUE and continue", 0);
+		}
   }
 
 
@@ -566,7 +611,8 @@ class DSAIndividual {
     return r;
   }
   public Object getChromosome() { return _chromosome; }
-  public double getValue() { return _val; }  // enhance the density value differences
+  public double getValue() { return _val; }  // enhance the density value 
+	                                           // differences
   public void computeValue(HashMap p) throws OptimizerException {
     if (_val==Double.MAX_VALUE) {  // don't do the computation if already done
       Chromosome2ArgMakerIntf c2amaker =
@@ -574,7 +620,13 @@ class DSAIndividual {
       Object arg = null;
       if (c2amaker == null) arg = _chromosome;
       else arg = c2amaker.getArg(_chromosome, p);
-      _val = _f.eval(arg, p);  // was _master._f which is also safe
+			try {
+				_val = _f.eval(arg, p);  // was _master._f which is also safe
+			}
+			catch (Exception e) {
+				throw new OptimizerException("DSAIndividual.computeValue(): _f.eval() "+
+					                           " threw "+e.toString());
+			}
     }
   }
 }

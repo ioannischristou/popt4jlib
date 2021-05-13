@@ -11,6 +11,11 @@ import popt4jlib.*;
  * class that implements the Conjugate-Gradient method for (unconstrained)
  * nonlinear optimization using the Polak-Ribiere formula for updating b, and
  * the Armijo rule for step-size determination.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured all exceptions thrown within function evaluation are
+ * properly handled.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
@@ -78,7 +83,8 @@ public class PolakRibiereConjugateGradient implements LocalOptimizerIntf {
    * <CODE>minimize(f)</CODE> method of this object.
    */
   public synchronized void setParams(HashMap p) throws OptimizerException {
-    if (_f!=null) throw new OptimizerException("cannot modify parameters while running");
+    if (_f!=null) 
+			throw new OptimizerException("cannot modify parameters while running");
     _params = null;
     _params = new HashMap(p);  // own the params
   }
@@ -127,8 +133,10 @@ public class PolakRibiereConjugateGradient implements LocalOptimizerIntf {
 		if (f==null) throw new OptimizerException("PRCG.minimize(f): null f");
     try {
       synchronized (this) {
-        if (_f != null)throw new OptimizerException("PRCG.minimize(): " +
-            "another thread is concurrently executing the method on the same object");
+        if (_f != null)
+					throw new OptimizerException("PRCG.minimize(): another thread is "+
+						                           "concurrently running this method on "+
+						                           "the same object");
         _f = f;
         _inc = null;
         _incValue = Double.MAX_VALUE;
@@ -211,14 +219,23 @@ public class PolakRibiereConjugateGradient implements LocalOptimizerIntf {
    * <CODE>Constants.PRCG</CODE> or some other value containing the given bit
    * must have been called before for this method to possibly throw)
    */
-  synchronized void setIncumbent(VectorIntf arg, double val) throws OptimizerException {
+  synchronized void setIncumbent(VectorIntf arg, double val) 
+		throws OptimizerException {
     if (val<_incValue) {
       if (Debug.debug(Constants.PRCG)!=0) {
         // sanity check
-        double incval = _f.eval(arg, _params);
+        double incval;
+				try { 
+					incval = _f.eval(arg, _params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("PRCG.setIncumbent(): f.eval() threw "+
+						                           e.toString());
+				}
         if (Math.abs(incval - _incValue) > 1.e-25) {
-          Messenger.getInstance().msg("PRCG.setIncumbent(): arg-val originally=" +
-                                      _incValue + " fval=" + incval + " ???", 0);
+          Messenger.getInstance().msg("PRCG.setIncumbent(): arg-val "+
+						                          "originally=" +_incValue + 
+						                          " fval=" + incval + " ???", 0);
           throw new OptimizerException(
               "PRCG.setIncumbent(): insanity detected; " +
               "most likely evaluation function is " +
@@ -228,7 +245,6 @@ public class PolakRibiereConjugateGradient implements LocalOptimizerIntf {
         }
         // end sanity check
       }
-
       _incValue=val;
       _inc=arg;
     }
@@ -274,7 +290,8 @@ class PRCGThread extends Thread {
   private int _id;
   private int _uid;
 
-  public PRCGThread(int id, int numtries, PolakRibiereConjugateGradient master) {
+  public PRCGThread(int id, int numtries, 
+		                PolakRibiereConjugateGradient master) {
     _id = id;
     _uid = (int) DataMgr.getUniqueId();
     _master=master;
@@ -329,17 +346,23 @@ class PRCGThread extends Thread {
    * @throws OptimizerException
    * @return PairObjDouble
    */
-  private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) throws OptimizerException {
+  private PairObjDouble min(FunctionIntf f, int solindex, HashMap p) 
+		throws OptimizerException {
     VecFunctionIntf grad = (VecFunctionIntf) p.get("prcg.gradient");
-    if (grad==null) grad = new GradApproximator(f);  // default: numeric computation of gradient
+    if (grad==null) 
+			grad = new GradApproximator(f);  // default: numeric gradient computation
     final VectorIntf x0 = 
 			p.containsKey("prcg.x"+solindex)==false ?
          p.containsKey("gradientdescent.x0") ? 
 			    (VectorIntf) p.get("gradientdescent.x0") : 
-			      p.containsKey("x0") ? (VectorIntf) p.get("x0") : null // attempt to retrieve generic point
+			      p.containsKey("x0") ? (VectorIntf) p.get("x0") : null 
+            // attempt to retrieve generic point
 			: (VectorIntf) p.get("prcg.x"+solindex);
-    if (x0==null) throw new OptimizerException("no prcg.x"+solindex+" initial point in _params passed");
-    VectorIntf x = x0.newInstance();  // x0.newCopy();  // don't modify the initial soln
+    if (x0==null) 
+			throw new OptimizerException("no prcg.x"+solindex+
+				                           " initial point in _params passed");
+    VectorIntf x = x0.newInstance();  // x0.newCopy();  
+                                      // don't modify the initial soln
     final int n = x.getNumCoords();
     double gtol = 1e-8;
     try {
@@ -391,28 +414,39 @@ class PRCGThread extends Thread {
     double[] xa = new double[n];
     for (int iter=0; iter<maxiters; iter++) {
       h=0;
-      VectorIntf g = grad.eval(x, p);
-      fx = f.eval(x, p);  // was _master._f
+      VectorIntf g;
+			try {
+				g = grad.eval(x, p);
+				fx = f.eval(x, p);  // was _master._f
+			}
+			catch (Exception e) {
+				throw new OptimizerException("PRCGThread.min(): f or g evaluation "+
+					                           "threw "+e.toString());
+			}
       final double norminfg = VecUtil.normInfinity(g);
       final double normg = VecUtil.norm(g,2);
       if (norminfg <= gtol) {
-        Messenger.getInstance().msg("found sol w/ value="+fx+" normg="+norminfg+" in "+iter+" iterations.",0);
+        Messenger.getInstance().msg("found sol w/ value="+fx+" normg="+norminfg+
+					                          " in "+iter+" iterations.",0);
         found = true;
         break;
       }
       for (int i=0; i<n; i++) {
         xa[i] = x.getCoord(i);
-        if (iter % n == 0) s.setCoord(i, -g.getCoord(i));  // reset search direction
+        if (iter % n == 0) 
+					s.setCoord(i, -g.getCoord(i));  // reset search direction
         else
           s.setCoord(i,s.getCoord(i)*b-g.getCoord(i));  // s update
       }
       double norms = VecUtil.norm2(s);
-      for (int i=0; i<n; i++) s.setCoord(i, s.getCoord(i)/norms);  // normalize s
+      for (int i=0; i<n; i++) 
+				s.setCoord(i, s.getCoord(i)/norms);  // normalize s
       // Armijo Rule implementation
       // determine step-size h
       double sTg = VecUtil.innerProduct(s,g);
       if (sTg>=0) {  // reset search direction
-        for (int i=0; i<n; i++) s.setCoord(i, -g.getCoord(i)/normg);  // normalize s
+        for (int i=0; i<n; i++) 
+					s.setCoord(i, -g.getCoord(i)/normg);  // normalize s
         sTg = -normg;
       }
       double rprev = rho*gamma*sTg;
@@ -426,7 +460,13 @@ class PRCGThread extends Thread {
             e.printStackTrace();
           }
         }
-        double fval = f.eval(x,p);  // was _master._f
+        double fval; 
+				try {
+					fval = f.eval(x,p);  // was _master._f
+				}  
+				catch (Exception e) {
+					throw new OptimizerException("PRCGThread.min(): f.eval() threw "+e);
+				}
         if (fval <= fx + rprev) {
           h = Math.pow(beta,m)*gamma;
           break;
@@ -434,8 +474,9 @@ class PRCGThread extends Thread {
         rprev = beta*rprev;
         m++;
       }
-      if (h<=0) throw new OptimizerException("PRCG could not find a valid h from x="+
-                                             x+" after "+m+" iterations...");
+      if (h<=0) 
+				throw new OptimizerException("PRCG could not find a valid h from x="+
+                                     x+" after "+m+" iterations...");
       // set new x
       for (int i=0; i<n; i++) {
         try {
@@ -446,7 +487,14 @@ class PRCGThread extends Thread {
         }
       }
       // update b
-      VectorIntf gnew = grad.eval(x, p);
+      VectorIntf gnew;
+			try {
+				gnew = grad.eval(x, p);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("PRCGThread.min(): g.eval() "+
+					                           "threw "+e.toString());
+			}
       VectorIntf gdiff = gnew.newCopy();
       for (int i=0; i<n; i++) {
         try {

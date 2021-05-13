@@ -18,6 +18,7 @@ import java.util.*;
  * @version 2.0
  */
 public class FunctionBase implements FunctionIntf {
+  // private final static long serialVersionUID = -7654946164692599332L;
   private long _evalCount=0;
   private FunctionIntf _f=null;
 

@@ -28,6 +28,8 @@ import popt4jlib.GradientDescent.VecUtil;
  * a Lenovo ThinkPad T530 is about 2.5 times faster than running on 1 thread.
  * <p>Notes:
  * <ul>
+ * <li>2021-05-08: ensure function evaluations can only throw 
+ * <CODE>IllegalArgumentException</CODE> exceptions.
  * <li>2020-04-25: method seParams() became public because it was moved up from
  * LocalOptimizerIntf to the root OptimizerIntf interface class.
  * </ul>
@@ -268,7 +270,8 @@ public class DDE2 implements OptimizerIntf {
       synchronized (this) {
         if (_f != null)throw new OptimizerException("DDE.minimize(): "+
           "another thread is concurrently executing the method on this object");
-        _f = f;
+        _f = new FunctionExceptionsWrapper(f);  // ensure _f.eval() only throws
+				                                        // IllegalArgumentException
         reset();
       }
       int numthreads = 1;
@@ -415,7 +418,14 @@ public class DDE2 implements OptimizerIntf {
 			_incIndex = index;
       if (Debug.debug(Constants.DDE)!=0) {
         // sanity check
-        double incval = _f.eval(arg, _params);
+				double incval = Double.MAX_VALUE;
+				try {
+					incval = _f.eval(arg, _params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("DDE2.setIncumbent(): _f.eval() threw "+
+						                           e.toString());
+				}
         if (Math.abs(incval - _incValue) > 1.e-25) {
           mger.msg("DDE2.setIncumbent(): arg-val originally="+
                    _incValue + " fval=" + incval + " ???",0);
@@ -532,7 +542,8 @@ class DDE2Thread extends Thread {
 		_numthreads = 1;
 		try {
 			HashMap p = _master.getParams();
-			_numthreads = ((Integer) p.get("dde.numthreads")).intValue();
+			if (p.containsKey("dde.numthreads"))
+				_numthreads = ((Integer) p.get("dde.numthreads")).intValue();
 			Boolean ndok = (Boolean) p.get("dde.nondeterminismok");
 			if (ndok!=null && ndok.booleanValue()==true) _nonDeterminismOK = true;
 			Boolean debeststr = (Boolean) p.get("dde.de/best/1/binstrategy");

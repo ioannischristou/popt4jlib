@@ -10,9 +10,14 @@ import java.util.*;
  * which a number of threads are spawned to compute at each iteration a new
  * solution. The best of all solutions found becomes the starting point for
  * each thread in the next iteration.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-08: ensured that all exceptions thrown in function evaluations 
+ * are handled properly.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -251,7 +256,14 @@ public class DEA implements OptimizerIntf {
         // the same used for function evals.
         if (_c2amaker != null) // oops, no it wasn't
           arg = _c2amaker.getArg(ind.getChromosome(), _params);
-        double incval = _f.eval(arg, _params);
+				double incval = Double.MAX_VALUE;
+				try {
+					incval = _f.eval(arg, _params);
+				}
+				catch (Exception e) {
+					throw new OptimizerException("DEA.setIncumbent(): _f.eval() threw "+
+						                           e.toString());
+				}
         if (Math.abs(incval - ind.getValue()) > 1.e-25) {
           Messenger.getInstance().msg("DEA.setIncumbent(): ind-val=" +
                                       ind.getValue() + " fval=" + incval +
@@ -462,10 +474,22 @@ class DEAThreadAux {
 
   private void runEA(int gen) throws OptimizerException {
     //System.err.println("thread: "+_id+" gen="+gen);
-    NewChromosomeMakerIntf mover = (NewChromosomeMakerIntf) _p.get("dea.movemaker");
-    Object newsol = mover.createNewChromosome(_individual.getChromosome(), _fp);  // used to be _p
-    Object newarg = _c2arg.getArg(newsol, _p);  // used to be _master.getParams()
-    double newval = _master.getFunction().eval(newarg, _fp);  // used to be _p, _master._f
+    NewChromosomeMakerIntf mover = 
+			(NewChromosomeMakerIntf) _p.get("dea.movemaker");
+    Object newsol = 
+			mover.createNewChromosome(_individual.getChromosome(), _fp);  
+    // used to be _p
+    Object newarg = _c2arg.getArg(newsol, _p);  
+    // used to be _master.getParams()
+		double newval = Double.MAX_VALUE;
+		try {
+			newval = _master.getFunction().eval(newarg, _fp);  // used to be _p, 
+			                                                   // _master._f
+		}
+		catch (Exception e) {
+			throw new OptimizerException("DEAThreadAux.runEA(): _f.eval() threw "+
+				                           e.toString());
+		}
     double df = newval - _individual.getValue();
     if (df < 0) {
       _individual = new DEAIndividual(newsol, _master, _fp);  // used to be _p
@@ -545,7 +569,14 @@ class DEAIndividual {
       Object arg = null;
       if (_c2amaker == null) arg = _chromosome;
       else arg = _c2amaker.getArg(_chromosome, p);
-      _val = _f.eval(arg, p);
+			try {
+				_val = _f.eval(arg, p);
+			}
+			catch (Exception e) {
+				throw new OptimizerException("DEAIndividual.computeValue(): _f.eval() "+
+					                           "threw "+e.toString());
+			}
+			
     }
   }
 }
