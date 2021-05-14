@@ -428,6 +428,29 @@ public class PDBTExecInitedClt {
 				"at least one worker failed to process request..."); 
 		else throw new PDBatchTaskExecutorException("cannot parse response...");
 	}
+	
+
+	/**
+	 * retrieves from the server the number of currently connected workers.
+	 * @return int
+	 * @throws IOException
+	 * @throws ClassNotFoundException 
+	 * @throws PDBatchTaskExecutorException
+	 */
+	public int getNumConnectedWorkers() 
+		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
+		utils.Messenger mger = utils.Messenger.getInstance();
+		mger.msg("PDTExecInitedClt.getNumConnectedWorkers(): sending request", 1);
+		_oos.reset();  // force object to be written anew
+		_oos.writeObject(new PDBTNumWorkersQueryCmd());
+		_oos.flush();
+		mger.msg("PDBTExecInitedClt.getNumConnectedWorkers(): request sent.", 1);
+		Object response = _ois.readObject();
+		mger.msg("PDBTExecInitedClt.getNumConnectedWorkers(): response recvd.", 1);		
+		if ((response instanceof Integer)==false) 
+			throw new PDBatchTaskExecutorException("wrong response");
+		return ((Integer)response).intValue();
+	}
 
 
 	/**

@@ -63,6 +63,8 @@ import java.util.*;
  * class).</p>
  * <p>Notes:
  * <ul>
+ * <li>2021-05-14: added functionality so as to submit a "final" command to be
+ * executed by all workers in the network when running in distributed mode.
  * <li>2021-05-08: added code around the evaluation of the function f to handle
  * the case where the <CODE>eval()</CODE> method throws exception other than 
  * <CODE>IllegalArgumentException</CODE>.
@@ -294,6 +296,10 @@ public class DGA extends GLockingObservableObserverBase
 	 * <li>&lt;"dga.pdbtexecinitedwrkcmd", RRObject cmd &gt; optional, the 
 	 * initialization command to send to the network of workers to run function
 	 * evaluation tasks, default is null, indicating no distributed computation.
+	 * <li>&lt;"dga.pdbtexecfinishedwrkcmd", PDBTExec cmd &gt; optional, the 
+	 * finalization command sent to the network of workers after the DGA process
+	 * has completed, default is null, indicating no finalization command need be
+	 * sent and executed by the network of workers.
 	 * <li>&lt;"dga.pdbthost", String pdbtexecinitedhost &gt; optional, the name
 	 * of the server to send function evaluation requests, default is localhost.
 	 * <li>&lt;"dga.pdbtport", Integer port &gt; optional, the port the above 
@@ -914,6 +920,7 @@ class DGAThreadAux {
       ensemble_name = (String) _p.get("ensemblename");
     }
     catch (ClassCastException e) { e.printStackTrace(); }
+		
     for (int gen = 0; gen < numgens; gen++) {
 			// synchronize with other threads
       Barrier.getInstance("dga."+master_id).barrier();  
@@ -951,7 +958,8 @@ class DGAThreadAux {
       _master.setIslandPop(_id, _individuals.size());
 			// synchronize with other threads
       Barrier.getInstance("dga."+_master.getId()).barrier();  
-    }
+    }  // for gen = 0 to #gens-1
+		
     if (ensemble_name!=null) {  // remove thread from ensemble barrier
       try {
         ComplexBarrier.removeCurrentThread(ensemble_name);
@@ -960,6 +968,31 @@ class DGAThreadAux {
         e.printStackTrace();  // no-op
       }
     }
+		
+		// check if a "finishing command" must be executed by the network of workers
+		if (_id==0) {
+			try {
+				PDBTExecCmd final_cmd = 
+					(PDBTExecCmd) _p.get("dga.pdbtexecfinishedwrkcmd");
+				if (final_cmd != null) {
+					_pdbtExecInitedClt.submitCmd(final_cmd);
+					// next commands are needed so that the final_cmd is actually executed 
+					// on all workers
+					final int nworkers = _pdbtExecInitedClt.getNumConnectedWorkers();
+					TaskObject[] notasks = new TaskObject[nworkers];
+					for (int i=0; i<nworkers; i++) notasks[i] = new NoOpTask();
+					_pdbtExecInitedClt.submitWorkFromSameHost(notasks, 1);
+					// the tasks in notasks will be distributed among all connected 
+					// workers (if a worker connects after the request to get the number
+					// of workers, no harm done, as it cannot have worked on any actual
+					// work from this DGA process)
+				}
+			}
+			catch (Exception e) {
+				e.printStackTrace();  // no-op
+			}
+		}
+		
 		if (_pdbtExecInitedClt!=null) {  // disconnect from network of workers
 			try {
 				_pdbtExecInitedClt.terminateConnection();

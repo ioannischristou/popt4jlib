@@ -36,6 +36,8 @@ public class sSTCnbin implements FunctionIntf {
 	double _h;
 	double _p;
 	
+	private static volatile int _maxAddedTermsInSum12 = 0;
+	
 	private final static double _eps = 2.e-8;  // itc-20210512: used to be 1.e-9
 	private final static int _numTerms = 5;
 	private final static int _maxAllowedSumTerms = 10000000;
@@ -181,6 +183,7 @@ public class sSTCnbin implements FunctionIntf {
 				           "evaluation exceeded "+_maxAllowedSumTerms+" limit";
 			throw new IllegalStateException(exc);
 		}
+		updateMaxAddedTermsInSum12(n);
 		return y;
 	}
 	
@@ -252,7 +255,29 @@ public class sSTCnbin implements FunctionIntf {
 				           "evaluation exceeded "+_maxAllowedSumTerms+" limit";
 			throw new IllegalStateException(exc);
 		}
+		updateMaxAddedTermsInSum12(n);
 		return y;
+	}
+
+	
+	/**
+	 * update the maximum number of terms needed to add up in order to compute 
+	 * either of the functions <CODE>sum1()</CODE> or <CODE>sum2()</CODE>.
+	 * @param n int
+	 */
+	private synchronized static void updateMaxAddedTermsInSum12(int n) {
+		if (n>_maxAddedTermsInSum12) 
+			_maxAddedTermsInSum12 = n;
+	}
+	
+	
+	/**
+	 * used in diagnostics, to get the maximum number of terms added in order to 
+	 * compute the value of <CODE>sum1()</CODE> or <CODE>sum2()</CODE> sums.
+	 * @return int
+	 */
+	public synchronized static int getMaxAddedTermsInSum12() {
+		return _maxAddedTermsInSum12;
 	}
 	
 	

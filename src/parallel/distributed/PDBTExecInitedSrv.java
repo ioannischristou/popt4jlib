@@ -46,6 +46,11 @@ import java.util.*;
  * connection from this "loser" worker. If the same batch of jobs fails to be 
  * executed by two different workers, the server sends back to the client a 
  * <CODE>FailedReply</CODE> indicating the job cannot be successfully completed.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-05-14: added functionality to query the current number of connected
+ * workers on this server.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2017</p>
@@ -246,7 +251,7 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 			return true;
 		}
 		return (_initCmd instanceof OKReplyRequestedPDBTExecWrkInitCmd) ||
-			     !(obj instanceof OKReplyRequestedPDBTExecWrkInitCmd);
+			      !(obj instanceof OKReplyRequestedPDBTExecWrkInitCmd);
 	}
 	
 	
@@ -482,6 +487,9 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 		 * workers to reply, but the server has already set (from another client) an 
 		 * init-cmd that doesn't require replies from the workers, the connection
 		 * to the client will be lost, as this is considered an inconsistent state.
+		 * In addition, the object could be <CODE>PDBTNumWorkersQueryCmd</CODE> in
+		 * which case, this server will send back an Integer object describing the 
+		 * total number of connected workers to it.
 		 */
     public void run() {
 			// first, read from socket the worker-initialization object that will
@@ -546,6 +554,14 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
           mger.msg("PDBTEC2ListenerThread.run(): RRObject read",2);
           // 2. take appropriate action
           try {
+						if (obj instanceof PDBTNumWorkersQueryCmd) {
+							final int num_workers = getNumWorkers();
+							mger.msg("PDBTEC2ListenerThread: got #workers query command", 2);
+							_oos.writeObject(new Integer(num_workers));
+							_oos.flush();
+							mger.msg("PDBTEC2ListenerThread: done w/ #workers query", 2);
+							continue;
+						}
 						if (obj instanceof PDBTExecCmd) {
 							setCmd((PDBTExecCmd)obj);
 							mger.msg("PDBTEC2ListenerThread: done setting PDBTExecCmd", 2);

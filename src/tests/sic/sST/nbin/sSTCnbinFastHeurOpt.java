@@ -296,7 +296,14 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 					                           "to submit tasks/process/get back result");
 			}
 		}  // while
-				
+		
+		try {
+			_pdclt.submitCmd(new PDBTExecReportMaxSum12TermsCmd());
+		}
+		catch (Exception e) {
+			e.printStackTrace();  // no-op
+		}
+		
 		synchronized(this) {
 			if (--_numRunning==0) {
 				notify();  // let another thread know that it can proceed with 

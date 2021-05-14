@@ -54,6 +54,8 @@ public class sSTCnbinMetaHeurOpt {
 		
 		if ("GA".equals(meta)) {  // prepare run for DGA
 			params.put("dga.pdbtexecinitedwrkcmd", new PDBTExecNoOpCmd());
+			params.put("dga.pdbtexecfinishedwrkcmd", 
+				         new PDBTExecReportMaxSum12TermsCmd());
 			params.put("dga.pdbthost", "localhost");
 			params.put("dga.pdbtport", new Integer(7891));
 			params.put("dga.chromosomelength", new Integer(3));  // [s,S,T]
@@ -68,7 +70,7 @@ public class sSTCnbinMetaHeurOpt {
 			params.put("dga.xoverop", new DblArray1PtXOverOp());
 			params.put("dga.mutationop", new DblVarArray1AlleleMutationOp());
 			params.put("dga.function", f);
-			params.put("dga.numgens", new Integer(20));
+			params.put("dga.numgens", new Integer(10));
 			params.put("dga.poplimit", new Integer(30));
 			try {
 				DGA dga = new DGA(params);

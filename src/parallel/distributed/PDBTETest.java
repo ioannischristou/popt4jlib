@@ -17,12 +17,14 @@ public class PDBTETest {
 
 	/**
 	 * invoke as:
-	 * <CODE>java -cp &lt;classpath&gt; parallel.PDBTETest &lt;j0&gt; &lt;numtasks&gt; &lt;numthreads&gt; [range](def: 1000)</CODE>.
+	 * <CODE>java -cp &lt;classpath&gt; parallel.PDBTETest 
+	 * &lt;j0&gt; &lt;numtasks&gt; &lt;numthreads&gt; [range](def: 1000)</CODE>.
 	 * @param args 
 	 */
   public static void main(String[] args) {
     if (args.length<3) {
-      System.err.println("usage: java -cp <classpath> parallel.PDBTETest <j0> <numtasks> <numthreads> [range](def: 1000)");
+      System.err.println("usage: java -cp <classpath> parallel.PDBTETest "+
+				                 "<j0> <numtasks> <numthreads> [range](def: 1000)");
       System.exit(-1);
     }
     try {
