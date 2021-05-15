@@ -12,7 +12,8 @@ import java.io.Serializable;
  * @version 1.0
  */
 public class NoOpTask implements TaskObject {
-
+	// private final static long serialVersionUID = -5265604222839083451L;
+	
   /**
    * returns null immediately.
    * @return null
@@ -32,8 +33,8 @@ public class NoOpTask implements TaskObject {
 
 
   /**
-   * always throws UnsupportedOperationException
-   * @param other not used.
+   * always throws UnsupportedOperationException.
+   * @param other TaskObject not used.
    * @throws UnsupportedOperationException
    */
   public void copyFrom(TaskObject other) {

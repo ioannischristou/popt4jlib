@@ -979,10 +979,11 @@ class DGAThreadAux {
 					// next commands are needed so that the final_cmd is actually executed 
 					// on all workers
 					final int nworkers = _pdbtExecInitedClt.getNumConnectedWorkers();
-					TaskObject[] notasks = new TaskObject[nworkers];
-					for (int i=0; i<nworkers; i++) notasks[i] = new NoOpTask();
-					_pdbtExecInitedClt.submitWorkFromSameHost(notasks, 1);
-					// the tasks in notasks will be distributed among all connected 
+					TaskObject[] tdtasks = new TaskObject[nworkers];
+					for (int i=0; i<nworkers; i++) 
+						tdtasks[i] = new TimeDelayTask(1000);
+					_pdbtExecInitedClt.submitWorkFromSameHost(tdtasks, 1);
+					// the tasks in pdtasks will be distributed among all connected 
 					// workers (if a worker connects after the request to get the number
 					// of workers, no harm done, as it cannot have worked on any actual
 					// work from this DGA process)

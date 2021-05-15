@@ -21,10 +21,12 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/VecUtil.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansCC.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/hiddenws0.dat</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutorClt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/DDE.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/OneDStepQuantumOptimizer.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoisson.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/toy_train.dat.lbls</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/RequestIgnoredReply.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/avd_test_props.txt</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/AlternatingVariablesDescent.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/FunctionExceptionsWrapper.java</file>
@@ -41,6 +43,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansSqrEvaluator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/ArmijoSteepestDescentST.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/SumOfVarianceEvaluator.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/SimpleMessage.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/det/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/GELU.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/poisson/RnQTCpoissonHeurPOpt.java</file>
@@ -151,6 +154,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/test_train_data0.dat</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/LightweightParams.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/RegisteredParcel.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTNumWorkersQueryCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnormMetaHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/Norm2FunctionGrad.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinFixedTOpt.java</file>
@@ -189,10 +193,12 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/PairObjDouble.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/PS/DblArray1CMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnormBoxed.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBatchTaskExecutorSrv.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/DLSM.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecOnAllThreadsCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FFNN4TrainBGradTest2.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/RRObject.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/NoOpTask.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonSimpleHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansNormSqrEvaluator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1Vector1AlleleMutationOp.java</file>
