@@ -43,18 +43,22 @@ public class DblArray1CMaker implements RandomChromosomeMakerIntf {
    * for the i-th allele in the chromosome ($i$ must be in the range
    * {0,...,chromosome_length-1}). If this value is greater than the global
    * value specified by the "dsa.maxallelevalue" key, it is ignored.
-   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of the
-   * thread invoking this method; this number is used so as to look-up the right
-   * random-number generator associated with the current thread.
+   * <li> &lt;"thread.id",$integer_value"&gt; mandatory, the (internal) id of 
+   * the thread invoking this method; this number is used so as to look-up the 
+	 * right random-number generator associated with the current thread.
 	 * </ul>
    * @throws OptimizerException
    * @return Object double[] of length specified in the params.
    */
-  public Object createRandomChromosome(HashMap params) throws OptimizerException {
+  public Object createRandomChromosome(HashMap params) 
+		throws OptimizerException {
     try {
-      final int nmax = ( (Integer) params.get("dsa.chromosomelength")).intValue();
-      final double maxalleleval=((Double) params.get("dsa.maxallelevalue")).doubleValue();
-      final double minalleleval=((Double) params.get("dsa.minallelevalue")).doubleValue();
+      final int nmax = 
+				((Integer) params.get("dsa.chromosomelength")).intValue();
+      final double maxalleleval =
+				((Double) params.get("dsa.maxallelevalue")).doubleValue();
+      final double minalleleval =
+				((Double) params.get("dsa.minallelevalue")).doubleValue();
       final int id = ((Integer) params.get("thread.id")).intValue();
 			final Random rid = RndUtil.getInstance(id).getRandom();
       double[] arr = new double[nmax];
