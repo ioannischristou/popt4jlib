@@ -35,9 +35,10 @@ import org.jfree.data.xy.XYSeriesCollection;
  * class logic -which is usually done much faster- and then computing the 
  * optimal (s(t),S(t)) parameters for t close to T* and picking the best set of
  * parameters.
- * In fact, we also compute the (R,nQ,T) optimal policy for a system with review
+ * In fact we also compute (R,nQ,T) near optimal policy for a system with review
  * cost equal to Kr and zero ordering cost and for the resulting review period 
- * T' we compute similarly the optimal s(T') and S(T').
+ * T', we compute similarly near-optimal s(T') and S(T'), and choose the best 
+ * among the solutions found.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2021</p>
@@ -77,7 +78,6 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 
 	private ArrayList _tis;      // used for visualization purposes
 	private ArrayList _ctis;     // again, for visualization purposes only
-	private ArrayList _lbtis;    // guess for what purposes this is...
 
 	
 	/**
@@ -100,7 +100,6 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 		
 		_tis = new ArrayList();
 		_ctis = new ArrayList();
-		_lbtis = new ArrayList();
 	}
 	
 
@@ -144,7 +143,6 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 			}
 			_tis.clear();
 			_ctis.clear();
-			_lbtis.clear();
 			++_numRunning;
 		}
 		sSTCnbin sSTC = (sSTCnbin) f;
@@ -160,7 +158,7 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 			       "(r,nQ,T) policy optimization", 1);
 		
 		// 1. compute the optimal T* for the (r,nQ,T) policy
-		final double t_rnqt = getOptimalRnQTReview(sSTC);
+		final double t_rnqt = getNearOptimalRnQTReview(sSTC);
 		mger.msg("sSTCnbinFastHeurOpt.minimize(f): "+
 			       "(r,nQ,T) policy optimization returns T*="+t_rnqt, 1);
 		
@@ -168,10 +166,8 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 		double T = Tmin >= t_rnqt-_deltaT ? Tmin : t_rnqt-_deltaT;
 		
 		final double Tmax = t_rnqt + _deltaT;
-
-		boolean done = false;
 		
-		while (T<Tmax && !done) {
+		while (T<Tmax) {
 			// 1. prepare batch
 			final int bsz = (int) Math.ceil((Tmax-T)/_epsT);
 			final int batchSz = bsz < _batchSz ? bsz : _batchSz;
@@ -193,13 +189,6 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 							(sSTCnbinFixedTOpterResult) res[i];
 						_tis.add(new Double(ri._T));  // add to tis time-series
 						_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
-						_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
-						if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
-							mger.msg("sSTCnbinFastHeurOpt.minimize(f): for T="+ri._T+
-								       " LB@T="+ri._LB+
-									     " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
-							done = true;
-						}
 						if (ri._C < c_cur_best) {
 							s_star = ri._s;
 							S_star = ri._S;
@@ -225,7 +214,7 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 		// 3. find the optimal T for a system with review cost Kr and 0 order cost!
 		sSTCnbin sSTC2 = new sSTCnbin(sSTC._Kr, 0, sSTC._L, 
 			                            sSTC._lambda, sSTC._p_l, sSTC._h, sSTC._p);
-		final double t_rnqt2 = getOptimalRnQTReview(sSTC2);
+		final double t_rnqt2 = getNearOptimalRnQTReview(sSTC2);
 		mger.msg("sSTCnbinFastHeurOpt.minimize(Kr,0): "+
 			       "(r,nQ,T) policy optimization returns T*="+t_rnqt2, 1);
 		
@@ -243,10 +232,8 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 		}
 		mger.msg("sSTCnbinFastHeurOpt.minimize(f): last search area is "+
 			       "["+T+","+Tmax2+"]", 1);
-
-		done = false;
 		
-		while (T<Tmax2 && !done) {
+		while (T<Tmax2) {
 			// 1. prepare batch
 			final int bsz = (int) Math.ceil((Tmax2-T)/_epsT);
 			final int batchSz = bsz < _batchSz ? bsz : _batchSz;
@@ -268,13 +255,6 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 							(sSTCnbinFixedTOpterResult) res[i];
 						_tis.add(new Double(ri._T));  // add to tis time-series
 						_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
-						_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
-						if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
-							mger.msg("sSTCnbinFastHeurOpt.minimize(f): for T="+ri._T+
-								       " LB@T="+ri._LB+
-									     " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
-							done = true;
-						}
 						if (ri._C < c_cur_best) {
 							s_star = ri._s;
 							S_star = ri._S;
@@ -297,6 +277,8 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 			}
 		}  // while
 		
+		// instruct network workers to show the maximum number of terms needed to 
+		// be added up in any (s,S,T) policy evaluation done so far
 		try {
 			_pdclt.submitCmd(new PDBTExecReportMaxSum12TermsCmd());
 		}
@@ -318,7 +300,7 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 	/**
 	 * get the time-series from the latest run.
 	 * @return ArrayList[] first element is T-axis values, second is optimal 
-	 * costs, third is lower bound on costs
+	 * costs
 	 */
 	public synchronized ArrayList[] getLatestTimeSeries() {
 		while (_numRunning>0) {
@@ -329,10 +311,9 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 				Thread.currentThread().interrupt();
 			}
 		}
-		ArrayList[] result = new ArrayList[4];
+		ArrayList[] result = new ArrayList[2];
 		result[0] = _tis;
 		result[1] = _ctis;
-		result[2] = _lbtis;
 		return result;
 	}
 
@@ -356,15 +337,17 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 		}
 		catch (Exception e) {
 			e.printStackTrace();  // ignore further
-			throw new Error("sSTCnbinHeurOpt.terminateServerConnection() "+
+			throw new Error("sSTCnbinFastHeurOpt.terminateServerConnection() "+
 				              "failed?");
 		}
 	}
 	
 	
 	/**
-	 * find the optimal (r,nQ,T) policy for a system operating with the parameters
-	 * contained in the given function, and return the optimal review period T*.
+	 * find near-optimal (r,nQ,T) policy for a system operating with parameters
+	 * contained in the given function, and return the optimal review period T*,
+	 * using the heuristic described in CAIE by Christou, Skouri and Lagodimos
+	 * (2020), adapted for compound Poisson demands.
 	 * Notice that in order to speed up the (R,nQ,T) optimization process, we 
 	 * multiply the _epsT used in the (s,S,T) outer T-search by the factor 
 	 * <CODE>_EPST_MULT</CODE>.
@@ -372,7 +355,7 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 	 * @return double optimal review period for the (r,nQ,T) policy
 	 * @throws OptimizerException
 	 */
-	private synchronized double getOptimalRnQTReview(sSTCnbin f) 
+	private synchronized double getNearOptimalRnQTReview(sSTCnbin f) 
 		throws OptimizerException {
 		RnQTCnbin rnqt = new RnQTCnbin(f._Kr, f._Ko, f._L, f._lambda, f._p_l,
 		                                     f._h, f._p);
@@ -454,17 +437,11 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 			ArrayList[] xyseries = ropter.getLatestTimeSeries();
 			XYSeriesCollection xyc = new XYSeriesCollection();
 			XYSeries tcs = new XYSeries("C*");
-			XYSeries tlbs = new XYSeries("LB");
 			for (int i=0; i<xyseries[1].size(); i++) {
 				tcs.add(((Double)xyseries[0].get(i)).doubleValue(), 
 					      ((Double)xyseries[1].get(i)).doubleValue());
 			}
-			for (int i=0; i<xyseries[2].size(); i++) {
-				tlbs.add(((Double)xyseries[0].get(i)).doubleValue(), 
-					      ((Double)xyseries[2].get(i)).doubleValue());				
-			}
 			xyc.addSeries(tcs);
-			xyc.addSeries(tlbs);
 			JFreeChart chart = 
 				ChartFactory.createXYLineChart(
 					"Optimal (s,S,T) Cost as Function of T",
@@ -483,7 +460,7 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 			r.setSeriesShape(0, shape);
 			r.setSeriesShapesVisible(0,true);
 			r.setSeriesLinesVisible(0, false);
-			r.setSeriesLinesVisible(1, false);
+			//r.setSeriesLinesVisible(1, false);
 			//r.setSeriesPaint(2, Color.DARK_GRAY);
 			
 			ChartPanel cp = new ChartPanel(chart);

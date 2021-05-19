@@ -9,8 +9,8 @@ import java.util.HashMap;
 /**
  * the class works as the class <CODE>sSTCnormBoxed</CODE> but the arguments are
  * s, D (representing the difference S-s) and T, which allows for specifying the
- * constraints 1 &le; D &le; D<sub>max</sub> directly on any meta-heuristic 
- * optimizing the function <CODE>sSTCnbin</CODE>. As in the 
+ * constraints 0 &le; D &le; D<sub>max</sub> directly on any meta-heuristic 
+ * optimizing the function <CODE>sSTCnorm</CODE>. As in the 
  * <CODE>sSTCnormBoxed</CODE> class, the function evaluations are cached for 
  * fast lookup.
  * <p>Title: popt4jlib</p>

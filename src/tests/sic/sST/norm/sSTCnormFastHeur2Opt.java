@@ -4,6 +4,7 @@ import popt4jlib.FunctionIntf;
 import popt4jlib.OptimizerException;
 import popt4jlib.OptimizerIntf;
 import parallel.TaskObject;
+import parallel.distributed.FailedReply;
 import parallel.distributed.PDBTExecInitNoOpCmd;
 import parallel.distributed.PDBTExecInitedClt;
 import utils.PairObjDouble;
@@ -15,6 +16,7 @@ import java.util.Locale;
 import java.awt.BorderLayout;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
+import java.io.Serializable;
 import java.text.NumberFormat;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -24,7 +26,6 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.util.ShapeUtilities;
 
 
 /**
@@ -32,8 +33,8 @@ import org.jfree.util.ShapeUtilities;
  * under normal demands, by computing near-optimal (r,nQ,T) policy parameters
  * r*,Q*, and T* according to the heuristic implemented in class 
  * <CODE>tests.sic.rnqt.norm.RnQTCnormHeurOpt</CODE> and then computing the 
- * optimal (s(t),S(t)) parameters for t close to T* and picking the best set of
- * parameters.
+ * best (s(r*),S(r*+Q*)) parameters for t close to T* and picking the best set 
+ * of parameters.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2021</p>
@@ -41,7 +42,7 @@ import org.jfree.util.ShapeUtilities;
  * @author Ioannis T. Christou
  * @version 1.0
  */
-public final class sSTCnormFastHeurOpt implements OptimizerIntf {
+public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 	/**
 	 * default address for PDBTExecSingleCltWrkInitSrv
 	 */
@@ -58,10 +59,11 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 	private final double _deltaT;
 	
 	private final double _epss;
-	private final double _qnot;
+	private final double _deltas;
 
+	
 	/**
-	 * by default, 24 tasks to be submitted each time to be processed in parallel
+	 * by default, 24 tasks to be submitted each time to be processed in parallel.
 	 */
 	private final int _batchSz;
 	
@@ -69,7 +71,6 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 
 	private ArrayList _tis;      // used for visualization purposes
 	private ArrayList _ctis;     // again, for visualization purposes only
-	private ArrayList _lbtis;    // guess for what purposes this is...
 
 	
 	/**
@@ -80,11 +81,11 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 	 * @param epsT double &gt;0; default 0.01
 	 * @param deltaT double &gt;0 default 0.05
 	 * @param epss double &gt;0 default 1.0
-	 * @param qnot double &ge;0 default 1.e-6
+	 * @param deltas double &ge;0 default 5.0
 	 */
-	public sSTCnormFastHeurOpt(String server, int port, int batchSz, 
-		                     double epsT, double deltaT,
-												 double epss, double qnot) {
+	public sSTCnormFastHeur2Opt(String server, int port, int batchSz, 
+		                          double epsT, double deltaT, 
+															double epss, double deltas) {
 		if (server==null || server.length()==0) _pdsrv = "localhost";
 		else _pdsrv = server;
 		if (port>1024) _pdport = port;
@@ -93,11 +94,10 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 		_epsT = epsT>0 ? epsT : 0.01;
 		_deltaT = deltaT>0 ? deltaT : 0.05;
 		_epss = epss>0 ? epss : 1.0;
-		_qnot = qnot>=0 ? qnot : 1.e-6;
+		_deltas = deltas>=0 ? deltas : 5.0;
 		
 		_tis = new ArrayList();
 		_ctis = new ArrayList();
-		_lbtis = new ArrayList();
 	}
 	
 
@@ -120,95 +120,93 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 	 */
 	public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
 		if (!(f instanceof sSTCnorm))
-			throw new OptimizerException("sSTCnormFastHeurOpt.minimize(f): f must be"+
-				                           " of type tests.sic.sST.norm.sSTCnorm");
+			throw new OptimizerException("sSTCnormFastHeur2Opt.minimize(f): f must "+
+				                           "be of type tests.sic.sST.norm.sSTCnorm");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
 			if (_pdclt==null) {
-				mger.msg("sSTCnormFastHeurOpt.minimize(f): connecting on "+_pdsrv+
+				mger.msg("sSTCnormFastHeur2Opt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);
 				_pdclt = new PDBTExecInitedClt(_pdsrv, _pdport);
 				try {
 					_pdclt.submitInitCmd(new PDBTExecInitNoOpCmd());
-					mger.msg("sSTCnormFastHeurOpt.minimize(f): successfully sent init "+
+					mger.msg("sSTCnormFastHeur2Opt.minimize(f): successfully sent init "+
 						       "cmd", 
 						       2);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
-					throw new OptimizerException("sSTCnormFastHeurOpt.mainimize(f): "+
+					throw new OptimizerException("sSTCnormFastHeur2Opt.mainimize(f): "+
 						                           "clt failed to send empty init-cmd to "+
 						                           "network");
 				}
 			}
 			_tis.clear();
 			_ctis.clear();
-			_lbtis.clear();
 			++_numRunning;
 		}
 		sSTCnorm sSTC = (sSTCnorm) f;
 		
 		double Tmin = Math.pow(3.5*sSTC._sigma/sSTC._mi, 2);  // used to be zero
-		double c_cur_best = Double.POSITIVE_INFINITY;
 		
 		double s_star=Double.NaN;
 		double S_star = Double.NaN;
 		double t_star = Double.NaN;
 		
-		mger.msg("sSTCnormFastHeurOpt.minimize(): running "+
+		mger.msg("sSTCnormFastHeur2Opt.minimize(): running "+
 			       "(r,nQ,T) policy optimization", 1);
 		// first, compute the optimal T* for the (r,nQ,T) policy
-		final double t_rnqt = getOptimalRnQTReview(sSTC);
-		mger.msg("sSTCnormFastHeurOpt.minimize(): "+
-			       "(r,nQ,T) policy optimization returns T*="+t_rnqt, 1);
+		final double[] rnqt_arr = getOptimalRnQTPolicy(sSTC);
+		mger.msg("sSTCnormFastHeur2Opt.minimize(): "+
+			       "(r,nQ,T) policy optimization returns "+
+			       "R*="+rnqt_arr[0]+", Q*="+rnqt_arr[1]+", T*="+rnqt_arr[2], 1);
 		
-		double T = Tmin >= t_rnqt-_deltaT ? Tmin : t_rnqt-_deltaT;
+		double T = Tmin >= rnqt_arr[2]-_deltaT ? Tmin : rnqt_arr[2]-_deltaT;
 		
-		final double Tmax = t_rnqt + _deltaT;
-
-		boolean done = false;
+		final double Tmax = rnqt_arr[2] + _deltaT;
 		
-		while (T<Tmax && !done) {
+		double c_cur_best = Double.POSITIVE_INFINITY;
+		
+		while (T<Tmax) {
 			// 1. prepare batch
 			final int bsz = (int) Math.ceil((Tmax-T)/_epsT);
 			final int batchSz = bsz < _batchSz ? bsz : _batchSz;
 			TaskObject[] batch = new TaskObject[batchSz];
 			double Tstart = T;
+			// following loop may cause some computations for larger T than Tmax
+			// in the last iteration (as they're done in parallel it doesn't matter)
 			for (int i=0; i<batchSz; i++) {
 				T += _epsT;
-				batch[i] = new sSTCnormFixedTOptTask(sSTC,T,_qnot,_epss,c_cur_best);
+				batch[i] = new sSTCnormFixedTBCOptTask(sSTC,T,_epss,
+					                                     rnqt_arr[0]-_deltas,
+				                                       rnqt_arr[0]+_deltas,
+				                                       rnqt_arr[0]+rnqt_arr[1]-_deltas,
+				                                       rnqt_arr[0]+rnqt_arr[1]+_deltas);
 			}
 			try {
-				mger.msg("sSTCnormFastHeurOpt.minimize(): submit a batch of "+batchSz+
+				mger.msg("sSTCnormFastHeur2Opt.minimize(): submit a batch of "+batchSz+
 					       " tasks to network for period length from "+(Tstart+_epsT)+
 					       " up to "+T, 
 					       1);
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
-					sSTCnormFixedTOpterResult ri = 
-						(sSTCnormFixedTOpterResult) res[i];
+					sSTCnormFixedTBCOpterResult ri = 
+						(sSTCnormFixedTBCOpterResult) res[i];
 					_tis.add(new Double(ri._T));  // add to tis time-series
 					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
-					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
-					if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
-						mger.msg("sSTCnormFastHeurOpt.minimize(f): for T="+ri._T+
-							       " LB@T="+ri._LB+
-							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
-						done = true;
-					}
 					if (ri._C < c_cur_best) {
 						s_star = ri._s;
 						S_star = ri._S;
 						t_star = ri._T;
 						c_cur_best = ri._C;
-						mger.msg("sSTCnormFastHeurOpt.minimize(f): found new better soln "+
-							       " @T="+t_star+", c="+c_cur_best+" LB@T="+ri._LB, 1);
+						mger.msg("sSTCnormFastHeur2Opt.minimize(f): found new better soln "+
+							       " @T="+t_star+", c="+c_cur_best, 1);
 					}
 				}
 			}
 			catch (Exception e) {
 				e.printStackTrace();
-				throw new OptimizerException("sSTCnormFastHeurOpt.minimize(): failed "+
+				throw new OptimizerException("sSTCnormFastHeur2Opt.minimize(): failed "+
 					                           "to submit tasks/process/get back result");
 			}
 		}
@@ -226,7 +224,7 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 	/**
 	 * get the time-series from the latest run.
 	 * @return ArrayList[] first element is T-axis values, second is optimal 
-	 * costs, third is lower bound on costs
+	 * costs
 	 */
 	public synchronized ArrayList[] getLatestTimeSeries() {
 		while (_numRunning>0) {
@@ -237,10 +235,9 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 				Thread.currentThread().interrupt();
 			}
 		}
-		ArrayList[] result = new ArrayList[3];
+		ArrayList[] result = new ArrayList[2];
 		result[0] = _tis;
 		result[1] = _ctis;
-		result[2] = _lbtis;
 		return result;
 	}
 
@@ -264,7 +261,7 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 		}
 		catch (Exception e) {
 			e.printStackTrace();  // ignore further
-			throw new Error("sSTCnormFastHeurOpt.terminateServerConnection() "+
+			throw new Error("sSTCnormFastHeur2Opt.terminateServerConnection() "+
 				              "failed?");
 		}
 	}
@@ -276,16 +273,15 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 	 * period T*. Uses the heuristic described in the CAIE paper by Christou,
 	 * Skouri and Lagodimos (2020).
 	 * @param f sSTCnorm
-	 * @return double near-optimal review period for the (r,nQ,T) policy
+	 * @return double[] near-optimal parameters for the (r,nQ,T) policy
 	 * @throws OptimizerException
 	 */
-	private synchronized double getOptimalRnQTReview(sSTCnorm f) 
+	private synchronized double[] getOptimalRnQTPolicy(sSTCnorm f) 
 		throws OptimizerException {
 		RnQTCnorm rnqt = new RnQTCnorm(f._Kr, f._Ko, f._L, f._mi,f._sigma,
-		                               f._h, f._p);
-		final double epsq = 0.0;  // this will cause the default epsq value 
-		                          // to be used
-		final double epsr = 0.0;  // again, as above
+		                                     f._h, f._p);
+		final double epsq = _epss;  // used to be zero
+		final double epsr = _epss;  // again, as above
 		RnQTCnormHeurOpt opter = new RnQTCnormHeurOpt(_epsT, epsq, epsr);
 		/* following code is not needed with the heuristic optimization algorithm
 		// first set the _pdclt
@@ -294,14 +290,14 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 		opter.setParams(p);
 		*/
 		PairObjDouble res = opter.minimize(rnqt);
-		return ((double[])res.getArg())[2];
+		return ((double[])res.getArg());
 	}
 	
 	
 	/**
 	 * invoke as 
 	 * <CODE>
-	 * java -cp &lt;classpath&gt; tests.sic.sST.norm.sSTCnormFastHeurOpt 
+	 * java -cp &lt;classpath&gt; tests.sic.sST.norm.sSTCnormFastHeur2Opt 
 	 * &lt;Kr&gt; 
 	 * &lt;Ko&gt;
 	 * &lt;L&gt;
@@ -315,7 +311,7 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 	 * [epst(0.01)]
 	 * [deltaT(0.05)]
 	 * [epss(1.e-4)]
-	 * [qnot(1.e-6)]
+	 * [deltas(5.0)]
 	 * [batchsize(24)]
 	 * [dbglvl(0)]
 	 * </CODE>.
@@ -343,8 +339,8 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 		if (args.length>11) deltat = Double.parseDouble(args[11]);
 		double epss = 1.e-4;
 		if (args.length>12) epss = Double.parseDouble(args[12]);
-		double qnot = 1.e-6;
-		if (args.length>13) qnot = Double.parseDouble(args[13]);
+		double deltas = 5.0;
+		if (args.length>13) deltas = Double.parseDouble(args[13]);
 		int bsize = 24;
 		if (args.length>14) bsize = Integer.parseInt(args[14]);
 		int dbglvl = 0;
@@ -356,8 +352,8 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 		sSTCnorm f = new sSTCnorm(Kr,Ko,L,mi,sigma,h,p,p2);
 		long start = System.currentTimeMillis();
 		// 3. optimize function
-		sSTCnormFastHeurOpt ropter = 
-			new sSTCnormFastHeurOpt(host, port, bsize, epst, deltat, epss, qnot);
+		sSTCnormFastHeur2Opt ropter = 
+			new sSTCnormFastHeur2Opt(host, port, bsize, epst, deltat, epss, deltas);
 		try {
 			PairObjDouble result = ropter.minimize(f);
 			long dur = System.currentTimeMillis()-start;
@@ -371,17 +367,11 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 			ArrayList[] xyseries = ropter.getLatestTimeSeries();
 			XYSeriesCollection xyc = new XYSeriesCollection();
 			XYSeries tcs = new XYSeries("C*");
-			XYSeries tlbs = new XYSeries("LB");
 			for (int i=0; i<xyseries[1].size(); i++) {
 				tcs.add(((Double)xyseries[0].get(i)).doubleValue(), 
 					      ((Double)xyseries[1].get(i)).doubleValue());
 			}
-			for (int i=0; i<xyseries[2].size(); i++) {
-				tlbs.add(((Double)xyseries[0].get(i)).doubleValue(), 
-					      ((Double)xyseries[2].get(i)).doubleValue());				
-			}
 			xyc.addSeries(tcs);
-			xyc.addSeries(tlbs);
 			JFreeChart chart = 
 				ChartFactory.createXYLineChart(
 					"(Near)-Optimal (s,S,T) Cost as Function of T",
@@ -393,10 +383,6 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 			// customize plot
 			XYPlot plot = (XYPlot) chart.getPlot();
 			XYLineAndShapeRenderer r = (XYLineAndShapeRenderer) plot.getRenderer();
-			// set lower-bound graphics
-			r.setSeriesShape(1, ShapeUtilities.createUpTriangle(5));
-			r.setSeriesShapesVisible(1, true);
-			r.setSeriesLinesVisible(1, false);
 			// set actual costs graphics
 			Shape shape  = new Ellipse2D.Double(0,0,3,3);
 			r.setSeriesShape(0, shape);
@@ -416,12 +402,12 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 			NumberFormat df = NumberFormat.getInstance(Locale.US);
 			df.setGroupingUsed(false);
 			df.setMaximumFractionDigits(2);
-			plot_frame.setTitle("Fast Heuristic T-Search of (s,S,T) Policy with Normal Demands");
+			plot_frame.setTitle("Fast Heuristic2 T-Search of (s,S,T) Policy with "+
+				                  "Normal Demands");
 			plot_frame.add(_GraphPanel);
 			plot_frame.setLocationRelativeTo(null);
 			plot_frame.pack();
 			plot_frame.setVisible(true);						
-			
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -430,3 +416,106 @@ public final class sSTCnormFastHeurOpt implements OptimizerIntf {
 	}
 }
 
+
+/**
+ * auxiliary class encapsulating the notion of optimizing an 
+ * <CODE>sSTCnorm</CODE> function, with a fixed review period T. NOT part of 
+ * the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+final class sSTCnormFixedTBCOptTask implements TaskObject {
+	private final sSTCnorm _f;
+	private final double _T;
+	private final double _epss;
+	private final double _smin;
+	private final double _smax;
+	private final double _Smin;
+	private final double _Smax;
+	
+	
+	public sSTCnormFixedTBCOptTask(sSTCnorm f, double T, double epss,
+															   double smin, double smax,
+																 double Smin, double Smax) {
+		_f = f;
+		_T = T;
+		_epss = epss;
+		_smin = smin;
+		_smax = smax;
+		_Smin = Smin;
+		_Smax = Smax;
+	}
+	
+	
+	/**
+	 * returns an object of type <CODE>sSTCnormFixedTBCOpterResult</CODE>, that
+	 * does not include lower bound value. This optimizer does not use lower 
+	 * bounds and does not plot them.
+	 * @return 
+	 */
+	public Serializable run() {
+		sSTCnormFixedTBoxedConstrOpt opter = 
+			new sSTCnormFixedTBoxedConstrOpt(_T, _smin, _smax, _Smin, _Smax, _epss);
+		sSTCnormFixedTBCOpterResult res = null;
+		try {
+			PairObjDouble p = opter.minimize(_f);
+			double[] x = (double[]) p.getArg();
+			res = new sSTCnormFixedTBCOpterResult(_T, x[0], x[1], p.getDouble());
+			return res;
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			return new FailedReply();
+		}
+	}
+	
+	
+  /**
+   * always throws.
+   * @throws UnsupportedOperationException unchecked.
+   */
+  public boolean isDone() {
+		throw new UnsupportedOperationException("isDone: NOT implemented");
+	}
+
+
+  /**
+	 * always throws.
+   * @param other unused.
+   * @throws UnsupportedOperationException unchecked.
+   */
+  public void copyFrom(TaskObject other) {
+		throw new UnsupportedOperationException("copyFrom: NOT implemented");		
+	}
+
+}
+
+
+/**
+ * auxiliary class that is essentially just an immutable struct, holding 4 
+ * double values. Not part of the public API.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+final class sSTCnormFixedTBCOpterResult implements Serializable {
+	public final double _T;
+	public final double _s;
+	public final double _S;
+	public final double _C;
+	
+	public sSTCnormFixedTBCOpterResult(double T, double s, double S, 
+		                               double c) {
+		_T = T;
+		_s = s;
+		_S = S;
+		_C = c;
+	}
+}

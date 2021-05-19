@@ -54,6 +54,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinMetaHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/FFNN4TrainBGradTest.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1HybridMutationOp.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnormFastHeur2Opt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/PDBTExecCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinSimpleHeurOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/RandomChromosomeMakerIntf.java</file>
@@ -109,6 +110,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/DE/FastDblArray1VectorLHSRndMaker.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/graph/GraphEdgeSetRemovalExecCmd.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/BH/DGABH.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SA/BoltzmanSchedule.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/neural/FFNN4TrainB.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SA/ExpDecSchedule.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnormHeurOpt.java</file>
@@ -205,6 +207,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/distributed/RRObject.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/NoOpTask.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonSimpleHeurOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/sSTCnormFixedTBoxedConstrOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/MSSC/KMeansNormSqrEvaluator.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GA/DblArray1Vector1AlleleMutationOp.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/utils/Debug.java</file>

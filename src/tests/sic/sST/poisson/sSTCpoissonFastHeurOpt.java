@@ -66,7 +66,6 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 
 	private ArrayList _tis;      // used for visualization purposes
 	private ArrayList _ctis;     // again, for visualization purposes only
-	private ArrayList _lbtis;    // guess for what purposes this is...
 
 	
 	/**
@@ -89,7 +88,6 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 		
 		_tis = new ArrayList();
 		_ctis = new ArrayList();
-		_lbtis = new ArrayList();
 	}
 	
 
@@ -134,7 +132,6 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 			}
 			_tis.clear();
 			_ctis.clear();
-			_lbtis.clear();
 			++_numRunning;
 		}
 		sSTCpoisson sSTC = (sSTCpoisson) f;
@@ -147,19 +144,17 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 		double t_star = Double.NaN;
 		
 		mger.msg("sSTCpoissonFastHeurOpt.minimize(): running "+
-			       "(r,nQ,T) policy optimization", 1);
+			       "(r,nQ,T) policy heuristic optimization", 1);
 		// first, compute the optimal T* for the (r,nQ,T) policy
-		final double t_rnqt = getOptimalRnQTReview(sSTC);
+		final double t_rnqt = getNearOptimalRnQTReview(sSTC);
 		mger.msg("sSTCpoissonFastHeurOpt.minimize(): "+
-			       "(r,nQ,T) policy optimization returns T*="+t_rnqt, 1);
+			       "(r,nQ,T) policy heuristic optimization returns T*="+t_rnqt, 1);
 		
 		double T = Tmin >= t_rnqt-_deltaT ? Tmin : t_rnqt-_deltaT;
 		
 		final double Tmax = t_rnqt + _deltaT;
-
-		boolean done = false;
 		
-		while (T<Tmax && !done) {
+		while (T<Tmax) {
 			// 1. prepare batch
 			final int bsz = (int) Math.ceil((Tmax-T)/_epsT);
 			final int batchSz = bsz < _batchSz ? bsz : _batchSz;
@@ -170,29 +165,22 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 				batch[i] = new sSTCpoissonFixedTOptTask(sSTC,T,c_cur_best);
 			}
 			try {
-				mger.msg("sSTCpoissonFastHeurOpt.minimize(): submit a batch of "+batchSz+
-					       " tasks to network for period length from "+Tstart+" up to "+T, 
-					       2);
+				mger.msg("sSTCpoissonFastHeurOpt.minimize(): submit a batch of "+
+					       batchSz+" tasks to network for period length from "+Tstart+
+					       " up to "+T, 2);
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
 					sSTCpoissonFixedTOpterResult ri = 
 						(sSTCpoissonFixedTOpterResult) res[i];
 					_tis.add(new Double(ri._T));  // add to tis time-series
 					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
-					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
-					if (ri._LB > c_cur_best) {  // done!
-						mger.msg("sSTCpoissonFastHeurOpt.minimize(f): for T="+ri._T+
-							       " LB@T="+ri._LB+
-							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 2);
-						done = true;
-					}
 					if (ri._C < c_cur_best) {
 						s_star = ri._s;
 						S_star = ri._S;
 						t_star = ri._T;
 						c_cur_best = ri._C;
 						mger.msg("sSTCpoissonFastHeurOpt.minimize(f): found better soln at"+
-							       " T="+t_star+", c="+c_cur_best+" LB@T="+ri._LB, 1);
+							       " T="+t_star+", c="+c_cur_best, 1);
 					}
 				}
 			}
@@ -217,7 +205,7 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 	/**
 	 * get the time-series from the latest run.
 	 * @return ArrayList[] first element is T-axis values, second is optimal 
-	 * costs, third is lower bound on costs
+	 * costs
 	 */
 	public synchronized ArrayList[] getLatestTimeSeries() {
 		while (_numRunning>0) {
@@ -228,10 +216,9 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 				Thread.currentThread().interrupt();
 			}
 		}
-		ArrayList[] result = new ArrayList[4];
+		ArrayList[] result = new ArrayList[2];
 		result[0] = _tis;
 		result[1] = _ctis;
-		result[2] = _lbtis;
 		return result;
 	}
 
@@ -268,7 +255,7 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 	 * @return double near-optimal review period for the (r,nQ,T) policy
 	 * @throws OptimizerException
 	 */
-	private synchronized double getOptimalRnQTReview(sSTCpoisson f) 
+	private synchronized double getNearOptimalRnQTReview(sSTCpoisson f) 
 		throws OptimizerException {
 		RnQTCpoisson rnqt = new RnQTCpoisson(f._Kr, f._Ko, f._L, f._lambda,
 		                                     f._h, f._p, f._p2);
@@ -351,17 +338,11 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 			ArrayList[] xyseries = ropter.getLatestTimeSeries();
 			XYSeriesCollection xyc = new XYSeriesCollection();
 			XYSeries tcs = new XYSeries("C*");
-			XYSeries tlbs = new XYSeries("LB");
 			for (int i=0; i<xyseries[1].size(); i++) {
 				tcs.add(((Double)xyseries[0].get(i)).doubleValue(), 
 					      ((Double)xyseries[1].get(i)).doubleValue());
 			}
-			for (int i=0; i<xyseries[2].size(); i++) {
-				tlbs.add(((Double)xyseries[0].get(i)).doubleValue(), 
-					      ((Double)xyseries[2].get(i)).doubleValue());				
-			}
 			xyc.addSeries(tcs);
-			xyc.addSeries(tlbs);
 			JFreeChart chart = 
 				ChartFactory.createXYLineChart(
 					"Optimal (s,S,T) Cost as Function of T",

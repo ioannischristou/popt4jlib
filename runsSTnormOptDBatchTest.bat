@@ -1,5 +1,5 @@
 echo off
-REM runsSTnormOptDBatchTest.bat <Kr> <Ko> <L> <mu> <sigma> <h> <p> <p2>(0) <serverport>(7891) <numworkerthreads>(8) [qnot(0)] [epst(0.01)] [epss(0.1)] [bsize(8)]
+REM runsSTnormOptDBatchTest.bat <Kr> <Ko> <L> <mu> <sigma> <h> <p> <p2>(0) <serverport>(7891) <numworkerthreads>(8) [qnot(0)] [epst(0.01)] [epss(0.1)] [bsize(8)] [dbglvl(0)]
 REM T530 WLAN IP (home):
 REM Compaq cq 58 IP (home): 
 REM T530 IP (work): 10.100.209.143
@@ -28,11 +28,11 @@ call start PDBTExecSingleCltWrkInitSrv.bat 7890 %srvport%
 echo Verify server has started before you press any key...
 pause
 REM java <jvm_args> -cp <classpath> parallel.distributed.PDBTExecInitedWrk [num_threads(10)] [serverhost(localhost)] [serverport(7890)] [dbglvl(0)]
-call start PDBTExecInitedWrk.bat %numworkerthreads% localhost 7890 1
+call start PDBTExecInitedWrk.bat %numworkerthreads% localhost 7890 2
 echo Verify all workers are started before you press any key...
 pause
 echo on
-REM java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.sST.norm.sSTCnormOpt <Kr> <Ko> <L> <mu> <sigma> <h> <p> [p2(0)] [pdsrvhost(localhost)] [pdsrvport(7891)] [qnot(0)] [epst(0.01)] [epss(0.1)] [bsize(8)]
+REM java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.sST.norm.sSTCnormOpt <Kr> <Ko> <L> <mu> <sigma> <h> <p> [p2(0)] [pdsrvhost(localhost)] [pdsrvport(7891)] [qnot(0)] [epst(0.01)] [epss(0.1)] [bsize(8)] [dbglvl(0)]
 
 REM java -Xmx2000m -cp .\dist\popt4jlib.jar tests.sic.sST.norm.sSTCnormOpt %1 %2 %3 %4 %5 %6 %7 localhost %8 %10 %11 
 java -Xmx2000m -cp .\dist\popt4jlib.jar tests.sic.sST.norm.sSTCnormOpt %Kr% %Ko% %L% %mu% %sigma% %h% %p% %p2% localhost %srvport% %prest%

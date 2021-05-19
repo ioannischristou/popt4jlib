@@ -1,5 +1,5 @@
 echo off
-REM runsSTnbinFastHeurOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <p_l> <h> <p> <serverport>(7891) <numworkerthreads>(8) [epst(0.01)] [deltat(0.1)] [bsize(24)] [dbglvl(0)]
+REM runsSTnbinFastHeurOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <p_l> <h> <p> <serverport>(7891) <numworkerthreads>(24) [epst(0.01)] [deltat(0.1)] [bsize(24)] [dbglvl(0)]
 REM T530 WLAN IP (home):
 REM Compaq cq 58 IP (home): 
 REM T530 IP (work): 10.100.209.143

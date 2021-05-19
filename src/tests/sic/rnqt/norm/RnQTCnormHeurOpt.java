@@ -31,18 +31,23 @@ public class RnQTCnormHeurOpt implements OptimizerIntf {
 	private double _epsT;
 	private double _epsQ;
 	private double _epsR;
-			
+
+	// default constants for search step-sizes
+	private static final double _MIN_EPST = 0.01;
+	private static final double _MIN_EPSQ = 0.1;
+	private static final double _MIN_EPSR = 0.1;
+	
 	
 	/**
 	 * sole constructor.
-	 * @param epsT double
-	 * @param epsQ double
-	 * @param epsR double
+	 * @param epsT double if zero is passed, the constant _MIN_EPST is used
+	 * @param epsQ double if zero is passed, the constant _MIN_EPSQ is used
+	 * @param epsR double if zero is passed, the constant _MIN_EPSR is used
 	 */
 	public RnQTCnormHeurOpt(double epsT, double epsQ, double epsR) {
-		_epsT = epsT;
-		_epsQ = epsQ;
-		_epsR = epsR;
+		_epsT = epsT > 0 ? epsT : _MIN_EPST;
+		_epsQ = epsQ > 0 ? epsQ : _MIN_EPSQ;
+		_epsR = epsR > 0 ? epsR : _MIN_EPSR;
 	}
 
 	

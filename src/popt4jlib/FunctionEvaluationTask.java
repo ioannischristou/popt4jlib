@@ -95,9 +95,11 @@ public class FunctionEvaluationTask implements TaskObject {
    * @param t TaskObject
    * @throws IllegalArgumentException
    */
-  public synchronized void copyFrom(TaskObject t) throws IllegalArgumentException {
+  public synchronized void copyFrom(TaskObject t) 
+		throws IllegalArgumentException {
     if (t instanceof FunctionEvaluationTask == false)
-      throw new IllegalArgumentException("TaskObject argument is not a FunctionEvaluationTask.");
+      throw new IllegalArgumentException("TaskObject argument is not a "+
+				                                 "FunctionEvaluationTask.");
     FunctionEvaluationTask t2 = (FunctionEvaluationTask) t;
     _arg = t2._arg;
     _isDone = t2._isDone;

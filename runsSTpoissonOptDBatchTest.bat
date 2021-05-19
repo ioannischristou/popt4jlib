@@ -1,5 +1,5 @@
 echo off
-REM runsSTpoissonOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <h> <p> <p2>(0) <serverport>(7891) <numworkerthreads>(8) [epst(0.01)] [bsize(24)]
+REM runsSTpoissonOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <h> <p> <p2>(0) <serverport>(7891) <numworkerthreads>(24) [epst(0.01)] [bsize(24)]
 REM T530 WLAN IP (home):
 REM Compaq cq 58 IP (home): 
 REM T530 IP (work): 10.100.209.143

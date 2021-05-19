@@ -21,10 +21,11 @@ import utils.PairObjTwoDouble;
  * guaranteed to be the global optimum for the given review period T.
  * <p>Notes:
  * <ul>
- * <li>2020-04-25: added method seParams() (public) because it was moved up from
- * LocalOptimizerIntf to the root OptimizerIntf interface class.
+ * <li>2021-05-18: fixed step-size in lower bound determination (was 1).
  * <li>2021-01-06: fixed update of S in step 2 of the <CODE>minimize()</CODE>
  * method.
+ * <li>2020-04-25: added method seParams() (public) because it was moved up from
+ * LocalOptimizerIntf to the root OptimizerIntf interface class.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -162,7 +163,8 @@ public class sSTCnormFixedTOpt implements OptimizerIntf {
 		// finally, evaluate the lower-bound (S,T) norm policy at (S(T),T)
 		// SstarT = findminST(...)
     // lbopt = RnqTCnorm(SstarT,0,T,...)
-		mger.msg("sSTCnormFixedTOpt.minimize(): start computing lower bound", 3);
+		mger.msg("sSTCnormFixedTOpt.minimize(): start computing lower bound "+
+			       " w/ epss="+_epss, 3);
 		OneDStepQuantumOptimizer onedopter = new OneDStepQuantumOptimizer();
 		FunctionIntf rnqtnorm = 
 			new tests.sic.rnqt.norm.RnQTCnorm(f._Kr, 0, f._L, f._mi, f._sigma, 
@@ -181,7 +183,9 @@ public class sSTCnormFixedTOpt implements OptimizerIntf {
 		try {
 			pr = onedopter.argmin(rnqtnorm, new DblArray1Vector(x0), null, 
 				                    0,  // the dimension s, along which to minimize f 
-			                      1, lb, ub, niterbnd, multfactor, tol,
+			                      _epss,  // the minimum step to take in the search
+														        // used to be 1
+														lb, ub, niterbnd, multfactor, tol,
 														maxiterswithsamefunctionval, maxnumfuncevals);
 		}
 		catch (parallel.ParallelException e) {  // cannot get here
