@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="lib1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/colt.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jython-standalone-2.7.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jfreechart-1.0.17.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jcommon-1.0.21.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

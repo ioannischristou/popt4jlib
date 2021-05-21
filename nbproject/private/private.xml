@@ -140,6 +140,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/LocalSearch/DLS.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/GradientDescent/stochastic/Adam.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/norm/RnQTCnormFixedTOpt.java</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinTermPlotter.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/popt4jlib/SparseVectorIntf.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/poisson/sSTCpoissonOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/nbin/sSTCnbinBoxed.java</file>
@@ -188,6 +189,7 @@
             <file>file:/C:/Users/itc/projects/popt4jlib/src/parallel/ComparableTaskObject.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/rnqt/norm/RnQTCnormBoxed.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/nn_related/nn_train_test_props5.txt</file>
+            <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/det/sSTCdetFixedTOpt.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/sic/sST/norm/package.html</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/src/tests/RosenbrockFunctionGrad.java</file>
             <file>file:/C:/Users/itc/projects/popt4jlib/testdata/asd_test_props.txt</file>

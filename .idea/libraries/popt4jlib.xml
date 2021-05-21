@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="popt4jlib">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/dist/popt4jlib.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -38,13 +38,13 @@ public class sSTCnbin implements FunctionIntf {
 	
 	private static volatile int _maxAddedTermsInSum12 = 0;
 	
-	private final static double _eps = 2.e-8;  // itc-20210512: used to be 1.e-9
-	private final static int _numTerms = 5;
-	private final static int _maxAllowedSumTerms = 10000000;
+	protected final static double _eps = 2.e-8;  // itc-20210512: used to be 1.e-9
+	protected final static int _numTerms = 5;
+	protected final static int _maxAllowedSumTerms = 10000000;
 
-	private final static Messenger _mger = Messenger.getInstance();
-	private final static int _DISP_MOD_NUM = 5000;
-	private final static int _START_DISP_MOD_NUM = 10000;
+	protected final static Messenger _mger = Messenger.getInstance();
+	protected final static int _DISP_MOD_NUM = 5000;
+	protected final static int _START_DISP_MOD_NUM = 10000;
 	
 	/**
 	 * Function sole public constructor.
@@ -132,7 +132,23 @@ public class sSTCnbin implements FunctionIntf {
 	}
 	
 	
-	private double sum1(int r, int R, double T, double t, 
+	/**
+	 * not part of the public API. Used to be private, but is over-ridden by class
+	 * <CODE>sSTCnbinTermPlotter</CODE> to plot the partial sums.
+	 * @param r int the re-order point
+	 * @param R int the order-up-to point
+	 * @param T double the review period length
+	 * @param t double the lead-time 
+	 * @param l double the mean demand-rate of the Negative Binomial distribution
+	 * @param m double the mean lead-time demand
+	 * @param IC double the holding cost rate
+	 * @param phat double the back-orders cost rate
+	 * @param eps double the threshold below which when the ratio of the last 
+	 * <CODE>_numTerms</CODE> terms sum up to divided by the total number of terms
+	 * added up so far falls, the computation of the infinite series stops
+	 * @return double
+	 */
+	protected double sum1(int r, int R, double T, double t, 
 		                  double l, double m, 
 											double IC, double phat, double eps) {
 		double y = 0;
@@ -187,8 +203,19 @@ public class sSTCnbin implements FunctionIntf {
 		return y;
 	}
 	
-	
-	private double sum2(int r, int R, double T, double l, double eps) {
+
+	/**
+	 * not part of the public API. Used to be private, but it needs to be 
+	 * over-ridden by class <CODE>sSTCnbinTermPlotter</CODE>.
+	 * @param r int the reorder point
+	 * @param R int the order-up-to point
+	 * @param T double the review period length
+	 * @param l double the demand rate
+	 * @param eps the same threshold as specified in <CODE>sum1()</CODE>, but for 
+	 * this method.
+	 * @return double
+	 */
+	protected double sum2(int r, int R, double T, double l, double eps) {
 		double y = 0;
 		int n = 1;
 		double last = 0;
@@ -262,10 +289,12 @@ public class sSTCnbin implements FunctionIntf {
 	
 	/**
 	 * update the maximum number of terms needed to add up in order to compute 
-	 * either of the functions <CODE>sum1()</CODE> or <CODE>sum2()</CODE>.
+	 * either of the functions <CODE>sum1()</CODE> or <CODE>sum2()</CODE>. Not 
+	 * part of the public API. Used to be private, but is needed in the 
+	 * <CODE>sSTCnbinTermPlotter</CODE> class.
 	 * @param n int
 	 */
-	private synchronized static void updateMaxAddedTermsInSum12(int n) {
+	protected synchronized static void updateMaxAddedTermsInSum12(int n) {
 		if (n>_maxAddedTermsInSum12) 
 			_maxAddedTermsInSum12 = n;
 	}
@@ -316,7 +345,21 @@ public class sSTCnbin implements FunctionIntf {
 	}
 	
 	
-	private static double H(int rpj, double T, double t, double l, double pl,
+	/**
+	 * method is NOT part of the public API. Used to be private, but is needed in
+	 * the <CODE>sSTCnbinTermPlotter</CODE> class. 
+	 * @param rpj int r+j
+	 * @param T double the review period
+	 * @param t double the lead-time
+	 * @param l double demand rate
+	 * @param pl double the parameter of the logarithmic distribution part of the 
+	 * Negative Binomial
+	 * @param m double lead-time demand rate
+	 * @param IC double holding cost rate
+	 * @param phat double back-orders cost rate
+	 * @return double
+	 */
+	protected static double H(int rpj, double T, double t, double l, double pl,
 		                      double m, 
 		                      double IC, double phat) {
 		return IC*T*(rpj-m-l*T/2.0) + (IC+phat)*bP(rpj,T,l,pl,t);
@@ -345,7 +388,9 @@ public class sSTCnbin implements FunctionIntf {
 	
 	
 	/**
-	 * last-attempt log-exp trick to compute the terms in the sum1 method.
+	 * last-attempt log-exp trick to compute the terms in the sum1 method. Not 
+	 * part of the public API. Used to be private, but is needed in the 
+	 * <CODE>sSTCnbinTermPlotter</CODE> class.
 	 * @param Rrj int the value R-r-j
 	 * @param lT double the value l*T
 	 * @param pl double the value p<sub>l</sub>
@@ -353,7 +398,7 @@ public class sSTCnbin implements FunctionIntf {
 	 * @param j int the index
 	 * @return double
 	 */
-	private static double n_nbinnfoldconv_nbincdfcompl(int Rrj, double lT, 
+	protected static double n_nbinnfoldconv_nbincdfcompl(int Rrj, double lT, 
 		                                                 double pl, int n, int j) {
 		double logaux = RnQTCnbin.nbinnfoldconvlog(Rrj, lT, pl, n-1);
 		double logaux2 = Math.log(n) + RnQTCnbin.nbincdfcompllog(j, lT, pl);
@@ -364,6 +409,6 @@ public class sSTCnbin implements FunctionIntf {
 		}
 		return res;
 	}
-	
+		
 }
 
