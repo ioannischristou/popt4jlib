@@ -1,5 +1,5 @@
 echo off
-REM runsSTpoissonOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <h> <p> <p2>(0) <serverport>(7891) <numworkerthreads>(24) [epst(0.01)] [bsize(24)] [dbglvl(0)]
+REM runRnQTpoissonOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <h> <p> <p2(0)> <serverport>(7891) <numworkerthreads>(8) [bsize(24)] [epst(0.01)] [tnot(0.01)] [dbglvl(0)]
 REM T530 WLAN IP (home):
 REM Compaq cq 58 IP (home): 
 REM T530 IP (work): 10.100.209.143
@@ -9,15 +9,15 @@ REM DeLL OPTIPLEX 755 IP (work): 10.100.208.99
 REM Compaq cq 58 IP (work): 10.100.209.226
 REM starts one worker and one server in different windows, then starts the test in its own command prompt
 REM java <jvmargs> -cp <classpath> parallel.distributed.PDBTExecSingleCltWrkInitSrv [workers_port(7890)] [clients_port(7891)]
-call start PDBTExecSingleCltWrkInitSrv.bat 7890 %8 2
+call start PDBTExecSingleCltWrkInitSrv.bat 7890 %8 
 echo Verify server has started before you press any key...
 pause
 REM java <jvm_args> -cp <classpath> parallel.distributed.PDBTExecInitedWrk [num_threads(10)] [serverhost(localhost)] [serverport(7890)] [dbglvl(0)]
-call start PDBTExecInitedWrk.bat %9 localhost 7890 2
+call start PDBTExecInitedWrk.bat %9 localhost 7890 1
 echo Verify all workers are started before you press any key...
 pause
 echo on
-REM java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.sST.poisson.sSTCpoissonOpt <Kr> <Ko> <L> <lambda> <h> <p> [p2(0)] [pdsrvhost(localhost)] [pdsrvport(7891)] [epst(0.01)] [bsize(24)]
+REM java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.rnqt.poisson.RnQTCpoissonOpt <Kr> <Ko> <L> <lambda> <h> <p> [p2(0)] [pdsrvhost(localhost)] [pdsrvport(7891)] [bsize(24)] [epst(0.01)] [tnot(0.01)] [dbglvl(0)]
 @echo off
 for /f "tokens=1-9*" %%a in ("%*") do (
     set p1=%%a
@@ -32,5 +32,4 @@ for /f "tokens=1-9*" %%a in ("%*") do (
     set prest=%%j
 )
 @echo on
-REM java -Xmx2000m -cp .\dist\popt4jlib.jar tests.sic.sST.poisson.sSTCpoissonOpt %1 %2 %3 %4 %5 %6 %7 localhost %8 %10 %11 
-java -Xmx2000m -cp .\dist\popt4jlib.jar tests.sic.sST.poisson.sSTCpoissonOpt %p1% %p2% %p3% %p4% %p5% %p6% %p7% localhost %p8% %prest%
+java -Xmx4000m -cp .\dist\popt4jlib.jar tests.sic.rnqt.poisson.RnQTCpoissonOpt %p1% %p2% %p3% %p4% %p5% %p6% %p7% localhost %p8% %prest%

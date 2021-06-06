@@ -2,6 +2,7 @@ package tests.sic.sST.poisson;
 
 import popt4jlib.FunctionIntf;
 import popt4jlib.DblArray1Vector;
+import utils.Messenger;
 import cern.jet.random.Poisson;
 
 
@@ -75,8 +76,22 @@ public class sSTCpoisson implements FunctionIntf {
 	 * method <CODE>evalBoth(x)</CODE>.
 	 */
 	public double eval(Object x, java.util.HashMap param) {
+		final Messenger mger = Messenger.getInstance();
 		utils.Pair p = evalBoth(x, param);
-		return ((Double) p.getFirst()).doubleValue();
+		final double res = ((Double) p.getFirst()).doubleValue();
+		if (mger.getDebugLvl()>=2) {
+			String str = "sSTCpoisson.eval(";
+			final double[] xarr = (double[])x;
+			final double Kr = (param!=null && param.containsKey("Kr")) ?
+				                  ((Double)param.get("Kr")).doubleValue() :
+				                  _Kr;
+			str += "s="+xarr[0]+", S="+xarr[1]+", T="+xarr[2];
+			str += " | Kr="+Kr+",Ko="+_Ko+",L="+_L+",ë="+_lambda;
+			str += ",h="+_h+",_p="+_p+",_p2="+_p2;
+			str += ")="+res;
+			mger.msg(str, 2);
+		}
+		return res;
 	} 
 
 	
@@ -156,16 +171,19 @@ public class sSTCpoisson implements FunctionIntf {
 			}
 			y += sum;
 			last += sum;
-			if (++count==_numTerms-1) {
+			++n;
+			if (++count==_numTerms) {
 				double ratio = Math.abs(last/y);
-				if (ratio < eps) break;
+				if (ratio < eps) {
+					System.err.println("sum1: n="+n+" last="+last+" y="+y+" ratio="+ratio);
+					break;
+				}
 				else {
-					//System.err.println("sum1: n="+n+" last="+last+" y="+y+" ratio="+ratio);
+					System.err.println("sum1: n="+n+" last="+last+" y="+y+" ratio="+ratio);
 					count = 0;
 					last = 0;
 				}
 			}
-			++n;
 		}
 		return y;
 	}
@@ -206,16 +224,19 @@ public class sSTCpoisson implements FunctionIntf {
 			}
 			y += sum;
 			last += sum;
-			if (++count==_numTerms-1) {
+			++n;
+			if (++count==_numTerms) {
 				double ratio = Math.abs(last/y);
-				if (ratio < eps) break;
+				if (ratio < eps) {
+					System.err.println("sum2: n="+n+" last="+last+" y="+y+" ratio="+ratio);
+					break;
+				}
 				else {
-					//System.err.println("sum2: n="+n+" last="+last+" y="+y+" ratio="+ratio);
+					System.err.println("sum2: n="+n+" last="+last+" y="+y+" ratio="+ratio);
 					count = 0;
 					last = 0;
 				}
 			}
-			++n;
 		}
 		return y;
 	}

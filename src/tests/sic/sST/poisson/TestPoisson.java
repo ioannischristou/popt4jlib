@@ -19,5 +19,9 @@ public class TestPoisson {
 		Poisson p = new Poisson2(0);
 		v = p.pdf(0);
 		System.out.println("v="+v);
+		p.setMean(0.005);
+		v = p.pdf(0);
+		System.out.println("v="+v);
+		
 	}
 }

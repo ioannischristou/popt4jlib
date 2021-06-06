@@ -20,6 +20,11 @@ import tests.sic.rnqt.nbin.RnQTCnbin;
  * parameters, this is the globally optimal control policy and the resulting
  * cost is the best possible cost of such an echelon (result known since the 
  * 50's by Arrow et al.)
+ * <p>Notes:
+ * <ul>
+ * <li>20210606: fixed bugs related to mean-demand during a period or during a
+ * lead-time.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2021</p>
@@ -115,7 +120,8 @@ public class sSTCnbin implements FunctionIntf {
 		double r = s;
 		double R = S;
 		double l = _lambda;
-		double m = _lambda*_L;
+		double m = // itc20210606: was _lambda*_L;
+			getMeanDemand(_lambda, _p_l)*_L;
 		double t = _L;
 		double phat = _p;
 		double IC = _h;
@@ -130,7 +136,21 @@ public class sSTCnbin implements FunctionIntf {
 			        3);
 		return new utils.Pair(new Double(y), new Double(lb));
 	}
+
 	
+	/**
+	 * return the mean value of the demand for given parameters for unit time 
+	 * period.
+	 * @param lambda double demand rate &gt; 0
+	 * @param p_l double logarithmic process parameter in (0,1)
+	 * @return double
+	 */
+	static double getMeanDemand(double lambda, double p_l) {
+		double r = -lambda/Math.log(1.0-p_l);
+		double utdem = r*p_l/(1.0-p_l);  // mean unit-time demand
+		return utdem;
+	}
+
 	
 	/**
 	 * not part of the public API. Used to be private, but is over-ridden by class
@@ -315,7 +335,7 @@ public class sSTCnbin implements FunctionIntf {
 	 * <CODE>java -cp &lt;classpath&gt; tests.sic.sST.poisson.sSTCnbin 
 	 * &lt;s&gt; &lt;S&gt; &lt;T&gt;
 	 * &lt;Kr&gt; &lt;Ko&gt; &lt;L&gt; &lt;&lambda;&gt; &lt;p<sub>l</sub>&gt; 
-	 * &lt;h&gt; &lt;p&gt;</CODE>. 
+	 * &lt;h&gt; &lt;p&gt; [dbglvl(0)]</CODE>. 
 	 * The constraints on the variables and parameters values are as follows:
 	 * <ul>
 	 * <li>s,S integer, S&ge;s
@@ -328,6 +348,7 @@ public class sSTCnbin implements FunctionIntf {
 	 * @param args String[]
 	 */
 	public static void main(String[] args) {
+		final Messenger mger = Messenger.getInstance();
 		int s = Integer.parseInt(args[0]);
 		int S = Integer.parseInt(args[1]);
 		double T = Double.parseDouble(args[2]);
@@ -338,6 +359,9 @@ public class sSTCnbin implements FunctionIntf {
 		double p_l = Double.parseDouble(args[7]);
 		double h = Double.parseDouble(args[8]);
 		double p = Double.parseDouble(args[9]);
+		int dbglvl = 0;
+		if (args.length>10) dbglvl = Integer.parseInt(args[10]);
+		mger.setDebugLevel(dbglvl);
 		sSTCnbin cc = new sSTCnbin(Kr,Ko,L,m,p_l,h,p);
 		double[] x = new double[]{s,S,T};
 		double val = cc.eval(x, null);
@@ -362,7 +386,10 @@ public class sSTCnbin implements FunctionIntf {
 	protected static double H(int rpj, double T, double t, double l, double pl,
 		                      double m, 
 		                      double IC, double phat) {
-		return IC*T*(rpj-m-l*T/2.0) + (IC+phat)*bP(rpj,T,l,pl,t);
+		double mean_demand = getMeanDemand(l, pl)*T;
+		return IC*T*(rpj-m-mean_demand/2.0) + (IC+phat)*bP(rpj,T,l,pl,t);
+		// itc-20210606: used to be:
+		// return IC*T*(rpj-m-l*T/2.0) + (IC+phat)*bP(rpj,T,l,pl,t);
 	}
 	
 	
@@ -371,8 +398,7 @@ public class sSTCnbin implements FunctionIntf {
 	 * t+L to t+L+T of a single-echelon system facing demands that follow the 
 	 * Negative Binomial (ie compound Poisson) distribution with arrival rate 
 	 * lambda and process parameter of the Logarithmic distribution p, with an 
-	 * (s,S,T) periodic-review policy, taking into account fixed costs (review and 
-	 * ordering costs).
+	 * (s,S,T) periodic-review policy.
 	 * @param rpj int the IP immediately after a review
 	 * @param T double review period length
 	 * @param lambda double arrival rate

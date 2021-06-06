@@ -136,7 +136,7 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 				}
 				catch (Exception e) {
 					e.printStackTrace();
-					throw new OptimizerException("sSTCnbinFastHeurOpt.mainimize(f): clt "+
+					throw new OptimizerException("sSTCnbinFastHeurOpt.minimize(f): clt "+
 						                           "failed to submit empty init-cmd to "+
 						                           "network");
 				}
@@ -212,7 +212,7 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 		}  // while
 		
 		// 3. find the optimal T for a system with review cost Kr and 0 order cost!
-		sSTCnbin sSTC2 = new sSTCnbin(sSTC._Kr, 0, sSTC._L, 
+		sSTCnbin sSTC2 = new sSTCnbin(sSTC._Kr, 0, sSTC._L,
 			                            sSTC._lambda, sSTC._p_l, sSTC._h, sSTC._p);
 		final double t_rnqt2 = getNearOptimalRnQTReview(sSTC2);
 		mger.msg("sSTCnbinFastHeurOpt.minimize(Kr,0): "+

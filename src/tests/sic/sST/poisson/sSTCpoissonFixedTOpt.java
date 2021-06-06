@@ -99,7 +99,7 @@ public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 			sS_0_T[0] = s;
 			c0 = f.eval(sS_0_T,param);
 			double Gs = G(s,_T,L,lambda,h,p,p2);
-			if (Double.compare(c0,Gs) <= 0) break;
+			if (c0 <= Gs) break;
 		}
 		int s0 = s;
 		int Su0 = S_0;
@@ -107,7 +107,7 @@ public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 		double GS = G(S,_T,L,lambda,h,p,p2);
 		// step 2:
 		double[] sST = new double[]{s,S,_T};
-		while (Double.compare(GS,c0) <= 0) {
+		while (GS <= c0) {
 			double css = f.eval(sST, param);
 			if (css < c0) {
 				Su0 = S;

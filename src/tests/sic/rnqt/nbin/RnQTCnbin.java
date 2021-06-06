@@ -302,8 +302,7 @@ public class RnQTCnbin implements FunctionIntf {
 	 * computes the average long-run expected back-order costs of a single-echelon
 	 * system facing demands that follow the Negative Binomial (ie compound 
 	 * Poisson) distribution with arrival rate lambda and process parameter of the
-	 * Logarithmic distribution p, with an (r,nQ,T) periodic-review policy, 
-	 * taking into account fixed costs (review and ordering costs).
+	 * Logarithmic distribution p, with an (r,nQ,T) periodic-review policy.
 	 * @param s int order-up to point
 	 * @param Q int batch-size
 	 * @param T double review period length
@@ -327,8 +326,7 @@ public class RnQTCnbin implements FunctionIntf {
 	 * t+L to t+L+T of a single-echelon system facing demands that follow the 
 	 * Negative Binomial (ie compound Poisson) distribution with arrival rate 
 	 * lambda and process parameter of the Logarithmic distribution p, with an 
-	 * (s,S,T) periodic-review policy, taking into account fixed costs (review and 
-	 * ordering costs).
+	 * (s,S,T) periodic-review policy.
 	 * @param rpj int the IP immediately after a review
 	 * @param T double review period length
 	 * @param lambda double arrival rate

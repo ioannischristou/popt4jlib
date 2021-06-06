@@ -154,7 +154,7 @@ public class RnQTCnbinHeurPOpt implements OptimizerIntf {
 				                                        lambda, p_l, h, p);
 			// argopt_ST is double[]{s,T,c}
 			// itc: apparently, starting at start_T doesn't work out so good in some
-			// cases. This is the formula in MATLAB as well for normal demands as well
+			// cases. This is the formula in MATLAB as well for normal demands
 			double T = tnot-_epsT;  // start_T;
 			final double T_limit_st = argopt_ST[2]-_nbin.getKr()/argopt_ST[1];
 			mger.msg("RnQTCnbinHeurPOpt.minimize(f): step 3 (ST) done.", 1);

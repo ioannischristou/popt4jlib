@@ -277,7 +277,7 @@ public class sSTCnbinTermPlotter extends sSTCnbin {
 	
 	/**
 	 * invoke as 
-	 * <CODE>java -cp &lt;classpath&gt; tests.sic.sST.poisson.sSTCnbinTermPlotter 
+	 * <CODE>java -cp &lt;classpath&gt; tests.sic.sST.nbin.sSTCnbinTermPlotter 
 	 * &lt;s&gt; &lt;S&gt; &lt;T&gt;
 	 * &lt;Kr&gt; &lt;Ko&gt; &lt;L&gt; &lt;&lambda;&gt; &lt;p<sub>l</sub>&gt; 
 	 * &lt;h&gt; &lt;p&gt; [doVals(false)]</CODE>. 
