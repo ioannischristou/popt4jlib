@@ -273,7 +273,7 @@ public final class sSTCpoissonHeurOpt implements OptimizerIntf {
 		final double tnot = 0.0;  // this will cause the default tnot value 
 		                          // to be used (currently at 0.01)
 		RnQTCpoissonOpt opter = new RnQTCpoissonOpt(_pdsrv, _pdport, _batchSz, 
-			                                          _epsT, tnot);
+			                                          _epsT, tnot, -1);
 		// first set the _pdclt
 		HashMap p = new HashMap();
 		p.put("rnqtcpoissonopt.pdclt", _pdclt);

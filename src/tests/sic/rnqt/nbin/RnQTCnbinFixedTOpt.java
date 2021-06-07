@@ -19,6 +19,8 @@ import java.util.HashMap;
  * guaranteed to be the global optimum for the given review period T.
  * <p>Notes:
  * <ul>
+ * <li>2021-06-07: excluded fixed review cost from lower bound computation as
+ * it decreases in time.
  * <li>2020-04-25: added method seParams() (public) because it was moved up from
  * LocalOptimizerIntf to the root OptimizerIntf interface class.
  * </ul>
@@ -135,11 +137,15 @@ public class RnQTCnbinFixedTOpt implements OptimizerIntf {
 			x0[1]++;  // increment Q
 		}
 		// itc20191118: notice the last param below used to be the order cost ordct
-		PairObjThreeDouble pod = new PairObjThreeDouble(x_best, copt, lbopt, 
+		PairObjThreeDouble pod = new PairObjThreeDouble(x_best, copt, 
+			                                              lbopt - f.getKr()/_T,
+			                                              // itc-20210607: used to be
+			                                              // just lbopt
 			                                              capproxopt);
 		mger.msg("RnQTCnbinFixedTOpt.minimize(f): for T="+_T+
 			       ": R*="+x_best[0]+" Q*="+x_best[1]+
-			       " C*(T)="+copt+" LB(T)="+lbopt+" ApproxCost(T)="+capproxopt, 
+			       " C*(T)="+copt+" LB(T)="+(lbopt-f.getKr()/_T)+
+			       " ApproxCost(T)="+capproxopt, 
 			       1);
 		return pod;
 	}

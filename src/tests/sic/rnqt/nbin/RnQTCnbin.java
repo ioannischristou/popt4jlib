@@ -325,7 +325,7 @@ public class RnQTCnbin implements FunctionIntf {
 	 * computes the average long-run expected unit years of shortage incurred from
 	 * t+L to t+L+T of a single-echelon system facing demands that follow the 
 	 * Negative Binomial (ie compound Poisson) distribution with arrival rate 
-	 * lambda and process parameter of the Logarithmic distribution p, with an 
+	 * lambda and process parameter of the Logarithmic distribution p_l, with an 
 	 * (s,S,T) periodic-review policy.
 	 * @param rpj int the IP immediately after a review
 	 * @param T double review period length

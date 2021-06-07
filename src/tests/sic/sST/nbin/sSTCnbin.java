@@ -132,8 +132,8 @@ public class sSTCnbin implements FunctionIntf {
 		
 		double y = K1 + (A+nom)/(T*denom);
 		double lb = K1 + nom/(T*denom);
-		_mger.msg("sSTCnbin.evalBoth(s="+xp[0]+",S="+xp[1]+",T="+xp[2]+"): end",
-			        3);
+		_mger.msg("sSTCnbin.evalBoth(s="+xp[0]+",S="+xp[1]+",T="+xp[2]+
+			        "): end w/ y="+y, 3);
 		return new utils.Pair(new Double(y), new Double(lb));
 	}
 
@@ -179,7 +179,11 @@ public class sSTCnbin implements FunctionIntf {
 			double sum = 0;
 			int Rmr = R-r;
 			for (int j=1; j<=Rmr; j++) {
-				double term = RnQTCnbin.nbinnfoldconv(Rmr-j, _lambda*T, _p_l, n);
+				//double term = RnQTCnbin.nbinnfoldconv(Rmr-j, _lambda*T, _p_l, n);
+				//itc-20210606: rate of demand and process parameter fix 
+				double term = RnQTCnbin.nbinnfoldconv(Rmr-j, 
+					                                    -_lambda*T/Math.log(1-_p_l), 
+					                                    1-_p_l, n);
 				if (Double.isNaN(term)) {
 					String exc = "for mean="+(l*T)+" arg="+(Rmr-j)+
 						           " nbin. "+n+"-fold conv is NaN?";
@@ -245,7 +249,11 @@ public class sSTCnbin implements FunctionIntf {
 			double prev_aux = Double.NaN;
 			double prev_aux2 = Double.NaN;
 			for (int j=1; j<=R-r; j++) {
-				double aux = RnQTCnbin.nbinnfoldconv(R-r-j, l*T, _p_l, n-1);
+				//double aux = RnQTCnbin.nbinnfoldconv(R-r-j, l*T, _p_l, n-1);
+				//itc-20210606: rate of demand and process parameter fix
+				double aux = RnQTCnbin.nbinnfoldconv(R-r-j, 
+					                                   -l*T/Math.log(1.0-_p_l), 1.0-_p_l, 
+																						 n-1);
 				double aux2 = 0.0;
 				if (Double.isNaN(aux)) {
 					String exc = (n-1)+"-nbin-conv("+(R-r-j)+";"+l*T+","+_p_l+") is NaN";
@@ -253,7 +261,9 @@ public class sSTCnbin implements FunctionIntf {
 					_mger.msg(exc, 0);
 					//throw new IllegalStateException(exc);
 				}
-				else aux2 = n*RnQTCnbin.nbincdfcompl(j, l*T, _p_l);
+				else //aux2 = n*RnQTCnbin.nbincdfcompl(j, l*T, _p_l);
+					//itc-20210606: rate of demand and process parameter fix
+					aux2 = n*RnQTCnbin.nbincdfcompl(j, -l*T/Math.log(1-_p_l), 1-_p_l);
 				if (Double.isNaN(aux2)) {
 					String exc = "for n="+n+" j="+j+" r="+r+" R="+R+" aux2 is NaN";
 					_mger.msg(exc, 0);
@@ -262,7 +272,11 @@ public class sSTCnbin implements FunctionIntf {
 				double all = aux*aux2;
 				if (Double.isNaN(all)) {
 					// try one last time the log-exp trick
-					all = n_nbinnfoldconv_nbincdfcompl(R-r-j, l*T, _p_l, n, j);
+					//all = n_nbinnfoldconv_nbincdfcompl(R-r-j, l*T, _p_l, n, j);
+					//itc-20210606: rate of demand and process parameter fix
+					all = n_nbinnfoldconv_nbincdfcompl(R-r-j, 
+						                                 -l*T/Math.log(1-_p_l), 1-_p_l, 
+																						 n, j);
 					if (!Double.isFinite(all)) {
 						String exc = "for n="+n+" j="+j+" r="+r+" R="+R+
 							           " aux="+aux+"*aux2="+aux2+

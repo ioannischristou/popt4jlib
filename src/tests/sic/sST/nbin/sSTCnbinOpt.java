@@ -1,7 +1,7 @@
 package tests.sic.sST.nbin;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
+//import java.awt.Color;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.io.Serializable;
@@ -47,6 +47,11 @@ import org.jfree.data.xy.XYSeriesCollection;
  * value it can take on, up to a point where the lower-bound on the cost 
  * function (namely the cost function with Ko=0) strictly exceeds the best known 
  * cost.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-06-07: modified the lower bound in fixed-T optimization to exclude 
+ * the review costs since they are decreasing in time.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2021</p>

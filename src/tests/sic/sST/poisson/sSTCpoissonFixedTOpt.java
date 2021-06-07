@@ -25,6 +25,8 @@ import utils.PairObjTwoDouble;
  * LocalOptimizerIntf to the root OptimizerIntf interface class.
  * <li>2021-01-06: fixed update of S parameter in step 2 of the 
  * <CODE>minimize()</CODE> method.
+ * <li>2021-06-07: excluded fixed review cost from lower bound since they are
+ * decreasing in time.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -157,7 +159,8 @@ public class sSTCpoissonFixedTOpt implements OptimizerIntf {
 		catch (parallel.ParallelException e) {  // cannot get here
 			e.printStackTrace();
 		}
-		lbopt = ((Double)pr.getSecond()).doubleValue();
+		lbopt = ((Double)pr.getSecond()).doubleValue() - f._Kr/_T;
+		// itc-20210607: lbopt used to be: ((Double)pr.getSecond()).doubleValue()
 		
 		PairObjTwoDouble pod = new PairObjTwoDouble(x_best, copt, lbopt);
 		return pod;

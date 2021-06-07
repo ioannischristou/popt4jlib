@@ -126,7 +126,10 @@ public class RnQTCpoissonFixedTOpt implements OptimizerIntf {
 			x0[1]++;  // increment Q
 		}
 		// itc20191118: notice the last param below used to be the order cost ordct
-		PairObjThreeDouble pod = new PairObjThreeDouble(x_best, copt, lbopt, 
+		PairObjThreeDouble pod = new PairObjThreeDouble(x_best, copt, 
+			                                              lbopt - f._Kr/_T,
+			                                              // itc-20210607: used to be
+			                                              // just lbopt
 			                                              capproxopt);
 		return pod;
 	}

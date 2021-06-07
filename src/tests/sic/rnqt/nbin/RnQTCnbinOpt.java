@@ -61,6 +61,8 @@ import org.jfree.data.xy.XYSeriesCollection;
  * <li>2021-04-10: modified <CODE>setParams()</CODE> method to allow for setting
  * the pdclient object; needed when running parallel heuristic (s,S,T) 
  * optimizers.
+ * <li>2021-06-07: the fixed-T optimization now excludes fixed review costs from
+ * the lower bound.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>

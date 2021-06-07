@@ -191,7 +191,7 @@ public final class sSTCpoissonSimpleHeurOpt implements OptimizerIntf {
 		RnQTCpoisson rnqt = new RnQTCpoisson(f._Kr, f._Ko, f._L, f._lambda,
 		                                     f._h, f._p, f._p2);
 		RnQTCpoissonOpt opter = new RnQTCpoissonOpt(_pdsrv, _pdport, _batchSz, 
-			                                          _epsT, _Tnot);
+			                                          _epsT, _Tnot, -1);
 		// first set the _pdclt
 		HashMap p = new HashMap();
 		p.put("rnqtcpoissonopt.pdclt", _pdclt);

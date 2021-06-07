@@ -48,6 +48,8 @@ import org.jfree.data.xy.XYSeriesCollection;
  * strictly exceeds the best known cost.
  * <p>Notes:
  * <ul>
+ * <li>2021-06-07: computation of lower bound in fixed-T optimization excludes
+ * review cost as it decreases in time.
  * <li>2021-04-08: added visualization capabilities to the class, so that when
  * it runs, a graph of the optimal costs for different review period lengths is
  * plotted via JFreeChart, same as in the (r,nQ,T) optimization classes.

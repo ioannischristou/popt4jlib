@@ -17,6 +17,13 @@ import utils.PairObjTwoDouble;
  * (fixed) review period T. The system being optimized faces stochastic demands 
  * as described in the class <CODE>sSTCnbin</CODE>. The solution found is 
  * guaranteed to be the global optimum for the given review period T.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-06-07: excluded fixed review costs from lower bound as they decrease
+ * in time.
+ * <li>2021-06-06: fixed issue related to computing the <CODE>G(.)</CODE>
+ * function given demand rates and process parameters.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2021</p>
@@ -144,7 +151,8 @@ public class sSTCnbinFixedTOpt implements OptimizerIntf {
 		catch (parallel.ParallelException e) {  // cannot get here
 			e.printStackTrace();
 		}
-		lbopt = ((Double)pr.getSecond()).doubleValue();
+		lbopt = ((Double)pr.getSecond()).doubleValue() - f._Kr/_T;
+		// itc-20210607: used to be: ((Double)pr.getSecond()).doubleValue()
 		
 		PairObjTwoDouble pod = new PairObjTwoDouble(x_best, copt, lbopt);
 		mger.msg("sSTCnbinFixedTOpt.minimize(f): for T="+_T+
@@ -179,7 +187,8 @@ public class sSTCnbinFixedTOpt implements OptimizerIntf {
 	
 	private static double G(int s, double T, double L, double lambda, double p_l,
 		                      double h, double p) {
-		double y = h*T*(s-L*lambda-lambda*T/2.0) + 
+		double md = sSTCnbin.getMeanDemand(lambda, p_l);
+		double y = h*T*(s-L*md-md*T/2.0) +  // itc20210606: md was lambda
 			         (h+p)*sSTCnbin.bP(s, T, lambda, p_l, L);
 		y /= T;  // divide by T to account for the review period length
 		return y;

@@ -56,6 +56,10 @@ import org.jfree.data.xy.XYSeriesCollection;
  * we can visualize them in the main program execution.
  * <p>Notes:
  * <ul>
+ * <li>2021-06-07: added Tmax feature to let the optimization run up to a user
+ * defined Tmax limit regardless of the lower bounds.
+ * <li>2021-06-07: modified the lower bound to exclude the review costs since 
+ * they are decreasing in time.
  * <li>2021-04-10: modified <CODE>setParams()</CODE> method to allow for setting
  * the pdclient object; needed when running parallel heuristic (s,S,T) 
  * optimizers.
@@ -82,6 +86,8 @@ public class RnQTCpoissonOpt implements OptimizerIntf {
 	private final double _epsT;
 	private final double _Tnot;
 	
+	private final double _Tmax;
+	
 	/**
 	 * by default, 8 tasks to be submitted each time to be processed in parallel
 	 */
@@ -103,9 +109,11 @@ public class RnQTCpoissonOpt implements OptimizerIntf {
 	 * @param batchSz int &gt;0; default 8
 	 * @param epsT double &gt;0; default 0.01
 	 * @param Tnot double &gt;0; default 0.01
+	 * @param Tmax double; default -1.0 indicating no time limit to reach; else
+	 * the value specified will be reached regardless of lower bounds
 	 */
 	public RnQTCpoissonOpt(String server, int port, int batchSz, 
-		                  double epsT, double Tnot) {
+		                  double epsT, double Tnot, double Tmax) {
 		if (server==null || server.length()==0) _pdsrv = "localhost";
 		else _pdsrv = server;
 		if (port>1024) _pdport = port;
@@ -113,6 +121,7 @@ public class RnQTCpoissonOpt implements OptimizerIntf {
 		_batchSz = (batchSz>0) ? batchSz : 8;
 		_epsT = epsT>0 ? epsT : 0.01;
 		_Tnot = Tnot>0 ? Tnot : 0.01;
+		_Tmax = Tmax;
 		_tis = new ArrayList();
 		_ctis = new ArrayList();
 		_lbtis = new ArrayList();
@@ -207,6 +216,7 @@ public class RnQTCpoissonOpt implements OptimizerIntf {
 				T += _epsT;
 				batch[i] = new RnQTCpoissonFixedTOptTask(rnqtc,T,1,1,1,c_cur_best);
 			}
+			if (_Tmax > 0 && T >= _Tmax) done = true;
 			try {
 				mger.msg("RnQTCpoissonOpt.minimize(): submit a batch of "+_batchSz+
 					       " tasks to network for period length from "+Tstart+" up to "+T, 
@@ -224,7 +234,7 @@ public class RnQTCpoissonOpt implements OptimizerIntf {
 					if (Double.compare(ri._LB, c_cur_best)>0) {  // done!
 						mger.msg("RnQTCpoissonOpt.minimize(f): for T="+ri._T+" LB@T="+
 							       ri._LB+" c@T="+ri._C+" c*="+c_cur_best+"; done.", 2);
-						done = true;
+						if (_Tmax < 0) done = true;
 					}
 					if (Double.compare(ri._C, c_cur_best)<0) {
 						r_star = ri._R;
@@ -317,6 +327,8 @@ public class RnQTCpoissonOpt implements OptimizerIntf {
 	 * [epst(0.01)]
 	 * [tnot(0.01)]
 	 * [batchsize(24)]
+	 * [Tmax(-1.0)]
+	 * [dbglvl(0)]
 	 * </CODE>.
 	 * @param args String[] 
 	 */
@@ -340,13 +352,20 @@ public class RnQTCpoissonOpt implements OptimizerIntf {
 		if (args.length>10) tnot = Double.parseDouble(args[10]);
 		int bsize = 24;
 		if (args.length>11) bsize = Integer.parseInt(args[11]);
+		double Tmax = -1.0;
+		if (args.length>12) Tmax = Double.parseDouble(args[12]);
+		int dbglvl = 0;
+		final Messenger mger = Messenger.getInstance();
+		if (args.length>13) dbglvl = Integer.parseInt(args[13]);
+		mger.setDebugLevel(dbglvl);
 		
 		// 2. create function
 		RnQTCpoisson f = new RnQTCpoisson(Kr,Ko,L,lambda,h,p,p2);
 
 		long start = System.currentTimeMillis();
 		// 3. optimize function
-		RnQTCpoissonOpt ropter = new RnQTCpoissonOpt(host, port, bsize, epst, tnot);
+		RnQTCpoissonOpt ropter = new RnQTCpoissonOpt(host, port, bsize, 
+			                                           epst, tnot, Tmax);
 		try {
 			PairObjDouble result = ropter.minimize(f);
 			long dur = System.currentTimeMillis()-start;

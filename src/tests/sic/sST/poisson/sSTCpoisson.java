@@ -86,7 +86,7 @@ public class sSTCpoisson implements FunctionIntf {
 				                  ((Double)param.get("Kr")).doubleValue() :
 				                  _Kr;
 			str += "s="+xarr[0]+", S="+xarr[1]+", T="+xarr[2];
-			str += " | Kr="+Kr+",Ko="+_Ko+",L="+_L+",ë="+_lambda;
+			str += " | Kr="+Kr+",Ko="+_Ko+",L="+_L+",lambda="+_lambda;
 			str += ",h="+_h+",_p="+_p+",_p2="+_p2;
 			str += ")="+res;
 			mger.msg(str, 2);
@@ -174,12 +174,8 @@ public class sSTCpoisson implements FunctionIntf {
 			++n;
 			if (++count==_numTerms) {
 				double ratio = Math.abs(last/y);
-				if (ratio < eps) {
-					System.err.println("sum1: n="+n+" last="+last+" y="+y+" ratio="+ratio);
-					break;
-				}
+				if (ratio < eps) break;
 				else {
-					System.err.println("sum1: n="+n+" last="+last+" y="+y+" ratio="+ratio);
 					count = 0;
 					last = 0;
 				}
@@ -227,12 +223,8 @@ public class sSTCpoisson implements FunctionIntf {
 			++n;
 			if (++count==_numTerms) {
 				double ratio = Math.abs(last/y);
-				if (ratio < eps) {
-					System.err.println("sum2: n="+n+" last="+last+" y="+y+" ratio="+ratio);
-					break;
-				}
+				if (ratio < eps) break;
 				else {
-					System.err.println("sum2: n="+n+" last="+last+" y="+y+" ratio="+ratio);
 					count = 0;
 					last = 0;
 				}
