@@ -1,6 +1,7 @@
 package tests.sic.sST.nbin;
 
 import parallel.distributed.*;
+import popt4jlib.DblArray1Vector;
 import popt4jlib.GA.*;
 import popt4jlib.SA.*;
 import popt4jlib.PS.*;
@@ -174,7 +175,7 @@ public class sSTCnbinMetaHeurOpt {
 				long start = System.currentTimeMillis();
 				PairObjDouble result = dde.minimize(f);
 				long dur = System.currentTimeMillis()-start;
-				double[] x = (double[]) result.getArg();
+				double[] x = ((DblArray1Vector) result.getArg()).getDblArray1();
 				System.out.println("DDE soln: s="+Math.round(x[0])+
 					                 " S="+(Math.round(x[0])+Math.round(x[1]))+
 					                 " T="+x[2]);

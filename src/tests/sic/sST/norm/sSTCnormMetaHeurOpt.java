@@ -1,6 +1,7 @@
 package tests.sic.sST.norm;
 
 import parallel.distributed.*;
+import popt4jlib.DblArray1Vector;
 import popt4jlib.GA.*;
 import popt4jlib.SA.*;
 import popt4jlib.PS.*;
@@ -175,7 +176,7 @@ public class sSTCnormMetaHeurOpt {
 				long start = System.currentTimeMillis();
 				PairObjDouble result = dde.minimize(f);
 				long dur = System.currentTimeMillis()-start;
-				double[] x = (double[]) result.getArg();
+				double[] x = ((DblArray1Vector) result.getArg()).getDblArray1();
 				System.out.println("DDE soln: s="+x[0]+
 					                 " S="+(x[0]+x[1])+
 					                 " T="+x[2]);
