@@ -111,7 +111,8 @@ public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 
 		
 	/**
-	 * main class method.
+	 * main class method, creates sets of function evaluations as tasks to be 
+	 * submitted to the cluster, for more parallelization.
 	 * @param f FunctionIntf must be of type sSTCnorm
 	 * @return PairObjDouble Pair&lt;double[] args, double bestcost&gt; where the 
 	 * args is an array holding the parameters (s*,S*,T*) yielding the bestcost 
@@ -119,6 +120,135 @@ public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 	 * @throws OptimizerException 
 	 */
 	public PairObjDouble minimize(FunctionIntf f) throws OptimizerException {
+		if (!(f instanceof sSTCnorm))
+			throw new OptimizerException("sSTCnormFastHeur2Opt.minimize(f): f must "+
+				                           "be of type tests.sic.sST.norm.sSTCnorm");
+		Messenger mger = Messenger.getInstance();
+		synchronized (this) {
+			if (_pdclt==null) {
+				mger.msg("sSTCnormFastHeur2Opt.minimize(f): connecting on "+_pdsrv+
+					       " on port "+_pdport, 2);
+				_pdclt = new PDBTExecInitedClt(_pdsrv, _pdport);
+				try {
+					_pdclt.submitInitCmd(new PDBTExecInitNoOpCmd());
+					mger.msg("sSTCnormFastHeur2Opt.minimize(f): successfully sent init "+
+						       "cmd", 
+						       2);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+					throw new OptimizerException("sSTCnormFastHeur2Opt.mainimize(f): "+
+						                           "clt failed to send empty init-cmd to "+
+						                           "network");
+				}
+			}
+			_tis.clear();
+			_ctis.clear();
+			++_numRunning;
+		}
+		sSTCnorm sSTC = (sSTCnorm) f;
+		
+		double Tmin = Math.pow(3.5*sSTC._sigma/sSTC._mi, 2);  // used to be zero
+		
+		double s_star=Double.NaN;
+		double S_star = Double.NaN;
+		double t_star = Double.NaN;
+		
+		mger.msg("sSTCnormFastHeur2Opt.minimize(): running "+
+			       "(r,nQ,T) policy optimization", 1);
+		// first, compute the optimal T* for the (r,nQ,T) policy
+		final double[] rnqt_arr = getOptimalRnQTPolicy(sSTC);
+		mger.msg("sSTCnormFastHeur2Opt.minimize(): "+
+			       "(r,nQ,T) policy optimization returns "+
+			       "R*="+rnqt_arr[0]+", Q*="+rnqt_arr[1]+", T*="+rnqt_arr[2], 1);
+		
+		double T = Tmin >= rnqt_arr[2]-_deltaT ? Tmin : rnqt_arr[2]-_deltaT;
+		double Tstart = T;
+		
+		final double Tmax = rnqt_arr[2] + _deltaT;
+		
+		double c_cur_best = Double.POSITIVE_INFINITY;
+		
+		ArrayList all_tasks = new ArrayList();
+		// create all function evaluation tasks
+		final double smin = rnqt_arr[0]-_deltas;
+		final double smax = rnqt_arr[0]+_deltas;
+		final double Smin = rnqt_arr[0]+rnqt_arr[1]-_deltas;
+		final double Smax = rnqt_arr[0]+rnqt_arr[1]+_deltas;
+		for(; T<Tmax; T+=_epsT) {
+			for(double s=smin; s<=smax; s+=_epss) {
+				for(double S=Smin; S<=Smax; S+=_epss) {
+					all_tasks.add(new FET2(sSTC, new double[]{s,S,T}));
+				}
+			}
+		}
+		TaskObject[] tasks_arr = new TaskObject[all_tasks.size()];
+		final int batchSz = all_tasks.size();
+		for(int i=0; i<all_tasks.size(); i++) 
+			tasks_arr[i] = (TaskObject) all_tasks.get(i);
+		try {
+			mger.msg("sSTCnormFastHeur2Opt.minimize(): submit a batch of "+batchSz+
+				       " tasks to network for period length from "+(Tstart+_epsT)+
+				       " up to "+Tmax, 
+				       1);
+			Object[] res = _pdclt.submitWorkFromSameHost(tasks_arr);
+			mger.msg("sSTCnormFastHeur2Opt.minimize(): got back results from entire "+
+				       "batch execution.",1);
+			for (int i=0; i<res.length; i++) {
+				FET2 ri = 
+					(FET2) res[i];
+				if (i==0 ||
+					  ((Double)_tis.get(_tis.size()-1)).doubleValue()<ri.getArg()[2]) {
+					_tis.add(new Double(ri.getArg()[2]));  // add to tis time-series
+				  _ctis.add(new Double(ri.getObjValue()));  // add to c(t)'s time-series
+				}
+				else {
+					double cur_val_t = ((Double)_ctis.get(_ctis.size()-1)).doubleValue();
+					if (ri.getObjValue() < cur_val_t) {
+						_ctis.set(_ctis.size()-1, ri.getObjValue());
+					} 
+				}
+				if (ri.getObjValue() < c_cur_best) {
+					s_star = ri.getArg()[0];
+					S_star = ri.getArg()[1];
+					t_star = ri.getArg()[2];
+					c_cur_best = ri.getObjValue();
+					mger.msg("sSTCnormFastHeur2Opt.minimize(f): found new better soln "+
+						       " @T="+t_star+", c="+c_cur_best, 1);
+				}
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			throw new OptimizerException("sSTCnormFastHeur2Opt.minimize(): failed "+
+				                           "to submit tasks/process/get back result");
+		}
+				
+		synchronized(this) {
+			if (--_numRunning==0) {
+				notify();  // let another thread know that it can proceed with 
+					         // client termination
+			}
+		}
+		double[] x = new double[]{s_star,S_star,t_star};
+		return new PairObjDouble(x,c_cur_best);
+	}
+
+	
+	/**
+	 * main class method, as originally implemented. This implementation creates
+	 * one task for each different T to be tried. The problem is that usually 
+	 * there are few different T's to try, and therefore any extra CPU cores will
+	 * go unused. Instead, we can have as a single task, a single (or small set 
+	 * of) function evaluations and send them to the network for parallel 
+	 * processing.
+	 * @param f FunctionIntf must be of type sSTCnorm
+	 * @return PairObjDouble Pair&lt;double[] args, double bestcost&gt; where the 
+	 * args is an array holding the parameters (s*,S*,T*) yielding the bestcost 
+	 * value
+	 * @throws OptimizerException 
+	 */
+	public PairObjDouble minimizeOverT(FunctionIntf f) throws OptimizerException {
 		if (!(f instanceof sSTCnorm))
 			throw new OptimizerException("sSTCnormFastHeur2Opt.minimize(f): f must "+
 				                           "be of type tests.sic.sST.norm.sSTCnorm");
@@ -219,8 +349,8 @@ public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 		double[] x = new double[]{s_star,S_star,t_star};
 		return new PairObjDouble(x,c_cur_best);
 	}
-
 	
+		
 	/**
 	 * get the time-series from the latest run.
 	 * @return ArrayList[] first element is T-axis values, second is optimal 
