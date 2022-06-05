@@ -4,20 +4,21 @@
 #     n00
 # x         y
 #     n01
-class,n00,popt4jlib.neural.ReLU
-class,n01,popt4jlib.neural.ReLU
-class,outputlayer,popt4jlib.neural.ReLU
+class,n00,popt4jlib.neural.Sigmoid,1.0
+class,n01,popt4jlib.neural.Sigmoid,1.0
+class,outputlayer,popt4jlib.neural.Sigmoid,1.0
 array,layer1_arr,popt4jlib.neural.NNNodeIntf,n00,n01
 array,hiddenlayers,[Ljava.lang.Object;,layer1_arr
 class,costfunc,popt4jlib.neural.costfunction.MSSE
-class,ffnnb,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc
-# matrix,hiddenws0,testdata/nn_related/hiddenws0_4_toy_test.dat
+class,ffnn4trainb,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc
+matrix,hiddenws0,testdata/nn_related/hiddenws0_4_toy_test.dat
 # contents of hiddenws0_4_toy_test.dat are:
 # 2 2
 # 1,0.05 2,-0.02
 # 1,0.03 2,0.01
-# array,outputws,double,0.5,1.0,0.0
-array,weights,double,1.0,0.0,-1.0,0.0,1.0,0.1,0.0
+array,outputws,double,0.5,1.0,0.0
+#array,weights,double,1.0,0.0,-1.0,0.0,1.0,0.1,0.0
+array,weights,double,0.05,-0.02,0.0,0.03,0.01,0.0,0.5,1.0,0.0
 # train data:
 matrix,ffnn.traindata,testdata/nn_related/toy_train.dat
 #ffnn.traindatafile,testdata/traindata1.dat

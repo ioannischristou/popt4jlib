@@ -52,36 +52,49 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
   private long _myid;
 	private int _sz;  // the true size of the array _descNumbers
 
-  private static boolean _useExecuteBatch=true;  // indicates whether to allow batch task submission to executor
-  private static FasterParallelAsynchBatchPriorityTaskExecutor _executor=null;  // set once from main()
+  private static boolean _useExecuteBatch=true;  // indicates whether to allow 
+	                                               // batch task submission to 
+	                                               // executor
+  private static FasterParallelAsynchBatchPriorityTaskExecutor _executor=null;  
+  // above is set once from main()
   private static int _maxDepthAllowed = 0;  // only set at most once from main()
-  private static int _minArrLenAllowed2Fork = Integer.MAX_VALUE;  // only set at most once from main()
-  private static long _numNodesDone = 0;  // indicates num nodes executed, that were submitted to executor
+  private static int _minArrLenAllowed2Fork = Integer.MAX_VALUE;  
+  // above is only set at most once from main()
+  private static long _numNodesDone = 0;  // indicates num nodes executed, 
+	                                        // that were submitted to executor
   private static long _id = 0;  // object id
 	static final boolean _DO_COLLECT_STATS = false;  // compile-time constant
 	private static long _numOpenNodes = 0;  // num current open nodes (total)
 	private static long _maxOpenNodes = 0;  // max num open nodes (total) ever
 	private static long _numTotalNodes = 0;  // num nodes created (total) 
                                            // -- NOT the same as below as it 
-	                                         // counts number of times setData(...) 
+	                                         // counts # of times setData(...) 
 	                                         // is called too
 	private static long _totalNumObjs = 0;  // total num FNPTask objects created
 	private static long _incumbent = Long.MAX_VALUE;  // global current incumbent
-  private static ThreadLocal _localIncs = new ThreadLocal() {  // for optimization purposes only
+  private static ThreadLocal _localIncs = new ThreadLocal() {  // for 
+		                                                           // optimization 
+		                                                           // purposes only
     protected Object initialValue() {
       return new Double(Double.MAX_VALUE);
     }
   };
 
 	// pool-related data
-	private final static boolean _USE_POOLS=true;  // compile-time flag indicates use of pools or not
-  private final static boolean _DO_RESET_ON_RELEASE=false;  // compile-time flag for resetting array elems on reset
-	private FNPTaskPool _pool=null;
-  private int _poolPos=-1;
-  private boolean _isUsed=false;  // redundant init.
+	private final static boolean _USE_POOLS=true;  // compile-time flag indicates 
+	                                               // use of pools or not
+  private final static boolean _DO_RESET_ON_RELEASE=false;  // compile-time flag 
+                                                            // for resetting arr
+	                                                          // elems on reset
+	// itc-20211009: modified below field initializers in case an FNPTask ever 
+	// needs to "travel trhough the wire"
+	private transient FNPTaskPool _pool=null;
+  private transient int _poolPos=-1;
+  private transient boolean _isUsed=true;  // itc-20211009: used to be false
 
 
-  public FNPTask(long id, long[] desc_numbers, long array_sum, long subtractions, long additions) {
+  public FNPTask(long id, long[] desc_numbers, long array_sum, 
+		             long subtractions, long additions) {
     _myid = id;
     _descNumbers = desc_numbers;
 		_sz = _descNumbers.length;
@@ -106,7 +119,9 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
    * @param poolpos int
    */
   FNPTask(int n, FNPTaskPool pool, int poolpos) {
-    if (_USE_POOLS==false) throw new IllegalArgumentException("_USE_POOLS==false: this ctor should not be used");
+    if (_USE_POOLS==false) 
+			throw new IllegalArgumentException("_USE_POOLS==false: "+
+				                                 "this ctor should not be used");
 		_pool=pool;
     _poolPos=poolpos;
     _isUsed=false;
@@ -185,14 +200,17 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 			if (val>=0) {
 				// prune by largest element being large enough
 	      double local_inc = ((Double) _localIncs.get()).doubleValue();
-		    if (val<local_inc) {  // call -synchronized- updateIncumbent() only if it's worth it
+		    if (val<local_inc) {  // call -synchronized- updateIncumbent() only if 
+					                    // it's worth it
 			    updateIncumbent(val);
 				}
 	      return new Long(val);
 		  }
 			if (_sz==1) {
 	      double local_inc = ((Double) _localIncs.get()).doubleValue();
-		    if (_descNumbers[0]<local_inc) {  // call -synchronized- updateIncumbent() only if it's worth it
+		    if (_descNumbers[0]<local_inc) {  // call -synchronized- 
+					                                // updateIncumbent() only if it's 
+					                                // worth it
 			    updateIncumbent(_descNumbers[0]);
 				}
 	      return new Long(_descNumbers[0]);
@@ -200,14 +218,15 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 			long diff = _descNumbers[0] - _descNumbers[1];
 	    if (_sz==2) {
 		    double local_inc = ((Double) _localIncs.get()).doubleValue();
-			  if (diff<local_inc) {  // call -synchronized- updateIncumbent() only if it's worth it
+			  if (diff<local_inc) {  // call -synchronized- updateIncumbent() only if 
+					                     // it's worth it
 				  updateIncumbent(diff);
 				}	
 	      return new Long(diff);
 		  }
 	    // last attempt at fathoming: normally we want the _incumbent, but
 	    // the cost of getting a synchronized access is probably not worth it.
-	    if (_numbersSum % 2 == 1 && ((Double) _localIncs.get()).doubleValue() == 1)
+	    if (_numbersSum % 2 == 1 && ((Double) _localIncs.get()).doubleValue()==1)
 		    return null;  // no reason to return anything here.
 
 	    // do the branching
@@ -218,8 +237,10 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 			boolean keep_checking = true;
 			for (int i=0; i<_sz-1; i++) {
 				if (i==left_node._sz-1) {  // i==left_branch.length-1
-					if (keep_checking) left_branch[i] = diff;
-	        else left_branch[i] = _descNumbers[left_node._sz];  // left_branch.length
+					if (keep_checking) 
+						left_branch[i] = diff;
+	        else 
+						left_branch[i] = _descNumbers[left_node._sz];  // left_branch.length
 		      break;
 			  }
 				if (_descNumbers[i+2]<=diff && keep_checking) {
@@ -235,8 +256,10 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 			right_branch[0] = sum;
 		  for (int i=1;i<right_node._sz; i++)  // right_branch.length
 			  right_branch[i] = _descNumbers[i+1];
-			final int mythreadid = (int)((IdentifiableIntf)Thread.currentThread()).getId();
-	    if (depth >= _maxDepthAllowed && _sz >= _minArrLenAllowed2Fork) { // ok, submit to executor
+			final int mythreadid = 
+				(int)((IdentifiableIntf)Thread.currentThread()).getId();
+	    if (depth >= _maxDepthAllowed && 
+				  _sz >= _minArrLenAllowed2Fork) { // ok, submit to executor
 			  left_node.setData(incrId(), left_sum, _numSubs+1, _numAdds, true);
 				right_node.setData(incrId(), _numbersSum, _numSubs, _numAdds+1, true);
 		    if (_useExecuteBatch) {  // asynch execution
@@ -261,9 +284,11 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 					}
 					try {
 						if (left_node.isManaged() && left_node.isUsed()) 
-							_executor.execute(ReleaseFNPTaskObject.newInstance(left_node, mythreadid));
+							_executor.execute(ReleaseFNPTaskObject.newInstance(left_node, 
+								                                                 mythreadid));
 						if (right_node.isManaged() && right_node.isUsed()) 
-							_executor.execute(ReleaseFNPTaskObject.newInstance(right_node, mythreadid));
+							_executor.execute(ReleaseFNPTaskObject.newInstance(right_node, 
+								                                                 mythreadid));
 					}
 					catch (parallel.ParallelException e) {
 						e.printStackTrace();
@@ -274,7 +299,9 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 							left_node.run();  // serial execution
 							left_node.release();
 						} else {
-							if (left_node.isManaged()) _executor.execute(ReleaseFNPTaskObject.newInstance(left_node, mythreadid));
+							if (left_node.isManaged()) 
+								_executor.execute(ReleaseFNPTaskObject.newInstance(left_node, 
+									                                                 mythreadid));
 						}
 				  }
 					catch (Exception e) {
@@ -287,18 +314,20 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 							right_node.release();
 						}
 						else {
-							if (right_node.isManaged()) _executor.execute(ReleaseFNPTaskObject.newInstance(right_node, mythreadid));							
+							if (right_node.isManaged()) 
+								_executor.execute(ReleaseFNPTaskObject.newInstance(right_node, 
+									                                                 mythreadid));							
 						}
 					}
 					catch (Exception e) {
 						//e.printStackTrace();
-						System.err.println("(thread-pool full): right node not executed...");
+						System.err.println("(thread-pool full): right node not executed.");
 					}
 				}
 			}
 			else {  // run children in same thread, now
-				// the first condition in the check below is needed to avoid slow-down of 
-				// multi-threaded CPU utilization
+				// the first condition in the check below is needed to avoid slow-down  
+				// of multi-threaded CPU utilization
 				if (_myid % 10 == 0 && foundOptimalSolution()) {
 					left_node.release();
 					right_node.release();
@@ -321,7 +350,8 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 			return this;
 		}  // overall try
 		finally {
-			if (depth==0 && isManaged()) {  // only synchronize for nodes that were submitted to the _executor
+			if (depth==0 && isManaged()) {  // only synchronize for nodes that were 
+				                              // submitted to the _executor
 				synchronized (this) {
 					_isDone = true;
 					notifyAll();
@@ -363,7 +393,8 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
    */
   public int compareTo(Object other) {
 		if (other==null) throw new NullPointerException("null arg. passed in");
-		if (other instanceof FNPTask == false) return -1;  // FNPTask objects have higher priority
+		if (other instanceof FNPTask == false) 
+			return -1;  // FNPTask objects have higher priority
 		FNPTask o = (FNPTask) other;
     if (_numSubs > o._numSubs) return -1;
     else if (_numSubs == o._numSubs) {
@@ -380,8 +411,8 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 
 
   /**
-   * required to be compatible with compareTo() so that different FNPTask objects
-   * are not "lost" when inserted into a TreeSet.
+   * required to be compatible with compareTo() so that different FNPTask 
+   * objects are not "lost" when inserted into a TreeSet.
    * @param other Object
    * @return boolean
    */
@@ -482,7 +513,12 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 	
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; popt4jlib.NumberPartitioning.FNPTask &lt;#numbers&gt; &lt;maxnumbersize&gt; [numthreads(1)] [maxdepthallowed(0)] [seed(7)] [useExecuteBatch(1)] [minarrlenallowed2fork(Integer.MAX_VALUE)] [FNPTaskpoolsize(100000)] [ReleaseFNPTaskObjectpoolsize(100000)]</CODE>
+   * <CODE>java -cp &lt;classpath&gt; popt4jlib.NumberPartitioning.FNPTask 
+	 * &lt;#numbers&gt; &lt;maxnumbersize&gt; 
+	 * [numthreads(1)] [maxdepthallowed(0)] [seed(7)] [useExecuteBatch(1)] 
+	 * [minarrlenallowed2fork(Integer.MAX_VALUE)] 
+	 * [FNPTaskpoolsize(100000)] 
+	 * [ReleaseFNPTaskObjectpoolsize(100000)]</CODE>
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -490,13 +526,20 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
     // register handle to show best soln if we stop the program via ctrl-c
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        System.err.println("best soln="+FNPTask._incumbent+" Total nodes exec'd in executor="+FNPTask._id+" _numNodesDone="+FNPTask._numNodesDone);
+        System.err.println("best soln="+FNPTask._incumbent+
+					                 " Total nodes exec'd in executor="+FNPTask._id+
+					                 " _numNodesDone="+FNPTask._numNodesDone);
 				if (_DO_COLLECT_STATS) {
-					System.err.println("Total FNPTask Objects Created="+FNPTask._totalNumObjs+" Max Open Nodes="+FNPTask._maxOpenNodes);
-					System.err.println("Total Nodes Created (FNPTasks + #setData() calls)="+FNPTask._numTotalNodes);
-					System.err.println("Total ReleaseFNPTaskObject Objects Created="+ReleaseFNPTaskObject.getTotalNumObjs());
+					System.err.println("Total FNPTask Objects Created="+
+						                 FNPTask._totalNumObjs+" Max Open Nodes="+
+						                 FNPTask._maxOpenNodes);
+					System.err.println("Total Nodes Created (FNPTasks + "+
+						                 "#setData() calls)="+FNPTask._numTotalNodes);
+					System.err.println("Total ReleaseFNPTaskObject Objects Created="+
+						                 ReleaseFNPTaskObject.getTotalNumObjs());
 				}
-				System.err.println("Total time (msecs)="+(System.currentTimeMillis()-start));
+				System.err.println("Total time (msecs)="+
+					                 (System.currentTimeMillis()-start));
         System.err.flush();
       }
     }
@@ -505,9 +548,11 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 			System.err.println("usage: "+
 							"java -cp &lt;classpath&gt; popt4jlib.NumberPartitioning.FNPTask"+
 							" <#numbers> <maxnumbersize> "+
-							"[numthreads(1)] [maxdepthallowed(0)] [seed(7)] [useExecuteBatch(1)]"+
+							"[numthreads(1)] [maxdepthallowed(0)] "+
+				      "[seed(7)] [useExecuteBatch(1)]"+
 							" [minarrlenallowed2fork(Integer.MAX_VALUE)] "+
-							"[FNPTaskpoolsize(100000)] [ReleaseFNPTaskObjectpoolsize(100000)]");
+							"[FNPTaskpoolsize(100000)] "+
+				      "[ReleaseFNPTaskObjectpoolsize(100000)]");
 			System.exit(-1);
 		}
 		int n = Integer.parseInt(args[0]);
@@ -546,7 +591,8 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
     long[] numbers = new long[n];
     long sum = 0L;
     for (int i=0; i<n; i++) {
-      numbers[i] = Math.round(utils.RndUtil.getInstance().getRandom().nextDouble()*m);
+      numbers[i] = 
+				Math.round(utils.RndUtil.getInstance().getRandom().nextDouble()*m);
       sum += numbers[i];
     }
     java.util.Arrays.sort(numbers);
@@ -560,10 +606,13 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
     for (int i=0; i<n; i++) System.err.print(numbers[i]+" ");
     System.err.println();
     try {
-			int maxcoordqsz = ((int) Math.pow(2.0, _maxDepthAllowed+2)*numthreads);
+			//int maxcoordqsz = ((int) Math.pow(2.0, _maxDepthAllowed+2)*numthreads);
+			int maxcoordqsz = Integer.MAX_VALUE;  // itc-20211009: used to be value in
+			                                      // commented code above instead
 			SimplePriorityMsgPassingCoordinator.setMaxSize(maxcoordqsz);
-      _executor = FasterParallelAsynchBatchPriorityTaskExecutor.
-										newFasterParallelAsynchBatchPriorityTaskExecutor(numthreads);
+      _executor = 
+				FasterParallelAsynchBatchPriorityTaskExecutor.
+				  newFasterParallelAsynchBatchPriorityTaskExecutor(numthreads);
       FNPTask root = new FNPTask(incrId(), numbers, sum, 0, 0);
       _executor.execute(root);
       while (!done()) {  // used to be !foundOptimalSolution() && !done()
@@ -581,12 +630,14 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
         */
 				synchronized(FNPTask.class) {
 					System.err.println("_id=" + _id + " _numNodesDone=" + _numNodesDone +
-						                 " executor tasks=" + _executor.getNumTasksInQueue());
+						                 " executor tasks=" + 
+						                 _executor.getNumTasksInQueue());
 				}
       }
       System.out.println("Optimal partition diff="+_incumbent);
 			if (_DO_COLLECT_STATS)
-				System.out.println("Total Nodes Created="+FNPTask._numTotalNodes+" Max Open Nodes="+FNPTask._maxOpenNodes);      
+				System.out.println("Total Nodes Created="+FNPTask._numTotalNodes+
+					                 " Max Open Nodes="+FNPTask._maxOpenNodes);      
 			System.out.print("Finished. Shuting down executor...");
       _executor.shutDown();
       System.out.println("Done.");
@@ -610,7 +661,8 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
       */
     }
     else if (value > _incumbent) {
-      _localIncs.set(new Double(_incumbent));  // update incumbent known by thread
+      _localIncs.set(new Double(_incumbent));  // update incumbent 
+			                                         // known by thread
     }
   }
 
@@ -646,7 +698,8 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 	}
 
 	
-	private void setData(long id, long array_sum, long subtractions, long additions, boolean do_synch) {
+	private void setData(long id, long array_sum, 
+		                   long subtractions, long additions, boolean do_synch) {
     _myid = id;
     _numbersSum = array_sum;
     _numAdds = additions;
@@ -656,7 +709,7 @@ public class FNPTask implements ComparableTaskObject, PoolableObjectIntf {
 			incrNumOpenNodes();
 		}
 		if (do_synch) {
-			synchronized (this) {
+			synchronized(this) {
 				_isDone = false;  // reset field for next use
 			}
 		}

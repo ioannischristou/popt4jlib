@@ -17,7 +17,9 @@ import popt4jlib.GradientDescent.VecUtil;
  *      x &ge; 0
  *      x integer vector
  * where the matrix A, and the vectors b,c are given and contain integer values.
- * Notice: this class is deprecated and will soon be removed from the code base.
+ * The objective coefficients vector c must obey the constraint c &ge; 0.
+ * Notice: this class has known bugs, and is inefficient. It is deprecated and 
+ * will soon be removed from the code base.
  * It served as "interim" code translating an old Pascal program into Java.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -28,7 +30,6 @@ import popt4jlib.GradientDescent.VecUtil;
  * @version 1.0
  */
 public class AdditiveSolverDepr {
-
 	private Node _current, _optimal;
 	private ON _head;
 	private int _maxnum;
@@ -53,7 +54,6 @@ public class AdditiveSolverDepr {
 		private Node _p;                   // link to the parent node
 		private int _z=Integer.MAX_VALUE;  // lower bound
 		private boolean _status=true;      // open<--T, closed<--F
-
 	}
 
 
@@ -61,7 +61,6 @@ public class AdditiveSolverDepr {
 		private ON _prev;
 		private ON _next;
 		private Node _v;
-
 	}
 
 
@@ -82,7 +81,7 @@ public class AdditiveSolverDepr {
 		IntArray1SparseVector result = new IntArray1SparseVector(A.getNumRows());
 		for (int i=0; i<result.getNumCoords(); i++) {
 			try {
-			result.setCoord(i, A.getIthRow(i).innerProduct(x));
+			  result.setCoord(i, A.getIthRow(i).innerProduct(x));
 			}
 			catch (Exception e) {
 				System.err.println("i="+i);
@@ -250,8 +249,9 @@ public class AdditiveSolverDepr {
 
 
 	private static ON close(Node current, ON head) {
+		if (!current._status) return head;  // itc-20220123: current already closed
 		current._status=false;
-		System.err.println("-- closing node "+current._id);
+		//System.err.println("-- closing node "+current._id);
 		head = remove(current, head);
 		return head;
 	}
@@ -264,8 +264,8 @@ public class AdditiveSolverDepr {
 		IntArray1SparseVector xc = current._x;
 		int z = (int) VecUtil.innerProduct(_c, xc);
 		current._z = z;
-		if (z <= _zbar) _zbar=z;
-		if (z <= _zstar) {
+		if (z < _zbar) _zbar=z;
+		if (z < _zstar) {
 			_zstar=z;
 			_optimal=current;
 			System.err.println("found new better solution z="+z+" (xc="+xc+")");
@@ -301,23 +301,6 @@ public class AdditiveSolverDepr {
 				}
 			}
 		}
-		// set bbar=_b - bbar
-		/*
-		IntArray1SparseVector bbar_old = (IntArray1SparseVector) bbar.newInstance();
-		int bbarnz = bbar.getNumNonZeros();
-		for (int i=0; i<bbarnz; i++) {
-			int ipos = bbar_old.getIthNonZeroPos(i);
-			int val = bbar_old.getIthNonZeroVal(i);
-			bbar.setCoord(ipos, _b.getCoord(ipos)-val);
-		}
-		int bnz = _b.getNumNonZeros();
-		for (int i=0; i<bnz; i++) {
-			int ipos = _b.getIthNonZeroPos(i);
-			int val = _b.getIthNonZeroVal(i);
-			int bbar_old_val = (int)bbar_old.getCoord(ipos);
-			bbar.setCoord(ipos, val-bbar_old_val);
-		}
-		*/
 		for (int i=0; i<_m; i++) {
 			int nvi = (int)_b.getCoord(i)-(int)bbar.getCoord(i);
 			bbar.setCoord(i, nvi);
@@ -333,6 +316,8 @@ public class AdditiveSolverDepr {
 		Pplus.reset();
 		int i=0;
 		do {
+			/* itc-20220122: 
+			   the bbar[i] > 0 test should not hinder the computation of the P+
 			if (bbar.getCoord(i)>0) {
 				Pplus.setCoord(i, 0);
 				int cxnz = current._x.getNumNonZeros();
@@ -349,46 +334,116 @@ public class AdditiveSolverDepr {
 				}
 				if (Pplus.getCoord(i)<bbar.getCoord(i)) feasible=false;
 			}
+			*/
+			Pplus.setCoord(i, 0);
+			int cxnz = current._x.getNumNonZeros();
+			for (int j=0; j<cxnz; j++) {
+				int jpos = current._x.getIthNonZeroPos(j);
+				int jval = current._x.getIntIthNonZeroVal(j);
+				if (jval==-1) {
+					int Aij = _A.getCoord(i, jpos);
+					if (Aij>0) {
+						int pplusival = (int)Pplus.getCoord(i);
+						Pplus.setCoord(i, pplusival+Aij);
+					}
+				}
+			}
+			if (bbar.getCoord(i)>0 && Pplus.getCoord(i)<bbar.getCoord(i)) 
+				feasible=false;			
 			++i;
-		} while (feasible && i!=_m);
+		} while (feasible && i!=_m); 
 		if (!feasible) _head = close(current, _head);
 		return feasible;
 	}
 
+	
+	/**
+	 * updates the b&#772; (bbar) and P+ (Pplus) vectors.
+	 * @param current Node
+	 * @param bbar IntArray1SparseVector
+	 * @param Pplus IntArray1SparseVector
+	 */
+	private void updateBbarPplus(Node current, 
+		                           IntArray1SparseVector bbar,
+															 IntArray1SparseVector Pplus) {
+		bbar.reset();
+		Pplus.reset();
+		for (int i=0; i<_m; i++) {
+			bbar.setCoord(i, _b.getCoord(i));
+			final int xnz = current._x.getNumNonZeros();
+			int ppi = 0;
+			for (int j=0; j<xnz; j++) {
+				int jpos = current._x.getIthNonZeroPos(j);
+				int jval = current._x.getIntIthNonZeroVal(j);
+				int Aij = _A.getCoord(i, jpos);
+				if (jval==-1 && Aij>0) ppi += Aij;
+				else if (jval==1 && Aij!=0) {
+					int bbari = (int) bbar.getCoord(i);
+					bbar.setCoord(i, bbari-Aij);
+				}
+			}
+			Pplus.setCoord(i, ppi);
+		}
+	}
 
-	private void fixSumTestVars(Node current,
+	
+	/**
+	 * fixes free variables to 0 or 1 depending on the constraints.
+	 * @param current Node
+	 * @param bbar IntArray1SparseVector represents the vector
+	 * b - &Sigma;_{i &isin; B_1}A_{.i}
+	 * @param Pplus IntArray1SparseVector represents the vector
+	 * &Sigma;_{i &isin; F}max(A_{.i},0)
+	 * @return boolean true if there was at least one variable fixed
+	 */
+	private boolean fixSumTestVars(Node current,
 		                          IntArray1SparseVector bbar,
 															IntArray1SparseVector Pplus) {
-		int cxnz = current._x.getNumNonZeros();
-		for (int j=0; j<cxnz; j++) {
-			int jpos = current._x.getIthNonZeroPos(j);
-			int jval = current._x.getIntIthNonZeroVal(j);
+		boolean ret = false;
+		for (int j=0; j<_n; j++) {
+			int jval = (int) current._x.getCoord(j);
 			if (jval==-1) {  // j-var is free
 				int pplusnz = Pplus.getNumNonZeros();
 				for (int i=0; i<pplusnz; i++) {
 					int ipos = Pplus.getIthNonZeroPos(i);
 					int ival = Pplus.getIntIthNonZeroVal(i);
-					int Aij = _A.getCoord(ipos, jpos);
+					int Aij = _A.getCoord(ipos, j);
 					if (ival>0 && ival-Math.abs(Aij)<bbar.getCoord(ipos)) {
-						if (Aij>0) current._x.setCoord(jpos, 1);
-						else if (Aij<0) current._x.setCoord(jpos, 0);
+						if (Aij>0) {
+							current._x.setCoord(j, 1);
+							ret = true;
+							break;  // itc20220122: no point continuing checking rows
+						}
+						else if (Aij<0) {
+							current._x.setCoord(j, 0);
+							ret = true;
+							break;  // itc20220122: no point continuing checking rows
+						}
 					}
 				}
-			}
+			}			
 		}
 		if (complete(current._x)) {
-			System.err.println("Node complete");
+			//System.err.println("Node complete");
 			_head = close(current, _head);
 			IntArray1SparseVector Ax = multiply(_A,current._x);
 			boolean feasible = check(Ax,_b);
 			if (feasible) updateZ(current);
 		}
+		return ret;
 	}
 
 
+	/**
+	 * implements the LU test, but contains bugs. Entire class is deprecated and
+	 * will soon be removed from the code base.
+	 * @param current
+	 * @param bbar
+	 * @param cstar 
+	 */
 	private void LU(Node current, IntArray1SparseVector bbar, int cstar) {
-		int L=0;
-		int U=_n+1;  // or is it n?
+		int L=0;     // max{Li}
+		int U=_n+1;  // min{Ui} // or is it n?
 		for (int i=0; i<_m; i++) {
 			IntArray1SparseVector s = sortDesc(_A.getIthRow(i));
 			int Li=0;
@@ -397,6 +452,8 @@ public class AdditiveSolverDepr {
 			int uaux = sum(0,_n-1,s);
 			int cxnz = current._x.getNumNonZeros();
 			int bbari = (int) bbar.getCoord(i);
+			// itc-20220128: loop below is wrong. Correct version is in class
+			// AdditiveSolverMT
 			for (int j=0; j<cxnz; j++) {
 				int jpos = current._x.getIthNonZeroPos(j);
 				int jval = current._x.getIntIthNonZeroVal(j);
@@ -405,9 +462,9 @@ public class AdditiveSolverDepr {
 						++Li;
 						laux += s.getCoord(jpos);
 					}
-					if (uaux < bbari) {
+					if (uaux < bbari) {  
 						--Ui;
-						uaux -= s.getCoord(_n-1-jpos);
+						uaux -= s.getCoord(_n-1-jpos);  
 					}
 				}
 			}  // for j
@@ -417,11 +474,13 @@ public class AdditiveSolverDepr {
 			if (laux < bbari) {
 				Li=_n+1;  // or is it n?
 			}
-			if (Li>L) L=Li;
-			if (Ui<U) U=Ui;
+			if (Li>L) L=Li;  // max{Li}
+			if (Ui<U) U=Ui;  // min{Ui}
 		}  // for i
-
-		if (L>U) _head = close(current,_head);  // infeasible
+		if (L>U) {
+			_head = close(current,_head);
+			return;
+		}  // infeasible
 		if (L==U) {
 			int f = countFreeVars(current._x);
 			if (f==L) {
@@ -473,11 +532,14 @@ public class AdditiveSolverDepr {
 
 
 	private ON branch(int col, Node current, ON head) {
+		//System.err.println("cur_x="+current._x);
 		// create and compute new Node 1-branch
 		Node t1 = new Node();
 		t1._id = ++_maxnum;
-		System.err.println("cur_x="+current._x);
+		//System.err.println("creating new node "+_maxnum);
 		t1._x = (IntArray1SparseVector) current._x.newInstance();
+		//System.err.println("branch(nid="+current._id+"): "+
+		//	                 "setting t1.x"+col+"="+1);
 		t1._x.setCoord(col, 1);  // 1-Branch
 		t1._p = current;  // parent
 		t1._status = true;  // node is OPEN for business
@@ -486,11 +548,13 @@ public class AdditiveSolverDepr {
 		t1._z = cstar1;
 		head = putInOrder(t1,head);
 		current._l = t1;  // update current node
-		System.err.println("creating new node "+_maxnum);
 		// create and compute new Node 0-branch
 		Node t2 = new Node();
 		t2._id = ++_maxnum;
+		//System.err.println("creating new node "+_maxnum);
 		t2._x = (IntArray1SparseVector) current._x.newInstance();
+		//System.err.println("branch(nid="+current._id+"): "+
+		//	                 "setting t2.x"+col+"="+0);
 		t2._x.setCoord(col, 0);  // 0-Branch
 		t2._p = current;  // parent
 		t2._status = true;  // node is OPEN for business
@@ -499,7 +563,6 @@ public class AdditiveSolverDepr {
 		t2._z = cstar2;
 		head = putInOrder(t2,head);
 		current._r = t2;  // update current node
-		System.err.println("creating new node "+_maxnum);
 		head = close(current,head);
 		return head;
 	}
@@ -547,7 +610,7 @@ public class AdditiveSolverDepr {
 							if (bound[j]>tbsum ||
 								  Double.compare(bound[j], -1.0)==0) {
 								bound[j]=tbsum;
-								System.err.println("improving bound for j="+j+" bound="+bound[j]);
+								//System.err.println("improving bound for j="+j+" bound="+bound[j]);
 								pass=true;
 							}
 						}
@@ -768,16 +831,19 @@ public class AdditiveSolverDepr {
 				}
 				solver.imposeConstraint(solver._current, solver._cstar);
 				solver._cstar = solver.computeNode(solver._current, solver._bbar);
-				System.err.println("processing node "+solver._current._id+" x="+solver._current._x);
+				//System.err.println("processing node "+solver._current._id+" x="+solver._current._x);
 				solver._feasible = solver.sumTest(solver._current,
 					                                solver._bbar,
 																					solver._Pplus);
 				if (solver._feasible) {
-					solver.fixSumTestVars(solver._current, solver._bbar, solver._Pplus);
-					System.err.println("after fixSumTestVars scstatus="+solver._current._status);
+					while (solver.fixSumTestVars(solver._current, 
+						                           solver._bbar, 
+																			 solver._Pplus)) {  // update vars
+						solver.updateBbarPplus(solver._current, 
+							                     solver._bbar, solver._Pplus);
+					}
 					if (solver._current._status) {
 						solver.LU(solver._current, solver._bbar, solver._cstar);
-						System.err.println("after LU scstatus="+solver._current._status);
 						if (solver._current._status) {
 							int column = solver.infSum(solver._bbar, solver._current);
 							solver._head = solver.branch(column, solver._current, solver._head);

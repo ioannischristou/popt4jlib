@@ -168,7 +168,13 @@ public class DataFileAccessSrv {
 			// upgrade read -> write lock without danger of exception throwing
 			dvchunks_lock.releaseReadAccess();
 			dvchunks_lock.getWriteAccess();
-			if (_dataCache.get(filename)==null) {  
+			// itc-20211009: corrected code below to handle correctly the case when
+			// the code is called from another thread that asked for data from the
+			// same file that wasn't read yet when the other thread came here, but
+			// since then, yet another thread read the file and filled up the 
+			// _dataCache; without the fix, dvchunks would remain being null.
+			dvchunks = (List) _dataCache.get(filename);
+			if (dvchunks==null) {  
         // essentially the Double-Check-Locking idiom
 				dvchunks = new ArrayList();
 				_dataCache.put(filename, dvchunks);

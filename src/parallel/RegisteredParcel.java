@@ -9,9 +9,14 @@ package parallel;
  * contexts.) With appropriately large array threshold size, the pool will never
  * be exhausted, and thus, a call to <CODE>new Registered(f,t,d)</CODE> will
  * never occur.</p>
+ * <p>Notes:
+ * <ul>
+ * <li>2021-10-09: modified some error conditions (that are impossible) to throw
+ * Error instead of NullPointerException's
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -116,9 +121,13 @@ final class RegisteredParcel {
   Object getData() { return _data; }
   void setData(Object data) {
     if (_isUsed) _data = data;
-    else {  // force a NullPointerException for debugging the pooling mechanism
+    else {
+			/*
+      // force a NullPointerException for debugging the pooling mechanism
       Double null_y=null;
       _data = null_y.toString();
+			*/
+			throw new Error("setData(): _isUsed is false?");
     }
   }
   boolean isDelivered() { return _isDelivered; }
@@ -131,9 +140,13 @@ final class RegisteredParcel {
    */
   void setFromId(int v) {
     if (_isUsed) _fromId = v;
-    else {  // force a NullPointerException for debugging the pooling mechanism
+    else {
+			/*
+      // force a NullPointerException for debugging the pooling mechanism
       Integer null_y=null;
       _fromId = null_y.intValue();
+			*/
+			throw new Error("setFromId(): _isUsed is false?");
     }
   }
 
@@ -144,9 +157,13 @@ final class RegisteredParcel {
    */
   void setToId(int v) {
     if (_isUsed) _toId = v;
-    else {  // force a NullPointerException for debugging the pooling mechanism
+    else {  
+      /*
+      // force a NullPointerException for debugging the pooling mechanism
       Integer null_y=null;
       _toId = null_y.intValue();
+			*/
+			throw new Error("setToId(): _isUsed is false?");
     }
   }
 

@@ -19,7 +19,12 @@ import java.lang.reflect.*;
 /**
  * The class acts as an I/O Manager class for saving and loading data for
  * complex objects in the library such as Graph, HGraph, and properties
- * HashMap objects.
+ * HashMap objects. Notice that the properties object that it can read from a 
+ * file is generic enough to act (almost) as a powerful substitute for the well
+ * known Spring context object factory. The properties file can describe almost
+ * any kind of object (with arbitrary number of references to other objects) to 
+ * be stored in the <CODE>HashMap</CODE> that the method 
+ * <CODE>readPropsFromFile(String)</CODE> returns.
  * The class is thread-safe (reentrant).
  * <p>Notes:
  * <ul>
@@ -42,6 +47,9 @@ import java.lang.reflect.*;
  * that every cell is divided according to the max and min values of some other
  * dataset's min and max values (needed when normalization occurs so that the 
  * values are shrank to the interval [-1,+1].)
+ * <li>2021-10-09: added functionality to throw IllegalArgumentException instead
+ * of NullPointerException's if lines are not properly formed when reading data
+ * from files (properties or graphs.)
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -247,6 +255,12 @@ public class DataMgr {
 											break;
 										}
 									}
+								}
+								if (ctor==null) {  // throw IllegalArgumentException instead of
+									                 // NullPointerException
+									throw new IllegalArgumentException(
+										          "DataMgr.readPropsFromFile(): no constructor "+
+															"for data described in line: '"+line+"' found");
 								}
                 Object obj = ctor.newInstance(args);
                 props.put(strval, obj);
@@ -1683,6 +1697,7 @@ public class DataMgr {
           }
         }
       }
+			else throw new IOException("cannot read from file "+filename);
       // set cardinality values
       for (int i = 0; i < g.getNumNodes(); i++) {
         Node ni = g.getNode(i);
@@ -1694,7 +1709,7 @@ public class DataMgr {
       return g;
     }
     finally {
-      if (br!=null) br.close();
+      br.close();
     }
   }
 
@@ -1748,6 +1763,7 @@ public class DataMgr {
           }
         }
       }
+			else throw new IOException("cannot read from file "+filename);
       int nid = 0;
       while (true) {
         String line = br.readLine();
@@ -1770,7 +1786,7 @@ public class DataMgr {
       return g;
     }
     finally {
-      if (br!=null) br.close();
+      br.close();
     }
   }
 
@@ -1819,6 +1835,7 @@ public class DataMgr {
           }
         }
       }
+			else throw new IOException("cannot read from file "+filename);
       // set cardinality values
       for (int i = 0; i < g.getNumNodes(); i++) {
         Node ni = g.getNode(i);
@@ -1830,7 +1847,7 @@ public class DataMgr {
       return g;
     }
     finally {
-      if (br!=null) br.close();
+      br.close();
     }
   }
 
@@ -1886,6 +1903,8 @@ public class DataMgr {
           catch (ParallelException e) { e.printStackTrace(); }  // never here
         }
       }
+			else throw new IOException("cannot read from file "+filename+
+				                         " or file "+labelfile);
       // set cardinality values
       for (int i = 0; i < g.getNumNodes(); i++) {
         Node ni = g.getNode(i);
@@ -1897,7 +1916,7 @@ public class DataMgr {
       return g;
     }
     finally {
-      if (br!=null) br.close();
+      br.close();
       if (br2!=null) br2.close();
     }
   }
@@ -1949,6 +1968,7 @@ public class DataMgr {
           g.addHLink(nodes, weighta);
         }
       }
+			else throw new IOException("cannot read file "+filename);
       // set cardinality values
       for (int i = 0; i < g.getNumNodes(); i++) {
         HNode ni = g.getHNode(i);
@@ -1957,7 +1977,7 @@ public class DataMgr {
       return g;
     }
     finally {
-      if (br!=null) br.close();
+      br.close();
     }
   }
 

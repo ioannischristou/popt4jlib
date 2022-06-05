@@ -1,12 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib.NumberPartitioning;
 
 import parallel.ParallelException;
+
 
 /**
  * auxiliary class using the <CODE>ThreadLocal</CODE> mechanism to create
@@ -39,7 +34,7 @@ class ReleaseFNPTaskObjectThreadLocalPools {
   /**
    * returns the thread-local <CODE>ReleaseFNPTaskObjectPool</CODE> object 
 	 * associated with the current thread invoking this method. Used only in the
-   * <CODE>ReleaseFPTaskObjectPool.getObject(task,threadid)</CODE> method.
+   * <CODE>ReleaseFPTaskObjectPool.getObject(task, threadid)</CODE> method.
    * @return ReleaseFNPTaskObjectPool
    */
   static ReleaseFNPTaskObjectPool getThreadLocalPool() {
@@ -69,8 +64,10 @@ class ReleaseFNPTaskObjectThreadLocalPools {
 	  throws ParallelException, IllegalArgumentException {
 		if (!_poolSizeResetAllowed) 
 			throw new ParallelException(
-				"popt4jlib.NumberPartitioning.ReleaseFNPTaskObjectThreadLocalPools.setPoolSize(): "+
-				"getThreadLocalPool() or setPoolSize has already been called from some thread");
+				"popt4jlib.NumberPartitioning.ReleaseFNPTaskObjectThreadLocalPools."+
+				"setPoolSize(): "+
+				"getThreadLocalPool() or setPoolSize has already been called "+
+				"from some thread");
 		_poolSizeResetAllowed = false;
 		ReleaseFNPTaskObjectPool.setPoolSize(poolsize);
 	}

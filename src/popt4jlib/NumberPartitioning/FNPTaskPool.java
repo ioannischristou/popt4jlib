@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib.NumberPartitioning;
 
 import java.util.*;
@@ -16,7 +10,7 @@ import java.util.*;
  * point runs out of space in its thread-local pool. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2014-2015</p>
+ * <p>Copyright: Copyright (c) 2014-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -101,18 +95,27 @@ class FNPTaskPool {
 	 */
   void returnObjectToPool(FNPTask ind) {
 		if (_DO_RELEASE_SANITY_TEST) {
-			FNPTaskPool pool = FNPTaskThreadLocalPools.getThreadLocalPool(ind.getSize());
+			FNPTaskPool pool = 
+				FNPTaskThreadLocalPools.getThreadLocalPool(ind.getSize());
 			if (pool!=this) {
+				/*
 				Integer yI = null;
 				System.err.println("null ref yI="+yI.intValue());  // force NullPointerException
+				*/
+				throw new Error("FNPTaskPool.returnObjectToPool(): pool!=this");
 			}
 		}
 		// corner case: the returned object was the only one "out-of-the-pool"
 		if (_maxUsedPos==_minUsedPos) {
 			if (_DO_RELEASE_SANITY_TEST) {
 				if (ind.getPoolPos()!=_minUsedPos) {
+					/*
 					Integer yI = null;
 					System.err.println("null ref yI="+yI.intValue());  // force NullPointerException					
+					*/
+					throw new Error("FNPTaskPool.returnObjectToPool(o): o.getPoolPos() "+
+						              "is not equal to _minUsedPos though "+
+						              "_minUsedPos=_maxUsedPos");
 				}
 			}
 			_maxUsedPos = -1;
@@ -161,8 +164,11 @@ class FNPTaskPool {
 				_minUsedPos--;
 				FNPTask ind = (FNPTask) _pool.get(_minUsedPos);
 				if (_DO_GET_SANITY_TEST && ind.isUsed()) {
+					/*
 					Integer yI = null;
 					System.err.println("getObjectFromPool(): left doesn't work: null ref yI="+yI.intValue());  // force NullPointerException
+					*/
+					throw new Error("FNPTaskPool.getObjectFromPool(): left doesn't work");
 				}
 				ind.setIsUsed();
 				if (_minUsedPos>_maxUsedPos) _maxUsedPos = _minUsedPos;

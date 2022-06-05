@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib;
 
 import java.util.*;
@@ -106,16 +100,14 @@ final class DblArray1VectorPool {
 			DblArray1VectorPool pool = 
 				DblArray1VectorThreadLocalPools.getThreadLocalPool(ind.getNumCoords());
 			if (pool!=this) {
-				Integer yI = null;
-				System.err.println("null ref yI="+yI.intValue());  // force NullPointerException
+				throw new IllegalStateException("returnObjectToPool(ind): insanity");
 			}
 		}
 		// corner case: the returned object was the only one "out-of-the-pool"
 		if (_maxUsedPos==_minUsedPos) {
 			if (_DO_RELEASE_SANITY_TEST) {
 				if (ind.getPoolPos()!=_minUsedPos) {
-					Integer yI = null;
-					System.err.println("null ref yI="+yI.intValue());  // force NullPointerException					
+					throw new IllegalStateException("returnObjctToPool(ind): insanity2");
 				}
 			}
 			_maxUsedPos = -1;
@@ -165,8 +157,8 @@ final class DblArray1VectorPool {
 				_minUsedPos--;
 				DblArray1Vector ind = (DblArray1Vector) _pool.get(_minUsedPos);
 				if (_DO_GET_SANITY_TEST && ind.isUsed()) {
-					Integer yI = null;
-					System.err.println("getObjectFromPool(): left doesn't work: null ref yI="+yI.intValue());  // force NullPointerException
+					throw new IllegalStateException("getObjectFromPool(): "+
+						                              "left insanity");
 				}
 				ind.setIsUsed();
 				if (_minUsedPos>_maxUsedPos) _maxUsedPos = _minUsedPos;

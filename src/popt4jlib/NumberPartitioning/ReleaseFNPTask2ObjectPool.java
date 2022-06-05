@@ -1,12 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib.NumberPartitioning;
-
-import java.util.*;
 
 
 /**
@@ -16,7 +8,7 @@ import java.util.*;
  * point runs out of space in its thread-local pool. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2014-2015</p>
+ * <p>Copyright: Copyright (c) 2014-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -54,7 +46,8 @@ class ReleaseFNPTask2ObjectPool {
    * @return ReleaseFNPTask2Object
    */
   static ReleaseFNPTask2Object getObject(FNPTask2 data, int threadid) {
-    ReleaseFNPTask2ObjectPool pool = ReleaseFNPTask2ObjectThreadLocalPools.getThreadLocalPool();
+    ReleaseFNPTask2ObjectPool pool = 
+			ReleaseFNPTask2ObjectThreadLocalPools.getThreadLocalPool();
     ReleaseFNPTask2Object p = pool.getObjectFromPool();
     if (p!=null) {  // ok, return managed object
       p.setData(data, threadid);
@@ -65,8 +58,9 @@ class ReleaseFNPTask2ObjectPool {
 
 	
 	/**
-	 * method is only called from <CODE>ReleaseFNPTask2ObjectThreadLocalPools</CODE>
-	 * right after object construction to avoid escaping "this" in the constructor.
+	 * method is only called from 
+	 * <CODE>ReleaseFNPTask2ObjectThreadLocalPools</CODE> right after object 
+	 * construction to avoid escaping "this" in the constructor.
 	 */
 	void initialize() {
     for (int i=0; i<_NUMOBJS; i++) {

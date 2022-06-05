@@ -1,14 +1,16 @@
 package popt4jlib.MSSC;
 
 import popt4jlib.VectorIntf;
-import popt4jlib.GradientDescent.VecUtil;
 import java.util.*;
+
 
 /**
  * implements the classical MSSC criterion for a given clustering BUT with 
  * normalized attribute values (dimensions) in [0,1], as the default in WEKA
  * SimpleKMeansClusterer. Mostly used for comparison purposes, because running
  * the WEKA clusterer can be very slow for large K values.
+ * <p>Notice that this implementation does NOT work with weighted clustering
+ * (which is when points in the dataset have positive weights associated).
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2018</p>

@@ -7,7 +7,6 @@ import popt4jlib.LocalOptimizerIntf;
 import popt4jlib.FunctionIntf;
 import popt4jlib.IncumbentProviderIntf;
 import popt4jlib.OptimizerException;
-import parallel.distributed.PDBatchTaskExecutor;
 import parallel.ParallelException;
 import utils.RndUtil;
 import utils.Messenger;
@@ -31,7 +30,7 @@ import popt4jlib.GradientDescent.VecUtil;
  * the <CODE>FFNN4TrainB</CODE> object the algorithm essentially trains. The 
  * extra feature it adds is that instead of modifying each time the current
  * iterate point (i.e. weights vector) by subtracting from it a multiple of the
- * gradient (the multiple being the "learning rate"), it evaluates in parallel
+ * gradient (the multiple being the "learning rate"), it evaluates in sequence
  * the new point that emerges when several different learning rates are applied
  * to the gradient, and picks the best one (the one that results in the largest
  * descent of the objective function.)
@@ -44,15 +43,19 @@ import popt4jlib.GradientDescent.VecUtil;
  * percentage of weights to constant values throughout a training epoch.
  * <li> 2020-09-18: when validation accuracy is set for display, it also shows
  * cost function value on the (entire) training set.
+ * <li> 2021-09-24: removed the PDBatchTaskExecutor <CODE>_extor</CODE> data 
+ * member from the class since it was unused.
+ * <li>2021-10-16: completed adding distributed processing capabilities to this
+ * class.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2020</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
-public class PDMiniBatchBackPropagation implements LocalOptimizerIntf, 
+final public class PDMiniBatchBackPropagation implements LocalOptimizerIntf, 
 	                                                 IncumbentProviderIntf {
 
 	private Messenger _mger = Messenger.getInstance();
@@ -79,8 +82,6 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 	private double[] _inc;
 	private double _incVal = Double.MAX_VALUE;
 	
-	private transient PDBatchTaskExecutor _extor = null;
-	
 	
   /**
    * public no-arg constructor.
@@ -94,12 +95,13 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
    * in the data member <CODE>_params</CODE> so that later modifications to the 
 	 * argument do not affect this object or its methods.
    * @param params HashMap
+	 * @see <CODE>setParams()</CODE>
    */
   public PDMiniBatchBackPropagation(HashMap params) {
     try {
       setParams(params);
     }
-    catch (Exception e) {
+    catch (OptimizerException e) {
       // no-op: cannot reach this point
     }
   }
@@ -116,8 +118,9 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 
 
   /**
-   * return a new empty Adam4FFNN optimizer object (that must be
-   * configured via a call to setParams(p) before it is used.)
+   * return a new empty <CODE>PDMiniBatchBackPropagation</CODE> optimizer object 
+	 * (that must be configured via a call to <CODE>setParams(p)</CODE> before it
+	 * can be used).
    * @return LocalOptimizerIntf
    */
   public LocalOptimizerIntf newInstance() {
@@ -130,10 +133,12 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
    * @param p HashMap should contain values for keys "ffnn.traindata", 
 	 * "ffnn.trainlabels" and "ffnn.minibatchsize" (default is 1). If the keys
 	 * for either of the first two is missing, the data will be read from the 
-	 * <CODE>TrainData</CODE> class. May also contain the key "pdmbbp.numthreads"
+	 * <CODE>TrainData</CODE> class. May contain the key "pdmbbp.numthreads"
 	 * in which case a <CODE>PDBatchTaskExecutor</CODE> of that number of threads
-	 * will be created to evaluate the function in the various step-sizes 
-	 * concurrently.
+	 * will be created in the class <CODE>FasterFFNN4TrainBGrad</CODE>, but it may
+	 * alternatively contain values for the keys "ffnn.pdbtsrv" and "ffnn.port" 
+	 * for distributed processing of the gradient computation (in which case, the
+	 * entire training set is used as "mini-batch".)
    * @throws OptimizerException if another thread is currently executing the
    * <CODE>minimize(f)</CODE> method of this object or if the data are not in 
 	 * the parameters and cannot be read from files either.
@@ -149,7 +154,8 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 				String traindatafile = (String) _params.get("ffnn.traindatafile");
 				String trainlabelsfile = (String) _params.get("ffnn.trainlabelsfile");
 				try {
-					TrainData.readTrainingDataFromFiles(traindatafile, trainlabelsfile);
+					TrainData.readTrainingDataFromFilesIfNull(traindatafile, 
+						                                        trainlabelsfile);
 				}
 				catch (IOException e) {
 					e.printStackTrace();
@@ -161,31 +167,23 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 				_allTrainLabels = TrainData.getTrainingLabels();
 			}
 		}
-		else {
+		else {  
 			_allTrainData = (double[][]) _params.get("ffnn.traindata");
 			_allTrainLabels = (double[]) _params.get("ffnn.trainlabels");
 		}
 		if (_params.containsKey("ffnn.minibatchsize")) {
 			_mbSize = (int) _params.get("ffnn.minibatchsize");
 		}
+		if (_params.containsKey("ffnn.pdbtsrv") && 
+			  _params.containsKey("ffnn.pdbtport")) {
+			// override _mbSize if by accident key "ffnn.minibatchsize" exists
+			_mbSize = _allTrainLabels.length;
+		}
 		if (_params.containsKey("pdmbbp.c1")) {
 			_c1 = ((Double)_params.get("pdmbbp.c1")).doubleValue();
 		}
 		if (_params.containsKey("pdmbbp.c2")) {
 			_c2 = ((Double)_params.get("pdmbbp.c2")).doubleValue();
-		}
-		if (_params.containsKey("pdmbbp.numthreads")) {
-			int nt = ((Integer)_params.get("pdmbbp.numthreads")).intValue();
-			if (nt>1) {
-				try {
-					if (_extor!=null) _extor.shutDown();  // shutdown previous one
-					// start new one
-					_extor = PDBatchTaskExecutor.newPDBatchTaskExecutor(nt);
-				}
-				catch (ParallelException e) {  // cannot get here
-					e.printStackTrace();  
-				}
-			}
 		}
 		if (_params.containsKey("pdmbbp.normgrad")) {
 			_normalizeGrad = ((Boolean)_params.get("pdmbbp.normgrad")).booleanValue();
@@ -275,7 +273,10 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 	 * <li>&lt;"ffnn.minibatchsize", Integer&gt; optional the mini-batch size 
 	 * that will be used to compute the derivative of the network. Default is 1 
 	 * (online learning). Notice that in general, the larger the mini-batch size
-	 * the faster an epoch completes!.
+	 * the faster an epoch completes!. If the key "ffnn.pdbtsrv" exists (go for
+	 * distributed processing), then the value of this parameter, if it exists is
+	 * used for the batch-size of each task to submit to the distributed cluster,
+	 * else the value 128 is used.
 	 * <li>&lt;"pdmbbp.fixedwgtsperc", Double&gt; optional, if present indicates
 	 * the (approximate) percentage of weights during an epoch that must remain
 	 * fixed and not change by the weight update rule of the SGD. Default is zero.
@@ -286,12 +287,19 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 	 * computed will also be normalized to have unit L2-norm. Default is false.
 	 * <li>&lt;"pdmbbp.num_threads", Integer&gt; optional, the number of threads
 	 * that the fast auto-differentiator will use. Default is 1.
+	 * <li>&lt;"ffnn.pdbtsrv", String&gt; optional, the IP address of the server
+	 * to send distributed tasks for gradient computation. Default is null.
+	 * <li>&lt;"ffnn.pdbtport", Integer&gt; optional, the port where pdbtexec 
+	 * server listens to. Default is -1. If this key and the previous are present
+	 * then the PDMiniBatchBackPropagation class enters distributed computing 
+	 * training mode, whereby the gradient computation becomes exact, and the 
+	 * minibatchsize is set to the entire training set size.
 	 * <li>&lt;"pdmbbp.num_epochs", Integer&gt; optional, the number of "epochs" 
 	 * (ie iterations) the algorithm will run for. Default is 100.
 	 * <li>&lt;"pdmbbp.shuffle", Boolean&gt; optional, indicates whether to 
 	 * present the training instances (and labels) in mini-batch formation in 
 	 * random order or not. Notice it is irrelevant when mini-batch size is the 
-	 * entire training set. Default is true.
+	 * entire training set or when doing distributed processing. Default is true.
 	 * <li>&lt;"pdmbbp.use_var_wgt_var, Boolean&gt; optional indicates whether 
 	 * weight initialization is such that every weight is normally distributed 
 	 * with zero mean and standard deviation 1/sqrt(fan_in) of the node the weight
@@ -348,10 +356,20 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 			final int num_epochs = 
 				_params.containsKey("pdmbbp.num_epochs") ?
 					((Integer)_params.get("pdmbbp.num_epochs")).intValue() :
-					100;  // default
-			final int nt = _params.containsKey("pdmbbp.num_threads") ?
-				               ((Integer) _params.get("pdmbbp.num_threads")).intValue():
-				               1;
+					100;  // default			
+			final int nt = 
+				_params.containsKey("pdmbbp.num_threads") ?
+				  ((Integer) _params.get("pdmbbp.num_threads")).intValue() :
+				  1;  // default
+			final String pdbtsrv = 
+				_params.containsKey("ffnn.pdbtsrv") ?
+				  (String) _params.get("ffnn.pdbtsrv") : 
+				  null;  // default
+			final int pdbtport = 
+				_params.containsKey("ffnn.pdbtport") ?
+				  ((Integer)_params.get("ffnn.pdbtport")).intValue() :
+				  -1;  // default
+			final boolean go_distr = pdbtsrv!=null && pdbtport>0;
 			final int div = _allTrainData.length / _mbSize;
 			final int rem = _allTrainData.length % _mbSize;
 			final boolean shuffle = 
@@ -414,8 +432,18 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 			final double[][] train_data_batch = new double[_mbSize][];
 			final double[] train_labels_batch = new double[_mbSize];
 			final double[] wgts_deriv = new double[wgts.length];
+			// distributed processing mode: use the value of mini-batch size specified 
+			// in params for batch-size of distributed processing if it exists, else 
+			// use default 128
+			final int bsize = 
+				_params.containsKey("ffnn.minibatchsize") ?
+				  ((Integer)_params.get("ffnn.minibatchsize")).intValue() :
+				  128;
 			final FasterFFNN4TrainBGrad derivator = 
-				new FasterFFNN4TrainBGrad(_ffnn, _allTrainData[0].length, nt);
+				go_distr==false ? 
+				  new FasterFFNN4TrainBGrad(_ffnn, _allTrainData[0].length, nt) :
+				  new FasterFFNN4TrainBGrad(_ffnn, _allTrainData[0].length, 
+						                        bsize, pdbtsrv, pdbtport);
 			DblArray1Vector wgts_vec = new DblArray1Vector(wgts.length);
 			// prev_wgts_diff is used for momentum update
 			final double[] prev_wgts_diff = new double[wgts.length];  // init to zero
@@ -471,16 +499,24 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 						_mger.msg("PDMBBackProp: running batch from ["+pos+
 							        ","+(pos+_mbSize)+") with current val="+val, 3);
 					}
-					for (int j=0; j<_mbSize; j++) {
-						train_data_batch[j] = 
-							_allTrainData[((Integer)indx.get(pos)).intValue()];
-						train_labels_batch[j] = 
-							_allTrainLabels[((Integer)indx.get(pos++)).intValue()];
+					if (!go_distr) {  // go parallel or even serial 
+						for (int j=0; j<_mbSize; j++) {
+							train_data_batch[j] = 
+								_allTrainData[((Integer)indx.get(pos)).intValue()];
+							train_labels_batch[j] = 
+								_allTrainLabels[((Integer)indx.get(pos++)).intValue()];
+						}
+						// to compute derivative 
+						// first setup the params for this batch
+						_params.put("ffnn.traindata", train_data_batch);
+						_params.put("ffnn.trainlabels", train_labels_batch);
 					}
-					// compute derivative 
-					// first setup the params for this batch
-					_params.put("ffnn.traindata", train_data_batch);
-					_params.put("ffnn.trainlabels", train_labels_batch);	
+					else {  // go distributed!
+						// to compute derivative, set params to null
+						_params.put("ffnn.traindata", null);
+						_params.put("ffnn.trainlabels", null);
+						pos = _allTrainData.length;  // in distributed mode, we use ALL data
+					}
 					// compute the derivative automatically
 					for (int i=0; i<wgts_deriv.length; i++) wgts_vec.setCoord(i, wgts[i]);
 					VectorIntf g = derivator.eval(wgts_vec, _params);
@@ -509,14 +545,6 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 					double best_a_val = Double.POSITIVE_INFINITY;
 					if (learning_rates.length==1) { // don't evaluate, just update weights
 						final double lrate = learning_rates[0]*_c1 / (epoch+_c2);
-						/*
-						for (int j=0; j<wgts.length; j++) {
-							wgts[j] -= (lrate*wgts_deriv[j] - 
-								          momentum*prev_wgts_diff[j]);
-							prev_wgts_diff[j] = momentum*prev_wgts_diff[j] - 
-								                  lrate*wgts_deriv[j];
-						}
-						*/
 						for (int j=0; j<wgts.length; j++) {
 							prev_wgts_diff[j] = momentum*prev_wgts_diff[j] - 
 								                  lrate*wgts_deriv[j];
@@ -550,6 +578,7 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 					}
 				}  // while pos
 				if (pos < _allTrainData.length-1) {  // there is a remainder
+					// may possibly come here ONLY when go_distr==false
 					// don't bother with many learning rates here, just use the first
 					final double[][] last_train_data = new double[rem][];
 					final double[] last_train_labels = new double[rem];
@@ -628,8 +657,12 @@ public class PDMiniBatchBackPropagation implements LocalOptimizerIntf,
 																																			cf);
 					// evaluate the current soln
 					_params.put("ffnn.traindata", _allTrainData);
-					_params.put("ffnn.trainlabels", _allTrainLabels);					
-					final double cost = _ffnn.eval(wgts, _params);
+					_params.put("ffnn.trainlabels", _allTrainLabels);
+					final double cost = _ffnn.eval(wgts, _params);					
+					if (go_distr) {  // go distributed
+						_params.put("ffnn.traindata", null);
+						_params.put("ffnn.trainlabels", null);						
+					}
 					// evaluate the overall gradient at the current solution
 					final VectorIntf gall = 
 						derivator.eval(new DblArray1Vector(wgts), _params);

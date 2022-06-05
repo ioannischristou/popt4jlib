@@ -12,7 +12,7 @@ package popt4jlib.MSSC;
 public interface EvaluatorIntf {
   /**
    * evaluates a particular Clusterer object's job (that must have already
-   * occured prior to this call).
+   * occurred prior to this call).
    * @param cl ClustererIntf
    * @throws ClustererException
    * @return double

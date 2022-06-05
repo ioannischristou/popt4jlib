@@ -229,10 +229,14 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 					setLastInputsCache(layer_i_inputs);
 					node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 				}
+				/*
+				// elseif condition below is impossible for TanH as it doesn't implement
+				// the OutputNNNodeIntf
 				else if (output_node==this) {  // our node is the output node
 					setLastInputsCache(layer_i_inputs);
 					node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 				}
+				*/
 				else {
 					throw new IllegalStateException("couldn't find this node in FFNN");
 				}
@@ -619,6 +623,9 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 				}
 				layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
 			}	
+			/*
+			// if condition below is impossible, as TanH doesn't implement the
+			// OutputNNNodeIntf
 			if (output_node==this) {  // our node is the output node
   			double node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 				double tp = tPrime(node_input);
@@ -629,6 +636,7 @@ public class TanH extends BaseNNNode implements NNNodeIntf {
 				setGradVectorCache(index, result);
 				return result;
 			}
+			*/
 			throw new IllegalStateException("for weight-index="+index+" cannot find "+
 				                              " node corresponding to it");
 		}

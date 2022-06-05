@@ -10,7 +10,8 @@ import java.util.Random;
 
 /**
  * implements the KMeans++ method for seeds initialization for the K-Means
- * algorithm.
+ * algorithm. This implementation does not take into accounts any weights 
+ * associated with the data points in the dataset.
  * <p>Notes:
  * <ul>
  * <li>2018-11-13: added getInitialCenters(k,weights) method to support KMeans||

@@ -16,13 +16,13 @@ import java.io.Serializable;
  * The algorithm has many similarities with the Det. Annealing algorithm of Rose
  * (also implemented as a sequential algorithm in this package), but has much
  * greater parallelism potential in its update phase.
+ * <p>Notes:
+ * 2016-27-01: changed <CODE>_docs</CODE> data member from Vector to ArrayList 
+ * to avoid the useless synchronized access of Vector class. 
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011</p>
  * <p>Company: </p>
- * Notes:
- * 2016-27-01: changed _docs data member from Vector to ArrayList to avoid 
- * the useless synchronized access of Vector class. 
  * @author Ioannis T. Christou
  * @version 1.0
  */
@@ -69,8 +69,8 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
    * <CODE>PDBatchTaskExecutor</CODE> is justified, it will be faster to run
    * using only 1 thread (this criterion applies to most situations where tasks
    * are executed in parallel).
-   * <li> &lt;"neuralgasmt.seed",Long s&gt; optional, if present, the seed for the
-   * random number generator to be used in shuffling the data vectors for
+   * <li> &lt;"neuralgasmt.seed",Long s&gt; optional, if present, the seed for 
+	 * the random number generator to be used in shuffling the data vectors for
    * presentation order to the update formula. Default is null, resulting in
    * random seed each time the method is invoked.
 	 * </ul>
@@ -146,7 +146,8 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
       while (!ct.isDone()) {
         ++t;
         // 0. print some info
-        Messenger.getInstance().msg("NeuralGasMTClusterer.clusterVectors(): Running iteration #"+t,0);
+        Messenger.getInstance().msg("NeuralGasMTClusterer.clusterVectors(): "+
+					                          "Running iteration #"+t,0);
         // 1. Shuffle docs
         Collections.shuffle(docs, RndUtil.getInstance().getRandom());
         for (int i=0; i<n; i++) {  // for each vector di
@@ -222,7 +223,8 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
       executor.executeBatch(uits);
       uit_counter.await();
       tot_uittime = System.currentTimeMillis()-st;
-      Messenger.getInstance().msg("Break-Down of Parallel Processing in times (msecs): "+
+      Messenger.getInstance().msg("Break-Down of Parallel Processing in times "+
+				                          "(msecs): "+
                                   "CDT_time="+tot_cdttime+
                                   " UCT_time="+tot_ucttime+
                                   " UIT_time="+tot_uittime,0);
@@ -243,6 +245,7 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
    * @return List // Vector&lt;VectorIntf center&gt;
    */
   public synchronized List clusterVectorsOldnSlow() throws ClustererException {
+		final Messenger mger = Messenger.getInstance();
     int nt=1;
     try {
       Integer ntI = (Integer) _params.get("neuralgasmt.numthreads");
@@ -270,8 +273,8 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
       PDBatchTaskExecutor executor = PDBatchTaskExecutor.
 																		   newPDBatchTaskExecutor(nt);
       ArrayList docs = new ArrayList(_docs);
-      ArrayList cdtasks = new ArrayList(k);  // List<ComputeDistanceTaskOldnSlow>
-      ArrayList uctasks = new ArrayList(k);  // List<UpdateCenterTaskOldnSlow>
+      ArrayList cdtasks = new ArrayList(k); // List<ComputeDistanceTaskOldnSlow>
+      ArrayList uctasks = new ArrayList(k); // List<UpdateCenterTaskOldnSlow>
       for (int i=0; i<k; i++) {
         cdtasks.add(new ComputeDistanceTaskOldnSlow());
         uctasks.add(new UpdateCenterTaskOldnSlow());
@@ -281,7 +284,8 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
       while (!ct.isDone()) {
         ++t;
         // 0. print some info
-        Messenger.getInstance().msg("NeuralGasMTClusterer.clusterVectorsOldnSlow(): Running iteration #"+t,0);
+        mger.msg("NeuralGasMTClusterer.clusterVectorsOldnSlow(): "+
+					       "Running iteration #"+t,0);
         // 1. Shuffle docs
         Collections.shuffle(docs, RndUtil.getInstance().getRandom());
         for (int i=0; i<n; i++) {  // for each vector di
@@ -290,7 +294,8 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
           for (int j=0; j<k; j++) {
             VectorIntf cj = _centersA[j];
             // update ComputeDistanceTasks
-            ComputeDistanceTaskOldnSlow cdtji = (ComputeDistanceTaskOldnSlow) cdtasks.get(j);
+            ComputeDistanceTaskOldnSlow cdtji = 
+							(ComputeDistanceTaskOldnSlow) cdtasks.get(j);
             cdtji.setValues(di,j,cj);
           }
           Vector res = executor.executeBatch(cdtasks);  // Vector<PairIntDouble>
@@ -303,7 +308,8 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
             int posj = pji.getInt();
             VectorIntf cposj = (VectorIntf) _centersA[posj];
             // update UpdateCenterTasks
-            UpdateCenterTaskOldnSlow uctj = (UpdateCenterTaskOldnSlow) uctasks.get(j);
+            UpdateCenterTaskOldnSlow uctj = 
+							(UpdateCenterTaskOldnSlow) uctasks.get(j);
             uctj.setValues(di, j, cposj, t);
             pji.release();  // reclaim pool space
           }
@@ -331,14 +337,15 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
 
 
   /**
-   * returns a List&lt;List&lt;Integer docid&gt; &gt; representing the ids of the
-   * vectors in each cluster.
+   * returns a List&lt;List&lt;Integer docid&gt; &gt; representing the ids of 
+   * the vectors in each cluster.
    * @return List  // Vector&lt;Vector&lt;Integer docid&gt; &gt;
    */
   public synchronized List getIntermediateClusters() {
     // store the final clustering in _intermediateClusters
     int prev_ic_sz = _intermediateClusters.size();
-    for (int i=0; i<_centers.size(); i++) _intermediateClusters.add(new ArrayList());
+    for (int i=0; i<_centers.size(); i++) 
+			_intermediateClusters.add(new ArrayList());
     for (int i=0; i<_clusterIndices.length; i++) {
       int c = _clusterIndices[i];
       List vc = (List) _intermediateClusters.get(prev_ic_sz+c);
@@ -392,7 +399,8 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
    * @param centers List  // Vector&lt;VectorIntf&gt;
    * @throws ClustererException if any object in centers is not a VectorIntf
    */
-  public synchronized void setInitialClustering(List centers) throws ClustererException {
+  public synchronized void setInitialClustering(List centers) 
+		throws ClustererException {
     if (centers==null || centers.size()==0)
       throw new ClustererException("null or empty initial clusters vector");
     _centersA = new VectorIntf[centers.size()];
@@ -400,12 +408,14 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
     _centers = new ArrayList();
     try {
       for (int i = 0; i < centers.size(); i++) {
-        _centersA[i] = ((VectorIntf) centers.get(i)).newInstance();  // used to be newCopy();
+        _centersA[i] = ((VectorIntf) centers.get(i)).newInstance();  
+        // used to be newCopy();
         _centers.add(_centersA[i]);
       }
     }
     catch (ClassCastException e) {
-      throw new ClustererException("at least one object in centers is not a VectorIntf");
+      throw new ClustererException("at least one object in centers is not a "+
+				                           "VectorIntf");
     }
   }
 
@@ -614,7 +624,7 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
     /**
      * update and return the i-th center i in [_starti, _endi] according to:
      * c_k(t+1) = c_k(t) + å(t)*exp(-k/ë(t))*(x-c_k(t))
-     * where the sequences å(t) and ë(t) are both decreasing sequences tending to
+     * where the sequences å(t) and ë(t) are both decreasing sequences going to
      * zero. In this implementation, ë(t) = 1/sqrt(t) å(t) = 1/t.
      * @return Serializable
      */
@@ -818,7 +828,7 @@ public final class NeuralGasMTClusterer implements ClustererIntf {
     /**
      * update and return the k-th center according to the formula
      * c_k(t+1) = c_k(t) + å(t)*exp(-k/ë(t))*(x-c_k(t))
-     * where the sequences å(t) and ë(t) are both decreasing sequences tending to
+     * where the sequences å(t) and ë(t) are both decreasing sequences going to
      * zero. In this implementation, ë(t) = 1/sqrt(t) å(t) = 1/t.
      * @return Serializable
      */

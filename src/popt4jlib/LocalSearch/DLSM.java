@@ -20,7 +20,7 @@ import java.util.*;
  * reached.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2017</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -39,9 +39,11 @@ public class DLSM implements LocalOptimizerIntf {
   Object _inc=null;  // incumbent chromosome
   FunctionIntf _f=null;
 
-	private ParallelBatchTaskExecutor _executor = null;  // executor to use when
-	                                                     // 1-int-arg ctor is used
+	// executor to use when 1-int-arg ctor is used
+	// itc-20211009: executors don't travel through the wire
+	private transient ParallelBatchTaskExecutor _executor = null;  
 
+	
   /**
    * public constructor of a DLSM OptimizerIntf. Assigns unique id among all 
 	 * DLSM objects (in the same JVM).

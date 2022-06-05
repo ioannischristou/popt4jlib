@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib.NumberPartitioning;
 
 import parallel.ParallelException;
@@ -39,8 +33,10 @@ class FNPTask3ThreadLocalPools {
     }
   };
 
-  static FNPTask3Pool getThreadLocalPool(int n) throws IllegalArgumentException {
-    if (n<=0) throw new IllegalArgumentException("FNPTask3ThreadLocalPools.getThreadLocalPool(n): n is <= 0");
+  static FNPTask3Pool getThreadLocalPool(int n) throws IllegalArgumentException{
+    if (n<=0) 
+			throw new IllegalArgumentException("FNPTask3ThreadLocalPools."+
+				                                 "getThreadLocalPool(n): n is <= 0");
 		FNPTask3Pool p = (FNPTask3Pool) _pools.get();
     if (p==null) {
 			synchronized (FNPTask3ThreadLocalPools.class) {
@@ -70,7 +66,8 @@ class FNPTask3ThreadLocalPools {
 		if (!_poolSizeResetAllowed) 
 			throw new ParallelException(
 				"popt4jlib.NumberPartitioning.FNPTask3ThreadLocalPools.setPoolSize(): "+
-				"getThreadLocalPool(n) or setPoolSize(size) has already been called from some thread");
+				"getThreadLocalPool(n) or setPoolSize(size) has already been called "+
+				"from some thread");
 		_poolSizeResetAllowed = false;
 		FNPTask3Pool.setPoolSize(poolsize);
 	}

@@ -106,9 +106,10 @@ public class Params {
 	 */
   void readTestData(int n, int k, int step, double gapm) {
     // read the array from a file.
-		double[] arr=null;
+		double[] arr=new double[0];
 		try {
-			BufferedReader br = new BufferedReader(new FileReader("test_MSSC1D_input.txt"));
+			BufferedReader br = 
+				new BufferedReader(new FileReader("test_MSSC1D_input.txt"));
 	    arr = new double[n];  // all elems init to zero
 			int i=0;
 			while (true) {

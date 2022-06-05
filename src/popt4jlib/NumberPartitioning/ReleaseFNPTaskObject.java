@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib.NumberPartitioning;
 
 import java.io.Serializable;
@@ -19,25 +13,32 @@ import parallel.ThreadSpecificComparableTaskObject;
  * the object itself). Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2014-2015</p>
+ * <p>Copyright: Copyright (c) 2014-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
  */
-class ReleaseFNPTaskObject implements ThreadSpecificComparableTaskObject, PoolableObjectIntf {
+class ReleaseFNPTaskObject implements ThreadSpecificComparableTaskObject, 
+	                                    PoolableObjectIntf {
   // private final static long serialVersionUID=123456789L;
 	private FNPTask _obj;  // the FNPTask object that must be released
-	private int _tid;  // the thread-id from which it must be released (as it 
-	                   // belongs to the ThreadLocal object pool of that thread) 
+	private transient int _tid;  // the thread-id from which it must be released 
+	                             // (as it belongs to the ThreadLocal object pool 
+	                             // of that thread) 
 	
 	private boolean _isDone=false;  // unused
 	
 	// pool-related data
-	// private final static boolean _USE_POOLS=true;  // compile-time flag indicates use of pools or not
-  private final static boolean _DO_RESET_ON_RELEASE=false;  // compile-time flag for resetting elems on release
-	private ReleaseFNPTaskObjectPool _pool=null;
-  private int _poolPos=-1;
-  private boolean _isUsed=false;  // redundant init.
+	// private final static boolean _USE_POOLS=true;  // compile-time flag 
+	                                                  // indicates use of pools
+  private final static boolean _DO_RESET_ON_RELEASE=false;  // compile-time flag 
+                                                            // for resetting 
+	                                                          // elems on release
+	// itc-20211009: made below fields transient though never meant to be 
+	// serialized
+	private transient ReleaseFNPTaskObjectPool _pool=null;
+  private transient int _poolPos=-1;
+  private transient boolean _isUsed=true;  // itc-20211009: was false
 
 	private static long _totalNumObjs = 0;
 
@@ -75,9 +76,13 @@ class ReleaseFNPTaskObject implements ThreadSpecificComparableTaskObject, Poolab
 			_obj = obj;
 			_tid = threadid;
 		}
-    else {  // force a NullPointerException for debugging the pooling mechanism
+    else {  
+      /* itc-20211009: force Error instead
+      // force a NullPointerException for debugging the pooling mechanism
       Integer null_y=null;
       _tid = null_y.intValue();
+			*/
+			throw new Error("ReleaseFNPTaskObject.setData(): _isUsed is false?");
     }
 	}
 	
@@ -192,7 +197,8 @@ class ReleaseFNPTaskObject implements ThreadSpecificComparableTaskObject, Poolab
    * @return boolean
    */
   public boolean equals(Object other) {
-    if (other==null || other instanceof ReleaseFNPTaskObject == false) return false;
+    if (other==null || other instanceof ReleaseFNPTaskObject == false) 
+			return false;
     ReleaseFNPTaskObject o = (ReleaseFNPTaskObject) other;
     return _obj == o._obj;
   }
@@ -235,7 +241,8 @@ class ReleaseFNPTaskObject implements ThreadSpecificComparableTaskObject, Poolab
 		*/
 		try {
 			// 0. sanity test
-			int tid = (int)((popt4jlib.IdentifiableIntf) Thread.currentThread()).getId();
+			int tid = 
+				(int)((popt4jlib.IdentifiableIntf) Thread.currentThread()).getId();
 			if (tid!=_tid) throw new parallel.ParallelException("tid!=_tid?");
 			// 0.5 wait until task is actually done
 			synchronized (_obj) {
@@ -254,7 +261,8 @@ class ReleaseFNPTaskObject implements ThreadSpecificComparableTaskObject, Poolab
 			release();
 		}
 		catch (Exception e) {
-			System.err.println("ReleaseFNPTaskObject is running on a Thread other than the one in which it was created");
+			System.err.println("ReleaseFNPTaskObject is running on a Thread other "+
+				                 "than the one in which it was created");
 		}
 		return null;
 	}

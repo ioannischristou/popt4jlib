@@ -11,10 +11,12 @@ import java.util.*;
  * <ul>
  * <li>20190701: modified <CODE>FunctionEvaluationTask</CODE> to return 
  * <CODE>Double.MAX_VALUE</CODE> when the underlying function returns NaN.
+ * <li>20211009: modified _executor to become transient in case such an object
+ * ever needs to be serialized.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2019</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -22,7 +24,8 @@ import java.util.*;
 public class LimitedTimeEvalFunction implements FunctionIntf {
   private long _evalCount=0;
   private long _successfullEvalCount=0;
-  private LimitedTimeTaskExecutor _executor=null;
+	private long _millis2wait=0;
+  private transient LimitedTimeTaskExecutor _executor=null;
   private FunctionIntf _f=null;
 
 
@@ -34,6 +37,7 @@ public class LimitedTimeEvalFunction implements FunctionIntf {
    * @param millis2wait long
    */
   public LimitedTimeEvalFunction(FunctionIntf f, long millis2wait) {
+		_millis2wait = millis2wait;
     _executor = new LimitedTimeTaskExecutor(millis2wait);
     _f = f;
   }
@@ -53,8 +57,13 @@ public class LimitedTimeEvalFunction implements FunctionIntf {
    * evaluation takes too long.
    */
   public double eval(Object arg, HashMap params) {
-    incrCount();
+    //incrCount();
     FunctionEvaluationTask t = new FunctionEvaluationTask(_f, arg, params);
+		synchronized(this) {
+			++_evalCount;
+			if (_executor==null) 
+				_executor = new LimitedTimeTaskExecutor(_millis2wait);
+		}
     if (_executor.execute(t)) incrSucEvalCount();
     return t.getObjValue();
   }

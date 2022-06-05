@@ -22,6 +22,8 @@ import java.util.ArrayList;
  * methods) in this package.
  * <p>Notes:
  * <ul>
+ * <li>2021-10-09: tightened the constructors so they throw in corner cases
+ * involving number of dimensions passed or empty arrays for indices or values.
  * <li>2018-11-21: fixed a bug in <CODE>div(double)</CODE> that would only 
  * appear if the default-value of this sparse vector's components is non-zero.
  * <li>2018-11-21: added <CODE>addMul(double, DblArray1SparseVector)</CODE> 
@@ -33,10 +35,10 @@ import java.util.ArrayList;
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2018</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 2.0
+ * @version 3.0
  */
 public class DblArray1SparseVector implements SparseVectorIntf {
   private static final long serialVersionUID = 6365520149403267798L;
@@ -65,8 +67,8 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 	/**
 	 * same as 1-arg constructor, but also specifies default value for not-yet-set
 	 * components (default is normally zero).
-	 * @param n int
-	 * @param def double
+	 * @param n int the dimension of this vector
+	 * @param def double the default value that components of this vector have
 	 * @throws IllegalArgumentException if 1-arg constructor throws
 	 */
 	public DblArray1SparseVector(int n, double def) 
@@ -81,15 +83,19 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    * @param indices int[] must be in ascending order
    * @param values double[] corresponds to values for each index in the indices 
 	 * array must not contain any zeros
-   * @param n int total length of the vector
+   * @param n int total length of the vector must be &gt; 0
    * @throws IllegalArgumentException if any component of values is equal to the
 	 * default value or if dimensions don't match or if indices are not ascending
+	 * or if n is &le; 0
    */
   public DblArray1SparseVector(int[] indices, double[] values, int n) 
 		throws IllegalArgumentException {
-    if (indices==null || values==null || indices.length!=values.length)
-      throw new IllegalArgumentException("Arguments null or dimensions "+
-				                                 "don't match");
+		if (n<=0)
+			throw new IllegalArgumentException("n must be >= 1");
+    if (indices==null || values==null || indices.length==0 || 
+			  indices.length!=values.length)
+      throw new IllegalArgumentException("Arguments null or empty or "+
+				                                 "dimensions don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
     final int ilen = indices.length;
@@ -115,15 +121,19 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    * @param indices int[] must be in ascending order
    * @param values double[] corresponds to values for each index in the indices 
 	 * array must not contain any defVal value
-   * @param n int total length of the vector
+   * @param n int total length of the vector must be &ge; 1
    * @throws IllegalArgumentException if any component of values is equal to the
-	 * default value or if dimensions don't match or if indices don't ascend
+	 * default value or if dimensions don't match or if indices don't ascend or if
+	 * n &le; 0
    */
   public DblArray1SparseVector(double defVal, int[] indices, double[] values, 
 		                           int n) throws IllegalArgumentException {
-    if (indices==null || values==null || indices.length!=values.length)
-      throw new IllegalArgumentException("Arguments null or dimensions "+
-				                                 "don't match");
+		if (n <= 0)
+			throw new IllegalArgumentException("n must be >= 1");
+    if (indices==null || values==null || indices.length==0 || 
+			  indices.length!=values.length)
+      throw new IllegalArgumentException("Arguments null or empty or "+
+				                                 "dimensions don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
     final int ilen = indices.length;
@@ -154,11 +164,13 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    * @param n int total length of the vector
 	 * @param ilen int the actual length of the _indices,_values array
    * @throws IllegalArgumentException if any component of values is equal to the
-	 * default value
+	 * default value or if ilen or n are not both greater than 0
    */
   protected DblArray1SparseVector(double defVal, int[] indices, double[] values, 
 		                              int n, int ilen) 
 		throws IllegalArgumentException {
+		if (ilen <= 0 || n <= 0)
+			throw new IllegalArgumentException("ilen or n are less than 1");
     _indices = new int[ilen];
     _values = new double[ilen];
     for (int i=0; i<ilen; i++) {
@@ -180,18 +192,22 @@ public class DblArray1SparseVector implements SparseVectorIntf {
 	 * whose default values are zero.
    * @param indices int[] elements must be in ascending order
    * @param values double[] must not have any zero
-   * @param n int
+   * @param n int must be &gt; 0
    * @param multFactor double must not be zero
-   * @throws IllegalArgumentException if any indices or values is null or their
-	 * dimensions don't match or if n &le; indices[indices.length-1] or if any
-	 * component of values has zero value of if indices don't ascend
+   * @throws IllegalArgumentException if any indices or values is null or empty
+	 * or their dimensions don't match or if n &le; indices[indices.length-1] or 
+	 * if n &le; 0 or if any component of values has zero value of if indices 
+	 * don't ascend
    */
   public DblArray1SparseVector(int[] indices, double[] values, 
 		                           int n, double multFactor) 
 		throws IllegalArgumentException {
-    if (indices==null || values==null || indices.length!=values.length)
-      throw new IllegalArgumentException("Arguments null or dimensions "+
-				                                 "don't match");
+		if (n<=0) 
+			throw new IllegalArgumentException("n must be strictly positive");
+    if (indices==null || values==null || indices.length==0 || 
+			  indices.length!=values.length)
+      throw new IllegalArgumentException("Arguments null or empty or "+
+				                                 "dimensions don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
 		if (Double.compare(multFactor, 0.0)==0) {  // _defVal is by default 0
@@ -224,18 +240,22 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    * @param indices int[] elements must be in ascending order
    * @param values double[] must not contain any element with value equal to
 	 * defVal/multFactor
-   * @param n int
+   * @param n int must be &gt; 0
    * @param multFactor double
 	 * @param defVal double default value of components
-   * @throws IllegalArgumentException if any indices or values is null or their
-	 * dimensions don't match or if n &le; indices[indices.length-1] or if indices 
-	 * don't ascend
+   * @throws IllegalArgumentException if any indices or values is null or empty
+	 * or their dimensions don't match or if n &le; indices[indices.length-1] or 
+	 * n &le; 0 or if indices don't ascend
    */
   public DblArray1SparseVector(int[] indices, double[] values, 
 		                           int n, double multFactor, double defVal) 
 		throws IllegalArgumentException {
-    if (indices==null || values==null || indices.length!=values.length)
-      throw new IllegalArgumentException("Arguments null or dimensions don't match");
+		if (n<=0)
+			throw new IllegalArgumentException("n <= 0");
+    if (indices==null || values==null || indices.length==0 || 
+			  indices.length!=values.length)
+      throw new IllegalArgumentException("Arguments null or empty or "+
+				                                 "dimensions don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
 		final utils.Messenger mger = utils.Messenger.getInstance();
@@ -276,12 +296,15 @@ public class DblArray1SparseVector implements SparseVectorIntf {
    * @param multFactor double
 	 * @param defVal double default value of components
 	 * @param ilen int
-	 * @throws IllegalArgumentException if values[i]==defVal for some component
+	 * @throws IllegalArgumentException if values[i]==defVal for some component or
+	 * if n or ilen are &le; 0
    */
   protected DblArray1SparseVector(int[] indices, double[] values, 
 		                              int n, double multFactor, double defVal, 
                                   int ilen) 
 		throws IllegalArgumentException {
+		if (n<=0 || ilen<=0)
+			throw new IllegalArgumentException("n or ilen <= 0");
     _indices = new int[ilen];
     _values = new double[ilen];
 		_defVal = defVal;

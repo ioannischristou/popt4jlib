@@ -3,25 +3,31 @@ package popt4jlib.MSSC;
 import java.util.ArrayList;
 import popt4jlib.VectorIntf;
 import popt4jlib.GradientDescent.VecUtil;
-import java.util.Vector;
 import java.util.List;
 
 
 /**
  * specifies that a clustering process must stop when two successive calls of
- * isDone() the centers found by the associated clusterer have not moved at all.
+ * <CODE>isDone()</CODE> the centers found by the associated clusterer have not 
+ * moved at all. Notice that as a safe-guard, there is still a limit on the 
+ * maximum number of iterations allowed when the no-arg constructor is used, 
+ * currently set to 50 (in this case, the "no center move" actually allows a
+ * "movement" of any center to a new position within the circle with center the
+ * previous center position and radius <CODE>1.E-7</CODE>.
  * <p>Note:
  * <ul>
  * <li>20181105: added one-arg constructor to allow for the centers to move 
  * slightly from their previous position, and still satisfy the criteria for 
  * "no movement".
+ * <li>20220221: modified the functionality to stop after <CODE>_maxIters</CODE>
+ * so that when a min distance is specified, the iterations no longer matter.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2018</p>
+ * <p>Copyright: Copyright (c) 2011-2022</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.1
+ * @version 1.2
  */
 public class ClustererTerminationNoCenterMove 
   implements ClustererTerminationIntf {
@@ -29,7 +35,7 @@ public class ClustererTerminationNoCenterMove
   private List _oldcenters;
   private int _totIters = 0;
   private double _c = 1e-7;
-  final static private int _maxIters = 50;
+  final private int _maxIters;
 
 
 	/**
@@ -37,6 +43,7 @@ public class ClustererTerminationNoCenterMove
 	 * to move and still be considered as no-move, 1E-7.
 	 */
   public ClustererTerminationNoCenterMove() {
+		_maxIters = 50;
   }
 
 	
@@ -47,6 +54,7 @@ public class ClustererTerminationNoCenterMove
 	 */
   public ClustererTerminationNoCenterMove(double c) {
 		_c = c;
+		_maxIters = Integer.MAX_VALUE;
   }
 
 

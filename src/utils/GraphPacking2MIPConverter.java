@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package utils;
 
 import graph.*;
@@ -139,7 +133,9 @@ public class GraphPacking2MIPConverter {
 		for (int i=0; i<m-1; i++) pw.print("-1 ");
 		pw.println("0");
 		// print c
-		for (int i=0; i<n; i++) pw.print(-g.getNode(i).getWeightValueUnsynchronized("value").intValue() + " ");
+		for (int i=0; i<n; i++) 
+			pw.print(-g.getNode(i).getWeightValueUnsynchronized("value").intValue() + 
+				       " ");
 		pw.println();
 		pw.flush();
 		pw.close();
@@ -148,12 +144,18 @@ public class GraphPacking2MIPConverter {
 	
 	/**
 	 * invoke as
-	 * java -cp &lt;classpath&gt; utils.GraphPacking2MIPConverter &lt;graphfile&gt; &lt;k&gt; &lt;lpfile&gt;
+	 * <CODE>
+	 * java -cp &lt;classpath&gt; utils.GraphPacking2MIPConverter 
+	 * &lt;graphfile&gt; &lt;k&gt; &lt;lpfile&gt;
+	 * </CODE>. If k==-1, the file created will correspond to a MWIS in a format
+	 * suitable for the LIP solver <CODE>popt4jlib.LIP.AdditiveSolver2</CODE>.
 	 * @param args String[] 
 	 */
 	public static void main(String[] args) {
 		if (args.length!=3) {
-			System.err.println("usage: java -cp <classpath> utils.GraphPacking2MIPConverter <graphfile> <k> <lpfile>");
+			System.err.println("usage: java -cp <classpath> "+
+				                 "utils.GraphPacking2MIPConverter "+
+				                 "<graphfile> <k> <lpfile>");
 			System.exit(-1);
 		}
 		String gfile = args[0];

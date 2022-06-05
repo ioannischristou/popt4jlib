@@ -702,7 +702,8 @@ public class FFNN4TrainB extends FFNN4Train {
 		}
 		if (extor!=null) {  // create task-objects to do the work for each t
 			List tasks = 
-				new ArrayList((int)Math.ceil(num_instances/_numDerivInputsPerTask));
+				new ArrayList((int)Math.ceil(((double)num_instances) /
+					                           _numDerivInputsPerTask));
       // List<FFNNMultiEvalPartialDerivTaskB>
 			int start = 0;
 			int end = _numDerivInputsPerTask;

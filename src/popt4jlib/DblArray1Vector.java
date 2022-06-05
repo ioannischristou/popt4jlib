@@ -12,7 +12,7 @@ package popt4jlib;
  * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
   // private final static long serialVersionUID=-1953111744690308391L;
@@ -34,7 +34,7 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
 	/**
 	 * public constructor creating a point in the origin of R^n.
 	 * @param n int
-	 * @throws IllegalArgumentException
+	 * @throws IllegalArgumentException if n &le; 0
 	 */
 	public DblArray1Vector(int n) throws IllegalArgumentException {
 		if (n<=0) throw new IllegalArgumentException("n<=0 passed");
@@ -49,11 +49,12 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
 
   /**
    * public constructor making a copy of the argument.
-   * @param x double[]
-   * @throws IllegalArgumentException
+   * @param x double[] must have length &gt; 0
+   * @throws IllegalArgumentException if x is null or has zero length
    */
   public DblArray1Vector(double[] x) throws IllegalArgumentException {
-    if (x==null) throw new IllegalArgumentException("null arg passed");
+    if (x==null || x.length==0) 
+			throw new IllegalArgumentException("null or empty arg passed");
     final int n = x.length;
     _x = new double[n];
     for (int i=0; i<n; i++) _x[i]=x[i];
@@ -68,13 +69,14 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
   /**
    * public constructor making a copy of the array passed in, and multiplying
    * each element by the multFactor passed in.
-   * @param x double[]
+   * @param x double[] must have length &gt; 0
    * @param multFactor double
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if x is null or has zero length
    */
   public DblArray1Vector(double[] x, double multFactor) 
 		throws IllegalArgumentException {
-    if (x==null) throw new IllegalArgumentException("null arg passed");
+    if (x==null || x.length==0) 
+			throw new IllegalArgumentException("null or empty arg passed");
     final int n = x.length;
     _x = new double[n];
     for (int i=0; i<n; i++) _x[i]=x[i]*multFactor;
@@ -89,14 +91,18 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
   /**
    * this constructor is to be used only from the DblArray1VectorPool for
    * constructing managed objects (re-claimable ones).
-	 * @param n int the vectors' fixed size
+	 * @param n int the vectors' fixed size must be &gt; 0
    * @param pool DblArray1VectorPool
    * @param poolpos int
+	 * @throws IllegalArgumentException if n &le; 0 or if the compile-time 
+	 * constant _USE_POOLS is false
    */
   DblArray1Vector(int n, DblArray1VectorPool pool, int poolpos) {
     if (_USE_POOLS==false) 
 			throw new IllegalArgumentException("_USE_POOLS==false: this ctor "+
 				                                 "should not be used");
+		if (n <= 0) 
+			throw new IllegalArgumentException("n must be greater than 0");
 		_pool=pool;
     _poolPos=poolpos;
     _isUsed=false;
@@ -111,9 +117,8 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
 
   /**
    * return a new VectorIntf object containing a copy of the data of this 
-	 * object.
-	 * This implementation will try to fetch a vector from the thread-local object
-	 * pool if _USE_POOLS is true.
+	 * object. This implementation will try to fetch a vector from the 
+	 * thread-local object pool if _USE_POOLS is true.
    * @return VectorIntf
    */
   public VectorIntf newCopy() {
@@ -164,10 +169,10 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
 	 * this factory method shall first try to obtain an object from the thread-
 	 * local object pool of DblArray1Vector objects (as long as the _USE_POOLS 
 	 * compile-time constant flag is true), and if it can't find one (or if the
-	 * _USE_POOLS flag is false), it will then produce an unmanaged one. 
-	 * The produced object is guaranteed at the origin only if the 
+	 * _USE_POOLS flag is false), it will then produce an unmanaged one. The 
+	 * produced object is guaranteed at the origin only if the 
 	 * _DO_RESET_ON_RELEASE flag is true or if _US_POOLS is false.
-	 * @param n int the vector size or dimension
+	 * @param n int the vector size or dimension must be strictly positive
 	 * @return DblArray1Vector
 	 */
   public static DblArray1Vector newInstance(int n) {
@@ -192,7 +197,10 @@ public class DblArray1Vector implements VectorIntf, PoolableObjectIntf {
 	
 	
 	/**
-	 * returns the integer part of the first element of this vector.
+	 * returns the integer part of the first element of this vector. Notice that 
+	 * this is not what Bloch recommends, but it is much faster (especially on
+	 * large arrays) and it is still correct according to the contract of the 
+	 * methods <CODE>equals()</CODE> and <CODE>hashCode()</CODE>.
 	 * @return int
 	 */
 	public int hashCode() {

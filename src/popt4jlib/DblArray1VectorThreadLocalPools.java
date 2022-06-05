@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib;
 
 /**
@@ -39,8 +33,11 @@ final public class DblArray1VectorThreadLocalPools {
     }
   };
 
-  static DblArray1VectorPool getThreadLocalPool(int n) throws IllegalArgumentException {
-    if (n<=0) throw new IllegalArgumentException("DblArray1VectorThreadLocalPools.getThreadLocalPool(n): n is <= 0");
+  static DblArray1VectorPool getThreadLocalPool(int n) 
+		throws IllegalArgumentException {
+    if (n<=0) 
+			throw new IllegalArgumentException("DblArray1VectorThreadLocalPools."+
+				                                 "getThreadLocalPool(n): n is <= 0");
 		DblArray1VectorPool p = (DblArray1VectorPool) _pools.get();
     if (p==null) {
 			synchronized (DblArray1VectorThreadLocalPools.class) {
@@ -70,7 +67,8 @@ final public class DblArray1VectorThreadLocalPools {
 		if (!_poolSizeResetAllowed) 
 			throw new IllegalStateException(
 				"popt4jlib.DblArray1VectorThreadLocalPools.setPoolSize(): "+
-				"getThreadLocalPool() or setPoolSize() has already been called from some thread");
+				"getThreadLocalPool() or setPoolSize() has already been called "+
+				"from some thread");
 		_poolSizeResetAllowed = false;
 		DblArray1VectorPool.setPoolSize(poolsize);
 	}

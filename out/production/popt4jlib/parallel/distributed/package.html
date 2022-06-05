@@ -1,0 +1,43 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head><!--
+  Copyright (c) 2011 
+  All Rights Reserved.
+--></head>
+
+<body bgcolor="white">Extends the basic functionality found in the <CODE>parallel</CODE> package over
+many remote JVMs distributed over a network of machines.
+
+<h2>Package Specification</h2>
+The package contains algorithms for obtaining distributed locks, barriers,
+Parallel-Distributed (Synchronous or Asynchronous) Task Executors, and Message 
+Passing Coordinators, over standard socket mechanisms (transport layer in the 
+OSI stack), without using RMI or web-services technologies. For more details, 
+read the documentation for each class. Each class comes with a test-driver 
+program that show-cases its intended use and effects. The whole package makes 
+heavy use of the <CODE>parallel</CODE> package and its classes.
+Notice that this package does not use secure socket layer communications; it
+assumes that the whole network of machines that will host the package's
+servers is in essentially a demilitarized zone (behind fire-walls, in 
+appropriate domains etc.) Also notice that this package has several servers
+that can combine to scale far beyond O/S imposed limitations on the number
+of concurrent threads or sockets that a system may have open at any time,
+via the use of aggregators; for example, several <CODE>DLockSrv</CODE> 
+servers may combine (by pointing to another, central <CODE>DLockSrv</CODE>)
+to allow for many more concurrent open lock requests than a single server
+can allow. Similarly, see the design for 
+<CODE>PD[Asynch]BatchTaskExecutor[Clt/Srv/Wrk]</CODE> to see how networks or
+rings of servers can form, to each of which many more workers or clients may
+be connected than could in any single server.
+<ul>
+  <li><a href="">hyperlink</a>
+</ul>
+
+<h2>Related Documentation</h2>
+The documentation for the <CODE>parallel</CODE> package.
+<ul>
+  <li><a href="../package-summary.html">hyperlink</a>
+</ul>
+
+<!-- Put @see and @since tags here. --></body>
+</html>

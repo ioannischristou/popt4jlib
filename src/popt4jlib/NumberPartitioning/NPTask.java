@@ -3,6 +3,7 @@ package popt4jlib.NumberPartitioning;
 import parallel.TaskObject;
 import parallel.ComparableTaskObject;
 import parallel.FasterParallelAsynchBatchPriorityTaskExecutor;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.io.Serializable;
 import parallel.SimplePriorityMsgPassingCoordinator;
@@ -31,9 +32,11 @@ public class NPTask implements ComparableTaskObject {
   private long _myid;
 
   private static boolean _useExecuteBatch=true;
-  private static FasterParallelAsynchBatchPriorityTaskExecutor _executor=null;  // set once from main()
+  private static FasterParallelAsynchBatchPriorityTaskExecutor _executor=null;  
+  // executor above set only once from main()
   private static int _maxDepthAllowed = 0;  // only set at most once from main()
-  private static int _minArrLenAllowed2Fork = Integer.MAX_VALUE;  // only set at most once from main()
+  private static int _minArrLenAllowed2Fork = Integer.MAX_VALUE;  
+  // above, only set at most once from main()
   private static long _numNodesDone = 0;
   private static long _id = 0;
 	/*
@@ -42,7 +45,8 @@ public class NPTask implements ComparableTaskObject {
 	private static long _numTotalNodes = 0;
   */
 	private static long _incumbent = Long.MAX_VALUE;
-  private static ThreadLocal _localIncs = new ThreadLocal() {  // for optimization purposes only
+  private static ThreadLocal _localIncs = new ThreadLocal() {  
+    // for optimization purposes only
     protected Object initialValue() {
       return new Double(Double.MAX_VALUE);
     }
@@ -50,7 +54,8 @@ public class NPTask implements ComparableTaskObject {
   //private static Object _waitOn = new Object();
 
 
-  public NPTask(long id, long[] desc_numbers, long array_sum, long subtractions, long additions) {
+  public NPTask(long id, long[] desc_numbers, long array_sum, 
+		            long subtractions, long additions) {
     _myid = id;
     _descNumbers = desc_numbers;
     _numbersSum = array_sum;
@@ -80,14 +85,16 @@ public class NPTask implements ComparableTaskObject {
     if (val>=0) {
       // prune by largest element being large enough
       double local_inc = ((Double) _localIncs.get()).doubleValue();
-      if (val<local_inc) {  // call -synchronized- updateIncumbent() only if it's worth it
+      if (val<local_inc) {  // call -synchronized- updateIncumbent() only if 
+				                    // it's worth it
         updateIncumbent(val);
       }
       return new Long(val);
     }
     if (_descNumbers.length==1) {
       double local_inc = ((Double) _localIncs.get()).doubleValue();
-      if (_descNumbers[0]<local_inc) {  // call -synchronized- updateIncumbent() only if it's worth it
+      if (_descNumbers[0]<local_inc) {  // call -synchronized- updateIncumbent() 
+				                                // only if it's worth it
         updateIncumbent(_descNumbers[0]);
       }
       return new Long(_descNumbers[0]);
@@ -95,7 +102,8 @@ public class NPTask implements ComparableTaskObject {
     long diff = _descNumbers[0] - _descNumbers[1];
     if (_descNumbers.length==2) {
       double local_inc = ((Double) _localIncs.get()).doubleValue();
-      if (diff<local_inc) {  // call -synchronized- updateIncumbent() only if it's worth it
+      if (diff<local_inc) {  // call -synchronized- updateIncumbent() only if 
+				                     // it's worth it
         updateIncumbent(diff);
       }
       return new Long(diff);
@@ -131,11 +139,14 @@ public class NPTask implements ComparableTaskObject {
       right_branch[i] = _descNumbers[i+1];
     //print(_id,"RIGHT: ", right_branch);
 
-    if (depth >= _maxDepthAllowed && _descNumbers.length >= _minArrLenAllowed2Fork) { // ok, submit to executor
-      NPTask left_node = new NPTask(incrId(), left_branch, left_sum, _numSubs+1, _numAdds);
-      NPTask right_node = new NPTask(incrId(), right_branch, _numbersSum, _numSubs, _numAdds+1);
+    if (depth >= _maxDepthAllowed && 
+			  _descNumbers.length >= _minArrLenAllowed2Fork) { // submit to executor
+      NPTask left_node = new NPTask(incrId(), left_branch, left_sum, 
+				                            _numSubs+1, _numAdds);
+      NPTask right_node = new NPTask(incrId(), right_branch, _numbersSum, 
+				                             _numSubs, _numAdds+1);
       if (_useExecuteBatch) {
-        Vector nodes = new Vector();
+        ArrayList nodes = new ArrayList(2);
         nodes.add(left_node);
         nodes.add(right_node);
         try {
@@ -143,10 +154,10 @@ public class NPTask implements ComparableTaskObject {
         }
 				catch (parallel.ParallelExceptionUnsubmittedTasks e2) {
 					// executor was full and some tasks were not submitted
-					nodes = e2.getUnsubmittedTasks();
+					Vector ns = e2.getUnsubmittedTasks();
 					// execute each unsubmitted task serially on the current thread
-					for (int i=0; i<nodes.size(); i++) {
-						NPTask ni = (NPTask) nodes.get(i);
+					for (int i=0; i<ns.size(); i++) {
+						NPTask ni = (NPTask) ns.get(i);
 						ni.run(); 
 					}
 				}
@@ -175,15 +186,17 @@ public class NPTask implements ComparableTaskObject {
 			// multi-threaded CPU utilization
 			if (_myid % 10 == 0 && foundOptimalSolution()) return null;
       // these nodes do not inrement the global _id.
-      NPTask left_node = new NPTask(_myid+1, left_branch, left_sum, _numSubs+1, _numAdds);
-      NPTask right_node = new NPTask(_myid+2, right_branch, _numbersSum, _numSubs, _numAdds+1);
+      NPTask left_node = new NPTask(_myid+1, left_branch, left_sum, 
+				                            _numSubs+1, _numAdds);
+      NPTask right_node = new NPTask(_myid+2, right_branch, _numbersSum, 
+				                             _numSubs, _numAdds+1);
       left_node.runAux(depth+1);
 			//decrNumOpenNodes();
       right_node.runAux(depth+1);
 			//decrNumOpenNodes();
     }
 
-    // if _isDone was used somehow, then the synchronization code would be needed
+    // if _isDone was used somehow then the synchronization code would be needed
     //synchronized (this) {
     _isDone = true;
     //}
@@ -256,7 +269,12 @@ public class NPTask implements ComparableTaskObject {
 
   /**
    * invoke as:
-   * <CODE>java -cp &lt;classpath&gt; popt4jlib.NumberPartitioning.NPTask &lt;#numbers&gt; &lt;maxnumbersize&gt; [numthreads(1)] [maxdepthallowed(0)] [seed(7)] [useExecuteBatch(1)] [minarrlenallowed2fork(Integer.MAX_VALUE)]</CODE>
+   * <CODE>
+	 * java -cp &lt;classpath&gt; popt4jlib.NumberPartitioning.NPTask 
+	 * &lt;#numbers&gt; &lt;maxnumbersize&gt; 
+	 * [numthreads(1)] [maxdepthallowed(0)] 
+	 * [seed(7)] [useExecuteBatch(1)] [minarrlenallowed2fork(Integer.MAX_VALUE)]
+	 * </CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -264,9 +282,13 @@ public class NPTask implements ComparableTaskObject {
     // register handle to show best soln if we stop the program via ctrl-c
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        System.err.println("best soln="+NPTask._incumbent+" Total nodes exec'd in executor="+NPTask._id+" _numNodesDone="+NPTask._numNodesDone);
-				//System.err.println("Total Nodes Created="+NPTask._numTotalNodes+" Max Open Nodes="+NPTask._maxOpenNodes);
-        System.err.println("Total time (msecs)="+(System.currentTimeMillis()-start));
+        System.err.println("best soln="+NPTask._incumbent+
+					                 " Total nodes exec'd in executor="+NPTask._id+
+					                 " _numNodesDone="+NPTask._numNodesDone);
+				//System.err.println("Total Nodes Created="+NPTask._numTotalNodes+
+				//                   " Max Open Nodes="+NPTask._maxOpenNodes);
+        System.err.println("Total time (msecs)="+
+					                 (System.currentTimeMillis()-start));
         System.err.flush();
       }
     }
@@ -287,7 +309,8 @@ public class NPTask implements ComparableTaskObject {
     long[] numbers = new long[n];
     long sum = 0L;
     for (int i=0; i<n; i++) {
-      numbers[i] = Math.round(utils.RndUtil.getInstance().getRandom().nextDouble()*m);
+      numbers[i] = 
+				Math.round(utils.RndUtil.getInstance().getRandom().nextDouble()*m);
       sum += numbers[i];
     }
     java.util.Arrays.sort(numbers);
@@ -301,15 +324,18 @@ public class NPTask implements ComparableTaskObject {
     for (int i=0; i<n; i++) System.err.print(numbers[i]+" ");
     System.err.println();
     try {
-			int maxcoordqsz = ((int) Math.pow(2.0, _maxDepthAllowed+2)*numthreads);
+			//int maxcoordqsz = ((int) Math.pow(2.0, _maxDepthAllowed+2)*numthreads);
+			int maxcoordqsz = Integer.MAX_VALUE;  // itc-20211009: used to be value in
+			                                      // commented code above instead
 			SimplePriorityMsgPassingCoordinator.setMaxSize(maxcoordqsz);
-      _executor = FasterParallelAsynchBatchPriorityTaskExecutor.
-										newFasterParallelAsynchBatchPriorityTaskExecutor(numthreads);
+      _executor = 
+				FasterParallelAsynchBatchPriorityTaskExecutor.
+				  newFasterParallelAsynchBatchPriorityTaskExecutor(numthreads);
       NPTask root = new NPTask(incrId(), numbers, sum, 0, 0);
       _executor.execute(root);
       while (!done()) {  // used to be !foundOptimalSolution() && !done()
         Thread.sleep(1000);
-        // code commented below is in fact worse than simple busy-waiting behavior
+        // code commented below is worse than simple busy-waiting behavior
         /*
         synchronized (_waitOn) {
           try {
@@ -322,11 +348,13 @@ public class NPTask implements ComparableTaskObject {
         */
 				synchronized(NPTask.class) {
 					System.err.println("_id=" + _id + " _numNodesDone=" + _numNodesDone +
-						                 " executor tasks=" + _executor.getNumTasksInQueue());
+						                 " executor tasks=" + 
+						                 _executor.getNumTasksInQueue());
 				}
       }
       System.out.println("Optimal partition diff="+_incumbent);
-			//System.out.println("Total Nodes Created="+NPTask._numTotalNodes+" Max Open Nodes="+NPTask._maxOpenNodes);      
+			//System.out.println("Total Nodes Created="+NPTask._numTotalNodes+
+			//                   " Max Open Nodes="+NPTask._maxOpenNodes);      
 			System.out.print("Finished. Shuting down executor...");
       _executor.shutDown();
       System.out.println("Done.");
@@ -350,7 +378,7 @@ public class NPTask implements ComparableTaskObject {
       */
     }
     else if (value > _incumbent) {
-      _localIncs.set(new Double(_incumbent));  // update incumbent known by thread
+      _localIncs.set(new Double(_incumbent));  // update inc. known by thread
     }
   }
 

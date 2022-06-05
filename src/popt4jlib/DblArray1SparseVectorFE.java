@@ -11,16 +11,21 @@ import java.util.Vector;
  * Notice also that the class is not thread-safe, just like the
  * DblArray1SparseVector class isn't either. Also notice that this class does
  * not support default-values other than zero for components.
+ * Notes:
+ * <ul>
+ * <li>2021-10-09: toughened the constructors by having them throw when corner
+ * cases (number of dimensions or length of indices/values arrays are zero).
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class DblArray1SparseVectorFE implements SparseVectorIntf {
   private static final long serialVersionUID = -6765183152262562934L;
-  private int[] _indices=null;  // _indices[0] indicates the first non-zero element
+  private int[] _indices=null;  // _indices[0] indicates the first non-zero elem
   private double[] _x=null;  // the entire array -with all zeros included
   private int _ilen;  // value of last non-zero element in _indices array
   private int _n;  // _x.length
@@ -43,12 +48,17 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
    * @param indices int[] must be in ascending order
    * @param values double[] corresponds to values for each index in the indices array
    * @param n int total length of the vector
-   * @throws IllegalArgumentException if indices or values is null or of 
-	 * different length or if n&le;indices[indices.length-1]
+   * @throws IllegalArgumentException if indices or values is null or empty or 
+	 * of different length or if n &le; max(0, indices[indices.length-1])
    */
-  public DblArray1SparseVectorFE(int[] indices, double[] values, int n) throws IllegalArgumentException {
-    if (indices==null || values==null || indices.length!=values.length)
-      throw new IllegalArgumentException("Arguments null or dimensions don't match");
+  public DblArray1SparseVectorFE(int[] indices, double[] values, int n) 
+		throws IllegalArgumentException {
+		if (n<=0)
+			throw new IllegalArgumentException("n<=0");
+    if (indices==null || values==null || 
+			  indices.length==0 || indices.length!=values.length)
+      throw new IllegalArgumentException("Arguments null or empty or "+
+				                                 "dimensions don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
     final int ilen = indices.length;
@@ -66,14 +76,20 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
    * each element by the multFactor passed in.
    * @param indices int[] elements must be in ascending order
    * @param values double[]
-   * @param n int total length of the vector
+   * @param n int total length of the vector must be strictly positive
    * @param multFactor double
    * @throws IllegalArgumentException if indices or values is null or of 
 	 * different length or if n&le;indices[indices.length-1]
    */
-  public DblArray1SparseVectorFE(int[] indices, double[] values, int n, double multFactor) throws IllegalArgumentException {
-    if (indices==null || values==null || indices.length!=values.length)
-      throw new IllegalArgumentException("Arguments null or dimensions don't match");
+  public DblArray1SparseVectorFE(int[] indices, double[] values, int n, 
+		                             double multFactor) 
+		throws IllegalArgumentException {
+		if (n<=0)
+			throw new IllegalArgumentException("n<=0");
+    if (indices==null || values==null || 
+			  indices.length==0 || indices.length!=values.length)
+      throw new IllegalArgumentException("Arguments null or empty or "+
+				                                 "dimensions don't match");
     if (n<=indices[indices.length-1])
       throw new IllegalArgumentException("dimension mismatch");
     final int ilen = indices.length;
@@ -300,7 +316,10 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
    * @return int
    */
   public int getIthNonZeroPos(int i) throws IndexOutOfBoundsException {
-    if (i<0 || i>=_ilen) throw new IndexOutOfBoundsException("index "+i+" out of bounds[0,"+_ilen+"] Vector is: "+this);
+    if (i<0 || i>=_ilen) 
+			throw new IndexOutOfBoundsException("index "+i+
+				                                  " out of bounds[0,"+_ilen+
+				                                  "] Vector is: "+this);
     return _indices[i];
   }
 	
@@ -328,7 +347,8 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
    * @throws IllegalArgumentException if other is null or does not have the
    * same dimensions as this vector or if m is NaN
    */
-  public void addMul(double m, VectorIntf other) throws IllegalArgumentException {
+  public void addMul(double m, VectorIntf other) 
+		throws IllegalArgumentException {
     if (other==null || other.getNumCoords()!=_n || Double.isNaN(m))
       throw new IllegalArgumentException("cannot call addMul(m,v) with v "+
                                          "having different dimensions than "+
@@ -392,7 +412,8 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
    */
   public String toString() {
     String x="[";
-    for (int i=0; i<_ilen-1; i++) x += "("+_indices[i]+","+_x[_indices[i]]+")"+", ";
+    for (int i=0; i<_ilen-1; i++) 
+			x += "("+_indices[i]+","+_x[_indices[i]]+")"+", ";
     if (_ilen>0) {
 			x += "("+_indices[_ilen-1]+","+_x[_indices[_ilen-1]]+")";
 		}
@@ -428,7 +449,8 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
    */
   public double innerProduct(VectorIntf other) throws IllegalArgumentException {
     if (other==null || other.getNumCoords()!=_n)
-      throw new IllegalArgumentException("dimensions don't match or null argument passed in");
+      throw new IllegalArgumentException("dimensions don't match or "+
+				                                 "null argument passed in");
     double sum=0.0;
     for (int i=0; i<_ilen; i++) {
       sum += _x[_indices[i]]*other.getCoord(_indices[i]);
@@ -527,8 +549,8 @@ public class DblArray1SparseVectorFE implements SparseVectorIntf {
 
 
   /**
-   * reduce the _indices and _values arrays and the _ilen value by removing
-   * the value at position pos.
+   * reduce the <CODE>_indices</CODE> and <CODE>_values</CODE> arrays and the 
+	 * <CODE>_ilen</CODE> value by removing the value at position pos.
    * @param pos int
    */
   private void shrink(int pos) {

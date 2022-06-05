@@ -1,16 +1,16 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib.LIP;
 
 import popt4jlib.IntArray1SparseVector;
 
 /**
- *
- * @author itc
+ * test driver for <CODE>sortAsc(),sortDesc()</CODE> methods of class
+ * <CODE>AdditiveSolver*</CODE>.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2017</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
  */
 public class IntArray1Test {
 	public static void main(String[] args) {

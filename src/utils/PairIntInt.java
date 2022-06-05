@@ -76,9 +76,13 @@ public class PairIntInt implements Comparable, Serializable {
   public int hashCode() {
     // return _first+_second;
 		int result = 17;
-		int c = (int)(_first ^ (_first >>> 32));
+		// int c = (int)(_first ^ (_first >>> 32));
+		// itc20211009: above is redundant and confusing for non-long fields		
+		int c = _first;
 		result = 31*result + c;
-		c = (int)(_second ^ (_second >>> 32));
+		// c = (int)(_second ^ (_second >>> 32));
+		// itc20211009: above is redundant and confusing for non-long fields
+		c = _second;
 		result = 31*result + c;
 		return result;		
   }

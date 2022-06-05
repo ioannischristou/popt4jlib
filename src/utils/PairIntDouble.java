@@ -17,23 +17,32 @@ import java.io.Serializable;
  * <ul>
  * <li> 20191227: modified <CODE>hashCode()</CODE> to work according to Bloch's
  * recommendations.
+ * <li> 20211009: corrected <CODE>hashCode()</CODE> for the int field part as
+ * FindBugs pointed out; forced Error to be thrown in some (impossible) error
+ * conditions that previously would throw NullPointerException's; if an object 
+ * of this class travels through the wire to another JVM process, it becomes 
+ * immediately "unmanaged" in that it belongs to no pool, and the related fields
+ * are appropriately set
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2019</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class PairIntDouble implements Comparable, Serializable {
   // private static final long serialVersionUID=...L;
-  int _key;
-  double _val;
-  private PairIntDoublePool _pool;
-  private int _poolPos;
-  private boolean _isUsed;
+  private int _key;
+  private double _val;
+  transient private PairIntDoublePool _pool;
+	// itc-20211009: below values are needed when this object is transferred
+	// through the wire, so it becomes "unmanaged"
+  transient private int _poolPos=-1;       // itc-20211009 used to be 0
+  transient private boolean _isUsed=true;  // itc-20211009 used to be false
   // private static long _totalNumObjs=0;
 
+	
   /**
    * returns a managed object if space exists for the current thread, else
    * creates a new unmanaged object. This method forms the only public
@@ -50,7 +59,7 @@ public class PairIntDouble implements Comparable, Serializable {
 
 
   /**
-   * get the key
+   * get the key.
    * @return int
    */
   public int getInt() {
@@ -59,7 +68,7 @@ public class PairIntDouble implements Comparable, Serializable {
 
 
   /**
-   * get the value
+   * get the value.
    * @return double
    */
   public double getDouble() {
@@ -119,7 +128,9 @@ public class PairIntDouble implements Comparable, Serializable {
       return 0;  // guard against NAN or infinity values
     // return (int) Math.floor(_val);
 		int result = 17;
-		int c = (int)(_key ^ (_key >>> 32));
+		// int c = (int)(_key ^ (_key >>> 32));
+		// itc20211009: above is redundant and confusing for non-long fields
+		int c = _key;
 		result = 31*result + c;
 		long tmplvl = Double.doubleToLongBits(_val);
 		c = (int)(tmplvl ^ (tmplvl >>> 32));
@@ -201,9 +212,13 @@ public class PairIntDouble implements Comparable, Serializable {
   void setKey(int id) {
     if (_isUsed) {
       _key = id;
-    } else {  // force a NullPointerException for debugging the pooling mechanism
+    } else {
+			/* itc-20211009: throw Error instead
+      // force a NullPointerException for debugging the pooling mechanism
       Integer null_y=null;
       _key = null_y.intValue();
+			*/
+			throw new Error("PairIntDouble.setKey(): _isUsed is false?");
     }
   }
 
@@ -214,9 +229,13 @@ public class PairIntDouble implements Comparable, Serializable {
    */
   void setVal(double v) {
     if (_isUsed) _val = v;
-    else {  // force a NullPointerException for debugging the pooling mechanism
+    else {  
+			/* itc-20211009: throw Error instead
+      // force a NullPointerException for debugging the pooling mechanism
       Double null_y=null;
       _val = null_y.doubleValue();
+			*/
+			throw new Error("PairIntDouble.setVal(): _isUsed is false?");
     }
   }
 

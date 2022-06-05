@@ -21,9 +21,14 @@ import java.io.Serializable;
  * It is the responsibility of the clients
  * to ensure that these methods must always be called in pairs (every getXXX
  * must be followed by a releaseXXX).
+ * <p>Notes:
+ * <ul>
+ * <li>2021-10-09: modified some error conditions to throw Error instead of
+ * NullPointerException's, and also simplified the use of Messenger objects
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -113,6 +118,7 @@ public class DMCoordinator implements Serializable {
    * eventually be followed by a releaseReadAccess() call.
    */
   synchronized public void getReadAccess() {
+		final utils.Messenger mger = utils.Messenger.getInstance();
     Thread current = Thread.currentThread();
     Integer cI = (Integer) _readerThreads.get(current);
     if (_writerThread == current || cI != null) {  // have lock already
@@ -131,8 +137,8 @@ public class DMCoordinator implements Serializable {
       ++_readersWaiting;
       try  {
         if (_PRINT_INTERVAL_MSECS>1)
-          utils.Messenger.getInstance().msg("DMCoordinator.getReadAccess(): waiting behind wait-writers "+
-                                            "TIMESTAMP="+System.currentTimeMillis(),0);
+          mger.msg("DMCoordinator.getReadAccess(): waiting behind wait-writers"+
+                   " TIMESTAMP="+System.currentTimeMillis(),0);
         wait(_PRINT_INTERVAL_MSECS);  // a writer is waiting before us
       }
       catch (InterruptedException e) {
@@ -144,8 +150,8 @@ public class DMCoordinator implements Serializable {
       ++_readersWaiting;
       try  {
         if (_PRINT_INTERVAL_MSECS>1)
-          utils.Messenger.getInstance().msg("DMCoordinator.getReadAccess(): waiting for writer to finish "+
-                                            "TIMESTAMP="+System.currentTimeMillis(),0);
+          mger.msg("DMCoordinator.getReadAccess(): waiting for writer "+
+						       "to finish TIMESTAMP="+System.currentTimeMillis(),0);
         wait(_PRINT_INTERVAL_MSECS);  // someone ELSE has a write lock
       }
       catch (InterruptedException e) {
@@ -156,12 +162,15 @@ public class DMCoordinator implements Serializable {
     // sanity check
     if (_writerThread!=null || _writerCalls!=0) {
       //throw new ParallelException("SANITY TEST FAILED");
-      utils.Messenger.getInstance().msg("DMCoordinator.getReadAccess(): SANITY TEST FAILED "+
-                                        "TIMESTAMP="+System.currentTimeMillis(),0);
+      mger.msg("DMCoordinator.getReadAccess(): SANITY TEST FAILED "+
+               "TIMESTAMP="+System.currentTimeMillis(),0);
+			/*
       // throw an exception without declaring it
       Integer x = null;
       System.err.println("throwing NullPointerException now to unwind computations...");
       System.err.println(x.intValue());
+			*/
+			throw new Error("SANITY TEST FAILED");
     }
     // ok, get the lock
     ++_readers;
@@ -185,7 +194,8 @@ public class DMCoordinator implements Serializable {
    * there is at least another reader in the system.
    */
   synchronized public void getWriteAccess() throws ParallelException {
-    Thread current = Thread.currentThread();
+    final utils.Messenger mger = utils.Messenger.getInstance();
+		Thread current = Thread.currentThread();
     if (_writerThread == current) {
       ++_writerCalls;
       return;  // we have the lock
@@ -209,8 +219,9 @@ public class DMCoordinator implements Serializable {
       ++_writersWaiting;
       try {
         if (_PRINT_INTERVAL_MSECS>1)
-          utils.Messenger.getInstance().msg("DMCoordinator.getWriteAccess(): waiting behind other wait-[readers/writers]"+
-                                            " TIMESTAMP="+System.currentTimeMillis(),0);
+          mger.msg("DMCoordinator.getWriteAccess(): waiting behind other "+
+						       "wait-[readers/writers] "+
+                   "TIMESTAMP="+System.currentTimeMillis(),0);
         wait(_PRINT_INTERVAL_MSECS);
       }
       catch (InterruptedException e) {
@@ -223,8 +234,9 @@ public class DMCoordinator implements Serializable {
       ++_writersWaiting;
       try {
         if (_PRINT_INTERVAL_MSECS>1)
-          utils.Messenger.getInstance().msg("DMCoordinator.getWriteAccess(): waiting for other [readers/writer] to finish "+
-                                            "TIMESTAMP="+System.currentTimeMillis(),0);
+          mger.msg("DMCoordinator.getWriteAccess(): waiting for other "+
+						       "[readers/writer] to finish "+
+                   "TIMESTAMP="+System.currentTimeMillis(),0);
         wait(_PRINT_INTERVAL_MSECS);
       }
       catch (InterruptedException e) {
@@ -250,7 +262,8 @@ public class DMCoordinator implements Serializable {
     Thread current = Thread.currentThread();
     Integer rcI = (Integer) _readerThreads.get(current);
     if (rcI==null) {
-      throw new ParallelException("Thread not allowed to call DMCoordinator.releaseReadAccess()");
+      throw new ParallelException("Thread not allowed to call "+
+				                          "DMCoordinator.releaseReadAccess()");
     }
     --_readers;
     int rcn = rcI.intValue()-1;
@@ -272,8 +285,8 @@ public class DMCoordinator implements Serializable {
    */
   synchronized public void releaseWriteAccess() throws ParallelException {
     if (_writerThread!=Thread.currentThread()) {
-      throw new ParallelException(
-      "Thread not allowed to call DMCoordinator.releaseWriteAccess()");
+      throw new ParallelException("Thread not allowed to call "+
+				                          "DMCoordinator.releaseWriteAccess()");
     }
     if (--_writerCalls==0) {
       _writerThread = null;  // no writer in the system any more

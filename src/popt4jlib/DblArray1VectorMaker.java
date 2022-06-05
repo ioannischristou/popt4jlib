@@ -30,7 +30,8 @@ public class DblArray1VectorMaker implements Chromosome2ArgMakerIntf {
    * @throws IllegalArgumentException if chromosome is not a double[]
    * @return Object DblArray1Vector having as data the double[] ref. passed in
    */
-  public Object getArg(Object chromosome, HashMap params) throws OptimizerException, IllegalArgumentException {
+  public Object getArg(Object chromosome, HashMap params) 
+		throws OptimizerException, IllegalArgumentException {
     try {
       double[] arr = (double[]) chromosome;
       // DblArray1Vector v = new DblArray1Vector(arr);
@@ -41,7 +42,8 @@ public class DblArray1VectorMaker implements Chromosome2ArgMakerIntf {
 			return v;
     }
     catch (ClassCastException e) {
-      throw new IllegalArgumentException("getArg(): chromosome argument is not a double[] array");
+      throw new IllegalArgumentException("getArg(): chromosome argument "+
+				                                 "is not a double[] array");
     }
   }
 }

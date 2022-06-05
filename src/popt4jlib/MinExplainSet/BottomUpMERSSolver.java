@@ -127,8 +127,11 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 	 * @return BoolVector a minimal cardinality vector covering the requested
 	 * percentage of instances that are coverable by the rules; may return null
 	 * if no solution is found due to a low <CODE>_K</CODE> value set
+	 * @throws IllegalArgumentException if the argument is null
 	 */
 	public BoolVector solve(BoolVector cur_rules) {
+		if (cur_rules==null) 
+			throw new IllegalArgumentException("null cur_rules");
 		ArrayList greedy_sols = new ArrayList();  // needed in case of Beam-Search
 		BottomUpMERSSolver saux = new BottomUpMERSSolver(this);
 		saux._queue = new BoundedBufferArrayUnsynchronized(1);
@@ -137,7 +140,7 @@ public class BottomUpMERSSolver extends BaseMESSolver {
 		_queue.reset();
 		
 		// short-cut
-		if (cur_rules!=null && cur_rules.cardinality()>_maxNumRulesAllowed) 
+		if (cur_rules.cardinality()>_maxNumRulesAllowed) 
 			return null;
 		
 		try {

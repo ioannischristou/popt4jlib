@@ -1,17 +1,11 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib.NumberPartitioning;
 
 import parallel.ParallelException;
 
 /**
  * auxiliary class using the <CODE>ThreadLocal</CODE> mechanism to create
- * thread-local <CODE>ReleaseFNPTask2Object</CODE> object pools. Essentially, the
- * three classes <CODE>ReleaseFNPTask2Object, ReleaseFNPTask2ObjectPool,
+ * thread-local <CODE>ReleaseFNPTask2Object</CODE> object pools. Essentially, 
+ * the three classes <CODE>ReleaseFNPTask2Object, ReleaseFNPTask2ObjectPool,
  * ReleaseFNPTask2ObjectThreadLocalPools</CODE>
  * implement a pattern that this author termed "The Thread-Local Object-Pool
  * Design Pattern" that can result in dramatic speedups in run-time especially
@@ -69,8 +63,10 @@ class ReleaseFNPTask2ObjectThreadLocalPools {
 	  throws ParallelException, IllegalArgumentException {
 		if (!_poolSizeResetAllowed) 
 			throw new ParallelException(
-				"popt4jlib.NumberPartitioning.ReleaseFNPTask2ObjectThreadLocalPools.setPoolSize(): "+
-				"getThreadLocalPool() or setPoolSize has already been called from some thread");
+				"popt4jlib.NumberPartitioning."+
+				"ReleaseFNPTask2ObjectThreadLocalPools.setPoolSize(): "+
+				"getThreadLocalPool() or setPoolSize has already been called "+
+				"from some thread");
 		_poolSizeResetAllowed = false;
 		ReleaseFNPTask2ObjectPool.setPoolSize(poolsize);
 	}

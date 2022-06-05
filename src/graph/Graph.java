@@ -1093,13 +1093,16 @@ public class Graph implements Serializable {
    * @return double the percentage of arcs from the clique that are also present
    * in the Graph g
    * @throws GraphException if one of the nodes has no labels
-   * @throws IllegalArgumentException if the nodes argument is null or empty
+   * @throws IllegalArgumentException if the nodes argument is null or empty or
+	 * if g is null
    * @throws ParallelException if the current thread has a write-lock on the
    * Graph object with the largest _id. This is needed to ensure no deadlocks
    * can arise.
    */
-  public double getCliqueLabelSupport(Set nodes, Graph g) throws GraphException, ParallelException {
-    if (g==this) return 1.0;
+  public double getCliqueLabelSupport(Set nodes, Graph g) 
+		throws GraphException, ParallelException {
+    if (g==null) throw new IllegalArgumentException("null Graph g");
+		if (g==this) return 1.0;
     boolean this_locked = false;
     boolean g_locked = false;
     boolean this_is_first = _id < g.getId();
@@ -1107,7 +1110,8 @@ public class Graph implements Serializable {
       // first, ensure no deadlocks can arise
       if ((this_is_first && g._rwLocker.currentThreadHasWriteLock()) ||
           (!this_is_first && _rwLocker.currentThreadHasWriteLock()))
-        throw new ParallelException("current thread has write-lock on the Graph object w/ largest _id");
+        throw new ParallelException("current thread has write-lock on "+
+					                          "the Graph object w/ largest _id");
       if (this_is_first) {
         getReadAccess();
         this_locked = true;
@@ -1121,8 +1125,8 @@ public class Graph implements Serializable {
         this_locked = true;
       }
       // now do the work
-      if (nodes == null || nodes.size() == 0)throw new IllegalArgumentException(
-          "null of empty clique");
+      if (nodes == null || nodes.size() == 0)
+				throw new IllegalArgumentException("null of empty clique");
       if (_nodeLabels == null || g == null || g._nodeLabels == null)
         throw new GraphException("no node labels in one Graph");
       double res = 0;
@@ -1878,14 +1882,15 @@ public class Graph implements Serializable {
 
 
   /**
-   *
+   * compute all cycles of 5 distinct nodes in this Graph, that contain the 
+	 * given link.
    * @param li Link
    * @param maxsetcount Integer
    * @throws GraphException
    * @return Set // Set&lt;Set&lt;Integer nodeid&gt; &gt;
    */
   private Set get5CycleBasedConnectedNodes(Link li, Integer maxsetcount)
-      throws GraphException {
+    throws GraphException {
     try {
       getReadAccess();
       int maxcount = Integer.MAX_VALUE;
@@ -1918,10 +1923,10 @@ public class Graph implements Serializable {
             if (n4idi == n1.getId() || n4idi == n2.getId())
               continue;
             /*  condition below is never true
-                       if (n4idi==n5.getId()) {
-              add1235 = true;
-              continue;
-                       }
+              if (n4idi==n5.getId()) {
+                add1235 = true;
+                continue;
+              }
              */
             // Node n4 = _nodes[n4id.intValue()];
             Set c5 = new IntSet();
@@ -1978,7 +1983,7 @@ public class Graph implements Serializable {
 
 
   /**
-   * was used for debugging purposes
+   * was used for debugging purposes.
    * @param clique Collection  // Collection&lt;Integer nid&gt;
    */
   private void print(Collection clique) {

@@ -1,16 +1,26 @@
 package parallel;
 
+import java.io.Serializable;
+
+
 /**
  * Interface for classes that implement bounded or unbounded, synchronized or 
  * unsynchronized buffers operating in FIFO order.
+ * <p>Notes:
+ * <ul>
+ * <li>20211009: the interface now extends <CODE>Serializable</CODE> so that all
+ * implementing classes are serializable. This means that all objects to be 
+ * added to such buffers must also be serializable, otherwise the underlying 
+ * buffer data structure must be declared transient.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2020</p>
+ * <p>Copyright: Copyright (c) 2020-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
-public interface BufferIntf {
+public interface BufferIntf extends Serializable {
 	
 	/**
 	 * adds an element at the end of this buffer.

@@ -2,6 +2,7 @@ package parallel;
 import utils.Pair;
 import java.util.HashMap;
 import java.util.Comparator;
+import java.util.NoSuchElementException;
 
 
 /**
@@ -14,7 +15,7 @@ import java.util.Comparator;
  * in the <CODE>graph.Graph</CODE> class.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2017</p>
+ * <p>Copyright: Copyright (c) 2017-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -62,6 +63,26 @@ public class BoundedMinHeapUnsynchronized {
 		_positions = new HashMap(other._positions);
 		_comp = other._comp;
 		_curSize = other._curSize;
+	}
+	
+	
+	/**
+	 * method needed by the <CODE>UnboundedMinHeapUnsynchronized</CODE> class.
+	 * @return BoundedMinHeapUnsynchronized with double the capacity of this one
+	 */
+	BoundedMinHeapUnsynchronized newCopyDoubleCapacity() {
+		final int mx = _heap.length-1;
+		BoundedMinHeapUnsynchronized ret = new BoundedMinHeapUnsynchronized(mx+mx);
+		for (int i=0; i<_heap.length; i++) ret._heap[i] = _heap[i];
+		java.util.Iterator it = _positions.keySet().iterator();
+		while (it.hasNext()) {
+			Object k = it.next();
+			Integer v = (Integer) _positions.get(k);
+			ret._positions.put(k, v);
+		}
+		ret._comp = _comp;
+		ret._curSize = _curSize;
+		return ret;
 	}
 
 
@@ -272,7 +293,13 @@ public class BoundedMinHeapUnsynchronized {
 
 
 		public Object next() {
-			return _queue.remove();
+			try {
+				return _queue.remove();
+			}
+			catch (IndexOutOfBoundsException e) {
+				throw new NoSuchElementException("BoundedMinHeapIterator: no more "+
+					                               "elements in this queue");
+			}
 		}
 		
 		

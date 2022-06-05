@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib.NumberPartitioning;
 
 import parallel.ParallelException;
@@ -14,7 +8,7 @@ import parallel.ParallelException;
  * <CODE>FNPTask2, FNPTask2Pool, FNPTask2ThreadLocalPools</CODE>
  * implement a pattern that this author termed "The Thread-Local Object-Pool
  * Design Pattern" that can result in dramatic speedups in run-time especially
- * when an application would need to create lots of <CODE>FNPTask2</CODE> objects
+ * when an application needs to create lots of <CODE>FNPTask2</CODE> objects
  * simultaneously from many concurrent threads. Not part of the public API.
  * Notice: This implementation only allows the creation of pools of 
  * <CODE>FNPTask2</CODE> objects of a single size for each thread. In
@@ -39,8 +33,10 @@ class FNPTask2ThreadLocalPools {
     }
   };
 
-  static FNPTask2Pool getThreadLocalPool(int n) throws IllegalArgumentException {
-    if (n<=0) throw new IllegalArgumentException("FNPTask2ThreadLocalPools.getThreadLocalPool(n): n is <= 0");
+  static FNPTask2Pool getThreadLocalPool(int n) throws IllegalArgumentException{
+    if (n<=0) 
+			throw new IllegalArgumentException("FNPTask2ThreadLocalPools."+
+				                                 "getThreadLocalPool(n): n is <= 0");
 		FNPTask2Pool p = (FNPTask2Pool) _pools.get();
     if (p==null) {
 			synchronized (FNPTask2ThreadLocalPools.class) {
@@ -70,7 +66,8 @@ class FNPTask2ThreadLocalPools {
 		if (!_poolSizeResetAllowed) 
 			throw new ParallelException(
 				"popt4jlib.NumberPartitioning.FNPTask2ThreadLocalPools.setPoolSize(): "+
-				"getThreadLocalPool(n) or setPoolSize(size) has already been called from some thread");
+				"getThreadLocalPool(n) or setPoolSize(size) has already been called "+
+				"from some thread");
 		_poolSizeResetAllowed = false;
 		FNPTask2Pool.setPoolSize(poolsize);
 	}

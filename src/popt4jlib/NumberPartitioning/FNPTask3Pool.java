@@ -1,12 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib.NumberPartitioning;
-
-import java.util.*;
 
 
 /**
@@ -16,7 +8,7 @@ import java.util.*;
  * point runs out of space in its thread-local pool. Not part of the public API.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2014-2015</p>
+ * <p>Copyright: Copyright (c) 2014-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -85,7 +77,6 @@ class FNPTask3Pool {
 	 */
   void returnObjectToPool(FNPTask3 ind) {
 		_pool[++_topAvailPos] = ind;
-    return;
   }
 	
 	

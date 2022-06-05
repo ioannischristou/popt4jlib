@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib.NumberPartitioning;
 
 import parallel.ParallelException;
@@ -25,7 +19,7 @@ import parallel.ParallelException;
  * length objects.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2014-2015</p>
+ * <p>Copyright: Copyright (c) 2014-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -40,7 +34,9 @@ class FNPTaskThreadLocalPools {
   };
 
   static FNPTaskPool getThreadLocalPool(int n) throws IllegalArgumentException {
-    if (n<=0) throw new IllegalArgumentException("FNPTaskThreadLocalPools.getThreadLocalPool(n): n is <= 0");
+    if (n<=0) 
+			throw new IllegalArgumentException("FNPTaskThreadLocalPools."+
+				                                 "getThreadLocalPool(n): n is <= 0");
 		FNPTaskPool p = (FNPTaskPool) _pools.get();
     if (p==null) {
 			synchronized (FNPTaskThreadLocalPools.class) {
@@ -70,7 +66,8 @@ class FNPTaskThreadLocalPools {
 		if (!_poolSizeResetAllowed) 
 			throw new ParallelException(
 				"popt4jlib.NumberPartitioning.FNPTaskThreadLocalPools.setPoolSize(): "+
-				"getThreadLocalPool(n) or setPoolSize(size) has already been called from some thread");
+				"getThreadLocalPool(n) or setPoolSize(size) has already been called "+
+				"from some thread");
 		_poolSizeResetAllowed = false;
 		FNPTaskPool.setPoolSize(poolsize);
 	}

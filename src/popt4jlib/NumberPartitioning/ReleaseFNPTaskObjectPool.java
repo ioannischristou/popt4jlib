@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package popt4jlib.NumberPartitioning;
 
 import java.util.*;
@@ -55,7 +49,8 @@ class ReleaseFNPTaskObjectPool {
    * @return ReleaseFNPTaskObject
    */
   static ReleaseFNPTaskObject getObject(FNPTask data, int threadid) {
-    ReleaseFNPTaskObjectPool pool = ReleaseFNPTaskObjectThreadLocalPools.getThreadLocalPool();
+    ReleaseFNPTaskObjectPool pool = 
+			ReleaseFNPTaskObjectThreadLocalPools.getThreadLocalPool();
     ReleaseFNPTaskObject p = pool.getObjectFromPool();
     if (p!=null) {  // ok, return managed object
       p.setData(data, threadid);
@@ -66,9 +61,9 @@ class ReleaseFNPTaskObjectPool {
 
 	
 	/**
-	 * method is only called from <CODE>ReleaseFNPTaskObjectThreadLocalPools</CODE> 
-	 * once right after this object is constructed to avoid escaping "this" in the
-	 * constructor.
+	 * method is only called from 
+	 * <CODE>ReleaseFNPTaskObjectThreadLocalPools</CODE> once right after this 
+	 * object is constructed to avoid escaping "this" in the constructor.
 	 */
 	void initialize() {
     for (int i=0; i<_NUMOBJS; i++) {
@@ -76,6 +71,7 @@ class ReleaseFNPTaskObjectPool {
     }		
 	}
 
+	
   /**
    * return a managed "free" object from the pool, or null if it cannot find
    * one.
@@ -91,7 +87,7 @@ class ReleaseFNPTaskObjectPool {
     } else {  // try the left end
 			if (_minUsedPos>0) {
 				_minUsedPos--;
-				ReleaseFNPTaskObject ind = (ReleaseFNPTaskObject) _pool.get(_minUsedPos);
+				ReleaseFNPTaskObject ind = (ReleaseFNPTaskObject)_pool.get(_minUsedPos);
 				ind.setIsUsed();
 				if (_minUsedPos>_maxUsedPos) _maxUsedPos = _minUsedPos;
 				return ind;

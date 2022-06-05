@@ -1,0 +1,100 @@
+package parallel;
+
+/**
+ * <p>Title: parallel</p>
+ * <p>Description: Singleton class providing proper synchronization between
+ * readers and writers. Many readers may concurently execute, but
+ * there can be only one writer at a time, and while a writer has
+ * control, no reader may gain access. The clients of this class
+ * when wishing to gain read access, simply call
+ * DMCoordinator.getInstance().getReadAccess()
+ * and when they're done must call
+ * DMCoordinator.getInstance().releaseReadAccess()
+ * and similarly for writers. It is the responsibility of the clients
+ * to ensure that these methods must always be called in pairs (every getXXX
+ * must be followed by a releaseXXX).
+ * </p>
+ * <p>Copyright: Copyright (c) 2003</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+
+public class DMCoordinator {
+
+  // synchronizing variables
+  private int _readers;
+  private int _writers;
+
+  static private DMCoordinator _DMCoord=null;
+
+
+  /**
+   * provides, securely, the unique instance of DMCoordinator that is
+   * used to coordinate readers and writers. The method needs to be
+   * synchronized (at the class level, as it's a static method) so as
+   * to avoid the possibility of two different client threads receiving
+   * different DMCoordinator objects to coordinate on (which results in no
+   * coordination).
+   */
+  synchronized static public DMCoordinator getInstance() {
+    if (_DMCoord==null) _DMCoord = new DMCoordinator();
+    return _DMCoord;
+  }
+
+
+  synchronized public void getReadAccess() {
+    try {
+      while (_writers>0) {
+        wait();
+      }
+      ++_readers;
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();  // this is the recommended action
+    }
+  }
+
+
+  synchronized public void getWriteAccess() {
+    try {
+      while (_writers>0 || _readers>0) {
+        wait();
+      }
+      ++_writers;
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();  // this is the recommended action
+    }
+  }
+
+
+  synchronized public void ReleaseReadAccess() {
+    --_readers;
+    if (_readers==0) {
+      notifyAll();
+    }
+  }
+
+
+  synchronized public void ReleaseWriteAccess() {
+    --_writers;
+    notifyAll();
+  }
+
+
+  synchronized public int getNumReaders() {
+    return _readers;
+  }
+
+
+  synchronized public int getNumWriters() {
+    return _writers;
+  }
+
+
+  private DMCoordinator() {
+    _readers=0;
+    _writers=0;
+  }
+}

@@ -62,8 +62,9 @@ public class DblArray1ChromosomeVelocityAdder
     if (chromosome==null) throw new OptimizerException("null chromosome arg");
     if (chromosome instanceof double[] == false)
       throw new OptimizerException("chromosome is not double[]");
-    if (velocity!=null && velocity instanceof double[] == false)
-      throw new OptimizerException("non-null velocity is not double[]");
+		if (velocity==null) throw new OptimizerException("null velocity arg");
+    if (velocity instanceof double[] == false)
+      throw new OptimizerException("velocity is not double[]");
 		final Messenger mger = Messenger.getInstance();
     final double[] c = (double[]) chromosome;
     final double[] v = (double[]) velocity;

@@ -225,9 +225,12 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 			if (found) {
 				node_input = _linearUnit.evalB(layer_i_inputs, weights, pos);
 			}
+			/*
+			// elseif below is not possible
 			else if (output_node==this) {  // our node is the output node
 				throw new IllegalStateException("GELU cannot be used as output node");
 			}
+			*/
 			else {
 				throw new IllegalStateException("couldn't find this node in FFNN");
 			}
@@ -591,10 +594,13 @@ public class GELU extends BaseNNNode implements NNNodeIntf {
 					pos += layer_i_inputs.length + 1;  // +1 is for the bias
 				}
 				layer_i_inputs = layeri_outputs;  // set the inputs for next iteration
-			}	
+			}
+			/*
+			// if condition below is impossible
 			if (output_node==this) {  // our node is the output node
 				throw new IllegalStateException("GELU cannot be used as output node");
 			}
+			*/
 			throw new IllegalStateException("for weight-index="+index+" cannot find "+
 				                              " node corresponding to it");
 		}

@@ -74,6 +74,7 @@ import java.io.FileReader;
  * <li>20201204: when expanding an initially empty solution, the size for the
  * parameter <CODE>_K</CODE> (number of top candidate rules to consider using to
  * expand the current solution) is increased 100-x.
+ * <li>20211009: the <CODE>solve()</CODE> method throws if argument is null.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -155,8 +156,11 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 	 * in the result-set, usually should be empty
 	 * @return BoolVector the minimum rule-set sought; may be null if the process
 	 * fails (due to low _K and/or low _minDepth4BeamSearch parameter values)
+	 * @throws IllegalArgumentException if cur_rules is null
 	 */
 	public BoolVector solve(BoolVector cur_rules) {
+		if (cur_rules==null)
+			throw new IllegalArgumentException("cur_rules is null");
 		synchronized(BottomUpMERSSolver2MT.class) {
 			if (_isRunning) {
 				throw new IllegalStateException("BottomUpMERSSolver2MT.solve():"+
@@ -204,7 +208,7 @@ public class BottomUpMERSSolver2MT extends BottomUpMERSSolver {
 	 */
 	private void solve2(BoolVector cur_rules) {
 		// short-cut
-		if (cur_rules!=null && cur_rules.cardinality()>_maxNumRulesAllowed) 
+		if (cur_rules.cardinality()>_maxNumRulesAllowed) 
 			return;
 		
 		try {

@@ -11,9 +11,13 @@ import utils.DataMgr;
  * accept an arbitrary number of input signals, and it is the weights that are
  * passed in the params argument of the <CODE>eval()</CODE> method that 
  * determine the number of the input signals expected by this ANN.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-10-16: made all private members final.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2020</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -24,17 +28,17 @@ public class FFNN implements FunctionIntf {
 	 * in this matrix represents a hidden layer. The output layer is NOT 
 	 * represented in this matrix.
 	 */
-	private NNNodeIntf[][] _hiddenLayers;
+	final private NNNodeIntf[][] _hiddenLayers;
 	/**
 	 * field stores the single output node of the ANN.
 	 */
-	private OutputNNNodeIntf _outputNode;
+	final private OutputNNNodeIntf _outputNode;
 	
 	
 	/**
 	 * single public constructor.
 	 * @param hiddenLayers Object[]  // NNNodeIntf[][]
-	 * @param output 
+	 * @param output OutputNNNodeIntf the single output node
 	 */
 	public FFNN(Object[] hiddenLayers, OutputNNNodeIntf output) {
 		_outputNode = output;

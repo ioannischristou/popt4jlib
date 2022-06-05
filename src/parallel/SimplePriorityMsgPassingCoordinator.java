@@ -27,7 +27,7 @@ public class SimplePriorityMsgPassingCoordinator {
 
 
   /**
-   * private constructor in accordance with the Singleton Design Pattern
+   * private constructor in accordance with the Singleton Design Pattern.
    */
   private SimplePriorityMsgPassingCoordinator() {
     _data = new TreeSet();
@@ -62,7 +62,7 @@ public class SimplePriorityMsgPassingCoordinator {
 
 
   /**
-   * return the _maxSize data member
+   * return the _maxSize data member.
    * @return int
    */
   public synchronized static int getMaxSize() { return _maxSize; }

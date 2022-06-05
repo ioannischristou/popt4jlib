@@ -20,12 +20,18 @@ import java.io.Serializable;
  * Notice also that the class is thread-safe but quite expensive. A faster but
  * not thread-safe implementation is DblArray1SparseVector. Also notice that 
  * this class does not support default-values other than zero for components.
+ * Notes:
+ * <ul>
+ * <li>2021-10-09: toughened the constructors by having them throw illegal 
+ * argument exceptions in corner cases (when number of dimensions or length or
+ * indices/values arrays are zero).
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2015</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class DblArray1SparseVectorMT extends DblArray1SparseVector {
   private static final long serialVersionUID = -303574319696853810L;

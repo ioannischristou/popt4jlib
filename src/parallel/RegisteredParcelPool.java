@@ -25,9 +25,14 @@ import java.util.ArrayList;
  * <CODE>RegisteredParcelPoolFailTest</CODE> for further details on how to show
  * this phenomenon.
  * Not part of the public API.
+ * <p>Notes:
+ * <ul>
+ * <li>2021-10-09: modified some (impossible) error conditions to throw Error
+ * instead of NullPointerException's
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -44,7 +49,9 @@ final class RegisteredParcelPool {
 	 * at the time of return.
 	 */
 	private static final boolean _DO_GET_SANITY_TEST=true;
-  private static boolean _ignoreReleaseSanityTest = false;	// auxiliary member to disable test in certain cases
+  private static boolean _ignoreReleaseSanityTest = false;	// auxiliary member 
+	                                                          // to disable test 
+	                                                          // in certain cases
 	/**
    * the maximum number of objects this pool can handle.
    */
@@ -78,7 +85,8 @@ final class RegisteredParcelPool {
    * @return RegisteredParcel
    */
   static RegisteredParcel getObject(int fromid, int toid, Object data) {
-    RegisteredParcelPool pool = RegisteredParcelThreadLocalPools.getThreadLocalPool();
+    RegisteredParcelPool pool = 
+			RegisteredParcelThreadLocalPools.getThreadLocalPool();
     RegisteredParcel p = pool.getObjectFromPool();
     if (p!=null) {  // ok, return managed object
       p.setFromId(fromid);
@@ -111,8 +119,12 @@ final class RegisteredParcelPool {
       _maxUsedPos++;
       RegisteredParcel dlp = (RegisteredParcel) _pool.get(_maxUsedPos);
 			if (_DO_GET_SANITY_TEST && dlp.isUsed()) {
-				Integer yI = null;
-				System.err.println("getObjectFromPool(): right doesn't work: null ref yI="+yI.intValue());  // force NullPointerException
+				/*
+				Integer yI = null;  // force NullPointerException below
+				System.err.println("getObjectFromPool(): right doesn't work: "+
+					                 "null ref yI="+yI.intValue()); 
+				*/
+				throw new Error("getObjectFromPool(): right doesn't work");
 			}
       dlp.setIsUsed();
 			if (_minUsedPos>_maxUsedPos) _minUsedPos = _maxUsedPos;
@@ -122,8 +134,12 @@ final class RegisteredParcelPool {
 				_minUsedPos--;
 				RegisteredParcel ind = (RegisteredParcel) _pool.get(_minUsedPos);
 				if (_DO_GET_SANITY_TEST && ind.isUsed()) {
-					Integer yI = null;
-					System.err.println("getObjectFromPool(): left doesn't work: null ref yI="+yI.intValue());  // force NullPointerException
+					/*
+					Integer yI = null;  // force NullPointerException below
+					System.err.println("getObjectFromPool(): left doesn't work: "+
+						                 "null ref yI="+yI.intValue());  
+					*/
+					throw new Error("getObjectFromPool(): left doesn't work");
 				}
 				ind.setIsUsed();
 				if (_minUsedPos>_maxUsedPos) _maxUsedPos = _minUsedPos;
@@ -140,18 +156,27 @@ final class RegisteredParcelPool {
    */
   void returnObjectToPool(RegisteredParcel dlp) {
 		if (_DO_RELEASE_SANITY_TEST && !_ignoreReleaseSanityTest) {
-			RegisteredParcelPool pool = RegisteredParcelThreadLocalPools.getThreadLocalPool();
+			RegisteredParcelPool pool = 
+				RegisteredParcelThreadLocalPools.getThreadLocalPool();
 			if (pool!=this) {
-				Integer yI = null;
-				System.err.println("null ref yI="+yI.intValue());  // force NullPointerException
+				/*
+				Integer yI = null;  // force NullPointerException below
+				System.err.println("null ref yI="+yI.intValue());
+				*/
+				throw new Error("returnObjectToPool(): RPTLP.getThreadLocalPool() "+
+					              "returns another pool than this?");
 			}
 		}
 		// corner case: the returned object was the only one "out-of-the-pool"
 		if (_maxUsedPos==_minUsedPos) {
 			if (_DO_RELEASE_SANITY_TEST && !_ignoreReleaseSanityTest) {
 				if (dlp.getPoolPos()!=_minUsedPos) {
-					Integer yI = null;
-					System.err.println("null ref yI="+yI.intValue());  // force NullPointerException					
+					/*
+					Integer yI = null;  // force NullPointerException below
+					System.err.println("null ref yI="+yI.intValue());
+					*/
+					throw new Error("dlp.getPoolPos()!=_minUsedPos but "+
+						              "_minUsedPos==_maxUsedPos?");
 				}
 			}
 			_maxUsedPos = -1;

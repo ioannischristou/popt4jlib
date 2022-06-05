@@ -123,8 +123,11 @@ public class BottomUpMESSolver extends BaseMESSolver {
 	 * @return BoolVector a minimal cardinality vector covering the requested
 	 * percentage of instances that are coverable by the rules; may return null
 	 * if no solution is found due to a low <CODE>_K</CODE> value set
+	 * @throws IllegalArgumentException if cur_vars is null
 	 */
 	public BoolVector solve(BoolVector cur_vars) {
+		if (cur_vars==null) 
+			throw new IllegalArgumentException("cur_vars is null");
 		ArrayList greedy_sols = new ArrayList();  // needed in case of Beam-Search
 		BottomUpMESSolver saux = new BottomUpMESSolver(this);
 		saux._queue = new BoundedBufferArrayUnsynchronized(1);
@@ -133,7 +136,7 @@ public class BottomUpMESSolver extends BaseMESSolver {
 		_queue.reset();
 		
 		// short-cut
-		if (cur_vars!=null && cur_vars.cardinality()>_maxNumVarsAllowed) 
+		if (cur_vars.cardinality()>_maxNumVarsAllowed) 
 			return null;
 		
 		try {
@@ -245,8 +248,11 @@ public class BottomUpMESSolver extends BaseMESSolver {
 	 * @return HashMap // HashMap&lt;Integer num_inst_covered, BoolVector vars&gt;
 	 * a map containing minimal cardinality sets of variables covering more and
 	 * more of the instance set that can be covered.
+	 * @throws Exception 
 	 */
 	public HashMap solveContinuously(BoolVector cur_vars) throws Exception {
+		if (cur_vars==null)
+			throw new IllegalArgumentException("cur_vars is null");
 		int best_coverage = 0;
 		HashMap result = new HashMap();  // map<Integer num_inst_cov, BoolVector>
 		BufferIntf queue = new UnboundedBufferArrayUnsynchronized(_K);

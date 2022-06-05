@@ -17,7 +17,8 @@ import utils.RndUtil;
 /**
  * implements the KMeans|| method for seeds initialization for the K-Means
  * algorithm. Multi-threaded implementation assumes that data-set fits in main
- * memory.
+ * memory. Notice that any weights attached to the data points (case of weighted
+ * clustering) are not taken into account in this algorithm.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2018</p>
@@ -27,24 +28,24 @@ import utils.RndUtil;
  */
 public class KMeansCC implements ClustererInitIntf {
 	/**
-	 * _data is the array of data points to be clustered.
+	 * <CODE>_data</CODE> is the array of data points to be clustered.
 	 */
 	final private List _data;  // List<VectorIntf>
 	
 	/**
-	 * _Cind is the set of indices indicating which of the data in the list _data
-	 * are included in the current set C.
+	 * <CODE>_Cind</CODE> is the set of indices indicating which of the data in 
+	 * the list <CODE>_data</CODE> are included in the current set C.
 	 */
 	final private Set _CInd;  // Set<Integer>
 	
 	/**
-	 * for the current set of centers C, _minPtDist2FromC[i] is the quantity
-	 * d(_data[i],C)^2.
+	 * for the current set of centers C, <CODE>_minPtDist2FromC[i]</CODE> is the 
+	 * quantity d(_data[i],C)^2.
 	 */
 	private double[] _minPtDist2FromC;  
 	
 	/**
-	 * _l is the parameter lambda in K-Means|| algorithm.
+	 * <CODE>_l</CODE> is the parameter &lambda; in K-Means|| algorithm.
 	 */
 	final private int _l;
 	
@@ -191,7 +192,7 @@ public class KMeansCC implements ClustererInitIntf {
 			_CInd.add(new Integer(pi));
 		}
 		_mger.msg("KMeansCC: initial cluster set w/ "+_CInd.size()+" pts created.", 
-			       0);
+ 			        0);
 		// 6.-8. final reclustering
 		if (_CInd.size()==k) {
 			// return the exact points
@@ -256,7 +257,7 @@ public class KMeansCC implements ClustererInitIntf {
 	
 	
 	/**
-	 * test-driver method for KMeansCC, to to be used as part of the public API.
+	 * test-driver method for KMeansCC, not to be used as part of the public API.
 	 * Usage:
 	 * <CODE>
 	 * java -cp &lt;classpath&gt; popt4jlib.MSSC.KMeansCC 

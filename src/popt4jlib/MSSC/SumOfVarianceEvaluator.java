@@ -8,7 +8,9 @@ import java.util.*;
  * implements the Sum-Of-Intracluster-Variances criterion for a given clustering.
  * This is not the standard Sum-of-Square-Errors criterion used in algorithms 
  * for MSSC such as K-Means (the SSE criterion is implemented in the 
- * <CODE>KMeansSqrEvaluator</CODE> class.)
+ * <CODE>KMeansSqrEvaluator</CODE> class.) Notice that this evaluator does NOT
+ * work with weighted clustering cases where each data point has an associated
+ * positive weight.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2014</p>

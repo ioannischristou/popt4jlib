@@ -11,7 +11,7 @@ import java.net.*;
  * Once this class has been compiled with javac, it can be loaded onto Oracle
  * from the command-prompt by doing
  * 
- * loadjava -user &lt;username&gt;/&lt;password&gt;@lt;dbname&gt; 
+ * loadjava -user &lt;username&gt;/&lt;password&gt;@&lt;dbname&gt; 
  * OrclEvtNotifier.java
  * 
  * dbname could be orclpdb (or whatever the Oracle pluggable DB name is where 

@@ -1,7 +1,10 @@
 package popt4jlib.neural;
 
 import parallel.TaskObject;
+import parallel.ParallelException;
 import parallel.distributed.PDBatchTaskExecutor;
+import parallel.distributed.PDBTExecInitedClt;
+import parallel.distributed.PDBTExecInitNoOpCmd;
 import popt4jlib.BoolVector;
 import popt4jlib.VecFunctionIntf;
 import popt4jlib.VectorIntf;
@@ -21,6 +24,9 @@ import java.io.IOException;
  * pair. On 3-layer networks (2 hidden layers), it is about 20-40x faster than
  * the <CODE>FastFFNN4TrainBGrad</CODE> algorithm. On 4-layer networks, the
  * difference increases even more, and becomes between 24-160x faster! 
+ * Notice that though the BP algorithm runs in parallel or distributed mode,
+ * the class itself is NOT thread-safe: it is not safe for different concurrent
+ * threads to call the same object's methods.
  * <p>Notes:
  * <ul>
  * <li> 2020-09-18: made it work with <CODE>CategoricalXEntropyLoss</CODE> as
@@ -28,19 +34,25 @@ import java.io.IOException;
  * <li> 2020-09-19: fixed a serious bug that was present when the 
  * <CODE>popt4jlib.neural.costfunction.[MAE|MSSE]</CODE> functions are used as
  * objective cost functions (division by the total number of training instances)
+ * <li> 2021-09-24: added functionality so that the gradient computation works
+ * in a distributed cluster as well.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2020</p>
+ * <p>Copyright: Copyright (c) 2011-2021</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 	private FFNN4TrainB _ffnn;
 	
-	private PDBatchTaskExecutor _extor = null;
+	private transient PDBatchTaskExecutor _extor = null;
 	
+	// fields related to distributed processing of gradient evaluation
+	private int _bsize = -1;
+	private transient PDBTExecInitedClt _pdbtclt = null;
+
 	
 	/**
 	 * public constructor assumes that the network has been fully initialized with
@@ -93,13 +105,40 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 	
 	
 	/**
+	 * similar to 3-arg constructor, but instead of <CODE>_extor</CODE>, it 
+	 * initializes the single client to the 
+	 * <CODE>PDBTExecSingleCltWrkInitSrv</CODE> network.
+	 * @param ffnn FFNN4TrainB the network whose gradient wrt weights this object
+	 * computes
+	 * @param num_input_signals int the number of dimensions of the training data
+	 * @param bsize int the number of training instances to include in any task to
+	 * submit
+	 * @param pdbtsrv String the host address of the server to submit tasks
+	 * @param pdbtport int the port of the server to submit tasks
+	 */
+	public FasterFFNN4TrainBGrad(FFNN4TrainB ffnn, int num_input_signals,
+		                           int bsize, String pdbtsrv, int pdbtport) {
+		this(ffnn, num_input_signals);
+		_bsize = bsize;
+		try {
+			_pdbtclt = new PDBTExecInitedClt(pdbtsrv, pdbtport);
+			_pdbtclt.submitInitCmd(new PDBTExecInitNoOpCmd());
+		}
+		catch (Exception e) {  // ignore
+			e.printStackTrace();
+			_pdbtclt = null;
+		}
+	}
+	
+	
+	/**
 	 * computes the gradient of the feed-forward neural network associated with
 	 * this object at the specified weights given by x. The computation of the 
 	 * partial derivatives is exact (does not rely on GradApproximator) due to the
 	 * auto-differentiation capabilities of the <CODE>FFNN4TrainB</CODE> class.
 	 * @param x VectorIntf the weights variables of the FFNN
 	 * @param p HashMap the parameters that must contain the traindata and train
-	 * labels
+	 * labels or the filenames where such data are stored.
 	 * @return VectorIntf the gradient of the network at the given weights 
 	 * @throws IllegalArgumentException if the train data pairs cannot be found
 	 */
@@ -131,7 +170,7 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 			if (trainlabels==null) trainlabels = TrainData.getTrainingLabels();
 		}
 		final int num_train_instances = traindata.length;
-		if (_extor==null) {  // do things serially
+		if (_extor==null && _pdbtclt==null) {  // do things serially
 			DblArray1Vector g = new DblArray1Vector(_ffnn.getTotalNumWeights());
 			for (int t=0; t<num_train_instances; t++) {
 				resetAllCaches();
@@ -148,6 +187,92 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 			}
 			return g;
 		}  // go serial
+		else if (_pdbtclt!=null) {  // go distributed
+			final int task_size = Math.max(_bsize, 1);
+			if (p.get("ffnn.traindata")!=null) {  
+				// mini-batch is passed in, use it to distribute data
+				List tasks = new ArrayList();  // List<FastFFNN4TrainBGradTask>
+				int start = 0;
+				int end = task_size;
+				while (end <= traindata.length) {
+					FasterFFNN4TrainBGradTask met = 
+						new FasterFFNN4TrainBGradTask(traindata, trainlabels,
+																					start, end-1,
+																					wgts);
+					tasks.add(met);
+					start = end;
+					end += task_size;
+				}
+				if (end != traindata.length + task_size) {  // remainder
+					FasterFFNN4TrainBGradTask met = 
+						new FasterFFNN4TrainBGradTask(traindata, trainlabels,
+																					start, traindata.length-1,
+																					wgts);
+					tasks.add(met);
+				}
+				TaskObject[] tasks_arr = new TaskObject[tasks.size()];
+				for (int i=0; i<tasks.size(); i++) 
+					tasks_arr[i] = (TaskObject) tasks.get(i);
+				double[] g = new double[wgts.length];
+				try {
+					Object[] resi = _pdbtclt.submitWorkFromSameHost(tasks_arr);
+					// Vector resi = _extor.executeBatch(tasks);
+					// every element of the resi vector is a double[]  -- the sum of the
+					// gradients of a number of single (x,y) training pairs
+					for (int i=0; i<resi.length; i++) {
+						double[] erri = (double[]) resi[i];
+						for (int j=0; j<erri.length; j++) g[j] += erri[j];
+					}
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+				return new DblArray1Vector(g);				
+			}
+			else {
+				// no mini-batch is passed in, just provide start/end indices to tasks
+				// plus name of data and labels file for workers to read from
+				final String traindatafile = (String) p.get("ffnn.traindatafile");
+				final String trainlabelsfile = (String) p.get("ffnn.trainlabelsfile");
+				List tasks = new ArrayList();  // List<FastFFNN4TrainBGradTask>
+				int start = 0;
+				int end = task_size;
+				while (end <= traindata.length) {
+					FasterFFNN4TrainBGradTask met = 
+						new FasterFFNN4TrainBGradTask(traindatafile, trainlabelsfile,
+																					start, end-1,
+																					wgts);
+					tasks.add(met);
+					start = end;
+					end += task_size;
+				}
+				if (end != traindata.length + task_size) {  // remainder
+					FasterFFNN4TrainBGradTask met = 
+						new FasterFFNN4TrainBGradTask(traindatafile, trainlabelsfile,
+																					start, traindata.length-1,
+																					wgts);
+					tasks.add(met);
+				}
+				TaskObject[] tasks_arr = new TaskObject[tasks.size()];
+				for (int i=0; i<tasks.size(); i++) 
+					tasks_arr[i] = (TaskObject) tasks.get(i);
+				double[] g = new double[wgts.length];
+				try {
+					Object[] resi = _pdbtclt.submitWorkFromSameHost(tasks_arr);
+					// Vector resi = _extor.executeBatch(tasks);
+					// every element of the resi vector is a double[]  -- the sum of the
+					// gradients of a number of single (x,y) training pairs
+					for (int i=0; i<resi.length; i++) {
+						double[] erri = (double[]) resi[i];
+						for (int j=0; j<erri.length; j++) g[j] += erri[j];
+					}
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+				return new DblArray1Vector(g);				
+			}
+		}
 		else {  // go parallel
 			// break training instances into up to 10 x num_threads tasks
 			final int task_size = 
@@ -181,7 +306,7 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 					for (int j=0; j<erri.length; j++) g[j] += erri[j];
 				}
 			}
-			catch (Exception e) {
+			catch (ParallelException e) {
 				e.printStackTrace();
 			}
 			return new DblArray1Vector(g);
@@ -195,12 +320,28 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 	 * @param x VectorIntf the weights at which the evaluation of the partial 
 	 * derivative takes place
 	 * @param p HashMap must contain keys "ffnn.traindata" and "ffnn.trainlabels"
+	 * or "ffnn.traindatafile" and "ffnn.trainlabelsfile"
 	 * @param coord int must be in {0,...#weights-1}
 	 * @return double
 	 */
 	public double evalCoord(VectorIntf x, HashMap p, int coord) {
 		VectorIntf g = eval(x, p);
 		return g.getCoord(coord);
+	}
+
+	
+	/**
+	 * terminate the client connection to the cluster of machines, when computing
+	 * gradients in distributed processing mode. After the method is called, this
+	 * object will never use whatever cluster might have been available for NN
+	 * gradient computation again.
+	 * @throws IOException 
+	 */
+	public void terminatePDClientConnection() throws IOException {
+		if (_pdbtclt!=null) {
+			_pdbtclt.terminateConnection();
+			_pdbtclt = null;
+		}
 	}
 	
 	
@@ -223,8 +364,11 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 			evalNetworkOutputOnTrainingData(w, train_inst, train_lbl);
 		OutputNNNodeIntf outn = _ffnn.getOutputNode();
 		final boolean out_ismcsse = outn instanceof MultiClassSSE;
-		final boolean out_iscxel = outn instanceof CategoricalXEntropyLoss &&
-			                         !(outn instanceof CategoricalXEntropyLossW);
+		//final boolean out_iscxel = outn instanceof CategoricalXEntropyLoss &&
+		//	                         !(outn instanceof CategoricalXEntropyLossW);
+		// itc2021-10-09: CategoricalXEntropyLossW is not a subclass of 
+		// CategoricalXEntropyLoss so 2nd term in predicate above is redundant
+		final boolean out_iscxel = outn instanceof CategoricalXEntropyLoss;
 		double err = ((BaseNNNode)outn).getLastEvalCache()-train_lbl;
 		double D_out = ((BaseNNNode)outn).getLastDerivEvalCache2()*
 			             _ffnn._costFunc.evalDerivative(err, num_instances);
@@ -405,22 +549,50 @@ public class FasterFFNN4TrainBGrad implements VecFunctionIntf {
 	class FasterFFNN4TrainBGradTask implements TaskObject {
 		private double[][] _allTrainData;
 		private double[] _allTrainLabels;
-		private double[] _wgts;
-		private int _start;
-		private int _end;
+		final private String _traindatafile;
+		final private String _trainlabelsfile;
+		final private double[] _wgts;
+		final private int _start;
+		final private int _end;
 		
 		
 		public FasterFFNN4TrainBGradTask(double[][] traindata, double[] trainlabels,
-			                             int start, int end, double[] wgts) {
+			                               int start, int end, double[] wgts) {
 			_allTrainData = traindata;
 			_allTrainLabels = trainlabels;
+			_traindatafile = null;
+			_trainlabelsfile = null;
 			_wgts = wgts;
 			_start = start;
 			_end = end;
 		}
+
 		
+		public FasterFFNN4TrainBGradTask(String traindatafile, 
+			                               String trainlabelsfile,
+			                               int start, int end, double[] wgts) {
+			_allTrainData = null;
+			_allTrainLabels = null;
+			_traindatafile = traindatafile;
+			_trainlabelsfile = trainlabelsfile;
+			_wgts = wgts;
+			_start = start;
+			_end = end;
+		}
+
 		
 		public Serializable run() {
+			if (_traindatafile!=null && _trainlabelsfile!=null) {
+				try {
+					TrainData.readTrainingDataFromFilesIfNull(_traindatafile, 
+						                                        _trainlabelsfile);
+					_allTrainData = TrainData.getTrainingVectors();
+					_allTrainLabels = TrainData.getTrainingLabels();
+				}
+				catch (IOException e) {  // non-silent ignore
+					e.printStackTrace();
+				}
+			}
 			double[] g_sum = new double[_wgts.length];
 			for (int t=_start; t<=_end; t++) {
 				resetAllCaches();
