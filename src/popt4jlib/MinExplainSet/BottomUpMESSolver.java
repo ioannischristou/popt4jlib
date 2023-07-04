@@ -48,12 +48,12 @@ import java.util.Iterator;
  * @version 1.0
  */
 public class BottomUpMESSolver extends BaseMESSolver {
-	private int _minNumSatInsts;
-	private int _maxNumSatInsts;
-	private int _K;
-	private BufferIntf _queue;  // FIFO fast buffer
-	private int _bestCoverage = 0;
-	private int _maxNumVarsAllowed = Integer.MAX_VALUE;
+	protected int _minNumSatInsts;
+	protected int _maxNumSatInsts;
+	protected int _K;
+	protected BufferIntf _queue;  // FIFO fast buffer
+	protected int _bestCoverage = 0;
+	protected int _maxNumVarsAllowed = Integer.MAX_VALUE;
 	
 	
 	/**
@@ -82,6 +82,14 @@ public class BottomUpMESSolver extends BaseMESSolver {
 												 int maxqueuesize,
 												 int maxnumvarsallowed) {
 		super(numVars, numRules, numInstances, rule2vars, rule2insts);
+		// check that all rules include the last var
+		for(int r=0; r<_r2vA.length; r++) {
+			BoolVector rv = _r2vA[r];
+			if (!rv.get(rv.reqSize()-1)) 
+				throw new IllegalArgumentException("last var-id not set for "+
+					                                 "BoolVector holding vars "+
+					                                 "of rule w/ rule-id="+r);
+		}
 		BoolVector all_sat_insts = new BoolVector(_r2iA[0]);
 		for (int i=1; i<_r2iA.length; i++)
 			all_sat_insts.or(_r2iA[i]);
@@ -181,7 +189,7 @@ public class BottomUpMESSolver extends BaseMESSolver {
 				// 1.1 maybe we can't be done ever?
 				// BoolVector cur_vars_max = new BoolVector(cur_vars);
 				cur_vars_max.copy(cur_vars);
-				for (int vid = cur_vars.lastSetBit(); vid < _numVars; vid++) 
+				for (int vid = cur_vars.lastSetBit()+1; vid < _numVars; vid++) 
 					cur_vars_max.set(vid);
 				BoolVector si = getSatInsts(cur_vars_max);
 				if (si.cardinality()<_minNumSatInsts) {
@@ -292,7 +300,7 @@ public class BottomUpMESSolver extends BaseMESSolver {
 			// 1.1 maybe cur_vars should be fathomed?
 			// BoolVector cur_vars_max = new BoolVector(cur_vars);
 			cur_vars_max.copy(cur_vars);
-			for (int vid = cur_vars.lastSetBit(); vid < _numVars; vid++) 
+			for (int vid = cur_vars.lastSetBit()+1; vid < _numVars; vid++) 
 				cur_vars_max.set(vid);
 			BoolVector si = getSatInsts(cur_vars_max);
 			if (si.cardinality()<=best_coverage) {

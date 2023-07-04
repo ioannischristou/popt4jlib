@@ -96,12 +96,19 @@ public class AllMWCFinderBKMT2 extends AllMWCFinder {
   }
 
 
+	/**
+	 * sets the depth at which parallelism kicks in. After that, tasks at integer
+	 * multiples of this depth will also be sent for execution to the executor,
+	 * instead of running directly on the current thread.
+	 * @param depth int
+	 */
   public void setMaxDepth(int depth) {
     _maxDepth = depth;
   }
 
 
-  private void runBronKerbosch2(Set R, Set P, Set X, double thres, RunBK2Task2 task, int depth) {
+  private void runBronKerbosch2(Set R, Set P, Set X, double thres, 
+		                            RunBK2Task2 task, int depth) {
     final Graph g = getGraph();
     if (P.size()==0 && X.size()==0) {
       task._cliques.add(R);

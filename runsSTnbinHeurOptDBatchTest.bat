@@ -1,5 +1,5 @@
 echo off
-REM runsSTnbinHeurOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <p_l> <h> <p> <serverport>(7891) <numworkerthreads>(8) [epst(0.01)] [deltat(0.1)] [bsize(24)] [dbglvl(0)]
+REM runsSTnbinHeurOptDBatchTest.bat <Kr> <Ko> <L> <lambda> <p_l> <h> <p> <serverport>(7891) <numworkerthreads>(8) [epst(0.01)] [deltat(0.1)] [bsize(24)] [dbglvl(0)] [run4ZeroOrderCost(true)]
 REM T530 WLAN IP (home):
 REM Compaq cq 58 IP (home): 
 REM T530 IP (work): 10.100.209.143
@@ -31,5 +31,5 @@ call start PDBTExecInitedWrk.bat %numworkerthreads% localhost 7890 1
 echo Verify all workers are started before you press any key...
 pause
 echo on
-REM java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.sST.nbin.sSTCnbinHeurOpt <Kr> <Ko> <L> <lambda> <p_l> <h> <p> [pdsrvhost(localhost)] [pdsrvport(7891)] [epst(0.01)] [deltat(0.1)] [bsize(24)] [dbglvl(0)]
+REM java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.sST.nbin.sSTCnbinHeurOpt <Kr> <Ko> <L> <lambda> <p_l> <h> <p> [pdsrvhost(localhost)] [pdsrvport(7891)] [epst(0.01)] [deltat(0.1)] [bsize(24)] [dbglvl(0)] [run4zeroordercost(true)]
 java -Xmx8000m -cp .\dist\popt4jlib.jar tests.sic.sST.nbin.sSTCnbinHeurOpt %Kr% %Ko% %L% %lambda% %pl% %h% %p% localhost %srvport% %prest%

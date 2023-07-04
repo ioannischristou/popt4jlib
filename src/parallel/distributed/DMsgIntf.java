@@ -19,7 +19,7 @@ import parallel.*;
  */
 public interface DMsgIntf extends Serializable {
   /**
-   * if the object is a DSendMsg calls the <CODE>sendData()</CODE> method on an
+   * if the object is a DSendMsg, calls the <CODE>sendData()</CODE> method on an
    * appropriate <CODE>parallel.MsgPassingCoordinator</CODE> and once the data
    * are safely sent, it sends back to the other end of the connecting socket an
    * <CODE>parallel.distributed.OKReply</CODE> object,

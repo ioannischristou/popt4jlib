@@ -49,8 +49,8 @@ public class EMST {
         links[i] = _g.getLink(i);
       }
       Arrays.sort(links, new LinkComp());
-      // 3. for each link in the sorted links array check if both ends of the link
-      //    are in the same set. If not, add link to the mst, and unite two sets,
+      // 3. for each link in the sorted links array check if both ends of link
+      //    are in the same set. If not, add link to the mst and unite two sets,
       //    else discard link
       for (int i = 0; i < links.length; i++) {
         DisjointSetElem start = djset.find(_g.getNode(links[i].getStart()));

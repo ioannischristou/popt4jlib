@@ -1,0 +1,4 @@
+0,cmd.exe /C echo 1
+1,cmd.exe /C echo 2
+2,cmd.exe /C echo 3
+3,cmd.exe /C echo 4

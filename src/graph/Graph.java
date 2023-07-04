@@ -42,9 +42,9 @@ public class Graph implements Serializable {
   private int _compindex=-1;  // holds number of max. connected components of
                               // Graph
 	private HashMap _maxNodeWeights;  // map<String wname, Double val> maintains
-	                                    // the max. node weight value for a wname.
+                                    // the max. node weight value for a wname.
 	private HashMap _sortedNodeArrays;  // map<String name,
-	                                      //     Node[] nodes_sorted_desc>
+                                      //     Node[] nodes_sorted_desc>
   private DMCoordinator _rwLocker=null;  // used for ensuring that the methods
                                          // are re-entrant (i.e. thread-safe)
 	boolean _isDirectionReverted=false;  // set to true when edges point
@@ -432,8 +432,8 @@ public class Graph implements Serializable {
 
   /**
    * return the Node object with the given id.
-   * The method will throw OutOfBoundsException if the id is out-of-bounds
-   * @param id int
+   * The method will throw OutOfBoundsException if the id is out-of-bounds.
+   * @param id int must be in [0, #num_nodes-1]
    * @return Node
    */
   public Node getNode(int id) {
@@ -459,7 +459,7 @@ public class Graph implements Serializable {
 	 * threaded context, should be externally synchronized or otherwise provide
 	 * guarantees that prevent race-conditions from occurring.
    * The method will throw OutOfBoundsException if the id is out-of-bounds
-   * @param id int
+   * @param id int must be in [0, #num_nodes-1]
    * @return Node
    */
   public Node getNodeUnsynchronized(int id) {
@@ -745,7 +745,8 @@ public class Graph implements Serializable {
 							Double nndD = new Double(nnd);
               labels[ne.getId()] = nnd;  // labels.put(ne, nndD);
 							// update ne's position in the min-heap
-							queue.decreaseKey(new utils.Pair(ne,new Double(ned)), new utils.Pair(ne,nndD));
+							queue.decreaseKey(new utils.Pair(ne,new Double(ned)), 
+								                new utils.Pair(ne,nndD));
 						}
           }
         }
@@ -882,7 +883,8 @@ public class Graph implements Serializable {
         // add arcs
         it = ginodes.iterator();
         int cnt = 0;
-        Integer[] rmap = new Integer[ginodes.size()]; // rmap[new-id] = orig-id of node in original graph
+        Integer[] rmap = new Integer[ginodes.size()]; // rmap[new-id] = orig-id 
+				                                              // of node in orig. graph
         while (it.hasNext()) {
           Node nit = (Node) it.next();
           map[nit.getId()] = cnt;
@@ -1229,9 +1231,9 @@ public class Graph implements Serializable {
 
 
   /**
-   * return a Set&lt;Set&lt;Integer nodeId&gt; &gt; that is the set of all sets of
-	 * nodeids in the result set that have the property that are maximal sets of
-	 * nodes that are connected with each other with at most 1 hop.
+   * return a Set&lt;Set&lt;Integer nodeId&gt; &gt; that is the set of all sets
+	 * of nodeids in the result set that have the property that are maximal sets 
+	 * of nodes that are connected with each other with at most 1 hop.
    * @param k int
    * @throws GraphException
    * @return Set // Set&lt;Set&lt;Integer nodeId&gt; &gt;
@@ -1619,7 +1621,8 @@ public class Graph implements Serializable {
 
 
   /**
-   *
+   * return all neighbors of any node in clique that are connected to every node
+	 * in the clique with an arc-weight greater than minval.
    * @param clique Set // Set&lt;Integer nodeid&gt;
    * @param minval double
    * @return Vector // Vector&lt;Integer nodeid&gt;
@@ -1637,7 +1640,8 @@ public class Graph implements Serializable {
       Iterator iter = clique.iterator();
       while (iter.hasNext()) {
         Integer nid = (Integer) iter.next();
-        Set nborsi = getNode(nid.intValue()).getNborIndices(minval); // Set<Integer nid>
+        Set nborsi = 
+					getNode(nid.intValue()).getNborIndices(minval); // Set<Integer nid>
         // remove from nbors the elements not in nborsi
         nbors.retainAll(nborsi);
       }
@@ -1701,7 +1705,8 @@ public class Graph implements Serializable {
 		}
 		catch (ParallelException e) {  // cannot happen
 			e.printStackTrace();
-			throw new Error("unexpected parallel exception in getNodesSortedDescByWeight("+wname+")");
+			throw new Error("unexpected parallel exception in "+
+				              "getNodesSortedDescByWeight("+wname+")");
 		}
 	}
 

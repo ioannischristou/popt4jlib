@@ -99,11 +99,33 @@ public class BoundedBufferArray implements BufferIntf {
    * @return Object
    */
   public synchronized Object elementAt(int i) throws ParallelException {
-    if (i<0 || i>=size()) throw new ParallelException("index "+i+" out of range");
+    if (i<0 || i>=size()) 
+			throw new ParallelException("index "+i+" out of range");
     int opos = _head+i;
     if (opos<_buffer.length) return _buffer[opos];
     else return _buffer[i - (_buffer.length - _head)];
   }
+	
+	
+	/**
+	 * check if the object o is contained in this buffer. Linear-time operation in 
+	 * the number of objects in the buffer.
+	 * @param o Object
+	 * @return boolean true iff there exists an object in the buffer that equals
+	 * the object o
+	 */
+	public synchronized boolean contains(Object o) {
+		final int sz = size();
+		for (int i=0; i<sz; i++) {
+			try {
+				if (elementAt(i).equals(o)) return true;
+			}
+			catch (ParallelException e) {
+				// can never get here
+			}
+		}
+		return false;
+	}
 
 
   /**

@@ -75,9 +75,11 @@ public class DAccumulatorClt {
 	 * <CODE>DAccumulatorNotificationType</CODE> constants
 	 * @throws IllegalStateException if called more than once
 	 */
-	public static synchronized void registerListener(ObserverIntf observer, int notification_type) {
+	public static synchronized void registerListener(ObserverIntf observer, 
+		                                               int notification_type) {
 		if (_updaterThread!=null) {
-			throw new IllegalStateException("DAccumulatorClt.registerListener(): method already called.");
+			throw new IllegalStateException("DAccumulatorClt.registerListener(): "+
+				                              "method already called.");
 		}
 		_updaterThread = new AsynchUpdateThread(observer, notification_type);
 		_updaterThread.setDaemon(true);
@@ -368,8 +370,9 @@ public class DAccumulatorClt {
 	
 	
 	public static synchronized void disconnect() {
+		final utils.Messenger mger = utils.Messenger.getInstance();
 		if (_updaterThread!=null) {
-			utils.Messenger.getInstance().msg("DAccumulatorClt.disconnect(): enter", 0);
+			mger.msg("DAccumulatorClt.disconnect(): enter", 0);
 			_updaterThread.setCont(false);
 			try {
 				if (_updaterThread._s!=null) {
@@ -378,11 +381,12 @@ public class DAccumulatorClt {
 				}
 			}
 			catch (IOException e) {
-				utils.Messenger.getInstance().msg("DAccumulatorClt.disconnect(): disconnected notification-updates Thread", 0);
+				mger.msg("DAccumulatorClt.disconnect(): "+
+					       "disconnected notification-updates Thread", 0);
 			}
 			finally {
 				_updaterThread=null;
-				utils.Messenger.getInstance().msg("DAccumulatorClt.disconnect(): done", 0);
+				mger.msg("DAccumulatorClt.disconnect(): done", 0);
 			}
 		}
 	}
@@ -513,7 +517,7 @@ public class DAccumulatorClt {
 		// interface; they all throw UnsupportedOperationException exception.
 		
 		public boolean registerObserver(ObserverIntf o) {
-			throw new UnsupportedOperationException("registerObserver() not supported");
+			throw new UnsupportedOperationException("registerObserver() unsupported");
 		}
 		public boolean removeObserver(ObserverIntf o) {
 			throw new UnsupportedOperationException("removeObserver() not supported");

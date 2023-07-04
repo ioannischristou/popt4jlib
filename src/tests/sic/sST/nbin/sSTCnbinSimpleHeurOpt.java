@@ -21,9 +21,13 @@ import java.util.HashMap;
  * cost equal to Kr and zero ordering cost and for the resulting review period 
  * T' we compute similarly the optimal s(T') and S(T'), and compare with the 
  * above computed cost, and we return the winner.
+ * <p>Notes:
+ * <p>2023-07-04: The 2nd heuristic above is only performed if there is no key
+ * parameter called "zeroOrderingCost" with value false passed in the optimizer
+ * parameters.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -42,6 +46,8 @@ public final class sSTCnbinSimpleHeurOpt implements OptimizerIntf {
 	
 	private final double _epsT;
 	private final double _Tnot;
+	
+	private boolean _run4ZeroOrderCost = true;
 	
 	/**
 	 * by default, 24 tasks to be submitted each time to be processed in parallel
@@ -72,11 +78,13 @@ public final class sSTCnbinSimpleHeurOpt implements OptimizerIntf {
 	
 
 	/**
-	 * no-op.
-	 * @param p HashMap unused 
+	 * checks for the "zeroOrderingCost" key.
+	 * @param p HashMap 
 	 */
 	public void setParams(java.util.HashMap p) {
-		// no-op.
+		if (p!=null && p.containsKey("zeroOrderingCost")) {
+			_run4ZeroOrderCost = ((Boolean) p.get("zeroOrderingCost")).booleanValue();
+		}
 	}
 
 		
@@ -128,17 +136,21 @@ public final class sSTCnbinSimpleHeurOpt implements OptimizerIntf {
 		
 		// 2. compute optimal params for the (r,nQ,T) policy of the system with 
 		// Kr and Ko=0.
-		sSTCnbin sSTC2 = new sSTCnbin(sSTC._Kr, 0, sSTC._L, 
-			                            sSTC._lambda, sSTC._p_l, sSTC._h, sSTC._p);		
-		mger.msg("sSTCnbinSimpleHeurOpt.minimize(f): running "+
-			       "(r,nQ,T) policy optimization for Ko=0", 1);
-		final double[] x2 = getOptimalRnQTParams(sSTC2);
-		mger.msg("sSTCnbinSimpleHeurOpt.minimize(f): "+
-			       "(r,nQ,T) policy optimization for zero ordering cost returns "+
-			       "T*="+x2[2], 1);
-		double[] h2 = new double[]{x2[0],x2[0]+x2[1],x2[2]};
-		double c2 = sSTC.eval(h2, null);
+		double[] h2=null;
+		double c2 = Double.POSITIVE_INFINITY;
 		
+		if (_run4ZeroOrderCost) {
+			sSTCnbin sSTC2 = new sSTCnbin(sSTC._Kr, 0, sSTC._L, 
+																		sSTC._lambda, sSTC._p_l, sSTC._h, sSTC._p);		
+			mger.msg("sSTCnbinSimpleHeurOpt.minimize(f): running "+
+							 "(r,nQ,T) policy optimization for Ko=0", 1);
+			final double[] x2 = getOptimalRnQTParams(sSTC2);
+			mger.msg("sSTCnbinSimpleHeurOpt.minimize(f): "+
+							 "(r,nQ,T) policy optimization for zero ordering cost returns "+
+							 "T*="+x2[2], 1);
+			h2 = new double[]{x2[0],x2[0]+x2[1],x2[2]};
+			c2 = sSTC.eval(h2, null);
+		}
 		// 3. decide which setting is best
 		double[] x = c1 <= c2 ? h1 : h2;
 		double c_best= Math.min(c1, c2);
@@ -218,6 +230,7 @@ public final class sSTCnbinSimpleHeurOpt implements OptimizerIntf {
 	 * [tnot(0.01)]
 	 * [batchsize(24)]
 	 * [dbglvl(0)]
+	 * [run4zeroOrderCost(true)]
 	 * </CODE>.
 	 * @param args String[] 
 	 */
@@ -246,12 +259,18 @@ public final class sSTCnbinSimpleHeurOpt implements OptimizerIntf {
 			dbglvl = Integer.parseInt(args[12]);
 		}
 		mger.setDebugLevel(dbglvl);
+		HashMap params = new HashMap();
+		if (args.length>13) {
+			boolean run4ZeroOrderCost = Boolean.parseBoolean(args[13]);
+			params.put("zeroOrderingCost", new Boolean(run4ZeroOrderCost));
+		}
 		// 2. create function
 		sSTCnbin f = new sSTCnbin(Kr,Ko,L,lambda,p_l,h,p);
 		long start = System.currentTimeMillis();
 		// 3. optimize function
 		sSTCnbinSimpleHeurOpt ropter = 
 			new sSTCnbinSimpleHeurOpt(host, port, epst, tnot, bsize);
+		ropter.setParams(params);
 		try {
 			PairObjDouble result = ropter.minimize(f);
 			long dur = System.currentTimeMillis()-start;

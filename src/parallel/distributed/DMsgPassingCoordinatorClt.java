@@ -47,7 +47,8 @@ public class DMsgPassingCoordinatorClt {
    * different names.
    * @throws UnknownHostException
    */
-  public DMsgPassingCoordinatorClt(String host, int port, String coordName) throws UnknownHostException {
+  public DMsgPassingCoordinatorClt(String host, int port, String coordName) 
+		throws UnknownHostException {
     _host = InetAddress.getByName(host).getHostAddress();
     _port = port;
     _coordName = coordName;
@@ -65,7 +66,8 @@ public class DMsgPassingCoordinatorClt {
    * @throws ClassNotFoundException
    * @throws ParallelException
    */
-  public void sendData(int myid, int toid, Serializable data) throws IOException, ClassNotFoundException, ParallelException {
+  public void sendData(int myid, int toid, Serializable data) 
+		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
     ObjectInputStream ois = null;
@@ -81,7 +83,8 @@ public class DMsgPassingCoordinatorClt {
         return;
       }
       else {
-        throw new ParallelException("sendData(myid="+myid+", toid="+toid+", data="+data+") failed");
+        throw new ParallelException("sendData(myid="+myid+", toid="+toid+
+					                          ", data="+data+") failed");
       }
     }
     finally {
@@ -102,7 +105,8 @@ public class DMsgPassingCoordinatorClt {
    * @throws ClassNotFoundException
    * @throws ParallelException
    */
-  public void sendData(int myid, Serializable data) throws IOException, ClassNotFoundException, ParallelException {
+  public void sendData(int myid, Serializable data) 
+		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
     ObjectInputStream ois = null;
@@ -136,7 +140,8 @@ public class DMsgPassingCoordinatorClt {
    * @throws ClassNotFoundException
    * @throws ParallelException
    */
-  public synchronized void sendData(DMsgIntf command) throws IOException, ClassNotFoundException, ParallelException {
+  public synchronized void sendData(DMsgIntf command) 
+		throws IOException, ClassNotFoundException, ParallelException {
     Socket s = new Socket(_host, _port);
     ObjectOutputStream oos = null;
     ObjectInputStream ois = null;
