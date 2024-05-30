@@ -13,7 +13,7 @@ import java.util.HashMap;
 
 /**
  * class computes an approximate solution to the (s,S,T) policy optimization 
- * under compound Poisson demands modelled with the Negative Binomial 
+ * under compound Poisson demands modeled with the Negative Binomial 
  * distribution, by computing the optimal (r,nQ,T) policy parameters
  * r*,Q*, and T* -which is usually done much faster- and then setting s*=r*, and
  * S*=r*+Q*.
@@ -22,9 +22,13 @@ import java.util.HashMap;
  * T' we compute similarly the optimal s(T') and S(T'), and compare with the 
  * above computed cost, and we return the winner.
  * <p>Notes:
- * <p>2023-07-04: The 2nd heuristic above is only performed if there is no key
+ * <ul>
+ * <li>2023-07-05: dissallowed multiple threads from concurrently running the 
+ * <CODE>minimize(f)</CODE> method of this class.
+ * <li>2023-07-04: The 2nd heuristic above is only performed if there is no key
  * parameter called "zeroOrderingCost" with value false passed in the optimizer
  * parameters.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2023</p>
@@ -47,10 +51,13 @@ public final class sSTCnbinSimpleHeurOpt implements OptimizerIntf {
 	private final double _epsT;
 	private final double _Tnot;
 	
-	private boolean _run4ZeroOrderCost = true;
+	/**
+	 * by default, running the 2nd heuristic is true.
+	 */
+	private volatile boolean _run4ZeroOrderCost = true;
 	
 	/**
-	 * by default, 24 tasks to be submitted each time to be processed in parallel
+	 * by default, 24 tasks to be submitted each time to be processed in parallel.
 	 */
 	private final int _batchSz;
 	
@@ -78,10 +85,12 @@ public final class sSTCnbinSimpleHeurOpt implements OptimizerIntf {
 	
 
 	/**
-	 * checks for the "zeroOrderingCost" key.
+	 * checks for the "zeroOrderingCost" key (only if no other thread is running
+	 * concurrently the <CODE>minimize(f)</CODE> method).
 	 * @param p HashMap 
 	 */
-	public void setParams(java.util.HashMap p) {
+	public synchronized void setParams(java.util.HashMap p) {
+		if (_numRunning>0) return;
 		if (p!=null && p.containsKey("zeroOrderingCost")) {
 			_run4ZeroOrderCost = ((Boolean) p.get("zeroOrderingCost")).booleanValue();
 		}
@@ -89,7 +98,8 @@ public final class sSTCnbinSimpleHeurOpt implements OptimizerIntf {
 
 		
 	/**
-	 * main class method.
+	 * main class method cannot run concurrently by multiple threads (will throw
+	 * <CODE>OptimizerException</CODE> if such an attempt is made).
 	 * @param f FunctionIntf must be of type sSTCnbin
 	 * @return PairObjDouble Pair&lt;double[] args, double bestcost&gt; where the 
 	 * args is an array holding the parameters (s*,S*,T*) yielding the bestcost 
@@ -102,6 +112,10 @@ public final class sSTCnbinSimpleHeurOpt implements OptimizerIntf {
 				                           "f must be tests.sic.sST.nbin.sSTCnbin");
 		final Messenger mger = Messenger.getInstance();
 		synchronized (this) {
+			if (_numRunning>0) 
+				throw new OptimizerException("sSTCnbinSimpleHeurOpt.minimize(f) is "+
+					                           "already running "+
+					                           "(by another thread on this object)");
 			if (_pdclt==null) {
 				mger.msg("sSTCnbinSimpleHeurOpt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);

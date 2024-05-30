@@ -10,8 +10,10 @@ import java.util.Random;
 
 /**
  * implements the KMeans++ method for seeds initialization for the K-Means
- * algorithm. This implementation does not take into accounts any weights 
- * associated with the data points in the dataset.
+ * algorithm. This implementation can be used to take into accounts any weights 
+ * associated with the data points in the dataset, by calling the 
+ * <CODE>getInitialCenters(k, weights)</CODE> method. This method was initially
+ * developed to work as the "reclustering" phase of the K-Means|| algorithm.
  * <p>Notes:
  * <ul>
  * <li>2018-11-13: added getInitialCenters(k,weights) method to support KMeans||
@@ -23,7 +25,7 @@ import java.util.Random;
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2018</p>
+ * <p>Copyright: Copyright (c) 2011-2024</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.1
@@ -64,7 +66,7 @@ public class KMeansPP implements ClustererInitIntf {
    * the main implementation method of the class.
    * @param k int
 	 * @param weights double[] optional, may be null; if not, then data are not
-	 * sampled uniformly but according to their weights
+	 * sampled uniformly but according to their weights, that must be positive.
    * @throws IllegalArgumentException if the centers k, is higher than the 
 	 * total number of points to be clustered, or if weights is not null but its
 	 * length doesn't match the <CODE>_vectors</CODE> data. Unchecked.

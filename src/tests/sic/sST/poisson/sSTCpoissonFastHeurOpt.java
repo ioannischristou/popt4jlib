@@ -34,9 +34,14 @@ import org.jfree.data.xy.XYSeriesCollection;
  * <CODE>tests.sic.rnqt.poisson.RnQTCpoisonHeurPOpt</CODE> and then computing 
  * optimal (s(t),S(t)) parameters for t close to T* and picking the best set of
  * parameters.
+ * <p>Notes:
+ * <ul>
+ * <li>2023-07-06: disallowed running <CODE>minimize(f)</CODE> concurrently from
+ * multiple threads.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -101,7 +106,8 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 
 		
 	/**
-	 * main class method.
+	 * main class method, does not allow running concurrently from multiple 
+	 * threads.
 	 * @param f FunctionIntf must be of type sSTCpoisson
 	 * @return PairObjDouble Pair&lt;double[] args, double bestcost&gt; where the 
 	 * args is an array holding the parameters (s*,S*,T*) yielding the bestcost 
@@ -115,6 +121,10 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 				                           "of type tests.sic.sST.poisson.sSTCpoisson");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
+			if (_numRunning>0) 
+				throw new OptimizerException("sSTCpoissonFastHeurOpt.minimize(f) is "+
+					                           "already running "+
+					                           "(by another thread on this object)");						
 			if (_pdclt==null) {
 				mger.msg("sSTCpoissonFastHeurOpt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);
@@ -172,8 +182,10 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 				for (int i=0; i<res.length; i++) {
 					sSTCpoissonFixedTOpterResult ri = 
 						(sSTCpoissonFixedTOpterResult) res[i];
-					_tis.add(new Double(ri._T));  // add to tis time-series
-					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+					synchronized(this) {
+						_tis.add(new Double(ri._T));  // add to tis time-series
+						_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+					}
 					if (ri._C < c_cur_best) {
 						s_star = ri._s;
 						S_star = ri._S;
@@ -217,8 +229,8 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 			}
 		}
 		ArrayList[] result = new ArrayList[2];
-		result[0] = _tis;
-		result[1] = _ctis;
+		result[0] = new ArrayList(_tis);
+		result[1] = new ArrayList(_ctis);
 		return result;
 	}
 
@@ -376,7 +388,8 @@ public final class sSTCpoissonFastHeurOpt implements OptimizerIntf {
 			NumberFormat df = NumberFormat.getInstance(Locale.US);
 			df.setGroupingUsed(false);
 			df.setMaximumFractionDigits(2);
-			plot_frame.setTitle("Fast Heuristic T-Search of (s,S,T) Policy with Poisson Demands");
+			plot_frame.setTitle("Fast Heuristic T-Search of (s,S,T) Policy with "+
+				                  "Poisson Demands");
 			plot_frame.add(_GraphPanel);
 			plot_frame.setLocationRelativeTo(null);
 			plot_frame.pack();

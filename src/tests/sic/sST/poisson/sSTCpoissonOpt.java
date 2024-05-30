@@ -1,9 +1,5 @@
 package tests.sic.sST.poisson;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Shape;
-import java.awt.geom.Ellipse2D;
 import java.io.Serializable;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -19,6 +15,10 @@ import utils.PairObjDouble;
 import utils.PairObjTwoDouble;
 import utils.Messenger;
 // below import needed for visualization of graph of optimal C(T) for various T
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -48,6 +48,8 @@ import org.jfree.data.xy.XYSeriesCollection;
  * strictly exceeds the best known cost.
  * <p>Notes:
  * <ul>
+ * <li>2023-07-06: disallowed multiple threads from concurrently running the
+ * <CODE>minimize(f)</CODE> method (on the same object).
  * <li>2021-06-07: computation of lower bound in fixed-T optimization excludes
  * review cost as it decreases in time.
  * <li>2021-04-08: added visualization capabilities to the class, so that when
@@ -58,7 +60,7 @@ import org.jfree.data.xy.XYSeriesCollection;
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -120,7 +122,8 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 
 		
 	/**
-	 * main class method.
+	 * main class method, does not allow running concurrently from different 
+	 * threads on the same object.
 	 * @param f FunctionIntf must be of type sSTCpoisson
 	 * @return PairObjDouble Pair&lt;double[] bestx, double bestcost&gt; where the
 	 * bestx array contains the values (s*,S*,T*)
@@ -132,6 +135,10 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 				                           "of type tests.sic.sST.sSTCpoisson");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
+			if (_numRunning>0) 
+				throw new OptimizerException("sSTCpoissonOpt.minimize(f) is "+
+					                           "already running "+
+					                           "(by another thread on this object)");						
 			if (_pdclt==null) {
 				mger.msg("sSTCpoissonOpt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);
@@ -182,9 +189,11 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 				for (int i=0; i<res.length; i++) {
 					sSTCpoissonFixedTOpterResult ri = 
 						(sSTCpoissonFixedTOpterResult) res[i];
-					_tis.add(new Double(ri._T));  // add to tis time-series
-					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
-					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+					synchronized(this) {
+						_tis.add(new Double(ri._T));  // add to tis time-series
+						_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+						_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+					}
 					if (Double.compare(ri._LB, c_cur_best)>0) {  // done!
 						mger.msg("sSTCpoissonOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
 							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
@@ -231,10 +240,10 @@ public final class sSTCpoissonOpt implements OptimizerIntf {
 				Thread.currentThread().interrupt();
 			}
 		}
-		ArrayList[] result = new ArrayList[4];
-		result[0] = _tis;
-		result[1] = _ctis;
-		result[2] = _lbtis;
+		ArrayList[] result = new ArrayList[3];  // used to be 4?
+		result[0] = new ArrayList(_tis);
+		result[1] = new ArrayList(_ctis);
+		result[2] = new ArrayList(_lbtis);
 		return result;
 	}
 

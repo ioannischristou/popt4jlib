@@ -24,12 +24,22 @@ import java.util.HashMap;
  * point), and T (the review interval). It is known that the policy itself is 
  * the optimal policy for controlling the long-run expected costs of such a 
  * single-echelon installation.
+ * <p>Notes:
+ * <ul>
+ * <li>2023-09-22:
+ * The evaluation of this policy for the normal distribution sometimes presents
+ * serious numerical instabilities, hence the many compile-time constants in 
+ * this class. For this reason, evaluation of the function at any given vector
+ * will be interrupted and instead an <CODE>IllegalStateException</CODE> will be
+ * thrown if the evaluation takes more than <CODE>_MAX_ALLOWED_TIME</CODE> msecs
+ * of wall-clock time to run.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class sSTCnorm implements FunctionIntf {
 	final double _Kr;
@@ -51,6 +61,14 @@ public class sSTCnorm implements FunctionIntf {
 	
 	private static final Messenger _mger = Messenger.getInstance();
 	
+	
+	private static ThreadLocal _evalStartTime = new ThreadLocal() {  // in millis
+		protected Object initialValue() {
+			return null;
+		}
+	};
+	
+	
 	/**
 	 * compile-time constants.
 	 */
@@ -70,7 +88,7 @@ public class sSTCnorm implements FunctionIntf {
 	private final static int _MIN_NUM_INT_ADDS = 50;
 	private final static int _MAX_SIMPSON_REC_LVL = 1000;
 	private final static int _INTEGRATION_NUM_PIECES = 10;
-	
+	private final static long _MAX_ALLOWED_TIME = 500;  // half a second
 	
 	/**
 	 * Function sole public constructor.
@@ -109,6 +127,8 @@ public class sSTCnorm implements FunctionIntf {
 	 * method <CODE>evalBoth(x)</CODE>.
 	 */
 	public double eval(Object x, java.util.HashMap param) {
+		long startTime = System.currentTimeMillis();
+		_evalStartTime.set(new Long(startTime));
 		utils.Pair p = evalBoth(x, param);
 		return ((Double) p.getFirst()).doubleValue();
 	} 
@@ -125,7 +145,8 @@ public class sSTCnorm implements FunctionIntf {
 	 * @param param HashMap  // may contain a &lt;"Kr",$val&gt; pair
 	 * @return utils.Pair  // Pair&lt;Double result, Double lowerbound&gt;
 	 * @throws IllegalStateException unchecked if Po is computed outside [0,1] or
-	 * if any number computed turns out to be <CODE>Double.NaN</CODE>.
+	 * if any number computed turns out to be <CODE>Double.NaN</CODE>. It also 
+	 * throws the same exception if the evaluation takes too long.
 	 */
 	utils.Pair evalBoth(Object x, HashMap param) {
 		double[] xp;
@@ -150,13 +171,18 @@ public class sSTCnorm implements FunctionIntf {
 		
 		double K1 = J/T;
 		try {
+			long startTime = ((Long)sSTCnorm._evalStartTime.get()).longValue();
+			
 			final double nom = sum1(r,R,T,t,l,_sigma,m,IC,phat,p2,_eps) + 
 				           H(R,T,t,l,_sigma,m,IC,phat,p2);
 			//_mger.msg("sSTCnorm.evalBoth(): sum1() returns "+nom, 3);
+			check4Time(startTime);
 			final double cmpl = complnormcdf(R-r, l*T, _sigma*Math.sqrt(T));
+			check4Time(startTime);
 			//_mger.msg("sSTCnorm.evalBoth(): complnormcdf() returns "+cmpl, 3);
 			final double sum2v = sum2(r,R,T,l,_sigma,_eps, cmpl);
 			//_mger.msg("sSTCnorm.evalBoth(): sum2() returns "+sum2v, 3);
+			check4Time(startTime);
 			final double denom = sum2v + cmpl;
 			final double y = K1 + (A+nom)/(T*denom);
 			final double lb = K1 + nom/(T*denom);
@@ -279,12 +305,14 @@ public class sSTCnorm implements FunctionIntf {
 	 * @param p2 double lost-sales penalty cost
 	 * @param ceps double convergence threshold for the summation
 	 * @return double
+	 * @throws IllegalStateException if the computation takes too long
 	 * @throws Exception 
 	 */
 	private static double sum1(double r, double R, double T, 
 		                         double t, double l, double sigma, double m, 
 											       double IC, double phat, double p2,
 											       double ceps) throws Exception {
+		final long startTime = ((Long)sSTCnorm._evalStartTime.get()).longValue();
 		final FunctionIntf fin2 = new FInner2();
 		//_mger.msg("sSTCnorm.sum1() called", 3);
 		double y = 0;
@@ -307,6 +335,7 @@ public class sSTCnorm implements FunctionIntf {
 		x0.setCoord(11, p2);
 		while (true) {
 			double sum = integrate(fin2, 0, R-r, x0);
+			check4Time(startTime);
       // itc20181006: the integral may run into instabilities resulting in zero
       // values because the shape of the function fin2 may come to look like
       // a gaussian with extrememly narrow spread, in which case, the numerical
@@ -322,6 +351,7 @@ public class sSTCnorm implements FunctionIntf {
 				for (int i=0; i<_NUM_INTVLS; i++) {
 					x0.setCoord(0, ul);  // redundant
 					double saux = integrate(fin2, ll, ul, x0);
+					check4Time(startTime);
 					if (Double.isFinite(saux)) sum += saux;
 					ll = ul;
 					ul += sz;
@@ -377,6 +407,7 @@ public class sSTCnorm implements FunctionIntf {
 		                         double l, double sigma,
 		                         double ceps,
 														 double cmpl) throws Exception {
+		final long startTime = ((Long)sSTCnorm._evalStartTime.get()).longValue();		
 		final FunctionIntf fin3 = new FInner3();
 		//_mger.msg("sSTCnorm.sum2() called", 3);
 		VectorIntf x0 = new DblArray1Vector(7);
@@ -407,6 +438,7 @@ public class sSTCnorm implements FunctionIntf {
 			} 
 			while (true) {
 				double sum = integrate(fin3, 0, R-r, x0);
+				check4Time(startTime);
 				// itc20181006: the integral may run into instabilities resulting in 0
 				// values because the shape of the function fin3 may come to look like
 				// a gaussian with extrememly narrow spread, in which case the numerical
@@ -422,6 +454,7 @@ public class sSTCnorm implements FunctionIntf {
 					for (int i=0; i<numintvls; i++) {
 						x0.setCoord(0, ul);  // redundant
 						double saux = integrate(fin3, ll, ul, x0);
+						check4Time(startTime);
 						if (Double.isFinite(saux)) {
 							sum += saux;
 						}
@@ -743,6 +776,18 @@ public class sSTCnorm implements FunctionIntf {
 			System.err.println("sSTCnorm.integrate("+f+","+a+","+b+","+x0+
 				                 "): evaluation failed");
 			throw new IllegalStateException("sSTCnorm.integrate(): failed");
+		}
+	}
+	
+	
+	/**
+	 * throws if time has ran out.
+	 * @param startTime 
+	 * @throws IllegalStateException
+	 */
+	private static void check4Time(long startTime) {
+		if (System.currentTimeMillis()-startTime>=_MAX_ALLOWED_TIME) {
+			throw new IllegalStateException("out of time");
 		}
 	}
 	

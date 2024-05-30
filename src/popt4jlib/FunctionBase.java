@@ -7,7 +7,10 @@ import java.util.*;
  * how many times a function has been evaluated.
  * <p>Notes:
  * <ul>
- * <li>20190701: modified <CODE>eval()</CODE> to return 
+ * <li>2024-03-22: fixed a bug in the <CODE>eval()</CODE> method of the class
+ * that would throw <CODE>NullPointerException</CODE> if the params argument was 
+ * null.
+ * <li>2019-07-01: modified <CODE>eval()</CODE> to return 
  * <CODE>Double.MAX_VALUE</CODE> when the underlying function returns NaN.
  * </ul>
  * <p>Title: popt4jlib</p>
@@ -46,9 +49,11 @@ public class FunctionBase implements FunctionIntf {
    */
   public double eval(Object arg, HashMap params) {
 		synchronized (this) {
-			Long max_countL = (Long) params.get("maxfuncevalslimit");
-			if (max_countL!=null && max_countL.longValue() <= _evalCount)
-				return Double.MAX_VALUE;  // stop the function evaluation process
+			if (params!=null) {
+				Long max_countL = (Long) params.get("maxfuncevalslimit");
+				if (max_countL!=null && max_countL.longValue() <= _evalCount)
+					return Double.MAX_VALUE;  // stop the function evaluation process
+			}
 			++_evalCount;
 		}
     double y = _f.eval(arg, params);

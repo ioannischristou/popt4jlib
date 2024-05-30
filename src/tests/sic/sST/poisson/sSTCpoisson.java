@@ -81,7 +81,9 @@ public class sSTCpoisson implements FunctionIntf {
 		final double res = ((Double) p.getFirst()).doubleValue();
 		if (mger.getDebugLvl()>=2) {
 			String str = "sSTCpoisson.eval(";
-			final double[] xarr = (double[])x;
+			final double[] xarr = x instanceof double[] ? 
+				                      (double[])x :
+				                      ((DblArray1Vector)x).getDblArray1();
 			final double Kr = (param!=null && param.containsKey("Kr")) ?
 				                  ((Double)param.get("Kr")).doubleValue() :
 				                  _Kr;

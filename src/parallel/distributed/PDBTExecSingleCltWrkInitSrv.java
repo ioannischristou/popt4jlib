@@ -43,6 +43,12 @@ import java.util.*;
  * connection from this "loser" worker. If the same batch of jobs fails to be 
  * executed by two different workers, the server sends back to the client a 
  * <CODE>FailedReply</CODE> to indicate job cannot be successfully completed.
+ * <p>Notes:
+ * <ul>
+ * <li>2023-12-05: the overriden method <CODE>addNewWorkerConnection(s)</CODE>
+ * no longer throws IOException if it fails to add worker. Also, previously
+ * private methods <CODE>submitWork()</CODE> are now protected.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2015</p>
@@ -123,8 +129,8 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
   }
 
 	
-  TaskObjectsExecutionResults submitWork(Vector originating_clients, 
-		                                     TaskObject[] tasks) 
+  protected TaskObjectsExecutionResults submitWork(Vector originating_clients, 
+		                                               TaskObject[] tasks) 
 		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
     Set workers2rm = new HashSet();  // Set<Socket s> for 
 		                                 // (Socket s, PDBTEW2Listener t) pair
@@ -215,8 +221,9 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
 	 * @throws IOException
 	 * @throws PDBatchTaskExecutorException 
 	 */
-  private TaskObjectsExecutionResults submitWork(TaskObjectsExecutionRequest rq, 
-		                                             PDBTEW2Listener t)
+  protected TaskObjectsExecutionResults submitWork(
+		                                      TaskObjectsExecutionRequest rq, 
+		                                      PDBTEW2Listener t)
     throws IOException, PDBatchTaskExecutorException {
     utils.Messenger.getInstance().msg(
 			"PDBTExecSingleCltWrkInitSrv.submitWork(req,t): sending request",1);
@@ -305,13 +312,16 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
   /**
    * adds a new worker to the network.
    * @param s Socket
-	 * @throws IOException
    */
-  private synchronized void addNewWorkerConnection(Socket s) 
-		throws IOException {
-    PDBTEW2Listener lt = new PDBTEW2Listener(this, s);
-		lt.init();
-    getWorkers().put(s, lt);
+  protected synchronized void addNewWorkerConnection(Socket s) {
+		try {
+			PDBTEW2Listener lt = new PDBTEW2Listener(this, s);
+			lt.init();
+			getWorkers().put(s, lt);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
   }
 
 
@@ -330,7 +340,7 @@ public class PDBTExecSingleCltWrkInitSrv extends PDBatchTaskExecutorSrv {
   }
 
 
-  private static void usage() {
+  static void usage() {
     System.err.println("usage: java -cp <classpath> "+
 			                 "parallel.distributed.PDBTExecSingleCltWrkInitSrv "+
 			                 "[workersport] [clientport] [debuglvl]");

@@ -38,11 +38,15 @@ import org.jfree.data.xy.XYSeriesCollection;
  * cost equal to Kr and zero ordering cost and for the resulting review period 
  * T' we compute similarly the optimal s(T') and S(T').
  * <p>Notes:
- * <p>2023-07-04: The last heuristic computation can be avoided if the param
+ * <ul>
+ * <li>2023-07-06: disallowed multiple threads from concurrently running 
+ * <CODE>minimize(f)</CODE> on the same <CODE>sSTCnbinHeurOpt</CODE> object.
+ * <li>2023-07-04: The last heuristic computation can be avoided if the param
  * "zeroOrderingCost" exists in the optimization params and is set to false.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -70,10 +74,13 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 	
 	private final double _deltaT;
 	
-	private boolean _run4ZeroOrderCost = true;
+	/**
+	 * by default, running the 2nd heuristic is true.
+	 */
+	private volatile boolean _run4ZeroOrderCost = true;
 
 	/**
-	 * by default, 24 tasks to be submitted each time to be processed in parallel
+	 * by default, 24 tasks to be submitted each time to be processed in parallel.
 	 */
 	private final int _batchSz;
 	
@@ -109,11 +116,13 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 	
 
 	/**
-	 * checks for the "zeroOrderingCost" key in the params, and if so, sets the 
-	 * <CODE>_run4ZeroOrderCost</CODE> variable.
+	 * checks for the "zeroOrderingCost" key in the params, and if so, re/sets the 
+	 * <CODE>_run4ZeroOrderCost</CODE> variable (only if no other thread is 
+	 * concurrently running <CODE>minimize(f)</CODE> on this object.)
 	 * @param p HashMap
 	 */
-	public void setParams(java.util.HashMap p) {
+	public synchronized void setParams(java.util.HashMap p) {
+		if (_numRunning>0) return;
 		if (p.containsKey("zeroOrderingCost")) {
 			_run4ZeroOrderCost = ((Boolean) p.get("zeroOrderingCost")).booleanValue();
 		}
@@ -121,7 +130,7 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 
 		
 	/**
-	 * main class method.
+	 * main class method cannot run concurrently by more than one thread.
 	 * @param f FunctionIntf must be of type sSTCnbin
 	 * @return PairObjDouble Pair&lt;double[] args, double bestcost&gt; where the 
 	 * args is an array holding the parameters (s*,S*,T*) yielding the bestcost 
@@ -134,6 +143,10 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 				                           "of type tests.sic.sST.nbin.sSTCnbin");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
+			if (_numRunning>0) 
+				throw new OptimizerException("sSTCnbinHeurOpt.minimize(f) is "+
+					                           "already running "+
+					                           "(by another thread on this object)");
 			if (_pdclt==null) {
 				mger.msg("sSTCnbinHeurOpt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);
@@ -198,9 +211,11 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 				for (int i=0; i<res.length; i++) {
 					sSTCnbinFixedTOpterResult ri = 
 						(sSTCnbinFixedTOpterResult) res[i];
-					_tis.add(new Double(ri._T));  // add to tis time-series
-					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
-					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+					synchronized(this) {
+						_tis.add(new Double(ri._T));  // add to tis time-series
+						_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+						_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+					}
 					if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
 						mger.msg("sSTCnbinHeurOpt.minimize(f): for T="+ri._T+
 							       " LB@T="+ri._LB+
@@ -268,9 +283,11 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 					for (int i=0; i<res.length; i++) {
 						sSTCnbinFixedTOpterResult ri = 
 							(sSTCnbinFixedTOpterResult) res[i];
-						_tis.add(new Double(ri._T));  // add to tis time-series
-						_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
-						_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+						synchronized(this) {
+							_tis.add(new Double(ri._T));  // add to tis time-series
+							_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+							_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+						}
 						if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
 							mger.msg("sSTCnbinHeurOpt.minimize(f): for T="+ri._T+
 											 " LB@T="+ri._LB+
@@ -321,9 +338,9 @@ public final class sSTCnbinHeurOpt implements OptimizerIntf {
 			}
 		}
 		ArrayList[] result = new ArrayList[4];
-		result[0] = _tis;
-		result[1] = _ctis;
-		result[2] = _lbtis;
+		result[0] = new ArrayList(_tis);
+		result[1] = new ArrayList(_ctis);
+		result[2] = new ArrayList(_lbtis);
 		return result;
 	}
 

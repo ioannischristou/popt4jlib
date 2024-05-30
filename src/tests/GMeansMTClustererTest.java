@@ -9,7 +9,7 @@ import popt4jlib.GradientDescent.VecUtil;
 /**
  * driver class for multi-threaded K-Means clusterer for MSSC (with or without
  * KMeans++ initialization of seed cluster centers).
- * <p>Note:
+ * <p>Notes:
  * <ul>
  * <li>20181104: added parameters to the command line for selecting the 
  * initialization method (random,KMeans++, or KMeans||) as well as whether the
@@ -20,6 +20,11 @@ import popt4jlib.GradientDescent.VecUtil;
  * weighted MSSC.
  * <li>20220221: added option to run the <CODE>GMeansMTClusterer</CODE> more 
  * than 1 times, if desired, and return the best (weighted) MSSC value.
+ * <li>20240416: changed the default debug-level from 
+ * <CODE>Integer.MAX_VALUE</CODE> (print all messages), to zero (print only 
+ * messages when called with 2nd parameter zero).
+ * <li>20240508: added the possibility for the KMeans++ and KMeans|| initializer
+ * schemes to work with weights on the data-points.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
@@ -37,13 +42,14 @@ public class GMeansMTClustererTest {
 	 * &lt;vectorsfilename&gt; &lt;k&gt; [weightsfilename(null)] 
 	 * [use_weights?(true)]
 	 * [num_threads(1)] [rndseed(-1)]
-	 * [init_method(0(default)=random point selection|1=KMeans++|2=KMeans||)] 
+	 * [init_method(0(default)=random point selection|1=KMeans++|2=KMeans|||
+	 * 3=W-KMeans++|4=W-KMEANS||)] 
 	 * [num_tries(1)]
 	 * [numitersOrmaxdist(-1)]
 	 * [vectors_are_sparse(false)]
 	 * [project_on_empty(false)]
 	 * [KMeans||_rounds(k/2)]
-	 * [dbglvl(Integer.MAX_VALUE, all msgs printed)]
+	 * [dbglvl(0)]
 	 * </CODE>
    * @param args String[]
    */
@@ -54,13 +60,14 @@ public class GMeansMTClustererTest {
 				                 "[weightsfilename(null)] [use_weights?(true)] "+
 				                 "[num_threads(1)] [rndseed(-1)] "+
 				                 "[init_method"+
-				                 "(0(default)=rand pt sel|1=KMeans++|2=KMeans||)] "+
+				                 "(0(default)=rand pt sel|1=KMeans++|2=KMeans||"+
+				                 "|3=W-KMeans++|4=W-KMeans||)] "+
 				                 "[num_tries(1)] "+
 				                 "[numitersORmaxdist(-1)] "+
 				                 "[vectors_are_sparse(false)] "+
 				                 "[project_on_empty(false] "+
 				                 "[KMEans||_rounds(-1)]"+
-				                 "[dbglvl(Integer.MAX_VALUE->all msgs printed)]");
+				                 "[dbglvl(0)]");
       System.exit(-1);
     }
     long start = System.currentTimeMillis();
@@ -108,6 +115,8 @@ public class GMeansMTClustererTest {
 		if (args.length>12) {
 			int dbglvl = Integer.parseInt(args[12]);
 			utils.Messenger.getInstance().setDebugLevel(dbglvl);
+		} else {
+			utils.Messenger.getInstance().setDebugLevel(0);
 		}
     if (seed >= 0) RndUtil.getInstance().setSeed(seed);  // deterministic 
 		                                                     // pseudo-random 
@@ -158,7 +167,7 @@ public class GMeansMTClustererTest {
 					}
 				}
 				else if (init_method==1) {
-					System.err.println("Running KMeans++ for seed initialization");
+					System.err.println("Running KMeans++ for center init.");
 					KMeansPP kmpp = new KMeansPP(docs);
 					init_centers = kmpp.getInitialCenters(k);
 					long dur = System.currentTimeMillis()-start_compute;
@@ -166,7 +175,7 @@ public class GMeansMTClustererTest {
 				}
 				else if (init_method==2) {
 					final int lambda = k/2 > 0 ? k/2 : 1;
-					System.err.println("Running KMeans|| for seed initialization w/ "+
+					System.err.println("Running KMeans|| for center init. w/ "+
 														 "lambda="+lambda);
 					final int numrounds = nr;
 					// KMeansCC needs an unsynchronized list of data to work well in
@@ -187,6 +196,40 @@ public class GMeansMTClustererTest {
 							double dij = VecUtil.getEuclideanDistance(ci, cj);
 							if (dij<1.e-8) 
 								System.err.println("KMeans|| for centers "+i+","+j+
+																	 " d(ci="+ci+",cj="+cj+" = "+dij);
+						}
+					}
+				}
+				else if (init_method==3) {
+					System.err.println("Running WEIGHTED-KMeans++ for center init.");
+					KMeansPP kmpp = new KMeansPP(docs);
+					init_centers = kmpp.getInitialCenters(k, wgts);
+					long dur = System.currentTimeMillis()-start_compute;
+					System.err.println("WEIGHTED-KMeans++: took "+dur+" msecs to run");
+				}
+				else if (init_method==4) {
+					final int lambda = k/2 > 0 ? k/2 : 1;
+					System.err.println("Running WEIGHTED-KMeans|| for center init. w/ "+
+														 "lambda="+lambda);
+					final int numrounds = nr;
+					// KMeansCC needs an unsynchronized list of data to work well in
+					// parallel, and to avoid rewriting DataMgr.readXXX() methods, we 
+					// resort to this "trick"
+					List docslist = new ArrayList();
+					docslist.addAll(docs);
+					KMeansCC kmcc = new KMeansCC(docslist,wgts,lambda,nt,numrounds);
+					init_centers = kmcc.getInitialCenters(k);				
+					long dur = System.currentTimeMillis()-start_compute;
+					System.err.println("WEIGHTED-KMeans||: took "+dur+" msecs to run");
+					// compute pair-wise distances between centers and report any pairs
+					// at distance shorter than 10^-8
+					for (int i=0; i<k; i++) {
+						VectorIntf ci = (VectorIntf) init_centers.get(i);
+						for (int j=i+1; j<k; j++) {
+							VectorIntf cj = (VectorIntf) init_centers.get(j);
+							double dij = VecUtil.getEuclideanDistance(ci, cj);
+							if (dij<1.e-8) 
+								System.err.println("W-KMeans|| for centers "+i+","+j+
 																	 " d(ci="+ci+",cj="+cj+" = "+dij);
 						}
 					}

@@ -95,6 +95,7 @@ public class RnQTCnbinHeurPOpt implements OptimizerIntf {
 		if (!(f instanceof RnQTCnbin)) 
 			throw new IllegalArgumentException("RnQTCnbinHeurPOpt.minimize(f): "+
 				                                 "f must be of type RnQTCnbin");
+		final long st_time = System.currentTimeMillis();
 		final Messenger mger = Messenger.getInstance();
 		synchronized(this) {
 			while (_nbin!=null) {
@@ -218,6 +219,8 @@ public class RnQTCnbinHeurPOpt implements OptimizerIntf {
 				copt = argopt_ST[2];
 			}
 			final double[] xopt = new double[]{sopt, qopt, topt};
+			long dur = System.currentTimeMillis() - st_time;
+			mger.msg("RnQTCnbinHeurPOpt.minimize(): took "+dur+" msecs", 0);
 			return new PairObjDouble(xopt, copt);
 		}
 		finally {

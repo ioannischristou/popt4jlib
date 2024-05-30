@@ -19,9 +19,14 @@ import popt4jlib.IdentifiableIntf;
  * <CODE>FasterParallelAsynchBatchTaskExecutor</CODE> objects, and multiple
  * concurrent threads may call the public methods of the class on the same or
  * different objects as long as the constraints mentioned above are satisfied.
+ * <p>Notes:
+ * <ul>
+ * <li>2023-09-08: added functionality to allow the executor to cancel any 
+ * currently executing <CODE>CancelableTaskObject</CODE>s.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2017</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 2.0 switched from SimpleFasterMsgPassingCoordinator to 
@@ -224,6 +229,20 @@ public final class FasterParallelAsynchBatchTaskExecutor {
 	
 	
 	/**
+	 * calls the <CODE>cancelCurrentTaskObject()</CODE> on any 
+	 * <CODE>CancelableTaskObject</CODE> that might be running on any thread of 
+	 * this executor's thread-pool at the time this method is invoked. If a thread
+	 * is running anything else (or is idle) nothing happens (on this thread).
+	 */
+	public synchronized void cancelAnyCurrentCancelableTaskObjects() {
+		if (!_isRunning) return;
+		for (int i=0; i<_threads.length; i++) {
+			_threads[i].cancelCurrentTaskObject();
+		}
+	}
+	
+	
+	/**
 	 * remove and return all tasks in this executor's queue after position pos,
 	 * regardless of sender and/or receiver intended addresses.
 	 * @param pos int
@@ -378,6 +397,9 @@ public final class FasterParallelAsynchBatchTaskExecutor {
 		private static final boolean _DO_CORRECT_COUNTING_BUSY_THREADS = false;
 		private int _id;
 		private boolean _isIdle=true;
+		
+		private Object _currentObj=null;  // currently executing object
+		
 
 		/**
 		 * public constructor. The id argument is a negative integer.
@@ -414,7 +436,10 @@ public final class FasterParallelAsynchBatchTaskExecutor {
 				Object data = sfmpc.recvData(_id);
 				setIdle(false);
 				try {
-					if (data instanceof TaskObject) ( (TaskObject) data).run();
+					if (data instanceof CancelableTaskObject) {
+						setCurrentObj((CancelableTaskObject) data);
+						( (TaskObject) data).run();
+					}
 					else if (data instanceof Runnable) ( (Runnable) data).run();
 					else if (data instanceof PoissonPill) {
 						do_run = false; // done
@@ -422,8 +447,10 @@ public final class FasterParallelAsynchBatchTaskExecutor {
 						break;
 					}
 					else throw new ParallelException("data object cannot be run");
+					setCurrentObj(null);
 				}
 				catch (Exception e) {
+					setCurrentObj(null);
 					e.printStackTrace();  // task threw an exception, ignore and continue
 				}
 				if (_DO_CORRECT_COUNTING_BUSY_THREADS) {
@@ -439,6 +466,31 @@ public final class FasterParallelAsynchBatchTaskExecutor {
 					}
 				}
 				setIdle(true);
+			}
+		}
+		
+		
+		/**
+		 * sets the <CODE>_currentObj</CODE> data member to the 
+		 * <CODE>TaskObject</CODE> that is about to start executing, so that in 
+		 * case it is a <CODE>CancelableTaskObject</CODE>, it can be canceled by 
+		 * a call to <CODE>cancelCurrentTaskObject</CODE>.
+		 * @param data TaskObject
+		 */
+		synchronized void setCurrentObj(TaskObject data) {
+			_currentObj = data;
+		}
+		
+		
+		/**
+		 * the method invokes the <CODE>cancel()</CODE> method on the 
+		 * <CODE>_currentObj</CODE> iff it is a cancelable task object. The cancel
+		 * method hopefully leads to the early finish of the execution of the run
+		 * method of the currently running object.
+		 */
+		synchronized void cancelCurrentTaskObject() {
+			if (_currentObj!=null && _currentObj instanceof CancelableTaskObject) {
+				((CancelableTaskObject) _currentObj).cancel();
 			}
 		}
 

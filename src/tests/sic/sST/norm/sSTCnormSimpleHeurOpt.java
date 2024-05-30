@@ -17,9 +17,14 @@ import java.util.HashMap;
  * r*,Q*, and T* using the algorithm implemented in class 
  * <CODE>tests.sic.rnqt.norm.RnQTCnormOpt</CODE> and then setting s=r*,
  * S=r*+Q* and T=T*.
+ * <p>Notes:
+ * <ul>
+ * <li>2023-07-06: multiple threads cannot concurrently run the 
+ * <CODE>minimize(f)</CODE> method.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -81,7 +86,7 @@ public final class sSTCnormSimpleHeurOpt implements OptimizerIntf {
 
 		
 	/**
-	 * main class method.
+	 * main class method cannot be called concurrently from many threads.
 	 * @param f FunctionIntf must be of type sSTCnorm
 	 * @return PairObjDouble Pair&lt;double[] args, double bestcost&gt; where the 
 	 * args is an array holding the parameters (s*,S*,T*) yielding the bestcost 
@@ -94,6 +99,10 @@ public final class sSTCnormSimpleHeurOpt implements OptimizerIntf {
 				                           "be of type tests.sic.sST.norm.sSTCnorm");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
+			if (_numRunning>0) 
+				throw new OptimizerException("sSTCnormSimpleHeurOpt.minimize(f) is "+
+					                           "already running "+
+					                           "(by another thread on this object)");						
 			if (_pdclt==null) {
 				mger.msg("sSTCnormSimpleHeurOpt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);

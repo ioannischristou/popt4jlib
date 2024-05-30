@@ -18,13 +18,15 @@ import utils.RndUtil;
  * implements the KMeans|| method for seeds initialization for the K-Means
  * algorithm. Multi-threaded implementation assumes that data-set fits in main
  * memory. Notice that any weights attached to the data points (case of weighted
- * clustering) are not taken into account in this algorithm.
+ * clustering) are taken into account by having the weights of the candidate
+ * data-points weigh as much as the sum of the weights of the points assigned to
+ * them, instead of the number of the points assigned unto them.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2018</p>
+ * <p>Copyright: Copyright (c) 2011-2024</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 1.1
  */
 public class KMeansCC implements ClustererInitIntf {
 	/**
@@ -66,11 +68,13 @@ public class KMeansCC implements ClustererInitIntf {
 	private int[] _asgn;  // int[] holds the current center index to which the 
 	                      // point is currently closest to
 	
+	final private double[] _weights;  // double[] holds data-point weights [opt]
+	
 	final private static Messenger _mger = Messenger.getInstance();
 
 	
 	/**
-	 * sole constructor.
+	 * first public constructor assumes no weights for the data-points.
 	 * @param datapts List  // List&lt;VectorIntf&gt;
 	 * @param lambda int the parameter of the algorithm
 	 * @param numthreads int the number of threads to use
@@ -83,13 +87,49 @@ public class KMeansCC implements ClustererInitIntf {
 		_CInd = new HashSet();
 		_nthreads = numthreads;
 		_numrounds = numrounds;
+		_weights = new double[_data.size()];
+		for (int i=0; i<_weights.length; i++) _weights[i] = 1.0;
+	}
+	
+
+	/**
+	 * last public constructor accepts weights for the data-points.
+	 * @param datapts List  // List&lt;VectorIntf&gt;
+	 * @param weights double[] may be null, else all numbers must be positive
+	 * @param lambda int the parameter of the algorithm
+	 * @param numthreads int the number of threads to use
+	 * @param numrounds int if this is positive, denotes the number of rounds to
+	 * run the main KMeansCC iteration instead of the logy number.
+	 * @throws IllegalArgumentException if weights is not null and its length is
+	 * different than the size of the datapts list.
+	 */
+	public KMeansCC(List datapts, double[] weights, int lambda, int numthreads, 
+		              int numrounds) {
+		if (weights!=null && weights.length != datapts.size())
+			throw new IllegalArgumentException("datapts and weights arrays sizes "+
+				                                 "don't match");
+		_data = datapts;
+		_l = lambda;
+		_CInd = new HashSet();
+		_nthreads = numthreads;
+		_numrounds = numrounds;
+		if (weights==null) {
+			_weights = new double[_data.size()];
+			for (int i=0; i<_weights.length; i++) _weights[i] = 1.0;	
+		}
+		else _weights = weights;
 	}
 	
 	
 	/**
 	 * the main method of the class. Implements the K-Means|| algorithm as 
 	 * described in the paper "Scalable K-Means++" by Bahmani, Moseley, Vattani
-	 * Kumar and Vassilvitskii, Proc. of the VLDB Endowment, 2012.
+	 * Kumar and Vassilvitskii, Proc. of the VLDB Endowment, 2012. 
+	 * <p>Notes:
+	 * <ul>
+	 * <li>2024-05-07: There is a slight variation in that we support positive 
+	 * weights attached to the data points for weighted-MSSC clustering.
+	 * </ul>
 	 * @param k int
 	 * @return List  // List&lt;VectorIntf&gt;
 	 * @throws IllegalArgumentException if k&gt;n, the number of data points to be
@@ -126,6 +166,10 @@ public class KMeansCC implements ClustererInitIntf {
 		// 2. update dists from C, then compute fi_X(C)
 		for (int i=0; i<_nthreads; i++) {
 			threads[i].startUpdateDists(null);  // update distances
+		}
+		//itc-20240507: wait until all threads are done
+		for (int i=0; i<_nthreads; i++) {
+			threads[i].waitForIdleState();
 		}
 		_mger.msg("KMeansCC: starting partial fi_X(C) computation", 1);
 		for (int i=0; i<_nthreads; i++) {
@@ -170,6 +214,10 @@ public class KMeansCC implements ClustererInitIntf {
 			_mger.msg("KMeansCC: distance updating in parallel", 1);
 			for (int i=0; i<_nthreads; i++) {
 				threads[i].startUpdateDists(C_new_points);
+			}
+			//itc-20240507: wait until all threads are done
+			for (int i=0; i<_nthreads; i++) {
+				threads[i].waitForIdleState();
 			}
 			// 4.2 get new fi_X, add C_new_points into _CInd, and repeat
 			_mger.msg("KMeansCC: fi_X(C) computing in parallel", 1);
@@ -264,6 +312,7 @@ public class KMeansCC implements ClustererInitIntf {
 	 * &lt;input_vectors_file&gt; &lt;k&gt; &lt;lambda&gt; 
 	 * [numthreads(4)] 
 	 * [numrounds(-1)]
+	 * [weights_file(null)]
 	 * [dbglvl(Integer.MAX_VALUE-&gt;print all msgs)]
 	 * </CODE>.
 	 * @param args 
@@ -283,11 +332,15 @@ public class KMeansCC implements ClustererInitIntf {
 			if (args.length>3) nthreads = Integer.parseInt(args[3]);
 			int numrounds = -1;
 			if (args.length>4) numrounds = Integer.parseInt(args[4]);
+			double[] weights = null;
 			if (args.length>5) {
-				int dbglvl = Integer.parseInt(args[5]);
+				weights = DataMgr.readDoubleLabelsFromFile(args[5]);
+			}
+			if (args.length>6) {
+				int dbglvl = Integer.parseInt(args[6]);
 				Messenger.getInstance().setDebugLevel(dbglvl);
 			}
-			KMeansCC kmcc = new KMeansCC(datapts, l, nthreads, numrounds);
+			KMeansCC kmcc = new KMeansCC(datapts, weights, l, nthreads, numrounds);
 			long start_time = System.currentTimeMillis();
 			List centers = kmcc.getInitialCenters(k);
 			long dur = System.currentTimeMillis()-start_time;
@@ -442,7 +495,8 @@ public class KMeansCC implements ClustererInitIntf {
 			long st = System.currentTimeMillis();
 			double res = 0.0;
 			for (int i=_fromInd; i<=_toInd; i++) {
-				res += _minPtDist2FromC[i];
+				res += _minPtDist2FromC[i]*_weights[i];  // itc-20240507: RHS used to be 
+				                                         // _minPtDist2FromC[i]
 			}
 			long dur = System.currentTimeMillis()-st;
 			_mger.msg("T#"+_myind+": getPartialF() took "+dur+" msecs.", 3);
@@ -472,8 +526,10 @@ public class KMeansCC implements ClustererInitIntf {
 						}
 					}
 				}
+				double wtot = 0.0;
+				for(int i=0; i<_weights.length; i++) wtot += _weights[i];
 				synchronized (_w) {
-					_w[_asgn[_fromInd]] = _data.size();
+					_w[_asgn[_fromInd]] = wtot;  // itc2024-0507: used to be _data.size()
 				}
 			}
 			else {  // NOT the first time, compare with new kids in the block
@@ -489,9 +545,11 @@ public class KMeansCC implements ClustererInitIntf {
 							_minPtDist2FromC[i] = d;
 							synchronized (_w) {
 								if (_asgn[i]>=0) {
-									--_w[_asgn[i]];
+									_w[_asgn[i]] -= _weights[i];  // itc-20240507: used to be 
+									                              // --_w[asgn[i]];
 								}
-								++_w[cii];
+								_w[cii] += _weights[i];         // itc-20240507: used to be 
+								                                // ++_w[cii];
 								_asgn[i] = cii;
 							}
 						}
@@ -512,7 +570,8 @@ public class KMeansCC implements ClustererInitIntf {
 			Random r = RndUtil.getInstance(_myind).getRandom();
 			int cnt = 0;
 			for (int i=_fromInd; i<=_toInd; i++) {
-				double pi_C = _minPtDist2FromC[i]*_l / _fi_X;
+				double pi_C = _minPtDist2FromC[i]*_weights[i]*_l / _fi_X;  
+        // itc-20240507: above RHS didn't include _weights[i]
 				double rand_val = r.nextDouble();
 				if (rand_val <= pi_C) {
 					Integer iI = new Integer(i);
@@ -555,7 +614,7 @@ public class KMeansCC implements ClustererInitIntf {
 					}
 				}
 				synchronized (_w) {
-					++_w[best_ind];
+					_w[best_ind] += _weights[i];  // itc20240507:used to be ++_w[best_ind]
 				}
 			}
 			final long dur = System.currentTimeMillis()-st;

@@ -28,7 +28,7 @@ call start PDBTExecSingleCltWrkInitSrv.bat 7890 %srvport% 2
 echo Verify server has started before you press any key...
 pause
 REM java <jvm_args> -cp <classpath> parallel.distributed.PDBTExecInitedWrk [num_threads(10)] [serverhost(localhost)] [serverport(7890)] [dbglvl(0)]
-call start PDBTExecInitedWrk.bat %numworkerthreads% localhost 7890 3
+call start PDBTExecInitedWrk.bat %numworkerthreads% localhost 7890 2
 echo Verify all workers are started before you press any key...
 pause
 echo on

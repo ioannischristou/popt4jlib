@@ -1,0 +1,87 @@
+package popt4jlib.TS;
+
+import popt4jlib.*;
+import utils.*;
+import java.util.*;
+
+/**
+ * implements the operator for creating random chromosome objects that are of
+ * type <CODE>double[]</CODE> for the Tabu-Search meta-heuristic.
+ * <p>Title: popt4jlib</p>
+ * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
+ * <p>Company: </p>
+ * @author Ioannis T. Christou
+ * @version 1.0
+ */
+public class DblArray1CMaker implements RandomChromosomeMakerIntf {
+  /**
+   * sole public constructor is empty.
+   */
+  public DblArray1CMaker() {
+    // no-op
+  }
+
+  /**
+   * creates fixed-length <CODE>double[]</CODE> objects, according to certain
+   * parameters, specified in the params argument. The value for each element
+   * in the array, is drawn from the uniform distribution restricted within the
+   * boundaries of the element's range specified in the params key-value pairs.
+   * @param params HashMap must contain the following params:
+	 * <ul>
+   * <li> &lt;"dts.chromosomelength", $integer_value$&gt; mandatory, the length
+   * of the chromosome.
+   * <li> &lt;"dts.minallelevalue", $value$&gt; mandatory, the minimum value
+   * for any allele in the chromosome.
+   * <li> &lt;"dts.minallelevalue$i$", $value$&gt; optional, the minimum value
+   * for the i-th allele in the chromosome ($i$ must be in the range
+   * {0,...,chromosome_length-1}). If this value is less than the global value
+   * specified by the "dts.minallelevalue" key, it is ignored.
+   * <li> &lt;"dts.maxallelevalue", $value$&gt; mandatory, the maximum value
+   * for any allele in the chromosome.
+   * <li> &lt;"dts.maxallelevalue$i$", $value$&gt; optional, the maximum value
+   * for the i-th allele in the chromosome ($i$ must be in the range
+   * {0,...,chromosome_length-1}). If this value is greater than the global
+   * value specified by the "dts.maxallelevalue" key, it is ignored.
+   * <li> &lt;"thread.id",$integer_value$&gt; mandatory, the (internal) id of 
+   * the thread invoking this method; this number is used so as to look-up the 
+	 * right random-number generator associated with the current thread.
+	 * </ul>
+   * @throws OptimizerException
+   * @return Object double[] of length specified in the params.
+   */
+  public Object createRandomChromosome(HashMap params) 
+		throws OptimizerException {
+    try {
+      final int nmax = 
+				((Integer) params.get("dts.chromosomelength")).intValue();
+      final double maxalleleval =
+				((Double) params.get("dts.maxallelevalue")).doubleValue();
+      final double minalleleval =
+				((Double) params.get("dts.minallelevalue")).doubleValue();
+      final int id = ((Integer) params.get("thread.id")).intValue();
+			final Random rid = RndUtil.getInstance(id).getRandom();
+      double[] arr = new double[nmax];
+      for (int i=0; i<nmax; i++) {
+        // restore within bounds, if any
+        double maxargvali = maxalleleval;
+        Double MaviD = (Double) params.get("dts.maxallelevalue"+i);
+        if (MaviD!=null && MaviD.doubleValue()<maxalleleval)
+          maxargvali = MaviD.doubleValue();
+        double minargvali = minalleleval;
+        Double maviD = (Double) params.get("dts.minallelevalue"+i);
+        if (maviD!=null && maviD.doubleValue()>minalleleval)
+          minargvali = maviD.doubleValue();
+				double rnd = rid.nextDouble();								
+				arr[i] = minargvali + rnd*(maxargvali-minargvali);
+      }			
+      return arr;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new OptimizerException("createRandomChromosome: failed");
+    }
+  }
+	
+}
+

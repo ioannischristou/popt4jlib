@@ -1,25 +1,33 @@
 package tests.sic.sST.poisson;
 
-import parallel.distributed.*;
-import popt4jlib.DblArray1Vector;
+import popt4jlib.*;
 import popt4jlib.GA.*;
 import popt4jlib.SA.*;
 import popt4jlib.PS.*;
 import popt4jlib.DE.*;
+import popt4jlib.TS.*;
+import parallel.distributed.*;
 import utils.Messenger;
 import utils.PairObjDouble;
+import tests.sic.rnqt.poisson.*;
 import java.util.HashMap;
 
 
 /**
  * class uses any of the following supported meta-heuristics for (s,S,T) policy
- * optimization under Poisson demands: GA, SA, PS, DE.
+ * optimization under Poisson demands: GA, SA, PS, DE, TS.
+ * <p>Notes:
+ * <ul>
+ * <li> 2024-01-10: For the SA and TS, it is possible to start it from the 
+ * heuristic solution of the (r,nQ,T) policy, by including in the main method
+ * parameters the useRnQT param as true.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class sSTCpoissonMetaHeurOpt {
 	
@@ -28,9 +36,9 @@ public class sSTCpoissonMetaHeurOpt {
 	 * echelon system facing Poisson demands. Invoke as:
 	 * <CODE>
 	 * java -cp &lt;classpath&gt; tests.sic.sST.poisson.sSTCpoissonMetaHeurOpt 
-	 * &lt;GA|SA|PS|DE&gt;
+	 * &lt;GA|SA|PS|DE|TS&gt;
 	 * &lt;Kr&gt; &lt;Ko&gt; &lt;L&gt; &lt;&lambda;&gt;
-	 * &lt;h&gt; &lt;p&gt; [p2(0)] [dbglvl(0)]
+	 * &lt;h&gt; &lt;p&gt; [p2(0)] [useRnQT(false)] [dbglvl(0)]
 	 * </CODE>.
 	 * @param args 
 	 */
@@ -44,8 +52,18 @@ public class sSTCpoissonMetaHeurOpt {
 		final double p = Double.parseDouble(args[6]);
 		double p2 = 0;
 		if (args.length>7) p2 = Double.parseDouble(args[7]);
+		boolean useRnQT = false;
+		if (args.length>8) {
+			try { 
+				useRnQT = Boolean.parseBoolean(args[8]);
+			}
+			catch (Exception e) {
+				System.err.println("couldn't parse "+args[8]+
+					                 " as a Boolean value, will remain at false");
+			}
+		}
 		int dbglvl = 0;
-		if (args.length>8) dbglvl = Integer.parseInt(args[8]);
+		if (args.length>9) dbglvl = Integer.parseInt(args[9]);
 		final Messenger mger = Messenger.getInstance();
 		mger.setDebugLevel(dbglvl);
 		
@@ -107,9 +125,28 @@ public class sSTCpoissonMetaHeurOpt {
 			params.put("dsa.numtriesperiter", new Integer(3));
 			params.put("dsa.numouteriters", new Integer(20));
 			params.put("dsa.function", f);
+			long start = -1;
+			if (useRnQT) {
+				start = System.currentTimeMillis();
+				RnQTCpoissonHeurPOpt rnqtHeur = 
+					new RnQTCpoissonHeurPOpt("localhost", 7891, 24, 0.01, 0.01);
+				RnQTCpoisson rnqt = new RnQTCpoisson(Kr, Ko, L, lambda, h, p, p2);
+				try {
+					PairObjDouble res = rnqtHeur.minimize(rnqt);
+					double[] x0 = (double[]) res.getArg();
+					// override in the parameters the key for initializing the SA thread
+					// search process
+					params.put("dsa.randomchromosomemaker", new FixedDblArray1CMaker(x0));
+				}
+				catch (Exception e) {
+					mger.msg("Exception "+e.getMessage()+" caught while heuristically "+
+						       "solving (r,nQ,T), exiting.", dbglvl);
+					System.exit(-1);
+				}
+			}
 			try {
 				DSA dsa = new DSA(params);
-				long start = System.currentTimeMillis();
+				if (!useRnQT) start = System.currentTimeMillis();
 				PairObjDouble result = dsa.minimize(f);
 				long dur = System.currentTimeMillis()-start;
 				double[] x = (double[]) result.getArg();
@@ -124,7 +161,7 @@ public class sSTCpoissonMetaHeurOpt {
 				System.exit(-1);
 			}			
 		}
-		else if ("PS".equals(meta)) {  // prepare run for DGA
+		else if ("PS".equals(meta)) {  // prepare run for PSO
 			params.put("dpso.pdbtexecinitedwrkcmd", new PDBTExecNoOpCmd());
 			params.put("dpso.pdbthost", "localhost");
 			params.put("dpso.pdbtport", new Integer(7891));
@@ -159,7 +196,7 @@ public class sSTCpoissonMetaHeurOpt {
 				System.exit(-1);
 			}
 		}
-		else if ("DE".equals(meta)) {  // prepare run for DGA
+		else if ("DE".equals(meta)) {  // prepare run for DDE
 			params.put("dde.numdimensions", new Integer(3));  // [s,S,T]
 			params.put("dde.numtries", new Integer(20));
 			params.put("dde.numthreads", new Integer(24));
@@ -186,5 +223,61 @@ public class sSTCpoissonMetaHeurOpt {
 				System.exit(-1);
 			}
 		}
+		else if ("TS".equals(meta)) {  // prepare run for DTS
+			params.put("dts.chromosomelength", new Integer(3));  // [s,S,T]
+			params.put("dts.minallelevalue", new Double(-150.0));
+			params.put("dts.maxallelevalue", new Double(150.0));
+			params.put("dts.minallelevalue1", new Double(1.0));   // Dmin
+			params.put("dts.maxallelevalue1", new Double(50.0));  // Dmax
+			params.put("dts.minallelevalue2", new Double(0.01));  // Tmin
+			params.put("dts.maxallelevalue2", new Double(20.0));  // Tmax
+			params.put("dts.randomchromosomemaker", 
+				         new popt4jlib.TS.DblArray1CMaker());
+			params.put("dts.movedelta", new Double(2.0));
+			params.put("dts.movemaker", new popt4jlib.TS.DblArray1MoveMaker());
+			params.put("dts.numthreads", new Integer(24));  // used to be 24
+			params.put("dts.nhoodmindist", new Double(1.e-2));
+			params.put("dts.nhooddistcalc", new popt4jlib.DblArray1DistCalc());
+			params.put("dts.numiters", new Integer(20));
+			params.put("dts.nhoodsize", new Integer(10));
+			params.put("dts.tabulistmaxsize", new Integer(10)); 
+			params.put("dts.function", f);
+			long start = -1;
+			if (useRnQT) {
+				start = System.currentTimeMillis();
+				RnQTCpoissonHeurPOpt rnqtHeur = 
+					new RnQTCpoissonHeurPOpt("localhost", 7891, 24, 0.01, 0.01);
+				RnQTCpoisson rnqt = new RnQTCpoisson(Kr, Ko, L, lambda, h, p, p2);
+				try {
+					PairObjDouble res = rnqtHeur.minimize(rnqt);
+					double[] x0 = (double[]) res.getArg();
+					// override in the parameters the key for initializing the TS thread
+					// search process
+					params.put("dts.randomchromosomemaker", new FixedDblArray1CMaker(x0));
+				}
+				catch (Exception e) {
+					mger.msg("Exception "+e.getMessage()+" caught while heuristically "+
+						       "solving (r,nQ,T), exiting.", dbglvl);
+					System.exit(-1);
+				}
+			}
+			try {
+				DTS dts = new DTS(params);
+				if (!useRnQT) start = System.currentTimeMillis();
+				PairObjDouble result = dts.minimize(f);
+				long dur = System.currentTimeMillis()-start;
+				double[] x = (double[]) result.getArg();
+				System.out.println("DTS soln: s="+x[0]+
+					                 " S="+(x[0]+x[1])+
+					                 " T="+x[2]);
+				System.out.println("DTS best cost found="+result.getDouble()+
+					                 " in "+dur+" msecs");
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				System.exit(-1);
+			}			
+		}
+		
 	}
 }

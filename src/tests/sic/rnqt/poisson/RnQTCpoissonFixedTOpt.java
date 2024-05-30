@@ -138,7 +138,7 @@ public class RnQTCpoissonFixedTOpt implements OptimizerIntf {
 	/**
 	 * test-driver for the class. Invoke as:
 	 * <CODE>
-	 * java -cp &lt;classpath&gt; tests.sic.rnqt.norm.RnQTCpoissonFixedTOpt 
+	 * java -cp &lt;classpath&gt; tests.sic.rnqt.poisson.RnQTCpoissonFixedTOpt 
 	 * &lt;T&gt; &lt;Kr&gt; &lt;Ko&gt; &lt;L&gt; &lt;&lambda;&gt;
 	 * &lt;h&gt; &lt;p&gt; [p2(0)]
 	 * </CODE>.

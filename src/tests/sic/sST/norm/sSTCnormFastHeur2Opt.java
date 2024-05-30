@@ -34,10 +34,20 @@ import org.jfree.data.xy.XYSeriesCollection;
  * r*,Q*, and T* according to the heuristic implemented in class 
  * <CODE>tests.sic.rnqt.norm.RnQTCnormHeurOpt</CODE> and then computing the 
  * best (s(r*),S(r*+Q*)) parameters for t close to T* and picking the best set 
- * of parameters.
+ * of parameters. The difference from class <CODE>sSTCnormFastHeurOpt</CODE> is
+ * that while the former class computes the (s*,S*) parameters for a given T*
+ * using the Zheng-Federgruen algorithm, this class simply performs a grid 
+ * search around the points (r*, r*+Q*). This can result in tens or hundreds of
+ * thousands of function evaluation tasks required.
+ * <p>Notes:
+ * <ul>
+ * <li>2024-03-20: disallowed creation of "bad" function evaluation tasks
+ * <li>2023-07-06: disallowed multiple thread from concurrently running the 
+ * <CODE>minimize(f)</CODE> method on the same object.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -125,6 +135,10 @@ public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 				                           "be of type tests.sic.sST.norm.sSTCnorm");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
+			if (_numRunning>0) 
+				throw new OptimizerException("sSTCnormFastHeur2Opt.minimize(f) is "+
+					                           "already running "+
+					                           "(by another thread on this object)");
 			if (_pdclt==null) {
 				mger.msg("sSTCnormFastHeur2Opt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);
@@ -178,6 +192,7 @@ public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 		for(; T<Tmax; T+=_epsT) {
 			for(double s=smin; s<=smax; s+=_epss) {
 				for(double S=Smin; S<=Smax; S+=_epss) {
+					if (S <= s) continue;  // don't include useless tasks
 					all_tasks.add(new FET2(sSTC, new double[]{s,S,T}));
 				}
 			}
@@ -197,16 +212,18 @@ public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 			for (int i=0; i<res.length; i++) {
 				FET2 ri = 
 					(FET2) res[i];
-				if (i==0 ||
-					  ((Double)_tis.get(_tis.size()-1)).doubleValue()<ri.getArg()[2]) {
-					_tis.add(new Double(ri.getArg()[2]));  // add to tis time-series
-				  _ctis.add(new Double(ri.getObjValue()));  // add to c(t)'s time-series
-				}
-				else {
-					double cur_val_t = ((Double)_ctis.get(_ctis.size()-1)).doubleValue();
-					if (ri.getObjValue() < cur_val_t) {
-						_ctis.set(_ctis.size()-1, ri.getObjValue());
-					} 
+				synchronized(this) {
+					if (i==0 ||
+							((Double)_tis.get(_tis.size()-1)).doubleValue()<ri.getArg()[2]) {
+						_tis.add(new Double(ri.getArg()[2]));  // add to tis time-series
+						_ctis.add(new Double(ri.getObjValue()));  // add to c(t)'s t-series
+					}
+					else {
+						double cur_val_t=((Double)_ctis.get(_ctis.size()-1)).doubleValue();
+						if (ri.getObjValue() < cur_val_t) {
+							_ctis.set(_ctis.size()-1, ri.getObjValue());
+						} 
+					}
 				}
 				if (ri.getObjValue() < c_cur_best) {
 					s_star = ri.getArg()[0];
@@ -244,31 +261,33 @@ public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 	 * processing.
 	 * @param f FunctionIntf must be of type sSTCnorm
 	 * @return PairObjDouble Pair&lt;double[] args, double bestcost&gt; where the 
-	 * args is an array holding the parameters (s*,S*,T*) yielding the bestcost 
+	 * args is an array holding the parameters (s*,S*,T*) yielding the best-cost 
 	 * value
 	 * @throws OptimizerException 
 	 */
 	public PairObjDouble minimizeOverT(FunctionIntf f) throws OptimizerException {
 		if (!(f instanceof sSTCnorm))
-			throw new OptimizerException("sSTCnormFastHeur2Opt.minimize(f): f must "+
-				                           "be of type tests.sic.sST.norm.sSTCnorm");
+			throw new OptimizerException("sSTCnormFastHeur2Opt.minimizeOverT(f): f "+
+				                           "NOT of type tests.sic.sST.norm.sSTCnorm?");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
-			if (_pdclt==null) {
-				mger.msg("sSTCnormFastHeur2Opt.minimize(f): connecting on "+_pdsrv+
+			if (_numRunning>0) 
+				throw new OptimizerException("sSTCnormFastHeur2Opt.minimizeOverT(f) or"+
+					                           " minimize(f) is already running"+
+					                           " (by another thread on this object)");
+			if (_pdclt==null) {				
+				mger.msg("sSTCnormFastHeur2Opt.minimizeOverT(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);
 				_pdclt = new PDBTExecInitedClt(_pdsrv, _pdport);
 				try {
 					_pdclt.submitInitCmd(new PDBTExecInitNoOpCmd());
-					mger.msg("sSTCnormFastHeur2Opt.minimize(f): successfully sent init "+
-						       "cmd", 
-						       2);
+					mger.msg("sSTCnormFastHeur2Opt.minimizeOverT(f): sent init cmd", 2);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
-					throw new OptimizerException("sSTCnormFastHeur2Opt.mainimize(f): "+
-						                           "clt failed to send empty init-cmd to "+
-						                           "network");
+					throw new OptimizerException("sSTCnormFastHeur2Opt.minimizeOverT(f):"+
+						                           " clt failed to send empty init-cmd to"+
+						                           " network");
 				}
 			}
 			_tis.clear();
@@ -283,11 +302,11 @@ public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 		double S_star = Double.NaN;
 		double t_star = Double.NaN;
 		
-		mger.msg("sSTCnormFastHeur2Opt.minimize(): running "+
+		mger.msg("sSTCnormFastHeur2Opt.minimizeOverT(): running "+
 			       "(r,nQ,T) policy optimization", 1);
 		// first, compute the optimal T* for the (r,nQ,T) policy
 		final double[] rnqt_arr = getOptimalRnQTPolicy(sSTC);
-		mger.msg("sSTCnormFastHeur2Opt.minimize(): "+
+		mger.msg("sSTCnormFastHeur2Opt.minimizeOverT(): "+
 			       "(r,nQ,T) policy optimization returns "+
 			       "R*="+rnqt_arr[0]+", Q*="+rnqt_arr[1]+", T*="+rnqt_arr[2], 1);
 		
@@ -314,7 +333,8 @@ public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 				                                       rnqt_arr[0]+rnqt_arr[1]+_deltas);
 			}
 			try {
-				mger.msg("sSTCnormFastHeur2Opt.minimize(): submit a batch of "+batchSz+
+				mger.msg("sSTCnormFastHeur2Opt.minimizeOverT(): submit a batch of "+
+					       batchSz+
 					       " tasks to network for period length from "+(Tstart+_epsT)+
 					       " up to "+T, 
 					       1);
@@ -322,21 +342,24 @@ public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 				for (int i=0; i<res.length; i++) {
 					sSTCnormFixedTBCOpterResult ri = 
 						(sSTCnormFixedTBCOpterResult) res[i];
-					_tis.add(new Double(ri._T));  // add to tis time-series
-					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+					synchronized(this) {
+						_tis.add(new Double(ri._T));  // add to tis time-series
+						_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+					}
 					if (ri._C < c_cur_best) {
 						s_star = ri._s;
 						S_star = ri._S;
 						t_star = ri._T;
 						c_cur_best = ri._C;
-						mger.msg("sSTCnormFastHeur2Opt.minimize(f): found new better soln "+
-							       " @T="+t_star+", c="+c_cur_best, 1);
+						mger.msg("sSTCnormFastHeur2Opt.minimizeOverT(f): found new better"+
+							       " soln @T="+t_star+", c="+c_cur_best, 1);
 					}
 				}
 			}
 			catch (Exception e) {
 				e.printStackTrace();
-				throw new OptimizerException("sSTCnormFastHeur2Opt.minimize(): failed "+
+				throw new OptimizerException("sSTCnormFastHeur2Opt.minimizeOverT(): "+
+					                           "failed "+
 					                           "to submit tasks/process/get back result");
 			}
 		}
@@ -366,8 +389,8 @@ public final class sSTCnormFastHeur2Opt implements OptimizerIntf {
 			}
 		}
 		ArrayList[] result = new ArrayList[2];
-		result[0] = _tis;
-		result[1] = _ctis;
+		result[0] = new ArrayList(_tis);
+		result[1] = new ArrayList(_ctis);
 		return result;
 	}
 

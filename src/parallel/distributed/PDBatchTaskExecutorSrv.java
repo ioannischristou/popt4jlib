@@ -46,10 +46,10 @@ public class PDBatchTaskExecutorSrv {
   private HashSet _working;  // Set<PDBTEW[2]Listener listener>
   private int _workersPort = 7890;  // default port
   private int _clientsPort = 7891;  // default port
-  private static final int _NUM_ATTEMPTS = 10;  // num attempts to iterate over
+  protected static final int _NUM_ATTEMPTS = 10;  // num attempts to iterate over
                                                 // available worker connections
                                                 // to try to find an idle one.
-	private static final int _NUM_REPEAT_ATTEMPTS = 2;  // num attempts to iterate
+	protected static final int _NUM_REPEAT_ATTEMPTS = 2;  // num attempts to iterate
 	                                                    // over other known srvrs
   private Vector _otherKnownServers;  // Vector<PDBatchTaskExecutorClt>
 
@@ -73,8 +73,8 @@ public class PDBatchTaskExecutorSrv {
    * <CODE>
 	 * java -cp &lt;classpath&gt; parallel.distributed.PDBatchTaskExecutorSrv 
 	 * [workers_port(7890)] [clients_port(7891)] 
-	 * [other_server_ip_address,otherserver_ip_port]* 
-	 * </CODE>
+	 * [other_server_ip_address otherserver_ip_port]* 
+	 * </CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -185,14 +185,24 @@ public class PDBatchTaskExecutorSrv {
    * @param host String
    * @param port int
    */
-  private synchronized void addOtherServer(String host, int port) {
+  protected synchronized void addOtherServer(String host, int port) {
     PDBatchTaskExecutorClt othersrv = new PDBatchTaskExecutorClt(host, port);
     _otherKnownServers.addElement(othersrv);
   }
+	
+	
+	/**
+	 * return the <CODE>_otherKnownServers</CODE> vector of the other known 
+	 * server clients to this server.
+	 * @return Vector  // Vector&lt;PDBatchTaskExecutorClt&gt;
+	 */
+	protected Vector getOtherKnownServers() {
+		return _otherKnownServers;
+	}
 
 
-  TaskObjectsExecutionResults submitWork(Vector originating_clients, 
-		                                     TaskObject[] tasks) 
+  protected TaskObjectsExecutionResults submitWork(Vector originating_clients, 
+		                                               TaskObject[] tasks) 
 		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
     Set workers2rm = new HashSet();  // Set<Socket s> for 
 		                                 // (Socket s, PDBTEWListener t) pair
@@ -294,7 +304,7 @@ public class PDBatchTaskExecutorSrv {
   }
 
 
-  private TaskObjectsExecutionResults submitWork(
+  protected TaskObjectsExecutionResults submitWork(
 		TaskObjectsExecutionRequest req, PDBTEWListener t)
       throws IOException, PDBatchTaskExecutorException {
     utils.Messenger mger = utils.Messenger.getInstance();
@@ -309,7 +319,7 @@ public class PDBatchTaskExecutorSrv {
    * adds a new worker to the network.
    * @param s Socket
    */
-  private synchronized void addNewWorkerConnection(Socket s) {
+  protected synchronized void addNewWorkerConnection(Socket s) {
     try {
       PDBTEWListener lt = new PDBTEWListener(this, s);
       _workers.put(s, lt);
@@ -338,7 +348,7 @@ public class PDBatchTaskExecutorSrv {
   }
 
 
-  private static void usage() {
+  static void usage() {
     System.err.println("usage: java -cp <classpath> "+
 			                 "parallel.distributed.PDBatchTaskExecutorSrv "+
 			                 "[workersport] [clientsport] "+
@@ -346,7 +356,7 @@ public class PDBatchTaskExecutorSrv {
   }
 
 
-  private static boolean contains(Vector clients, String cname) {
+  static boolean contains(Vector clients, String cname) {
     if (clients==null) return false;
     for (int i=0; i<clients.size(); i++) {
       String ci = (String) clients.elementAt(i);
@@ -556,7 +566,7 @@ public class PDBatchTaskExecutorSrv {
 		private boolean _isPrevRunSuccess=true;
 		private TaskObject[] _prevFailedBatch=null;
 
-    private PDBTEWListener(PDBatchTaskExecutorSrv srv, Socket s) 
+    PDBTEWListener(PDBatchTaskExecutorSrv srv, Socket s) 
 			throws IOException {
       _srv = srv;
       _s = s;
@@ -630,7 +640,7 @@ public class PDBatchTaskExecutorSrv {
     private synchronized void setAvailability(boolean v) { _isAvail = v; }
 
 
-    private boolean isConnectionLost() {
+    protected boolean isConnectionLost() {
       return _s==null || _s.isClosed();
     }
 

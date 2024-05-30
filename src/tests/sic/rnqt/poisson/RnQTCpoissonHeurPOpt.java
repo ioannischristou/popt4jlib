@@ -276,7 +276,7 @@ public class RnQTCpoissonHeurPOpt implements OptimizerIntf {
 		final OneDStepQuantumOptimizer onedopter = new OneDStepQuantumOptimizer();			
 		final FunctionIntf f2 = new RnQTCpoisson(0, 0, L, lambda, h, p, p2);
 		final Messenger mger = Messenger.getInstance();
-		mger.msg("RnQTCpoissonHeurPOpt.STCnbinOptFastApprox(): started", 1);
+		mger.msg("RnQTCpoissonHeurPOpt.STCpoissonOptFastApprox(): started", 1);
 		double[] res = new double[3];
 		double T = startT;
 		double c_prev = Double.POSITIVE_INFINITY;
@@ -286,7 +286,7 @@ public class RnQTCpoissonHeurPOpt implements OptimizerIntf {
 		double s0 = Math.ceil(_poiss._lambda*(L+T));
 		final double[] x0 = new double[3];
 		while (true) {
-			mger.msg("RnQTCpoissonHeurPOpt.STCnbinOptFastApprox(): running w/ T="+T,
+			mger.msg("RnQTCpoissonHeurPOpt.STCpoissonOptFastApprox(): running T="+T,
 				       2);
 			final double lb = Integer.MIN_VALUE;
 			final double ub = Integer.MAX_VALUE;

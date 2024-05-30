@@ -33,9 +33,14 @@ import org.jfree.data.xy.XYSeriesCollection;
  * r*,Q*, and T* -which is usually done much faster- and then computing the 
  * optimal (s(t),S(t)) parameters for t close to T* and picking the best set of
  * parameters.
+ * <p>Notes:
+ * <ul>
+ * <li>2023-07-06: disallowed multiple threads from concurrently running the
+ * method <CODE>minimize(f)</CODE>.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -60,7 +65,7 @@ public final class sSTCnormHeurOpt implements OptimizerIntf {
 	private final double _qnot;
 
 	/**
-	 * by default, 24 tasks to be submitted each time to be processed in parallel
+	 * by default, 24 tasks to be submitted each time to be processed in parallel.
 	 */
 	private final int _batchSz;
 	
@@ -123,6 +128,10 @@ public final class sSTCnormHeurOpt implements OptimizerIntf {
 				                           "of type tests.sic.sST.norm.sSTCnorm");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
+			if (_numRunning>0) 
+				throw new OptimizerException("sSTCnormHeurOpt.minimize(f) is "+
+					                           "already running "+
+					                           "(by another thread on this object)");			
 			if (_pdclt==null) {
 				mger.msg("sSTCnormHeurOpt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);
@@ -185,9 +194,11 @@ public final class sSTCnormHeurOpt implements OptimizerIntf {
 				for (int i=0; i<res.length; i++) {
 					sSTCnormFixedTOpterResult ri = 
 						(sSTCnormFixedTOpterResult) res[i];
-					_tis.add(new Double(ri._T));  // add to tis time-series
-					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
-					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+					synchronized(this) {
+						_tis.add(new Double(ri._T));  // add to tis time-series
+						_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+						_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+					}
 					if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
 						mger.msg("sSTCnormHeurOpt.minimize(f): for T="+ri._T+
 							       " LB@T="+ri._LB+
@@ -236,9 +247,9 @@ public final class sSTCnormHeurOpt implements OptimizerIntf {
 			}
 		}
 		ArrayList[] result = new ArrayList[4];
-		result[0] = _tis;
-		result[1] = _ctis;
-		result[2] = _lbtis;
+		result[0] = new ArrayList(_tis);
+		result[1] = new ArrayList(_ctis);
+		result[2] = new ArrayList(_lbtis);
 		return result;
 	}
 

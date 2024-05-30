@@ -120,6 +120,15 @@ public class FiniteLRUFunctionCache implements FunctionIntf {
 	}
 	
 	
+	/**
+	 * get the underlying function object.
+	 * @return FunctionIntf
+	 */
+	public final FunctionIntf getFunction() {
+		return _f;
+	}
+	
+	
 	private void incrementHits() {
 		if (_KEEP_STATS) {
 			synchronized(this) {

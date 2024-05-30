@@ -100,7 +100,7 @@ public class BottomUpMESSolver2MT extends BottomUpMESSolver {
 	 * @param numsols2consider int the max number of top solutions added to the 
 	 * queue at every step (can be <CODE>Integer.MAX_VALUE</CODE> for no limit in 
 	 * the search). This is the <CODE>_K</CODE> field, and must be &ge; 1
-	 * @param mindepth4beamsearch int the minimum number of rules in a solution 
+	 * @param mindepth4beamsearch int the minimum number of vars in a solution 
 	 * for a BeamForming-Search to begin or -1 (the default, indicating no attempt
 	 * for beam-search)
 	 * @param maxnumrulesallowed int default -1 (no limit) used to cut the search

@@ -6,6 +6,7 @@ import popt4jlib.GA.*;
 import popt4jlib.SA.*;
 import popt4jlib.PS.*;
 import popt4jlib.DE.*;
+import popt4jlib.TS.*;
 import utils.Messenger;
 import utils.PairObjDouble;
 import java.util.HashMap;
@@ -13,10 +14,15 @@ import java.util.HashMap;
 
 /**
  * class uses any of the following supported meta-heuristics for (s,S,T) policy
- * optimization under normal demands: GA, SA, PS, DE.
+ * optimization under normal demands: GA, SA, PS, DE, TS.
+ * <p>Notes:
+ * <ul>
+ * <li>2023-09-22: added the Tabu Search method in the list of meta-heuristics
+ * to try.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -28,7 +34,7 @@ public class sSTCnormMetaHeurOpt {
 	 * echelon system facing normal demands. Invoke as:
 	 * <CODE>
 	 * java -cp &lt;classpath&gt; tests.sic.sST.norm.sSTCnormMetaHeurOpt 
-	 * &lt;GA|SA|PS|DE&gt;
+	 * &lt;GA|SA|PS|DE|TS&gt;
 	 * &lt;Kr&gt; &lt;Ko&gt; &lt;L&gt; &lt;&mu;&gt; &lt;&sigma;&gt;
 	 * &lt;h&gt; &lt;p&gt; [p2(0)] [dbglvl(0)]
 	 * </CODE>.
@@ -126,7 +132,7 @@ public class sSTCnormMetaHeurOpt {
 				System.exit(-1);
 			}			
 		}
-		else if ("PS".equals(meta)) {  // prepare run for DGA
+		else if ("PS".equals(meta)) {  // prepare run for DPSO
 			params.put("dpso.pdbtexecinitedwrkcmd", new PDBTExecNoOpCmd());
 			params.put("dpso.pdbthost", "localhost");
 			params.put("dpso.pdbtport", new Integer(7891));
@@ -161,7 +167,7 @@ public class sSTCnormMetaHeurOpt {
 				System.exit(-1);
 			}
 		}
-		else if ("DE".equals(meta)) {  // prepare run for DGA
+		else if ("DE".equals(meta)) {  // prepare run for DDE
 			params.put("dde.numdimensions", new Integer(3));  // [s,S,T]
 			params.put("dde.numtries", new Integer(20));
 			params.put("dde.numthreads", new Integer(24));
@@ -188,5 +194,46 @@ public class sSTCnormMetaHeurOpt {
 				System.exit(-1);
 			}
 		}
+		else if ("TS".equals(meta)) {  // prepare run for DTS
+			params.put("dts.chromosomelength", new Integer(3));  // [s,S,T]
+			params.put("dts.minallelevalue", new Double(-10.0));
+			// above smin used to be -150
+			params.put("dts.maxallelevalue", new Double(30.0));
+			// above smax used to be 150
+			params.put("dts.minallelevalue1", new Double(1.e-4));   // Dmin
+			params.put("dts.maxallelevalue1", new Double(20.0));  // Dmax
+			// above Dmax used to be 50.0
+			params.put("dts.minallelevalue2", new Double(Tmin));  // Tmin
+			params.put("dts.maxallelevalue2", new Double(3.0));  // Tmax
+			// above Tmax used to be 20.0
+			params.put("dts.randomchromosomemaker", 
+				         new popt4jlib.TS.DblArray1CMaker());
+			params.put("dts.movedelta", new Double(0.7));  // used to be 2.0
+			params.put("dts.movemaker", new popt4jlib.TS.DblArray1MoveMaker());
+			params.put("dts.numthreads", new Integer(8));  // used to be 24
+			params.put("dts.nhoodmindist", new Double(1.e-2));
+			params.put("dts.nhooddistcalc", new popt4jlib.DblArray1DistCalc());
+			params.put("dts.numiters", new Integer(20));
+			params.put("dts.nhoodsize", new Integer(10));
+			params.put("dts.tabulistmaxsize", new Integer(10)); 
+			params.put("dts.function", f);
+			try {
+				DTS dts = new DTS(params);
+				long start = System.currentTimeMillis();
+				PairObjDouble result = dts.minimize(f);
+				long dur = System.currentTimeMillis()-start;
+				double[] x = (double[]) result.getArg();
+				System.out.println("DTS soln: s="+x[0]+
+					                 " S="+(x[0]+x[1])+
+					                 " T="+x[2]);
+				System.out.println("DTS best cost found="+result.getDouble()+
+					                 " in "+dur+" msecs");
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				System.exit(-1);
+			}			
+		}
+		
 	}
 }

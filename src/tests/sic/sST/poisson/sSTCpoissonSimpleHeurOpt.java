@@ -20,9 +20,17 @@ import java.util.HashMap;
  * cost equal to Kr and zero ordering cost and for the resulting review period 
  * T' we compute similarly the optimal s(T') and S(T'), and compare with the 
  * above computed cost, and we return the winner.
+ * <p>Notes:
+ * <ul>
+ * <li>2023-07-06: disallowed class from concurrently running the method 
+ * <CODE>minimize(f)</CODE> on the same object.
+ * <li>2023-07-06: The 2nd heuristic above is only performed if there is no key
+ * parameter called "zeroOrderingCost" with value false passed in the optimizer
+ * parameters.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -43,7 +51,12 @@ public final class sSTCpoissonSimpleHeurOpt implements OptimizerIntf {
 	private final double _Tnot;
 	
 	/**
-	 * by default, 24 tasks to be submitted each time to be processed in parallel
+	 * by default, running the 2nd heuristic is true.
+	 */
+	private volatile boolean _run4ZeroOrderCost = true;
+	
+	/**
+	 * by default, 24 tasks to be submitted each time to be processed in parallel.
 	 */
 	private final int _batchSz;
 	
@@ -71,16 +84,20 @@ public final class sSTCpoissonSimpleHeurOpt implements OptimizerIntf {
 	
 
 	/**
-	 * no-op.
-	 * @param p HashMap unused 
+	 * checks and re/sets the data-member <CODE>_run4ZeroOrderCost</CODE> if
+	 * the key "zeroOrderingCost" is in the map, with value false/true.
+	 * @param p HashMap 
 	 */
-	public void setParams(java.util.HashMap p) {
-		// no-op.
+	public synchronized void setParams(java.util.HashMap p) {
+		if (p.containsKey("zeroOrderingCost")) {
+			_run4ZeroOrderCost = ((Boolean)p.get("zeroOrderingCost")).booleanValue();
+		}
 	}
 
 		
 	/**
-	 * main class method.
+	 * main class method does not allow multiple threads from concurrently running
+	 * it.
 	 * @param f FunctionIntf must be of type sSTCpoisson
 	 * @return PairObjDouble Pair&lt;double[] args, double bestcost&gt; where the 
 	 * args is an array holding the parameters (s*,S*,T*) yielding the bestcost 
@@ -93,6 +110,10 @@ public final class sSTCpoissonSimpleHeurOpt implements OptimizerIntf {
 				                           "f must be tests.sic.sST.nbin.sSTCpoisson");
 		final Messenger mger = Messenger.getInstance();
 		synchronized (this) {
+			if (_numRunning>0) 
+				throw new OptimizerException("sSTCpoissonSimpleHeurOpt.minimize(f) is "+
+					                           "already running "+
+					                           "(by another thread on this object)");						
 			if (_pdclt==null) {
 				mger.msg("sSTCpoissonSimpleHeurOpt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);
@@ -126,19 +147,22 @@ public final class sSTCpoissonSimpleHeurOpt implements OptimizerIntf {
 		double c1 = sSTC.eval(h1, null);
 		
 		// 2. compute optimal params for the (r,nQ,T) policy of the system with 
-		// Kr and Ko=0.
-		sSTCpoisson sSTC2 = new sSTCpoisson(sSTC._Kr, 0, sSTC._L, 
-			                                  sSTC._lambda, 
-			                                  sSTC._h, sSTC._p, sSTC._p2);		
-		mger.msg("sSTCpoissonSimpleHeurOpt.minimize(f): running "+
-			       "(r,nQ,T) policy optimization for Ko=0", 1);
-		final double[] x2 = getOptimalRnQTParams(sSTC2);
-		mger.msg("sSTCpoissonSimpleHeurOpt.minimize(f): "+
-			       "(r,nQ,T) policy optimization for zero ordering cost returns "+
-			       "T*="+x2[2], 1);
-		double[] h2 = new double[]{x2[0],x2[0]+x2[1],x2[2]};
-		double c2 = sSTC.eval(h2, null);
-		
+		// Kr and Ko=0, if it's allowed
+		double[] h2 = null;
+		double c2 = Double.POSITIVE_INFINITY;
+		if (_run4ZeroOrderCost) {
+			sSTCpoisson sSTC2 = new sSTCpoisson(sSTC._Kr, 0, sSTC._L, 
+																					sSTC._lambda, 
+																					sSTC._h, sSTC._p, sSTC._p2);		
+			mger.msg("sSTCpoissonSimpleHeurOpt.minimize(f): running "+
+							 "(r,nQ,T) policy optimization for Ko=0", 1);
+			final double[] x2 = getOptimalRnQTParams(sSTC2);
+			mger.msg("sSTCpoissonSimpleHeurOpt.minimize(f): "+
+							 "(r,nQ,T) policy optimization for zero ordering cost returns "+
+							 "T*="+x2[2], 1);
+			h2 = new double[]{x2[0],x2[0]+x2[1],x2[2]};
+			c2 = sSTC.eval(h2, null);
+		}
 		// 3. decide which setting is best
 		double[] x = c1 <= c2 ? h1 : h2;
 		double c_best= Math.min(c1, c2);
@@ -218,6 +242,7 @@ public final class sSTCpoissonSimpleHeurOpt implements OptimizerIntf {
 	 * [tnot(0.01)]
 	 * [batchsize(24)]
 	 * [dbglvl(0)]
+	 * [run4ZeroOrderCost(true)]
 	 * </CODE>.
 	 * @param args String[] 
 	 */
@@ -247,6 +272,12 @@ public final class sSTCpoissonSimpleHeurOpt implements OptimizerIntf {
 			dbglvl = Integer.parseInt(args[12]);
 		}
 		mger.setDebugLevel(dbglvl);
+		boolean run4zeroordercost = true;
+		HashMap params = new HashMap();
+		if (args.length>13) {
+			run4zeroordercost = Boolean.valueOf(args[13]);
+			params.put("zeroOrderingCost", new Boolean(run4zeroordercost));
+		}
 		// 2. create function
 		sSTCpoisson f = new sSTCpoisson(Kr,Ko,L,lambda,h,p,p2);
 		long start = System.currentTimeMillis();
@@ -254,6 +285,7 @@ public final class sSTCpoissonSimpleHeurOpt implements OptimizerIntf {
 		sSTCpoissonSimpleHeurOpt ropter = 
 			new sSTCpoissonSimpleHeurOpt(host, port, epst, tnot, bsize);
 		try {
+			ropter.setParams(params);
 			PairObjDouble result = ropter.minimize(f);
 			long dur = System.currentTimeMillis()-start;
 			double[] x = (double[])result.getArg();

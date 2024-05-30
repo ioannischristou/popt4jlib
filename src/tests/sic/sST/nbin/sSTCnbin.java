@@ -22,15 +22,26 @@ import tests.sic.rnqt.nbin.RnQTCnbin;
  * 50's by Arrow et al.)
  * <p>Notes:
  * <ul>
+ * <li>2024-03-27: allowed the <CODE>_MAX_ALLOWED_TIME</CODE> to vary; this is
+ * mostly needed for the TS meta-heuristic applied to the nbin distribution that
+ * can take too long.
+ * <li>2024-02-21: increased max time allowed for a single (s,S,T) evaluation.
+ * <li>2023-10-02:
+ * The evaluation of this policy for the nbin distribution sometimes presents
+ * serious numerical instabilities, hence the many compile-time constants in 
+ * this class. For this reason, evaluation of the function at any given vector
+ * will be interrupted and instead an <CODE>IllegalStateException</CODE> will be
+ * thrown if the evaluation takes more than <CODE>_MAX_ALLOWED_TIME</CODE> msecs
+ * of wall-clock time to run.
  * <li>20210606: fixed bugs related to mean-demand during a period or during a
  * lead-time.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
- * @version 1.0
+ * @version 2.0
  */
 public class sSTCnbin implements FunctionIntf {
 	final double _Kr;
@@ -51,6 +62,17 @@ public class sSTCnbin implements FunctionIntf {
 	protected final static int _DISP_MOD_NUM = 5000;
 	protected final static int _START_DISP_MOD_NUM = 10000;
 	
+	private volatile static long _MAX_ALLOWED_TIME = 5000;  // itc-20240221:
+	                                                        // was half a second
+
+	
+	private static ThreadLocal _evalStartTime = new ThreadLocal() {  // in millis
+		protected Object initialValue() {
+			return null;
+		}
+	};
+	
+		
 	/**
 	 * Function sole public constructor.
 	 * @param Kr double
@@ -86,6 +108,8 @@ public class sSTCnbin implements FunctionIntf {
 	 * method <CODE>evalBoth(x)</CODE>.
 	 */
 	public double eval(Object x, java.util.HashMap param) {
+		long startTime = System.currentTimeMillis();
+		_evalStartTime.set(new Long(startTime));
 		utils.Pair p = evalBoth(x, param);
 		return ((Double) p.getFirst()).doubleValue();
 	} 
@@ -105,6 +129,7 @@ public class sSTCnbin implements FunctionIntf {
 	 */
 	utils.Pair evalBoth(Object x, java.util.HashMap param) {
 		double[] xp;
+		long startTime = ((Long)sSTCnbin._evalStartTime.get()).longValue();
 		if (x instanceof double[]) xp = (double[])x;
 		else xp = ((DblArray1Vector) x).getDblArray1();
 		_mger.msg("sSTCnbin.evalBoth(s="+xp[0]+",S="+xp[1]+",T="+xp[2]+"): start",
@@ -128,8 +153,9 @@ public class sSTCnbin implements FunctionIntf {
 		
 		double K1 = J/T;
 		double nom = sum1((int)r,(int)R,T,t,l,m,IC,phat,_eps);
+		check4Time(startTime);
 		double denom = sum2((int)r,(int)R,T,l,_eps);
-		
+		check4Time(startTime);
 		double y = K1 + (A+nom)/(T*denom);
 		double lb = K1 + nom/(T*denom);
 		_mger.msg("sSTCnbin.evalBoth(s="+xp[0]+",S="+xp[1]+",T="+xp[2]+
@@ -171,6 +197,7 @@ public class sSTCnbin implements FunctionIntf {
 	protected double sum1(int r, int R, double T, double t, 
 		                  double l, double m, 
 											double IC, double phat, double eps) {
+		final long startTime = ((Long)sSTCnbin._evalStartTime.get()).longValue();
 		double y = 0;
 		int n = 0;
 		double last = 0;
@@ -209,6 +236,7 @@ public class sSTCnbin implements FunctionIntf {
 				if (n>_START_DISP_MOD_NUM && n%_DISP_MOD_NUM == 0) {  // debug
 					_mger.msg("sSTCnbin.sum1(r="+r+",R="+R+",T="+T+"...,eps="+eps+
 						        "): n="+n+" cur_val="+y+" ratio="+ratio, 3);
+					check4Time(startTime);
 				}
 				if (ratio < eps) break;
 				else {
@@ -240,6 +268,7 @@ public class sSTCnbin implements FunctionIntf {
 	 * @return double
 	 */
 	protected double sum2(int r, int R, double T, double l, double eps) {
+		final long startTime = ((Long)sSTCnbin._evalStartTime.get()).longValue();
 		double y = 0;
 		int n = 1;
 		double last = 0;
@@ -298,6 +327,7 @@ public class sSTCnbin implements FunctionIntf {
 			last += sum;
 			++n;
 			if (++count==_numTerms) {
+				check4Time(startTime);
 				double ratio = Math.abs(last/y);
 				if (n>_START_DISP_MOD_NUM && n%_DISP_MOD_NUM == 0) {  // debug
 					_mger.msg("sSTCnbin.sum2(r="+r+",R="+R+",T="+T+",l="+l+",eps="+eps+
@@ -449,6 +479,28 @@ public class sSTCnbin implements FunctionIntf {
 		}
 		return res;
 	}
-		
+	
+	
+	/**
+	 * throws if time has ran out.
+	 * @param startTime 
+	 * @throws IllegalStateException
+	 */
+	private static void check4Time(long startTime) {
+		if (System.currentTimeMillis()-startTime>=_MAX_ALLOWED_TIME) {
+			throw new IllegalStateException("out of time");
+		}
+	}
+	
+	
+	/**
+	 * only used when applying the TS meta-heuristic to (s,S,T) optimization. Must
+	 * only be called before any thread starts evaluating this function.
+	 * @param dur long
+	 */
+	public static void setMaxAllowedTime(long dur) {
+		_MAX_ALLOWED_TIME = dur;
+	}
+
 }
 

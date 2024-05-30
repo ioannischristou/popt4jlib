@@ -3,6 +3,7 @@ package tests.sic.sST.nbin;
 import popt4jlib.DblArray1Vector;
 import popt4jlib.OptimizerIntf;
 import popt4jlib.FunctionIntf;
+import popt4jlib.FunctionBaseStatic;
 import popt4jlib.OptimizerException;
 import popt4jlib.GradientDescent.OneDStepQuantumOptimizer;
 import utils.Messenger;
@@ -19,6 +20,8 @@ import utils.PairObjTwoDouble;
  * guaranteed to be the global optimum for the given review period T.
  * <p>Notes:
  * <ul>
+ * <li>2024-03-23: allowed the <CODE>G(.)</CODE> function minimization to start
+ * from a given s, rather than zero every time.
  * <li>2021-06-07: excluded fixed review costs from lower bound as they decrease
  * in time.
  * <li>2021-06-06: fixed issue related to computing the <CODE>G(.)</CODE>
@@ -33,14 +36,27 @@ import utils.PairObjTwoDouble;
  */
 public class sSTCnbinFixedTOpt implements OptimizerIntf {
 	private double _T;
+	private int _s0 = Integer.MAX_VALUE;  // by default, don't use this number
 	
 	
 	/**
-	 * sole public constructor.
+	 * one-arg original public constructor.
 	 * @param T double the given review period
 	 */
 	public sSTCnbinFixedTOpt(double T) {
 		_T = T;
+	}
+	
+	
+	/**
+	 * two-arg constructor allows starting the <CODE>G(.)</CODE> function 
+	 * optimization to start from a "good" initial reorder point.
+	 * @param T double the given review period
+	 * @param s0 int the reorder point to start searching from
+	 */
+	public sSTCnbinFixedTOpt(double T, int s0) {
+		_T = T;
+		_s0 = s0;
 	}
 
 	
@@ -68,9 +84,12 @@ public class sSTCnbinFixedTOpt implements OptimizerIntf {
 		throws OptimizerException {
 		if (!(func instanceof sSTCnbin))
 			throw new OptimizerException("sSTCnbinFixedTOpt.minimize(function): "+
-				                           "function passed in must be sSTCpoisson");
+				                           "function passed in must be sSTCnbin");
 		Messenger mger = Messenger.getInstance();
 		sSTCnbin f = (sSTCnbin) func;
+		FunctionIntf f2 = new FunctionBaseStatic(f);  // use FunctionBaseStatic 
+		                                              // to keep track of #function
+																									// calls
 		final double L = f._L;
 		final double lambda = f._lambda;
 		final double p_l = f._p_l;
@@ -91,7 +110,7 @@ public class sSTCnbinFixedTOpt implements OptimizerIntf {
 		while (true) {
 			--s;
 			sS_0_T[0] = s;
-			c0 = f.eval(sS_0_T,param);
+			c0 = f2.eval(sS_0_T,param);
 			double Gs = G(s,_T,L,lambda,p_l,h,p);
 			if (Double.compare(c0,Gs) <= 0) break;
 		}
@@ -102,16 +121,16 @@ public class sSTCnbinFixedTOpt implements OptimizerIntf {
 		// step 2:
 		double[] sST = new double[]{s,S,_T};
 		while (Double.compare(GS,c0) <= 0) {
-			double css = f.eval(sST, param);
+			double css = f2.eval(sST, param);
 			if (css < c0) {
 				Su0 = S;
 				sST[1] = Su0;  // set S
-				double csS0 = f.eval(sST, param);
+				double csS0 = f2.eval(sST, param);
 				double Gsp1 = G(s+1,_T,L,lambda,p_l,h,p);
 				while (Double.compare(csS0, Gsp1) <= 0) {
 					++s;
 					sST[0] = s;  // set s
-					csS0 = f.eval(sST, param);
+					csS0 = f2.eval(sST, param);
 					Gsp1 = G(s+1,_T,L,lambda,p_l,h,p);
 				}
 				c0 = csS0;
@@ -124,7 +143,7 @@ public class sSTCnbinFixedTOpt implements OptimizerIntf {
 		x_best[0] = s;
 		x_best[1] = Su0;
 		double[] xaux = new double[]{s,Su0,_T};
-		copt = f.eval(xaux, null);  // take into account review cost as well now
+		copt = f2.eval(xaux, null);  // take into account review cost as well now
 		// finally, evaluate the lower-bound (S,T) Poisson policy at (S(T),T)
 		// SstarT = findminST(...)
     // lbopt = RnqTCpoisson(SstarT,1,T,...)
@@ -162,9 +181,10 @@ public class sSTCnbinFixedTOpt implements OptimizerIntf {
 	}
 
 	
-	private static int findGminarg(double T, double L, double lambda, double p_l, 
-		                             double h, double p) {
+	private int findGminarg(double T, double L, double lambda, double p_l, 
+		                      double h, double p) {
 		int y = 0;
+		if (_s0!=Integer.MAX_VALUE) y = _s0;  // start from _s0 if passed in
 		double c = G(y, T, L, lambda, p_l, h, p);
 		double c2 = G(y+1, T, L, lambda, p_l, h, p);
 		if (c==c2) return y;

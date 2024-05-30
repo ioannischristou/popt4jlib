@@ -1,6 +1,7 @@
 package tests.sic.sST.nbin;
 
 import popt4jlib.FunctionIntf;
+import popt4jlib.FunctionBaseStatic;
 import popt4jlib.OptimizerException;
 import popt4jlib.OptimizerIntf;
 import parallel.TaskObject;
@@ -40,8 +41,14 @@ import org.jfree.data.xy.XYSeriesCollection;
  * T', we compute similarly near-optimal s(T') and S(T'), and choose the best 
  * among the solutions found. 
  * <p>Notes:
- * <p>2023-07-04: The 2nd heuristic computation can be avoided if the param
+ * <ul>
+ * <li>2024-03-22: forced printing of total number of 
+ * <CODE>sSTCnbin.eval()</CODE> calls made.
+ * <li>2023-07-05: changed class to disallow multiple threads from running the 
+ * method <CODE>minimize()</CODE> on the same object concurrently.
+ * <li>2023-07-04: The 2nd heuristic computation can be avoided if the param
  * "zeroOrderingCost" exists in the optimization params and is set to false.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2023</p>
@@ -72,10 +79,13 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 	
 	private final double _deltaT;
 	
-	private boolean _run4ZeroOrderCost = true;
+	/**
+	 * by default, using the 2nd heuristic is true.
+	 */
+	private volatile boolean _run4ZeroOrderCost = true;
 
 	/**
-	 * by default, 24 tasks to be submitted each time to be processed in parallel
+	 * by default, 24 tasks to be submitted each time to be processed in parallel.
 	 */
 	private final int _batchSz;
 	
@@ -110,10 +120,13 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 
 	/**
 	 * checks, and resets the variable <CODE>_run4ZeroOrderCost</CODE> if the key
-	 * "zeroOrderingCost" exists and is set to false.
+	 * "zeroOrderingCost" exists and is set to false (assuming no other threads is
+	 * concurrently running <CODE>minimize(f)</CODE>).
 	 * @param p HashMap 
 	 */
-	public void setParams(java.util.HashMap p) {
+	public synchronized void setParams(java.util.HashMap p) {
+		if (_numRunning>0) 
+			return;  // does not work while another thread runs minimize(f)
 		if (p.containsKey("zeroOrderingCost")) {
 			_run4ZeroOrderCost = ((Boolean)p.get("zeroOrderingCost")).booleanValue();
 		}
@@ -121,7 +134,7 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 
 		
 	/**
-	 * main class method.
+	 * main class method cannot run by multiple threads concurrently.
 	 * @param f FunctionIntf must be of type sSTCnbin
 	 * @return PairObjDouble Pair&lt;double[] args, double bestcost&gt; where the 
 	 * args is an array holding the parameters (s*,S*,T*) yielding the bestcost 
@@ -134,12 +147,17 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 				                           " of type tests.sic.sST.nbin.sSTCnbin");
 		Messenger mger = Messenger.getInstance();
 		synchronized (this) {
+			if (_numRunning>0) 
+				throw new OptimizerException("sSTCnbinFastHeurOpt.minimize(f) is "+
+					                           "already running "+
+					                           "(by another thread on this object)");
 			if (_pdclt==null) {
 				mger.msg("sSTCnbinFastHeurOpt.minimize(f): connecting on "+_pdsrv+
 					       " on port "+_pdport, 2);
 				_pdclt = new PDBTExecInitedClt(_pdsrv, _pdport);
 				try {
-					_pdclt.submitInitCmd(new PDBTExecInitNoOpCmd());
+					// _pdclt.submitInitCmd(new PDBTExecInitNoOpCmd());
+					_pdclt.submitInitCmd(new PDBTExecShowFuncEvalsOnExitCmd());					
 					mger.msg("sSTCnbinFastHeurOpt.minimize(f): sent init cmd", 2);
 				}
 				catch (Exception e) {
@@ -166,7 +184,9 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 			       "(r,nQ,T) policy optimization", 1);
 		
 		// 1. compute the optimal T* for the (r,nQ,T) policy
-		final double t_rnqt = getNearOptimalRnQTReview(sSTC);
+		final double[] rnqt = getNearOptimalRnQTPolicy(sSTC);
+		final double t_rnqt = rnqt[2];
+		final int s_rnqt = (int) Math.floor(rnqt[0]);
 		mger.msg("sSTCnbinFastHeurOpt.minimize(f): "+
 			       "(r,nQ,T) policy optimization returns T*="+t_rnqt, 1);
 		
@@ -183,7 +203,7 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 			double Tstart = T;
 			for (int i=0; i<batchSz; i++) {
 				T += _epsT;
-				batch[i] = new sSTCnbinFixedTOptTask(sSTC,T,c_cur_best);
+				batch[i] = new sSTCnbinFixedTOptTask(sSTC,T,c_cur_best, s_rnqt);
 			}
 			try {
 				mger.msg("sSTCnbinFastHeurOpt.minimize(f): submit a batch of "+batchSz+
@@ -195,8 +215,10 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 					try {
 						sSTCnbinFixedTOpterResult ri = 
 							(sSTCnbinFixedTOpterResult) res[i];
-						_tis.add(new Double(ri._T));  // add to tis time-series
-						_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+						synchronized(this) {
+							_tis.add(new Double(ri._T));  // add to tis time-series
+							_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+						}
 						if (ri._C < c_cur_best) {
 							s_star = ri._s;
 							S_star = ri._S;
@@ -223,7 +245,9 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 		if (_run4ZeroOrderCost) {
 			sSTCnbin sSTC2 = new sSTCnbin(sSTC._Kr, 0, sSTC._L,
 																		sSTC._lambda, sSTC._p_l, sSTC._h, sSTC._p);
-			final double t_rnqt2 = getNearOptimalRnQTReview(sSTC2);
+			final double[] rnqt2 = getNearOptimalRnQTPolicy(sSTC2);
+			final double t_rnqt2 = rnqt2[2];
+			final int s_rnqt2 = (int) Math.floor(rnqt2[0]);
 			mger.msg("sSTCnbinFastHeurOpt.minimize(Kr,0): "+
 							 "(r,nQ,T) policy optimization returns T*="+t_rnqt2, 1);
 
@@ -250,10 +274,10 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 				double Tstart = T;
 				for (int i=0; i<batchSz; i++) {
 					T += _epsT;
-					batch[i] = new sSTCnbinFixedTOptTask(sSTC,T,c_cur_best);
+					batch[i] = new sSTCnbinFixedTOptTask(sSTC,T,c_cur_best, s_rnqt2);
 				}
 				try {
-					mger.msg("sSTCnbinFastHeurOpt.minimize(f): submit a batch of "+batchSz+
+					mger.msg("sSTCnbinFastHeurOpt.minimize(f): submit batch of "+batchSz+
 									 " tasks to network for period length from "+(Tstart+_epsT)+
 									 " up to "+T, 
 									 1);
@@ -262,27 +286,30 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 						try {
 							sSTCnbinFixedTOpterResult ri = 
 								(sSTCnbinFixedTOpterResult) res[i];
-							_tis.add(new Double(ri._T));  // add to tis time-series
-							_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+							synchronized(this) {
+								_tis.add(new Double(ri._T));  // add to tis time-series
+								_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+							}
 							if (ri._C < c_cur_best) {
 								s_star = ri._s;
 								S_star = ri._S;
 								t_star = ri._T;
 								c_cur_best = ri._C;
-								mger.msg("sSTCnbinFastHeurOpt.minimize(f): found better soln at"+
+								mger.msg("sSTCnbinFastHeurOpt.minimize(f): found better sol at"+
 												 " T="+t_star+", c="+c_cur_best+" LB@T="+ri._LB, 1);
 							}
 						}
 						catch (ClassCastException e) {  // FailedReply recvd
-							mger.msg("task["+i+"] failed, will ignore but optimization results"+
+							mger.msg("task["+i+"] failed will ignore but optimization result"+
 											 " may be unreliable.", 0);						
 						}
 					}
 				}
 				catch (Exception e) {
 					e.printStackTrace();
-					throw new OptimizerException("sSTCnbinFastHeurOpt.minimize(): failed "+
-																			 "to submit tasks/process/get back result");
+					throw new OptimizerException("sSTCnbinFastHeurOpt.minimize(): failed"+
+																			 " to submit tasks/process/get_back"+
+						                           " result");
 				}
 			}  // while
 		}
@@ -322,8 +349,8 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 			}
 		}
 		ArrayList[] result = new ArrayList[2];
-		result[0] = _tis;
-		result[1] = _ctis;
+		result[0] = new ArrayList(_tis);
+		result[1] = new ArrayList(_ctis);
 		return result;
 	}
 
@@ -362,10 +389,10 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 	 * multiply the _epsT used in the (s,S,T) outer T-search by the factor 
 	 * <CODE>_EPST_MULT</CODE>.
 	 * @param f sSTCnbin
-	 * @return double optimal review period for the (r,nQ,T) policy
+	 * @return double[] optimal policy for the (r,nQ,T) policy
 	 * @throws OptimizerException
 	 */
-	private synchronized double getNearOptimalRnQTReview(sSTCnbin f) 
+	private synchronized double[] getNearOptimalRnQTPolicy(sSTCnbin f) 
 		throws OptimizerException {
 		RnQTCnbin rnqt = new RnQTCnbin(f._Kr, f._Ko, f._L, f._lambda, f._p_l,
 		                                     f._h, f._p);
@@ -379,7 +406,7 @@ public final class sSTCnbinFastHeurOpt implements OptimizerIntf {
 		p.put("rnqtcnbinheurpopt.pdclt", _pdclt);
 		opter.setParams(p);
 		PairObjDouble res = opter.minimize(rnqt);
-		return ((double[])res.getArg())[2];
+		return (double[]) res.getArg();
 	}
 	
 	

@@ -49,6 +49,8 @@ import org.jfree.data.xy.XYSeriesCollection;
  * cost.
  * <p>Notes:
  * <ul>
+ * <li>2024-02-21: allowed FailedReply to return from a single-T optimization
+ * instance.
  * <li>2021-06-07: modified the lower bound in fixed-T optimization to exclude 
  * the review costs since they are decreasing in time.
  * </ul>
@@ -176,23 +178,29 @@ public final class sSTCnbinOpt implements OptimizerIntf {
 					       1);
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
-					sSTCnbinFixedTOpterResult ri = 
-						(sSTCnbinFixedTOpterResult) res[i];
-					_tis.add(new Double(ri._T));  // add to tis time-series
-					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
-					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
-					if (Double.compare(ri._LB, c_cur_best)>0) {  // done!
-						mger.msg("sSTCnbinOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
-							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
-						done = true;
+					try {
+						sSTCnbinFixedTOpterResult ri = 
+							(sSTCnbinFixedTOpterResult) res[i];
+						_tis.add(new Double(ri._T));  // add to tis time-series
+						_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+						_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+						if (Double.compare(ri._LB, c_cur_best)>0) {  // done!
+							mger.msg("sSTCnbinOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
+											 " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
+							done = true;
+						}
+						if (ri._C < c_cur_best) {
+							s_star = ri._s;
+							S_star = ri._S;
+							t_star = ri._T;
+							c_cur_best = ri._C;
+							mger.msg("sSTCnbinOpt.minimize(f): found new better soln at T="+
+											 t_star+", c="+c_cur_best+" LB@T="+ri._LB, 1);
+						}
 					}
-					if (ri._C < c_cur_best) {
-						s_star = ri._s;
-						S_star = ri._S;
-						t_star = ri._T;
-						c_cur_best = ri._C;
-						mger.msg("sSTCnbinOpt.minimize(f): found new better soln at T="+
-							       t_star+", c="+c_cur_best+" LB@T="+ri._LB, 1);
+					catch (ClassCastException e2) {
+						mger.msg("sSTCnbinOpt.minimize(f): for T="+(i+1) * _epsT+
+							       " the optimization task failed...", 0);
 					}
 				}
 			}
@@ -383,6 +391,10 @@ public final class sSTCnbinOpt implements OptimizerIntf {
  * auxiliary class encapsulating the notion of optimizing an 
  * <CODE>sSTCnbin</CODE> function, with a fixed review period T. NOT part of 
  * the public API.
+ * <p>Notes:
+ * <ul>
+ * <li>2024-03-23: Allowed specifying starting reorder point s0 to the task.
+ * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
  * <p>Copyright: Copyright (c) 2011-2021</p>
@@ -394,16 +406,36 @@ final class sSTCnbinFixedTOptTask implements TaskObject {
 	private sSTCnbin _f;
 	private double _T;
 	private double _curBest;
+	private int _s0;  // initial reorder point
 	
 	public sSTCnbinFixedTOptTask(sSTCnbin f, double T, double curBest) {
 		_f = f;
 		_T = T;
 		_curBest = curBest;
+		_s0 = Integer.MAX_VALUE;
 	}
+
+
+	/**
+	 * if this constructor is used, the optimization will use the initial reorder
+	 * point passed in.
+	 * @param f sSTCnbin 
+	 * @param T double must be &gt; 0
+	 * @param curBest double
+	 * @param s0 int initial reorder point
+	 */
+	public sSTCnbinFixedTOptTask(sSTCnbin f, double T, double curBest, int s0) {
+		_f = f;
+		_T = T;
+		_curBest = curBest;
+		_s0 = s0;
+	}
+
 	
 	public Serializable run() {
-		sSTCnbinFixedTOpt opter = 
-			new sSTCnbinFixedTOpt(_T);
+		sSTCnbinFixedTOpt opter = _s0 == Integer.MAX_VALUE ?
+																new sSTCnbinFixedTOpt(_T) :
+																new sSTCnbinFixedTOpt(_T, _s0);
 		sSTCnbinFixedTOpterResult res = null;
 		try {
 			PairObjTwoDouble p = opter.minimize(_f);

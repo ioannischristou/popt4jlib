@@ -1,9 +1,5 @@
 package tests.sic.sST.norm;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Shape;
-import java.awt.geom.Ellipse2D;
 import java.io.Serializable;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -20,6 +16,10 @@ import utils.PairObjDouble;
 import utils.PairObjTwoDouble;
 import utils.Messenger;
 // below import needed for visualization of graph of optimal C(T) for various T
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -49,7 +49,7 @@ import org.jfree.data.xy.XYSeriesCollection;
  * strictly exceeds the best known cost.
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2021</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -118,7 +118,10 @@ public final class sSTCnormOpt implements OptimizerIntf {
 
 	
 	/**
-	 * main class method.
+	 * main class method doesn't allow multiple threads to concurrently run it,
+	 * however, instead of throwing <CODE>OptimizerException</CODE> at such an
+	 * attempt, the latter threads will just wait until no previous thread is
+	 * running.
 	 * @param f FunctionIntf must be instance of sSTCnorm
 	 * @return PairObjDouble
 	 * @throws OptimizerException 
@@ -186,9 +189,11 @@ public final class sSTCnormOpt implements OptimizerIntf {
 				Object[] res = _pdclt.submitWorkFromSameHost(batch);
 				for (int i=0; i<res.length; i++) {
 					sSTCnormFixedTOpterResult ri = (sSTCnormFixedTOpterResult) res[i];
-					_tis.add(new Double(ri._T));  // add to tis time-series
-					_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
-					_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+					synchronized(this) {
+						_tis.add(new Double(ri._T));  // add to tis time-series
+						_ctis.add(new Double(ri._C));  // add to c(t)'s time-series
+						_lbtis.add(new Double(ri._LB));  // add to lb(t)'s time-series
+					}
 					if (Double.compare(ri._LB, c_cur_best) > 0) {  // done!
 						mger.msg("sSTCnormOpt.minimize(f): for T="+ri._T+" LB@T="+ri._LB+
 							       " c@T="+ri._C+" c*="+c_cur_best+"; done.", 1);
@@ -236,9 +241,9 @@ public final class sSTCnormOpt implements OptimizerIntf {
 			}
 		}
 		ArrayList[] result = new ArrayList[3];
-		result[0] = _tis;
-		result[1] = _ctis;
-		result[2] = _lbtis;
+		result[0] = new ArrayList(_tis);
+		result[1] = new ArrayList(_ctis);
+		result[2] = new ArrayList(_lbtis);
 		return result;
 	}
 	

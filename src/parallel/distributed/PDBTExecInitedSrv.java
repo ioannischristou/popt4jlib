@@ -50,10 +50,13 @@ import java.util.*;
  * <ul>
  * <li>2021-05-14: added functionality to query the current number of connected
  * workers on this server.
+ * <li>2023-12-05: method <CODE>addNewWorkerConnection(s)</CODE> is now 
+ * protected and does not throw <CODE>IOException</CODE>. Also, previously
+ * private methods <CODE>submitWork()</CODE> are now protected.
  * </ul>
  * <p>Title: popt4jlib</p>
  * <p>Description: A Parallel Meta-Heuristic Optimization Library in Java</p>
- * <p>Copyright: Copyright (c) 2011-2017</p>
+ * <p>Copyright: Copyright (c) 2011-2023</p>
  * <p>Company: </p>
  * @author Ioannis T. Christou
  * @version 1.0
@@ -80,7 +83,7 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
   /**
    * invoke as:
    * <CODE>java -cp &lt;classpath&gt; parallel.distributed.PDBTExecInitedSrv 
-	 * [workers_port(7890)] [clients_port(7891)] [debuglvl(0)]</CODE>
+	 * [workers_port(7890)] [clients_port(7891)] [debuglvl(0)]</CODE>.
    * @param args String[]
    */
   public static void main(String[] args) {
@@ -137,8 +140,8 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
   }
 
 	
-  TaskObjectsExecutionResults submitWork(Vector originating_clients, 
-		                                     TaskObject[] tasks) 
+  protected TaskObjectsExecutionResults submitWork(Vector originating_clients, 
+		                                               TaskObject[] tasks) 
 		throws IOException, ClassNotFoundException, PDBatchTaskExecutorException {
     Set workers2rm = new HashSet();  // Set<Socket s> for 
 		                                 // (Socket s, PDBTEW2Listener t) pair
@@ -223,8 +226,9 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 	 * @throws IOException
 	 * @throws PDBatchTaskExecutorException 
 	 */
-  private TaskObjectsExecutionResults submitWork(
-		TaskObjectsExecutionRequest req, PDBTEW2Listener t)
+  protected TaskObjectsExecutionResults submitWork(
+		                                      TaskObjectsExecutionRequest req, 
+		                                      PDBTEW2Listener t)
       throws IOException, PDBatchTaskExecutorException {
     utils.Messenger.getInstance().msg("PDBTExecInitedSrv.submitWork(req,t): "+
 			                                "sending request",1);
@@ -303,14 +307,17 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
 	 * of the socket has been fully initialized and sends back an 
 	 * <CODE>OKReply</CODE>.
    * @param s Socket
-	 * @throws IOException
    */
-  private synchronized void addNewWorkerConnection(Socket s) 
-		throws IOException {
-    PDBTEW2Listener lt = new PDBTEW2Listener(s);
-		lt.initWorker();
-    getWorkers().put(s, lt);
-		notifyAll();  // notify client-threads waiting for workers to be inited
+  protected synchronized void addNewWorkerConnection(Socket s) {
+    try {
+			PDBTEW2Listener lt = new PDBTEW2Listener(s);
+			lt.initWorker();
+			getWorkers().put(s, lt);
+			notifyAll();  // notify client-threads waiting for workers to be inited
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
   }
 
 
@@ -330,7 +337,7 @@ public class PDBTExecInitedSrv extends PDBatchTaskExecutorSrv {
   }
 
 
-  private static void usage() {
+  static void usage() {
     System.err.println("usage: java -cp <classpath> "+
 			                 "parallel.distributed.PDBTExecInitedSrv "+
 			                 "[workersport(7890)] [clientsport(7891)] [debuglvl(0)]");

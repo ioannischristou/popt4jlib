@@ -1,0 +1,27 @@
+# the following defines an ANN and weights on the nn's connections
+# the ANN looks like this:
+# INP L0   OUT
+#     n00
+# x         y
+#     n01
+class,n00,popt4jlib.neural.ReLU
+class,n01,popt4jlib.neural.ReLU
+class,outputlayer,popt4jlib.neural.ReLU
+array,layer1_arr,popt4jlib.neural.NNNodeIntf,n00,n01
+array,hiddenlayers,[Ljava.lang.Object;,layer1_arr
+class,costfunc,popt4jlib.neural.costfunction.MSSE
+class,ffnn4trainb,popt4jlib.neural.FFNN4TrainB,hiddenlayers,outputlayer,costfunc
+matrix,hiddenws0,testdata/nn_related/hiddenws0_4_toy_test_2024.dat
+# contents of hiddenws0_4_toy_test.dat are:
+# 2 4
+# 1,1.0 2,1.0 3,1.0 4,0.0
+# 1,1.0 2,1.0 3,1.0 4,0.0
+array,outputws,double,-1.0,0.5,0.0
+#array,weights,double,1.0,0.0,-1.0,0.0,1.0,0.1,0.0
+array,weights,double,1.0,1.0,1.0,0.0,1.0,1.0,1.0,0.0,-1.0,0.5,0.0
+# train data:
+matrix,ffnn.traindata,testdata/nn_related/toy_train_2024.dat
+#ffnn.traindatafile,testdata/traindata1.dat
+# train labels
+dblarray,ffnn.trainlabels,testdata/nn_related/toy_train_2024.dat.lbls
+#ffnn.trainlabelsfile,testdata/trainlabels1.dat
