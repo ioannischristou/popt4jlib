@@ -22,6 +22,7 @@ popt4jlib.NumberPartitioning
 popt4jlib.PS
 popt4jlib.PS.FA
 popt4jlib.SA
+popt4jlib.TS
 popt4jlib.network
 popt4jlib.neural
 popt4jlib.neural.costfunction
@@ -29,6 +30,7 @@ tests
 tests.sic.rnqt.nbin
 tests.sic.rnqt.norm
 tests.sic.rnqt.poisson
+tests.sic.rt.poisson
 tests.sic.sST.det
 tests.sic.sST.nbin
 tests.sic.sST.norm
